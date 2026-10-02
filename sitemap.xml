@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://heyprince.in/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp</image:loc>
+      <image:title>Prince - Senior Full Stack IT Consultant</image:title>
+      <image:caption>Prince personal portfolio and engineering hub</image:caption>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://heyprince.in/contact/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://heyprince.in/freelancing-tips-it-professionals-2026/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://heyprince.in/assets/blog/photo1.webp</image:loc>
+      <image:title>Essential Freelancing Tips for IT Professionals in 2026</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://heyprince.in/choose-it-services-provider/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://heyprince.in/assets/blog/photo2.webp</image:loc>
+      <image:title>How to Choose the Right IT Services Provider for Your Business</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://heyprince.in/professional-website-2026/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://heyprince.in/assets/blog/photo3.webp</image:loc>
+      <image:title>Why Every Business Needs a Professional Website in 2026</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://heyprince.in/web-development-trends-2026/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://heyprince.in/assets/blog/photo4.webp</image:loc>
+      <image:title>Top Web Development Trends Every Business Should Follow in 2026</image:title>
+    </image:image>
+  </url>
+</urlset>
