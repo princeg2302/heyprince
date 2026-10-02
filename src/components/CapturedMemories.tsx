@@ -28,10 +28,8 @@ export const CapturedMemories: React.FC = () => {
         return Math.max(Math.abs(getScrollAmount()) * 1.05, 1000);
       };
 
-      // Pin the inner wrapper while section provides the scroll space
-      gsap.to(track, {
-        x: getScrollAmount,
-        ease: 'none',
+      // Single unified timeline with ONE ScrollTrigger — zero pinning collision or hitching
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           pin: pinWrap,
@@ -39,43 +37,45 @@ export const CapturedMemories: React.FC = () => {
           end: () => `+=${getScrollDistance()}`,
           scrub: true,
           invalidateOnRefresh: true,
-          anticipatePin: 1,
         },
       });
+
+      tl.to(
+        track,
+        {
+          x: getScrollAmount,
+          ease: 'none',
+        },
+        0
+      );
 
       // Subtle organic floating parallax on speed classes
-      gsap.to('.img-wrapper.slower', {
-        y: -14,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: () => `+=${getScrollDistance()}`,
-          scrub: true,
+      tl.to(
+        '.img-wrapper.slower',
+        {
+          y: -14,
+          ease: 'none',
         },
-      });
+        0
+      );
 
-      gsap.to('.img-wrapper.slower-down', {
-        y: 16,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: () => `+=${getScrollDistance()}`,
-          scrub: true,
+      tl.to(
+        '.img-wrapper.slower-down',
+        {
+          y: 16,
+          ease: 'none',
         },
-      });
+        0
+      );
 
-      gsap.to('.img-wrapper.faster', {
-        y: 10,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: () => `+=${getScrollDistance()}`,
-          scrub: true,
+      tl.to(
+        '.img-wrapper.faster',
+        {
+          y: 10,
+          ease: 'none',
         },
-      });
+        0
+      );
     }, sectionRef);
 
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -86,14 +86,9 @@ export const CapturedMemories: React.FC = () => {
       }, 200);
     };
 
-    const initialTimer = setTimeout(() => {
-      ScrollTrigger.refresh();
-    }, 400);
-
     window.addEventListener('resize', debouncedRefresh);
 
     return () => {
-      clearTimeout(initialTimer);
       if (refreshTimer) clearTimeout(refreshTimer);
       window.removeEventListener('resize', debouncedRefresh);
       ctx.revert();

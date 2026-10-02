@@ -15,18 +15,23 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
 
     const ctx = gsap.context(() => {
       if (sectionRef.current) {
-        gsap.from('.article-card', {
-          y: 40,
-          opacity: 0,
-          stagger: 0.12,
-          duration: 0.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 85%',
-            once: true,
-          },
-        });
+        gsap.fromTo(
+          '.article-card',
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            stagger: 0.08,
+            duration: 0.6,
+            ease: 'power2.out',
+            clearProps: 'transform,opacity',
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: 'top 85%',
+              once: true,
+            },
+          }
+        );
       }
     }, sectionRef);
 

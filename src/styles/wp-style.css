@@ -829,6 +829,9 @@ img.shape-separator {
   border: 0;
   border-radius: 12px;
   overflow: hidden;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .article-card .card-body {

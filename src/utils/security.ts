@@ -103,30 +103,7 @@ export function initSecurityShield(): void {
     };
 
     printSecurityNotice();
-    setInterval(printSecurityNotice, 4000);
-
-    // 5. DevTools Detection & Anti-Debugging Trap
-    // When DevTools is open, hitting a debugger statement interrupts the inspector
-    const debuggerTrap = () => {
-      try {
-        const start = performance.now();
-        (function () {
-          // eslint-disable-next-line no-debugger
-          debugger;
-        })();
-        const duration = performance.now() - start;
-        // If debugger paused or outer vs inner dimension delta indicates docked DevTools:
-        const widthThreshold = window.outerWidth - window.innerWidth > 160;
-        const heightThreshold = window.outerHeight - window.innerHeight > 160;
-        if (duration > 100 || widthThreshold || heightThreshold) {
-          try {
-            console.clear();
-          } catch (_) {}
-        }
-      } catch (_) {}
-    };
-
-    setInterval(debuggerTrap, 1000);
+    setInterval(printSecurityNotice, 5000);
   } catch (_) {}
 }
 

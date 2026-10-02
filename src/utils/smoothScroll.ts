@@ -33,7 +33,7 @@ export const initSmoothScroll = (): Lenis | null => {
   };
 
   gsap.ticker.add(tickerCallback);
-  gsap.ticker.lagSmoothing(0);
+  gsap.ticker.lagSmoothing(500, 33);
 
   return lenis;
 };
