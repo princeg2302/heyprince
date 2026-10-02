@@ -102,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               title="HeyPrince"
               rel="home"
             >
-              <img src="https://heyprince.in/wp-content/uploads/2025/09/heyprince.svg" alt="HeyPrince" />
+              <img src="https://heyprince.in/wp-content/uploads/2025/09/heyprince.svg" alt="HeyPrince" className="svg" />
               <p className="site-tagline">Where Ideas Get Dressed to Impress.</p>
             </a>
           </div>

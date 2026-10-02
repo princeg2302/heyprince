@@ -12,3 +12,4 @@ export { Footer } from './Footer';
 export { CyberArcade } from './CyberArcade';
 export { SingleBlogPage } from './SingleBlogPage';
 export { ContactPage } from './ContactPage';
+export { InlineSvg } from './InlineSvg';

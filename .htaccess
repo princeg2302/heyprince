@@ -12,6 +12,10 @@ DirectoryIndex dist/index.html index.html
   RewriteCond %{REQUEST_URI} ^/dist/ [NC]
   RewriteRule ^ - [L]
 
+  # If requested file physically exists on the server (e.g. wp-content/uploads/...), serve directly!
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
   # Map static asset requests directly to dist/
   RewriteRule ^(assets|fonts|images|audio)/(.*)$ dist/$1/$2 [L]
   RewriteRule ^(favicon\.svg|icons\.svg)$ dist/$1 [L]
