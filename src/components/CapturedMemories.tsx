@@ -20,12 +20,12 @@ export const CapturedMemories: React.FC = () => {
       // Calculate total horizontal travel needed so the last item is fully revealed
       const getScrollAmount = () => {
         if (!track) return 0;
-        return -(track.scrollWidth - window.innerWidth + 140);
+        return -(track.scrollWidth - window.innerWidth + 120);
       };
 
       const getScrollDistance = () => {
-        if (!track) return 2000;
-        return Math.max(track.scrollWidth - window.innerWidth + 400, 2000);
+        if (!track) return 1200;
+        return Math.max(Math.abs(getScrollAmount()) * 1.05, 1000);
       };
 
       // Pin the inner wrapper while section provides the scroll space
@@ -37,7 +37,7 @@ export const CapturedMemories: React.FC = () => {
           pin: pinWrap,
           start: 'top top',
           end: () => `+=${getScrollDistance()}`,
-          scrub: 1,
+          scrub: true,
           invalidateOnRefresh: true,
           anticipatePin: 1,
         },
@@ -45,56 +45,57 @@ export const CapturedMemories: React.FC = () => {
 
       // Subtle organic floating parallax on speed classes
       gsap.to('.img-wrapper.slower', {
-        y: -35,
+        y: -14,
         ease: 'none',
         scrollTrigger: {
           trigger: section,
           start: 'top top',
           end: () => `+=${getScrollDistance()}`,
-          scrub: 1.2,
+          scrub: true,
         },
       });
 
       gsap.to('.img-wrapper.slower-down', {
-        y: 40,
+        y: 16,
         ease: 'none',
         scrollTrigger: {
           trigger: section,
           start: 'top top',
           end: () => `+=${getScrollDistance()}`,
-          scrub: 1.2,
+          scrub: true,
         },
       });
 
       gsap.to('.img-wrapper.faster', {
-        y: 28,
+        y: 10,
         ease: 'none',
         scrollTrigger: {
           trigger: section,
           start: 'top top',
           end: () => `+=${getScrollDistance()}`,
-          scrub: 1,
+          scrub: true,
         },
       });
     }, sectionRef);
 
-    // Refresh ScrollTrigger calculations after initial layout and when images settle
-    const refreshScroll = () => {
-      ScrollTrigger.refresh();
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedRefresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 200);
     };
-    const t1 = setTimeout(refreshScroll, 150);
-    const t2 = setTimeout(refreshScroll, 600);
-    const t3 = setTimeout(refreshScroll, 1200);
 
-    window.addEventListener('load', refreshScroll);
-    window.addEventListener('resize', refreshScroll);
+    const initialTimer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 400);
+
+    window.addEventListener('resize', debouncedRefresh);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      window.removeEventListener('load', refreshScroll);
-      window.removeEventListener('resize', refreshScroll);
+      clearTimeout(initialTimer);
+      if (refreshTimer) clearTimeout(refreshTimer);
+      window.removeEventListener('resize', debouncedRefresh);
       ctx.revert();
     };
   }, []);
@@ -128,7 +129,6 @@ export const CapturedMemories: React.FC = () => {
                     src={item.image}
                     alt={`Prince outdoor travel and photography memory #${idx + 1}`}
                     decoding="async"
-                    onLoad={() => ScrollTrigger.refresh()}
                   />
                 </a>
               </div>

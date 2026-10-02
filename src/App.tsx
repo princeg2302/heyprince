@@ -240,8 +240,20 @@ export const App: React.FC = () => {
 
   // High-performance GPU-accelerated scroll progress tracking (Zero root re-renders)
   useEffect(() => {
-    let ticking = false;
+    const lenis = getSmoothScroll();
+    if (lenis) {
+      const handleLenisScroll = (e: any) => {
+        if (progressBarRef.current && typeof e.progress === 'number') {
+          progressBarRef.current.style.transform = `scaleX(${e.progress})`;
+        }
+      };
+      lenis.on('scroll', handleLenisScroll);
+      return () => {
+        lenis.off('scroll', handleLenisScroll);
+      };
+    }
 
+    let ticking = false;
     const updateProgress = () => {
       const total = document.documentElement.scrollHeight - window.innerHeight;
       const progress = total > 0 ? window.scrollY / total : 0;

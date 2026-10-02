@@ -262,15 +262,27 @@ export const CyberArcade: React.FC = () => {
     }
   };
 
-  // Main 60fps render loop
+  // Main 60fps render loop (active during gameplay)
   useEffect(() => {
+    if (gameState !== 'playing') return;
+
     let lastSpawn = Date.now();
+    let arenaWidth = arenaRef.current?.clientWidth || 800;
+    let arenaHeight = arenaRef.current?.clientHeight || 450;
+
+    const handleResize = () => {
+      if (arenaRef.current) {
+        arenaWidth = arenaRef.current.clientWidth;
+        arenaHeight = arenaRef.current.clientHeight;
+      }
+    };
+    window.addEventListener('resize', handleResize);
 
     const loop = () => {
       const arena = arenaRef.current;
       if (arena) {
-        const width = arena.clientWidth;
-        const height = arena.clientHeight;
+        const width = arenaWidth;
+        const height = arenaHeight;
 
         // Move targets
         targetsRef.current.forEach((target) => {
@@ -313,16 +325,9 @@ export const CyberArcade: React.FC = () => {
         }
 
         // Spawn targets to maintain minimum count when playing
-        if (gameState === 'playing') {
-          if (targetsRef.current.length < 5 && Date.now() - lastSpawn > 500) {
-            spawnTarget();
-            lastSpawn = Date.now();
-          }
-        } else if (gameState === 'idle') {
-          // Idle floating targets
-          if (targetsRef.current.length < 4) {
-            spawnTarget();
-          }
+        if (targetsRef.current.length < 5 && Date.now() - lastSpawn > 500) {
+          spawnTarget();
+          lastSpawn = Date.now();
         }
       }
 
@@ -330,7 +335,10 @@ export const CyberArcade: React.FC = () => {
     };
 
     animFrameRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animFrameRef.current);
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [gameState, spawnTarget]);
 
   // 30s Game Timer

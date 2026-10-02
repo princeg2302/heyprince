@@ -841,15 +841,11 @@ img.shape-separator {
 
 .article-link {
   color: var(--color-text);
-  transition: all ease 0.5s;
+  transition: background-color 0.35s ease, color 0.35s ease, transform 0.35s ease;
 }
 
 .article-link:hover {
   background-color: var(--color-primary);
-}
-
-.article-link:hover * {
-  transition: all ease 0.5s;
 }
 
 .captured-memories h2+p {
@@ -2189,24 +2185,26 @@ ul#menu-main {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 30px 0;
+  padding: 15px 0 10px 0;
   box-sizing: border-box;
 }
 
 .captured-memories .container {
   flex-shrink: 0;
-  margin-bottom: 25px;
+  margin-bottom: 12px;
   position: relative;
   z-index: 2;
 }
 
 .external {
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
   position: relative;
   flex-grow: 1;
   display: flex;
   align-items: center;
+  padding: 42px 0;
+  box-sizing: border-box;
 }
 
 .horizontal-scroll-wrapper {
@@ -2226,43 +2224,20 @@ ul#menu-main {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 12px 0;
   transition: filter 0.35s ease;
 }
 
-.img-wrapper.slower {
-  transform: translateY(-28px);
-}
-
-.img-wrapper.slower1 {
-  transform: translateY(24px);
-}
-
-.img-wrapper.slower2 {
-  transform: translateY(-16px);
-}
-
-.img-wrapper.slower-down {
-  transform: translateY(32px);
-}
-
-.faster {
-  transform: translateY(22px);
-}
-
-.faster1 {
-  transform: translateY(-20px);
-}
-
-.fastest {
-  transform: translateY(28px);
-}
-
-.vertical {
-  transform: translateY(0);
-}
-
+.img-wrapper.slower,
+.img-wrapper.slower1,
+.img-wrapper.slower2,
+.img-wrapper.slower-down,
+.faster,
+.faster1,
+.fastest,
+.vertical,
 .last {
-  transform: translateY(-24px);
+  transform: translateY(0);
 }
 
 .img-wrapper a {
@@ -2281,9 +2256,9 @@ ul#menu-main {
 }
 
 .external img {
-  height: 38vh;
-  max-height: 380px;
-  min-height: 240px;
+  height: 33vh;
+  max-height: 320px;
+  min-height: 200px;
   width: auto;
   aspect-ratio: 4/3;
   object-fit: cover;
@@ -2524,8 +2499,9 @@ body {
   }
 
   .external {
-    overflow: hidden;
+    overflow: visible;
     width: 100%;
+    padding: 30px 0;
   }
 
   .horizontal-scroll-wrapper {

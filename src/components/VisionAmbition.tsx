@@ -15,7 +15,7 @@ export const VisionAmbition: React.FC = () => {
           trigger: e,
           start: 'top bottom-=200',
           end: '+=450',
-          scrub: 2,
+          scrub: true,
         },
       });
 

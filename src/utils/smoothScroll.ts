@@ -13,13 +13,14 @@ export const initSmoothScroll = (): Lenis | null => {
   gsap.registerPlugin(ScrollTrigger);
 
   const lenis = new Lenis({
-    duration: 1.15,
+    duration: 1.05,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // smooth easeOutExpo curve
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
-    wheelMultiplier: 0.95,
-    touchMultiplier: 1.1,
+    wheelMultiplier: 1.0,
+    touchMultiplier: 1.0,
+    autoRaf: false,
   });
 
   lenisInstance = lenis;
