@@ -1,13 +1,13 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /
 
-  # If requested resource exists as a file or folder, serve it directly
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+  # Serve existing files directly
+  RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
-  # Otherwise redirect all requests to index.html (SPA Fallback)
-  RewriteRule ^ index.html [L]
+  # SPA Fallback for all other paths
+  RewriteRule ^.*$ index.html [L]
 </IfModule>
 
 # Caching for production performance
