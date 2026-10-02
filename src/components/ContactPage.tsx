@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   FaArrowLeft,
   FaEnvelope,
@@ -70,8 +70,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  // CRITICAL: Ensure instant scroll to top on mount
-  useEffect(() => {
+  // CRITICAL: Ensure instant scroll to top on mount before paint
+  useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;

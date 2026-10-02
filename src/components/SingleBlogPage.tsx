@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { articlesList, Article } from '../data/siteContent';
 import {
   FaArrowLeft,
@@ -60,8 +60,8 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   // Filter dynamic related articles (excluding current article)
   const relatedArticles = articlesList.filter((a) => a.slug !== article.slug).slice(0, 3);
 
-  // CRITICAL: Scroll immediately to top on mount and whenever slug changes
-  useEffect(() => {
+  // CRITICAL: Scroll immediately to top on mount before paint and whenever slug changes
+  useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;

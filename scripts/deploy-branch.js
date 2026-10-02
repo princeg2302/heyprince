@@ -22,13 +22,17 @@ try {
 
   console.log(`\n📦 Pushing dist contents to branch "deploy" on ${remoteUrl}...`);
 
+  const distGit = path.join(distDir, '.git');
+  if (fs.existsSync(distGit)) {
+    fs.rmSync(distGit, { recursive: true, force: true });
+  }
+
   execSync('git init', { cwd: distDir, stdio: 'inherit' });
   execSync('git checkout -B deploy', { cwd: distDir, stdio: 'inherit' });
   execSync('git add -A', { cwd: distDir, stdio: 'inherit' });
-  execSync('git commit -m "Deploy production build [skip ci]"', { cwd: distDir, stdio: 'inherit' });
+  execSync('git commit --allow-empty -m "Deploy production build [skip ci]"', { cwd: distDir, stdio: 'inherit' });
   execSync(`git push -f "${remoteUrl}" deploy`, { cwd: distDir, stdio: 'inherit' });
 
-  const distGit = path.join(distDir, '.git');
   if (fs.existsSync(distGit)) {
     fs.rmSync(distGit, { recursive: true, force: true });
   }

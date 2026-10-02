@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   Preloader,
   CustomCursor,
@@ -69,17 +69,19 @@ export const resolveRoute = (): RouteState => {
 };
 
 export const App: React.FC = () => {
-  // Activate animated letter cycles for all .word titles
-  useWordAnimation();
-
-  // Disable browser automatic scroll restoration to avoid stuck positions
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'scrollRestoration' in history) {
-      history.scrollRestoration = 'manual';
-    }
-  }, []);
-
   const [route, setRoute] = useState<RouteState>(() => resolveRoute());
+
+  // Activate animated letter cycles for all .word titles on every route transition
+  useWordAnimation(route);
+
+  // Pre-paint instant scroll reset on route changes so no previous scroll position flickers
+  useLayoutEffect(() => {
+    if (route.page === 'contact' || route.page === 'blog') {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [route.page, route.slug]);
 
   // Synchronize SEO meta tags, title, Open Graph, and Structured Data
   useEffect(() => {
@@ -234,37 +236,44 @@ export const App: React.FC = () => {
       )}
       <Header onNavigate={handleNavigate} />
       <main id="main" className="main-content">
-        {route.page === 'home' && (
-          <>
-            <HeroBanner />
-            <VisionAmbition />
-            <JourneyTimeline />
-            <CyberArcade />
-            <ArticlesSection
-              onSelectArticle={(slug) => handleNavigate('blog', slug)}
+        <div
+          key={route.page === 'blog' ? `view-blog-${route.slug}` : `view-${route.page}`}
+          className="page-view-wrapper"
+        >
+          {route.page === 'home' && (
+            <>
+              <HeroBanner />
+              <VisionAmbition />
+              <JourneyTimeline />
+              <CyberArcade />
+              <ArticlesSection
+                onSelectArticle={(slug) => handleNavigate('blog', slug)}
+              />
+              <LetsTalkBanner onNavigateContact={() => handleNavigate('contact')} />
+              <CapturedMemories />
+            </>
+          )}
+
+          {route.page === 'blog' && (
+            <SingleBlogPage
+              key={route.slug}
+              slug={route.slug}
+              onNavigateHome={() => handleNavigate('home')}
+              onNavigateArticles={() => handleNavigate('home', 'articles')}
+              onSelectArticle={(newSlug) => handleNavigate('blog', newSlug)}
+              onNavigateContact={() => handleNavigate('contact')}
             />
-            <LetsTalkBanner onNavigateContact={() => handleNavigate('contact')} />
-            <CapturedMemories />
-          </>
-        )}
+          )}
 
-        {route.page === 'blog' && (
-          <SingleBlogPage
-            slug={route.slug}
-            onNavigateHome={() => handleNavigate('home')}
-            onNavigateArticles={() => handleNavigate('home', 'articles')}
-            onSelectArticle={(newSlug) => handleNavigate('blog', newSlug)}
-            onNavigateContact={() => handleNavigate('contact')}
-          />
-        )}
-
-        {route.page === 'contact' && (
-          <ContactPage
-            onNavigateHome={() => {
-              handleNavigate('home');
-            }}
-          />
-        )}
+          {route.page === 'contact' && (
+            <ContactPage
+              key="contact-page"
+              onNavigateHome={() => {
+                handleNavigate('home');
+              }}
+            />
+          )}
+        </div>
       </main>
       <Footer />
     </div>

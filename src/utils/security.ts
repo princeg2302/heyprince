@@ -129,3 +129,4 @@ export function initSecurityShield(): void {
     setInterval(debuggerTrap, 1000);
   } catch (_) {}
 }
+

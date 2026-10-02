@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export function useWordAnimation() {
+export function useWordAnimation(dependency?: any) {
   useEffect(() => {
     const wordBlocks = document.querySelectorAll('.word');
     const intervals: ReturnType<typeof setInterval>[] = [];
@@ -44,7 +44,7 @@ export function useWordAnimation() {
       intervals.forEach(clearInterval);
       timeouts.forEach(clearTimeout);
     };
-  }, []);
+  }, [dependency]);
 }
 
 export default useWordAnimation;
