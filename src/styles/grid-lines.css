@@ -1,0 +1,287 @@
+.journey-timeline {
+    overflow: hidden;
+}
+.timeline-wrapper {
+    flex-flow: column;
+    justify-content: space-between;
+    height: 110svh;
+    display: flex;
+    position: relative;
+}
+
+.timeline-grid-wrapper {
+    width: 100%;
+    height: calc(45% + 80px);
+    position: absolute;
+    top: -80px;
+    left: 0;
+    z-index: 3;
+}
+
+.timeline-text {
+    position: absolute;
+    bottom: 90px;
+    left: 0;
+    width: 100%;
+}
+
+.timeline-grid {
+    --padding: 100px 0;
+    --stroke-color: #fff;
+    --dashed-line-bg: repeating-linear-gradient(to top, var(--stroke-color) 0, var(--stroke-color) 2px, transparent 2px, transparent 6px);
+    --font-size: 1vw;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 0 var(--padding);
+    font-size: var(--font-size);
+    color: var(--stroke-color);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid;
+}
+
+@media screen and (max-width: 991px) {
+    .timeline-grid {
+        --font-size: 1.6vw
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .timeline-grid {
+        --font-size: 2.45vw;
+        --padding: 2.8vw
+    }
+}
+
+@media screen and (max-width: 478px) {
+    .timeline-grid {
+        --font-size: 3.6vw;
+        --padding: 4.1vw
+    }
+}
+
+.grid::before {
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--stroke-color);
+    transform: scaleX(0);
+    transform-origin: left
+}
+
+.grid__container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    gap: 4.1vw
+}
+
+.grid__section {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    flex-shrink: 0
+}
+
+.grid__x {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+/* On tablet and mobile, preserve all interactive milestones with smooth horizontal touch scroll */
+@media screen and (max-width: 991px) {
+    .timeline-grid-wrapper {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .timeline-grid {
+        min-width: 880px;
+    }
+
+    .grid__x {
+        display: block !important;
+    }
+
+    .timeline-wrapper {
+        height: 100svh;
+        min-height: 620px;
+    }
+
+    .timeline-text {
+        bottom: 30px;
+    }
+
+    .timeline-text h2 {
+        font-size: clamp(38px, 9vw, 68px) !important;
+    }
+}
+
+.grid__x.current-active-x::after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--stroke-color);
+    bottom: 0;
+    transform: translate(-50%, 50%);
+    transition: transform .25s;
+}
+
+.grid__x-line {
+    width: 1px;
+    height: calc(100% - 4px);
+    background: var(--dashed-line-bg);
+    transform: scaleY(1);
+    transform-origin: bottom
+}
+
+.grid__x-label {
+    transform: translate(-50%, 50%);
+    cursor: pointer;
+    transition: all ease 0.2s;
+}
+.current-active-x .grid__x-label {
+    color: var(--color-primary);
+    font-weight: 700;
+    pointer-events: none;
+} 
+.grid__x-label:hover {
+    padding: 0 10px;
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.grid__x-text {
+    width: max-content;
+    position: absolute;
+    left: -5px;
+    display: flex;
+    align-items: stretch;
+    padding-left: 5px;
+    overflow: hidden;
+    opacity: 0;
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+.current-active-x .grid__x-text {
+    opacity: 1;
+    top: calc(100% + 2.5em);
+    display: flex !important;
+}
+
+@media screen and (max-width: 767px) {
+    .grid__x-text {
+        font-size: 13px;
+    }
+    .grid__x-text-content {
+        max-width: 120px;
+        font-size: 12px;
+    }
+}
+
+.grid__x-text-line {
+    position: absolute;
+    top: .5em;
+    bottom: .25em;
+    width: 1px;
+    background: var(--dashed-line-bg);
+    transform-origin: top
+}
+
+.grid__x-text-line::before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--stroke-color);
+    transform: translateX(-50%)
+}
+
+.grid__x-text-content {
+    margin-left: 0.7em;
+    padding-top: 1em;
+    max-width: 150px;
+}
+
+.grid__circles {
+    position: absolute;
+    top: 100%;
+    left: var(--x-pos-6);
+    transform: translate(-50%, -50%);
+    width: 25%;
+}
+
+@media screen and (max-width: 991px) {
+    .grid__circles {
+        width: 50%
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .grid__circles {
+        width: 85%
+    }
+}
+
+.grid__circles svg {
+    width: 100%;
+    color: var(--stroke-color);
+}
+
+.grid__circles circle {
+    animation-duration: 28s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    transform-origin: center;
+    transition: all ease 0.2s;
+}
+
+.grid__circles #grid-circle-big {
+    animation-name: big-circle-rotation;
+}
+
+@media screen and (max-width: 478px) {
+    .grid__circles #grid-circle-big {
+        stroke-dasharray: 1 31
+    }
+}
+
+@keyframes big-circle-rotation {
+    from {
+        transform: rotate(0deg)
+    }
+
+    to {
+        transform: rotate(-360deg)
+    }
+}
+/* Brand Red Milestone Accents */
+.current-active-x .grid__x-label {
+  color: #d40027 !important;
+  text-shadow: 0 0 12px rgba(212, 0, 39, 0.8) !important;
+  font-weight: 800 !important;
+}
+.grid__x-label:hover {
+  color: #ff3355 !important;
+}
+.current-active-x .grid__x-line {
+  background: repeating-linear-gradient(to top, #d40027 0, #d40027 2px, transparent 2px, transparent 6px) !important;
+}
