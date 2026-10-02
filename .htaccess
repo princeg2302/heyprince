@@ -1,13 +1,18 @@
+DirectoryIndex dist/index.html index.html
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # If requested resource exists as a file or folder, serve it directly
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+  # Force HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Don't rewrite if request is already targeting dist/
+  RewriteCond %{REQUEST_URI} ^/dist/ [NC]
   RewriteRule ^ - [L]
 
-  # Otherwise redirect all requests to index.html (SPA Fallback)
-  RewriteRule ^ index.html [L]
+  # Rewrite all other requests to dist/
+  RewriteRule ^(.*)$ dist/$1 [L,QSA]
 </IfModule>
 
 # Caching for production performance
