@@ -238,7 +238,7 @@ export const App: React.FC = () => {
       <main id="main" className="main-content">
         <div
           key={route.page === 'blog' ? `view-blog-${route.slug}` : `view-${route.page}`}
-          className="page-view-wrapper"
+          className={route.page === 'home' ? 'home-view-container' : 'page-view-wrapper'}
         >
           {route.page === 'home' && (
             <>

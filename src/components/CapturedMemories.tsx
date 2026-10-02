@@ -127,7 +127,6 @@ export const CapturedMemories: React.FC = () => {
                   <img
                     src={item.image}
                     alt={`Prince outdoor travel and photography memory #${idx + 1}`}
-                    loading="lazy"
                     decoding="async"
                     onLoad={() => ScrollTrigger.refresh()}
                   />
