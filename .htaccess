@@ -12,7 +12,7 @@ DirectoryIndex dist/index.html index.html
   RewriteCond %{REQUEST_URI} ^/dist/ [NC]
   RewriteRule ^ - [L]
 
-  # If requested file physically exists on the server (e.g. wp-content/uploads/...), serve directly!
+  # If requested file physically exists on the server, serve directly
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 

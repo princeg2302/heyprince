@@ -1,5 +1,3 @@
-DirectoryIndex dist/index.html index.html
-
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -8,20 +6,12 @@ DirectoryIndex dist/index.html index.html
   RewriteCond %{HTTPS} off
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-  # Don't rewrite if request is already targeting dist/
-  RewriteCond %{REQUEST_URI} ^/dist/ [NC]
-  RewriteRule ^ - [L]
-
-  # If requested file physically exists on the server (e.g. wp-content/uploads/...), serve directly!
+  # Serve existing physical files directly
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
-  # Map static asset requests directly to dist/
-  RewriteRule ^(assets|fonts|images|audio)/(.*)$ dist/$1/$2 [L]
-  RewriteRule ^(favicon\.svg|icons\.svg|robots\.txt|sitemap\.xml|heyprince-logo\.svg)$ dist/$1 [L]
-
-  # SPA Fallback: send all other paths directly to dist/index.html
-  RewriteRule ^.*$ dist/index.html [L]
+  # SPA Fallback for all routes to index.html
+  RewriteRule ^.*$ index.html [L]
 </IfModule>
 
 <IfModule mod_headers.c>
