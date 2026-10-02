@@ -77,13 +77,11 @@ export function updatePageSeo(options: PageSeoOptions): void {
   setMetaTag('meta[property="og:site_name"]', 'property', 'og:site_name', 'HeyPrince');
   setMetaTag('meta[property="og:locale"]', 'property', 'og:locale', 'en_US');
 
-  // 5. Twitter Card Tags
+  // 5. Twitter Card Tags (for crawler preview rich cards)
   setMetaTag('meta[name="twitter:card"]', 'name', 'twitter:card', 'summary_large_image');
   setMetaTag('meta[name="twitter:title"]', 'name', 'twitter:title', title);
   setMetaTag('meta[name="twitter:description"]', 'name', 'twitter:description', description);
   setMetaTag('meta[name="twitter:image"]', 'name', 'twitter:image', ogImage);
-  setMetaTag('meta[name="twitter:site"]', 'name', 'twitter:site', '@heyprince');
-  setMetaTag('meta[name="twitter:creator"]', 'name', 'twitter:creator', '@heyprince');
 
   // 6. Dynamic JSON-LD Schema
   let schemaScript = document.getElementById('dynamic-page-schema') as HTMLScriptElement | null;
@@ -139,8 +137,8 @@ export function updatePageSeo(options: PageSeoOptions): void {
           image: DEFAULT_IMAGE,
           email: 'it@heyprince.in',
           sameAs: [
-            'https://www.linkedin.com/',
-            'https://x.com/',
+            'https://www.linkedin.com/in/mr-goyal/',
+            'https://www.instagram.com/heyprince.in/',
             'https://wa.me/',
           ],
           knowsAbout: [

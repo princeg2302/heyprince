@@ -8,7 +8,7 @@ import {
   FaHeart,
   FaShareNodes,
   FaLinkedinIn,
-  FaXTwitter,
+  FaInstagram,
   FaWhatsapp,
   FaCheck,
   FaLightbulb,
@@ -318,13 +318,14 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                     Share:
                   </span>
                   <a
-                    className="share-btn twitter"
-                    href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`}
+                    className="share-btn instagram"
+                    href="https://www.instagram.com/heyprince.in/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="Share on X"
+                    aria-label="Instagram @heyprince.in"
+                    title="Instagram @heyprince.in"
                   >
-                    <FaXTwitter size={14} />
+                    <FaInstagram size={14} />
                   </a>
                   <a
                     className="share-btn whatsapp"

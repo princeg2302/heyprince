@@ -348,14 +348,13 @@ export interface TechPill {
 
 export const bannerTechPills: TechPill[] = [
   { name: 'HTML', image: htmlImg },
+  { name: 'PHP', image: phpImg },
   { name: 'CSS', image: cssImg },
   { name: 'JavaScript', image: jsImg },
   { name: 'ReactJS', image: reactjsImg },
   { name: 'Node.js', image: nodejsImg },
-  { name: 'Python', image: pythonImg },
-  { name: 'PHP', image: phpImg },
   { name: 'WordPress', image: wordpressImg },
+  { name: 'Python', image: pythonImg },
   { name: 'Shopify', image: shopifyImg },
   { name: 'jQuery', image: jqueryImg },
 ];
-

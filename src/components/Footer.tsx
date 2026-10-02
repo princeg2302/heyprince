@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaLinkedinIn, FaXTwitter, FaWhatsapp } from 'react-icons/fa6';
+import { FaLinkedinIn, FaInstagram, FaWhatsapp } from 'react-icons/fa6';
 
 export const Footer: React.FC = () => {
   return (
@@ -132,11 +132,11 @@ export const Footer: React.FC = () => {
 
             <div className="col-md-2">
               <div className="social-links">
-                <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <a href="https://www.linkedin.com/in/mr-goyal/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                   <FaLinkedinIn size={24} color="#fff" />
                 </a>
-                <a href="https://x.com/" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter">
-                  <FaXTwitter size={22} color="#fff" />
+                <a href="https://www.instagram.com/heyprince.in/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                  <FaInstagram size={24} color="#fff" />
                 </a>
                 <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
                   <FaWhatsapp size={24} color="#fff" />

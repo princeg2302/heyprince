@@ -5,7 +5,7 @@ import {
   FaPhone,
   FaWhatsapp,
   FaLinkedinIn,
-  FaXTwitter,
+  FaInstagram,
   FaClock,
   FaGlobe,
   FaPaperPlane,
@@ -504,7 +504,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
               <h5>Direct Social Channels</h5>
               <div className="social-pill-row">
                 <a
-                  href="https://www.linkedin.com/"
+                  href="https://www.linkedin.com/in/mr-goyal/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hub-social-pill linkedin"
@@ -514,14 +514,14 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                   <span>LinkedIn</span>
                 </a>
                 <a
-                  href="https://x.com/"
+                  href="https://www.instagram.com/heyprince.in/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hub-social-pill twitter"
-                  aria-label="X / Twitter"
+                  className="hub-social-pill instagram"
+                  aria-label="Instagram"
                 >
-                  <FaXTwitter />
-                  <span>X / Twitter</span>
+                  <FaInstagram />
+                  <span>Instagram</span>
                 </a>
                 <a
                   href={whatsAppUrl}

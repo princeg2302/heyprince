@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaLinkedinIn, FaXTwitter, FaWhatsapp } from 'react-icons/fa6';
+import { FaLinkedinIn, FaInstagram, FaWhatsapp } from 'react-icons/fa6';
 import heyprinceLogo from '../assets/heyprince-logo.svg';
 
 export interface HeaderProps {
@@ -240,19 +240,20 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                               rel="noopener noreferrer"
                               aria-label="LinkedIn"
                               className="d-flex align-items-center Linkedin"
-                              href="https://www.linkedin.com/"
+                              href="https://www.linkedin.com/in/mr-goyal/"
                               target="_blank"
                             >
                               <FaLinkedinIn size={22} color="#fff" />
                             </a>
                             <a
                               rel="noopener noreferrer"
-                              aria-label="Twitter"
-                              className="d-flex align-items-center Twitter mx-3"
-                              href="https://x.com/"
+                              aria-label="Instagram"
+                              title="Instagram (@heyprince.in)"
+                              className="d-flex align-items-center Instagram mx-3"
+                              href="https://www.instagram.com/heyprince.in/"
                               target="_blank"
                             >
-                              <FaXTwitter size={20} color="#fff" />
+                              <FaInstagram size={22} color="#fff" />
                             </a>
                             <a
                               rel="noopener noreferrer"
