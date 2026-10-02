@@ -7,9 +7,58 @@
     <meta name="theme-color" content="#0b0b0f" />
     <meta name="color-scheme" content="dark" />
 
+    <!-- Client-Side Security & Inspection Protection -->
+    <script>
+      (function () {
+        // 1. Disable Right-Click Context Menu
+        document.addEventListener('contextmenu', function (e) {
+          e.preventDefault();
+          return false;
+        }, true);
+
+        // 2. Disable DevTools & Inspect Keyboard Shortcuts
+        window.addEventListener('keydown', function (e) {
+          if (e.key === 'F12' || e.keyCode === 123) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+          var isCtrl = e.ctrlKey || e.metaKey;
+          if (isCtrl && e.shiftKey) {
+            var k = (e.key || '').toUpperCase();
+            if (k === 'I' || k === 'J' || k === 'C' || k === 'K') {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            }
+          }
+          if (isCtrl) {
+            var k = (e.key || '').toUpperCase();
+            if (k === 'U' || k === 'S' || k === 'P') {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            }
+          }
+        }, true);
+
+        // 3. Clear and Silence Console
+        if (typeof console !== 'undefined') {
+          try {
+            console.clear();
+            var noop = function () {};
+            console.log = noop;
+            console.info = noop;
+            console.debug = noop;
+            console.table = noop;
+          } catch (_) {}
+        }
+      })();
+    </script>
+
     <!-- Primary Search Engine Optimization (SEO) -->
     <title>Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince</title>
-    <meta name="description" content="Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React web applications, scalable cloud architectures, interactive UI/UX, and custom IT solutions worldwide." />
+    <meta name="description" content="Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React web apps, scalable cloud architecture, and custom IT solutions." />
     <meta name="keywords" content="Prince, HeyPrince, IT Consultant, Full Stack Engineer, React Developer, Web Engineering, Custom Software Development, Cloud Architecture, Node.js, UI/UX Design, IT Services India" />
     <meta name="author" content="Prince" />
     <meta name="publisher" content="HeyPrince" />
@@ -26,7 +75,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://heyprince.in/" />
     <meta property="og:title" content="Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince" />
-    <meta property="og:description" content="Senior Full Stack Engineer & IT Consultant specializing in high-performance React web applications, scalable cloud architectures, and interactive digital solutions." />
+    <meta property="og:description" content="Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React web apps, scalable cloud architecture, and custom IT solutions." />
     <meta property="og:image" content="https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp" />
     <meta property="og:image:alt" content="Prince - Senior Full Stack Engineer and IT Consultant" />
     <meta property="og:image:width" content="1200" />

@@ -65,6 +65,27 @@ body {
   background-color: #00000094;
   position: relative;
   color: #fff;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 /* Noise overlay */
@@ -3584,6 +3605,82 @@ body {
   color: rgba(255, 255, 255, 0.8);
   font-size: 17px;
   line-height: 1.8;
+}
+
+.blog-inline-link {
+  color: #ff3344;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.blog-inline-link:hover {
+  color: #ffffff;
+  text-decoration-color: #ffffff;
+}
+
+.article-consult-banner {
+  margin: 50px 0 36px;
+  padding: 36px 32px;
+  background: linear-gradient(135deg, rgba(212, 0, 39, 0.14) 0%, rgba(18, 19, 27, 0.98) 100%);
+  border: 1px solid rgba(212, 0, 39, 0.35);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+}
+
+.consult-banner-content h3 {
+  color: #fff;
+  font-size: 22px;
+  margin: 10px 0 8px;
+  font-weight: 800;
+}
+
+.consult-banner-content p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  margin: 0;
+  max-width: 620px;
+  line-height: 1.6;
+}
+
+.consult-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(212, 0, 39, 0.25);
+  border: 1px solid rgba(212, 0, 39, 0.4);
+  border-radius: 999px;
+  color: #ff4d6d;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.consult-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: #d40027;
+  color: #fff !important;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.consult-cta-btn:hover {
+  background: #ff1a40;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 0, 39, 0.5);
 }
 
 .blog-key-points-list {

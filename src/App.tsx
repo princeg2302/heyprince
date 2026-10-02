@@ -85,23 +85,26 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (route.page === 'contact') {
       updatePageSeo({
-        title: 'Contact Prince | Senior Full Stack IT Consultant & Web Engineer',
+        title: 'Contact Prince — Senior IT Consultant & Full Stack Web Engineer | HeyPrince',
         description:
           'Get in touch with Prince for senior IT consulting, full-stack React engineering, custom web applications, performance audits, and high-conversion software architecture.',
         canonicalPath: '/contact/',
         keywords:
-          'Contact Prince, Hire IT Consultant, Full Stack React Developer, Web Engineer India, Remote Tech Partner, Senior Software Architect',
+          'Contact Prince, Hire IT Consultant, Full Stack React Developer, Web Engineer India, Remote Tech Partner, Senior Software Architect, HeyPrince Contact, Custom Web Solutions',
         ogType: 'website',
       });
     } else if (route.page === 'blog') {
       const article = articlesList.find((a) => a.slug === route.slug) || articlesList[0];
+      const absoluteImage = article.image.startsWith('http')
+        ? article.image
+        : `https://heyprince.in${article.image.startsWith('/') ? '' : '/'}${article.image}`;
       updatePageSeo({
         title: `${article.title} | Prince — Tech Partner`,
         description: article.description,
         canonicalPath: `/${article.slug}/`,
-        keywords: `${article.tags.join(', ')}, Web Development, IT Engineering, Prince, Software Architecture`,
+        keywords: `${article.tags.join(', ')}, Web Development, IT Engineering, Prince, Software Architecture, Full Stack Consultant`,
         ogType: 'article',
-        ogImage: article.image,
+        ogImage: absoluteImage,
         publishedDate: article.date,
         authorName: article.author?.name || 'Prince',
       });
@@ -109,7 +112,7 @@ export const App: React.FC = () => {
       updatePageSeo({
         title: 'Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince',
         description:
-          'Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React web applications, scalable cloud architectures, interactive UI/UX, and custom IT solutions worldwide.',
+          'Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React web apps, scalable cloud architecture, and custom IT solutions.',
         canonicalPath: '/',
         keywords:
           'Prince, HeyPrince, IT Consultant, Full Stack Engineer, React Developer, Web Engineering, Custom Software Development, Cloud Architecture, Node.js, UI/UX Design, IT Services India',
@@ -251,6 +254,7 @@ export const App: React.FC = () => {
             onNavigateHome={() => handleNavigate('home')}
             onNavigateArticles={() => handleNavigate('home', 'articles')}
             onSelectArticle={(newSlug) => handleNavigate('blog', newSlug)}
+            onNavigateContact={() => handleNavigate('contact')}
           />
         )}
 

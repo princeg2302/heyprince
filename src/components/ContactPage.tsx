@@ -559,6 +559,33 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                 })}
               </div>
             </div>
+
+            {/* Engineering Insights Interlinking Box */}
+            <div className="hub-insights-box" style={{ marginTop: '24px', padding: '24px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <h5 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', marginBottom: '14px' }}>Latest Tech Insights</h5>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <li>
+                  <a href="/choose-it-services-provider/" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', textDecoration: 'none', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#d40027' }}>&bull;</span> How to Choose the Right IT Services Provider
+                  </a>
+                </li>
+                <li>
+                  <a href="/professional-website-2026/" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', textDecoration: 'none', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#d40027' }}>&bull;</span> Why Every Business Needs a Professional Website
+                  </a>
+                </li>
+                <li>
+                  <a href="/web-development-trends-2026/" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', textDecoration: 'none', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#d40027' }}>&bull;</span> Top Web Development Trends in 2026
+                  </a>
+                </li>
+                <li>
+                  <a href="/freelancing-tips-it-professionals-2026/" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', textDecoration: 'none', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#d40027' }}>&bull;</span> Essential Freelancing Tips for IT Professionals
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

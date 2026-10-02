@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { articlesList, Article } from '../data/siteContent';
 import {
   FaArrowLeft,
+  FaArrowRight,
   FaClock,
   FaCalendarDays,
   FaUser,
@@ -20,6 +21,7 @@ export interface SingleBlogPageProps {
   onNavigateHome: () => void;
   onNavigateArticles: () => void;
   onSelectArticle: (slug: string) => void;
+  onNavigateContact?: () => void;
 }
 
 export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
@@ -27,6 +29,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   onNavigateHome,
   onNavigateArticles,
   onSelectArticle,
+  onNavigateContact,
 }) => {
   // Find article matching slug or default to first
   const article: Article =
@@ -126,6 +129,49 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareUrl = encodeURIComponent(currentUrl);
   const shareText = encodeURIComponent(`${article.title} — By Prince`);
+
+  const renderParagraphWithLinks = (text: string) => {
+    const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const parts: React.ReactNode[] = [];
+    let lastIdx = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIdx) {
+        parts.push(text.slice(lastIdx, match.index));
+      }
+      const label = match[1];
+      const url = match[2];
+      const isContact = url.startsWith('/contact');
+      const matchedArticle = articlesList.find((a) => url.includes(a.slug));
+
+      parts.push(
+        <a
+          key={match.index}
+          href={url}
+          className="blog-inline-link"
+          onClick={(e) => {
+            if (isContact && onNavigateContact) {
+              e.preventDefault();
+              onNavigateContact();
+            } else if (matchedArticle) {
+              e.preventDefault();
+              onSelectArticle(matchedArticle.slug);
+            }
+          }}
+        >
+          {label}
+        </a>
+      );
+      lastIdx = regex.lastIndex;
+    }
+
+    if (lastIdx < text.length) {
+      parts.push(text.slice(lastIdx));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
 
   return (
     <article className="single-blog-page">
@@ -240,7 +286,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                   {section.paragraphs &&
                     section.paragraphs.map((p, pIdx) => (
                       <p className="blog-paragraph" key={pIdx}>
-                        {p}
+                        {renderParagraphWithLinks(p)}
                       </p>
                     ))}
 
@@ -289,6 +335,31 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                 </p>
               </section>
             )}
+
+            {/* In-Article Consultation & Tech Partner Callout Banner */}
+            <aside className="article-consult-banner">
+              <div className="consult-banner-content">
+                <span className="consult-pill">High-Performance IT Engineering</span>
+                <h3>Need an Experienced Full-Stack Tech Partner?</h3>
+                <p>
+                  Prince collaborates with ambitious businesses and founders to engineer scalable React applications,
+                  optimize Core Web Vitals, and build custom software architectures that convert.
+                </p>
+              </div>
+              <a
+                href="/contact/"
+                className="consult-cta-btn"
+                onClick={(e) => {
+                  if (onNavigateContact) {
+                    e.preventDefault();
+                    onNavigateContact();
+                  }
+                }}
+              >
+                <span>Schedule a Consultation</span>
+                <FaArrowRight size={14} />
+              </a>
+            </aside>
 
             {/* Article Footer & Dynamic Tags */}
             <footer className="blog-article-footer">
@@ -397,14 +468,13 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
             <h3 className="related-title">Continue Reading</h3>
             <div className="related-grid">
               {relatedArticles.map((rel) => (
-                <div
+                <a
                   key={rel.slug}
+                  href={`/${rel.slug}/`}
                   className="related-card"
-                  onClick={() => onSelectArticle(rel.slug)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') onSelectArticle(rel.slug);
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectArticle(rel.slug);
                   }}
                 >
                   <div className="related-img-wrap">
@@ -425,7 +495,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                       {rel.description.slice(0, 90)}...
                     </p>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
           </section>
