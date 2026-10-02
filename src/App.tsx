@@ -16,6 +16,7 @@ import {
 } from './components';
 import { useWordAnimation } from './hooks/useWordAnimation';
 import { articlesList } from './data/siteContent';
+import { updatePageSeo } from './utils/seo';
 
 export interface RouteState {
   page: 'home' | 'contact' | 'blog';
@@ -79,6 +80,43 @@ export const App: React.FC = () => {
   }, []);
 
   const [route, setRoute] = useState<RouteState>(() => resolveRoute());
+
+  // Synchronize SEO meta tags, title, Open Graph, and Structured Data
+  useEffect(() => {
+    if (route.page === 'contact') {
+      updatePageSeo({
+        title: 'Contact Prince | Senior Full Stack IT Consultant & Web Engineer',
+        description:
+          'Get in touch with Prince for senior IT consulting, full-stack React engineering, custom web applications, performance audits, and high-conversion software architecture.',
+        canonicalPath: '/contact/',
+        keywords:
+          'Contact Prince, Hire IT Consultant, Full Stack React Developer, Web Engineer India, Remote Tech Partner, Senior Software Architect',
+        ogType: 'website',
+      });
+    } else if (route.page === 'blog') {
+      const article = articlesList.find((a) => a.slug === route.slug) || articlesList[0];
+      updatePageSeo({
+        title: `${article.title} | Prince — Tech Partner`,
+        description: article.description,
+        canonicalPath: `/${article.slug}/`,
+        keywords: `${article.tags.join(', ')}, Web Development, IT Engineering, Prince, Software Architecture`,
+        ogType: 'article',
+        ogImage: article.image,
+        publishedDate: article.date,
+        authorName: article.author?.name || 'Prince',
+      });
+    } else {
+      updatePageSeo({
+        title: 'Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince',
+        description:
+          'Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React web applications, scalable cloud architectures, interactive UI/UX, and custom IT solutions worldwide.',
+        canonicalPath: '/',
+        keywords:
+          'Prince, HeyPrince, IT Consultant, Full Stack Engineer, React Developer, Web Engineering, Custom Software Development, Cloud Architecture, Node.js, UI/UX Design, IT Services India',
+        ogType: 'website',
+      });
+    }
+  }, [route]);
 
   useEffect(() => {
     const handleLocationChange = () => {

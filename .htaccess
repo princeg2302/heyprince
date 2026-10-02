@@ -18,10 +18,17 @@ DirectoryIndex dist/index.html index.html
 
   # Map static asset requests directly to dist/
   RewriteRule ^(assets|fonts|images|audio)/(.*)$ dist/$1/$2 [L]
-  RewriteRule ^(favicon\.svg|icons\.svg)$ dist/$1 [L]
+  RewriteRule ^(favicon\.svg|icons\.svg|robots\.txt|sitemap\.xml|heyprince-logo\.svg)$ dist/$1 [L]
 
   # SPA Fallback: send all other paths directly to dist/index.html
   RewriteRule ^.*$ dist/index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Googlebot & Crawler Permissions
+  Header set X-Robots-Tag "all"
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
 # Caching for production performance

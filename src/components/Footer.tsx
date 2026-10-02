@@ -15,7 +15,14 @@ export const Footer: React.FC = () => {
               <img
                 className="cards-indicator"
                 src="https://heyprince.in/wp-content/uploads/2025/02/card-indicate.png"
-                alt="Cards indicator"
+                alt="Interactive service cards indicator"
+                loading="lazy"
+                decoding="async"
+                width="170"
+                height="80"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
               />
               {/* 6 Interactive Stacked Footer Cards (Exact IDs from WordPress style.css) */}
               <div className="footer-cards-container">

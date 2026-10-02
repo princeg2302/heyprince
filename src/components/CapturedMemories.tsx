@@ -126,7 +126,9 @@ export const CapturedMemories: React.FC = () => {
                 <a href={item.image} target="_blank" rel="noopener noreferrer">
                   <img
                     src={item.image}
-                    alt={`Memory capture ${idx + 1}`}
+                    alt={`Prince outdoor travel and photography memory #${idx + 1}`}
+                    loading="lazy"
+                    decoding="async"
                     onLoad={() => ScrollTrigger.refresh()}
                   />
                 </a>

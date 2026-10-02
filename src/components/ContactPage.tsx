@@ -287,6 +287,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                       <input
                         type="text"
                         id="clientName"
+                        name="name"
+                        autoComplete="name"
+                        aria-required="true"
                         required
                         className="custom-input"
                         placeholder="e.g. Alex Morgan"
@@ -302,6 +305,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                       <input
                         type="email"
                         id="clientEmail"
+                        name="email"
+                        autoComplete="email"
+                        aria-required="true"
                         required
                         className="custom-input"
                         placeholder="e.g. alex@company.com"
@@ -319,6 +325,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                     <input
                       type="tel"
                       id="clientPhone"
+                      name="phone"
+                      autoComplete="tel"
                       className="custom-input"
                       placeholder="e.g. +1 (555) 000-0000"
                       value={formData.phone}
@@ -384,6 +392,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                     </label>
                     <textarea
                       id="projectMessage"
+                      name="message"
+                      aria-required="true"
                       required
                       rows={4}
                       className="custom-textarea"

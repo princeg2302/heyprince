@@ -112,14 +112,14 @@ export const articlesList: Article[] = [
     description:
       'Freelancing tips for IT professionals are more important than ever in 2026 because the market is growing fast, but the competition is growing even faster.',
     readMins: '5 min',
-    image: 'https://heyprince.in/wp-content/uploads/2026/01/Screenshot_1-1024x590.jpg',
-    url: '#/blog/freelancing-tips-it-professionals-2026',
+    image: '/assets/blog/photo1.webp',
+    url: '/freelancing-tips-it-professionals-2026/',
     date: 'January 18, 2026',
     category: 'Freelancing & Career',
     author: {
       name: 'Prince',
-      role: 'Creative Web Engineer & IT Consultant',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      role: 'Senior Full Stack Engineer & IT Consultant',
+      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
     },
     tags: ['Freelancing', 'Career Growth', 'IT Industry', 'Remote Work', 'Value Pricing'],
     sections: [
@@ -172,14 +172,14 @@ export const articlesList: Article[] = [
     description:
       'Choosing the right IT services provider is one of the most important decisions your business can make.',
     readMins: '6 min',
-    image: 'https://heyprince.in/wp-content/uploads/2026/01/Screenshot_2-1024x614.jpg',
-    url: '#/blog/choose-it-services-provider',
+    image: '/assets/blog/photo2.webp',
+    url: '/choose-it-services-provider/',
     date: 'January 25, 2026',
     category: 'Business Strategy',
     author: {
       name: 'Prince',
-      role: 'Creative Web Engineer & IT Consultant',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      role: 'Senior Full Stack Engineer & IT Consultant',
+      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
     },
     tags: ['IT Services', 'Vendor Selection', 'Business Growth', 'Tech Partner', 'Architecture'],
     sections: [
@@ -224,14 +224,14 @@ export const articlesList: Article[] = [
     description:
       'A professional website is one of the most important assets for any business that wants to grow, build trust, and attract customers.',
     readMins: '4 min',
-    image: 'https://heyprince.in/wp-content/uploads/2026/01/Screenshot_3-1024x590.jpg',
-    url: '#/blog/professional-website-2026',
+    image: '/assets/blog/photo3.webp',
+    url: '/professional-website-2026/',
     date: 'February 4, 2026',
     category: 'Web Engineering',
     author: {
       name: 'Prince',
-      role: 'Creative Web Engineer & IT Consultant',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      role: 'Senior Full Stack Engineer & IT Consultant',
+      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
     },
     tags: ['Web Design', 'Conversion Rate', 'UI/UX', 'SEO', 'Brand Trust'],
     sections: [
@@ -271,14 +271,14 @@ export const articlesList: Article[] = [
     description:
       'Understand the web development trends shaping modern digital experiences, from AI-powered websites to enhanced security.',
     readMins: '7 min',
-    image: 'https://heyprince.in/wp-content/uploads/2026/01/Screenshot_4-1024x591.jpg',
-    url: '#/blog/web-development-trends-2026',
+    image: '/assets/blog/photo4.webp',
+    url: '/web-development-trends-2026/',
     date: 'February 12, 2026',
     category: 'Tech Trends & Innovation',
     author: {
       name: 'Prince',
-      role: 'Creative Web Engineer & IT Consultant',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      role: 'Senior Full Stack Engineer & IT Consultant',
+      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
     },
     tags: ['Web Trends', 'AI Integrations', 'Fluid Motion', 'Physics UI', 'Cyber Security'],
     sections: [

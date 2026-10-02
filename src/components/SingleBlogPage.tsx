@@ -205,8 +205,12 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
         <div className="blog-featured-img-wrap">
           <img
             src={article.image}
-            alt={article.title}
+            alt={`${article.title} - Article by Prince`}
             className="blog-featured-img"
+            fetchPriority="high"
+            decoding="async"
+            width="1200"
+            height="630"
           />
         </div>
 
@@ -361,8 +365,12 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                   article.author?.avatar ||
                   'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp'
                 }
-                alt={article.author?.name || 'Prince'}
+                alt={`${article.author?.name || 'Prince'} - Senior Full Stack Engineer & Author`}
                 className="author-avatar"
+                loading="lazy"
+                decoding="async"
+                width="96"
+                height="96"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
@@ -399,7 +407,15 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                   }}
                 >
                   <div className="related-img-wrap">
-                    <img src={rel.image} alt={rel.title} className="related-img" />
+                    <img
+                      src={rel.image}
+                      alt={`${rel.title} - Related Tech Story`}
+                      className="related-img"
+                      loading="lazy"
+                      decoding="async"
+                      width="320"
+                      height="180"
+                    />
                   </div>
                   <div className="related-body">
                     <span className="related-mins">{rel.readMins} Read</span>

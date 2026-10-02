@@ -91,7 +91,15 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
                     }
                   }}
                 >
-                  <img className="card-img card-img-bottom" src={article.image} alt={article.title} />
+                  <img
+                    className="card-img card-img-bottom"
+                    src={article.image}
+                    alt={`${article.title} - IT & Web Engineering Insight by Prince`}
+                    loading="lazy"
+                    decoding="async"
+                    width="1024"
+                    height="590"
+                  />
                   <div className="card-body">
                     <p className="read-mins">{article.readMins} read</p>
                     <h3 className="card-title">{article.title}</h3>

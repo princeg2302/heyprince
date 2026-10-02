@@ -320,7 +320,15 @@ export const PhysicsPills: React.FC<PhysicsPillsProps> = ({ items, count }) => {
           title={pill.name}
           aria-label={`${pill.name} technology pill`}
         >
-          <img src={pill.image} alt={`${pill.name} tech`} draggable={false} />
+          <img
+            src={pill.image}
+            alt={`${pill.name} - Technology Stack Expertise`}
+            draggable={false}
+            loading="lazy"
+            decoding="async"
+            width="120"
+            height="40"
+          />
         </a>
       ))}
     </div>
