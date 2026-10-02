@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "node scripts/deploy-branch.js"
+    "deploy": "npm run build && node scripts/deploy-branch.js"
   },
   "devDependencies": {
     "@types/matter-js": "^0.20.2",
