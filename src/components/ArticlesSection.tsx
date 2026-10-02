@@ -23,8 +23,8 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           ease: 'power3.out',
           scrollTrigger: {
             trigger: sectionRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
+            start: 'top 85%',
+            once: true,
           },
         });
       }

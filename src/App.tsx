@@ -17,6 +17,8 @@ import {
 import { useWordAnimation } from './hooks/useWordAnimation';
 import { articlesList } from './data/siteContent';
 import { updatePageSeo } from './utils/seo';
+import 'lenis/dist/lenis.css';
+import { initSmoothScroll, getSmoothScroll, destroySmoothScroll } from './utils/smoothScroll';
 
 export interface RouteState {
   page: 'home' | 'contact' | 'blog';
@@ -74,9 +76,21 @@ export const App: React.FC = () => {
   // Activate animated letter cycles for all .word titles on every route transition
   useWordAnimation(route);
 
+  // Initialize Lenis smooth momentum scrolling with GSAP ticker sync
+  useEffect(() => {
+    const lenis = initSmoothScroll();
+    return () => {
+      destroySmoothScroll();
+    };
+  }, []);
+
   // Pre-paint instant scroll reset on route changes so no previous scroll position flickers
   useLayoutEffect(() => {
     if (route.page === 'contact' || route.page === 'blog') {
+      const lenis = getSmoothScroll();
+      if (lenis) {
+        lenis.scrollTo(0, { immediate: true });
+      }
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
@@ -128,7 +142,11 @@ export const App: React.FC = () => {
       const parsed = resolveRoute();
       setRoute(parsed);
 
+      const lenis = getSmoothScroll();
       if (parsed.page === 'contact' || parsed.page === 'blog') {
+        if (lenis) {
+          lenis.scrollTo(0, { immediate: true });
+        }
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
@@ -137,10 +155,20 @@ export const App: React.FC = () => {
         if (hash && hash !== 'home') {
           setTimeout(() => {
             const el = document.getElementById(hash);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
+            if (el) {
+              if (lenis) {
+                lenis.scrollTo(el, { duration: 1.2, offset: -20 });
+              } else {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }
           }, 80);
         } else {
-          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+          if (lenis) {
+            lenis.scrollTo(0, { duration: 1.2 });
+          } else {
+            window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+          }
         }
       }
     };
@@ -154,9 +182,11 @@ export const App: React.FC = () => {
   }, []);
 
   const handleNavigate = (page: 'home' | 'contact' | 'blog', slugOrSection?: string) => {
+    const lenis = getSmoothScroll();
     if (page === 'contact') {
       window.history.pushState(null, '', '/contact');
       setRoute({ page: 'contact', slug: '' });
+      if (lenis) lenis.scrollTo(0, { immediate: true });
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
@@ -164,6 +194,7 @@ export const App: React.FC = () => {
       const slug = slugOrSection || 'freelancing-tips-it-professionals-2026';
       window.history.pushState(null, '', `/${slug}/`);
       setRoute({ page: 'blog', slug });
+      if (lenis) lenis.scrollTo(0, { immediate: true });
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
@@ -174,17 +205,33 @@ export const App: React.FC = () => {
           setRoute({ page: 'home', slug: '' });
           setTimeout(() => {
             const el = document.getElementById(slugOrSection);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
+            if (el) {
+              if (lenis) {
+                lenis.scrollTo(el, { duration: 1.2, offset: -20 });
+              } else {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }
           }, 100);
         } else {
           window.history.pushState(null, '', `/#${slugOrSection}`);
           const el = document.getElementById(slugOrSection);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
+          if (el) {
+            if (lenis) {
+              lenis.scrollTo(el, { duration: 1.2, offset: -20 });
+            } else {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
         }
       } else {
         window.history.pushState(null, '', '/');
         setRoute({ page: 'home', slug: '' });
-        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        if (lenis) {
+          lenis.scrollTo(0, { duration: 1.2 });
+        } else {
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        }
       }
     }
   };
