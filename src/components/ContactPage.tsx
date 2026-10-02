@@ -162,7 +162,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
 
           <nav className="contact-breadcrumbs" aria-label="Breadcrumb">
             <a
-              href="#/"
+              href="/"
               onClick={(e) => {
                 e.preventDefault();
                 onNavigateHome();

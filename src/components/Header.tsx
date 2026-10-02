@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
           <div className="col-4 logo-wrap">
             <a
               className="navbar-brand"
-              href="#/"
+              href="/"
               onClick={(e) => {
                 e.preventDefault();
                 handleSectionClick('home');
@@ -136,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                           <ul className="navbar-menu" id="menu-main">
                             <li className="menu-item">
                               <a
-                                href="#home"
+                                href="/"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -148,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="#about"
+                                href="/#about"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -160,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="#journey"
+                                href="/#journey"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -172,7 +172,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="#arcade"
+                                href="/#arcade"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -184,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="#articles"
+                                href="/#articles"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -196,7 +196,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="#memories"
+                                href="/#memories"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -208,7 +208,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="#/contact"
+                                href="/contact"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -303,7 +303,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 
             <a
               className="portal-btn"
-              href="#/contact"
+              href="/contact"
               onClick={(e) => {
                 e.preventDefault();
                 handleContactClick();

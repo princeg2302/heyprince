@@ -55,7 +55,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           </p>
           <a
             className="portal-btn mx-auto"
-            href="#/blog/freelancing-tips-it-professionals-2026"
+            href="/freelancing-tips-it-professionals-2026/"
             onClick={(e) => {
               if (onSelectArticle) {
                 e.preventDefault();
@@ -83,7 +83,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
               <div className="card article-card">
                 <a
                   className="article-link"
-                  href={`#/blog/${article.slug}`}
+                  href={`/${article.slug}/`}
                   onClick={(e) => {
                     if (onSelectArticle) {
                       e.preventDefault();

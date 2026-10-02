@@ -1,6 +1,10 @@
 import React from 'react';
 
-export const LetsTalkBanner: React.FC = () => {
+export interface LetsTalkBannerProps {
+  onNavigateContact?: () => void;
+}
+
+export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContact }) => {
   return (
     <section className="lets-talk">
       <div className="container">
@@ -18,7 +22,16 @@ export const LetsTalkBanner: React.FC = () => {
           <p>
             I’m Prince — a passionate Web Developer &amp; IT Professional who loves building clean, fast, and modern websites. I focus on creating designs that look premium, work smoothly on every device, and help businesses grow online.
           </p>
-          <a className="portal-btn mx-auto" href="#/contact" target="_self">
+          <a
+            className="portal-btn mx-auto"
+            href="/contact"
+            onClick={(e) => {
+              if (onNavigateContact) {
+                e.preventDefault();
+                onNavigateContact();
+              }
+            }}
+          >
             <span className="mr-right">Let’s Talk About It</span>
             <span className="arrow">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">

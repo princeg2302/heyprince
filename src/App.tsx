@@ -15,18 +15,55 @@ import {
   Footer,
 } from './components';
 import { useWordAnimation } from './hooks/useWordAnimation';
+import { articlesList } from './data/siteContent';
 
-const parseRouteFromHash = (rawHash: string): { page: 'home' | 'contact' | 'blog'; slug: string } => {
-  const hash = (rawHash || '').trim();
-  const path = hash.replace(/^#\/?/, '').replace(/\/+$/, '');
+export interface RouteState {
+  page: 'home' | 'contact' | 'blog';
+  slug: string;
+}
 
-  if (path === 'contact') {
+export const resolveRoute = (): RouteState => {
+  if (typeof window === 'undefined') {
+    return { page: 'home', slug: '' };
+  }
+
+  // 1. Clean pathname (e.g. "/choose-it-services-provider/" -> "choose-it-services-provider")
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+
+  // 2. Clean hash (e.g. "#/contact" or "#contact" -> "contact")
+  const hash = window.location.hash.replace(/^#\/?/, '').replace(/\/+$/, '').toLowerCase();
+
+  // Contact checks
+  if (path === 'contact' || hash === 'contact') {
     return { page: 'contact', slug: '' };
   }
+
+  // Blog prefixed paths (e.g. /blog/choose-it-services-provider/)
   if (path.startsWith('blog/') || path === 'blog') {
     const slug = path.replace(/^blog\/?/, '').trim();
     return { page: 'blog', slug: slug || 'freelancing-tips-it-professionals-2026' };
   }
+  if (hash.startsWith('blog/') || hash === 'blog') {
+    const slug = hash.replace(/^blog\/?/, '').trim();
+    return { page: 'blog', slug: slug || 'freelancing-tips-it-professionals-2026' };
+  }
+
+  // Direct article slug in pathname (e.g. /choose-it-services-provider/)
+  if (path) {
+    const matched = articlesList.find((a) => a.slug.toLowerCase() === path);
+    if (matched) {
+      return { page: 'blog', slug: matched.slug };
+    }
+  }
+
+  // Direct article slug in hash
+  if (hash) {
+    const matched = articlesList.find((a) => a.slug.toLowerCase() === hash);
+    if (matched) {
+      return { page: 'blog', slug: matched.slug };
+    }
+  }
+
   return { page: 'home', slug: '' };
 };
 
@@ -41,17 +78,11 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  const [route, setRoute] = useState<{
-    page: 'home' | 'contact' | 'blog';
-    slug: string;
-  }>(() => {
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    return parseRouteFromHash(hash);
-  });
+  const [route, setRoute] = useState<RouteState>(() => resolveRoute());
 
   useEffect(() => {
-    const handleHashChange = () => {
-      const parsed = parseRouteFromHash(window.location.hash);
+    const handleLocationChange = () => {
+      const parsed = resolveRoute();
       setRoute(parsed);
 
       if (parsed.page === 'contact' || parsed.page === 'blog') {
@@ -59,52 +90,57 @@ export const App: React.FC = () => {
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
       } else {
-        const rawHash = window.location.hash || '';
-        const targetId = rawHash.replace(/^#\/?/, '').replace(/\/+$/, '');
-        if (!targetId || targetId === 'home') {
-          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-        } else {
-          // Section anchor like #articles, #about, #timeline, #memories, #arcade
+        const hash = (window.location.hash || '').replace(/^#\/?/, '').replace(/\/+$/, '');
+        if (hash && hash !== 'home') {
           setTimeout(() => {
-            const el = document.getElementById(targetId);
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth' });
-            }
+            const el = document.getElementById(hash);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
           }, 80);
+        } else {
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         }
       }
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, []);
 
-  const handleNavigate = (page: 'home' | 'contact' | 'blog', sectionId?: string) => {
+  const handleNavigate = (page: 'home' | 'contact' | 'blog', slugOrSection?: string) => {
     if (page === 'contact') {
+      window.history.pushState(null, '', '/contact');
+      setRoute({ page: 'contact', slug: '' });
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-      window.location.hash = '#/contact';
     } else if (page === 'blog') {
+      const slug = slugOrSection || 'freelancing-tips-it-professionals-2026';
+      window.history.pushState(null, '', `/${slug}/`);
+      setRoute({ page: 'blog', slug });
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-      window.location.hash = `#/blog/${sectionId || 'freelancing-tips-it-professionals-2026'}`;
     } else {
-      if (sectionId && sectionId !== 'home') {
+      if (slugOrSection && slugOrSection !== 'home') {
         if (route.page !== 'home') {
+          window.history.pushState(null, '', `/#${slugOrSection}`);
           setRoute({ page: 'home', slug: '' });
           setTimeout(() => {
-            const el = document.getElementById(sectionId);
+            const el = document.getElementById(slugOrSection);
             if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }, 120);
+          }, 100);
         } else {
-          const el = document.getElementById(sectionId);
+          window.history.pushState(null, '', `/#${slugOrSection}`);
+          const el = document.getElementById(slugOrSection);
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }
-        window.location.hash = `#${sectionId}`;
       } else {
-        window.location.hash = '#/';
+        window.history.pushState(null, '', '/');
+        setRoute({ page: 'home', slug: '' });
         window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
       }
     }
@@ -164,14 +200,9 @@ export const App: React.FC = () => {
             <JourneyTimeline />
             <CyberArcade />
             <ArticlesSection
-              onSelectArticle={(slug) => {
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
-                document.documentElement.scrollTop = 0;
-                document.body.scrollTop = 0;
-                window.location.hash = `#/blog/${slug}`;
-              }}
+              onSelectArticle={(slug) => handleNavigate('blog', slug)}
             />
-            <LetsTalkBanner />
+            <LetsTalkBanner onNavigateContact={() => handleNavigate('contact')} />
             <CapturedMemories />
           </>
         )}
@@ -179,18 +210,9 @@ export const App: React.FC = () => {
         {route.page === 'blog' && (
           <SingleBlogPage
             slug={route.slug}
-            onNavigateHome={() => {
-              handleNavigate('home');
-            }}
-            onNavigateArticles={() => {
-              handleNavigate('home', 'articles');
-            }}
-            onSelectArticle={(newSlug) => {
-              window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
-              document.documentElement.scrollTop = 0;
-              document.body.scrollTop = 0;
-              window.location.hash = `#/blog/${newSlug}`;
-            }}
+            onNavigateHome={() => handleNavigate('home')}
+            onNavigateArticles={() => handleNavigate('home', 'articles')}
+            onSelectArticle={(newSlug) => handleNavigate('blog', newSlug)}
           />
         )}
 

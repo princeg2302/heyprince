@@ -151,7 +151,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
           <nav className="blog-breadcrumb" aria-label="Breadcrumb">
             <a
-              href="#/"
+              href="/"
               onClick={(e) => {
                 e.preventDefault();
                 onNavigateHome();
@@ -161,7 +161,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
             </a>
             <span className="breadcrumb-sep">/</span>
             <a
-              href="#articles"
+              href="/#articles"
               onClick={(e) => {
                 e.preventDefault();
                 onNavigateArticles();
