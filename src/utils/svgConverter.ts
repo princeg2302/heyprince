@@ -83,12 +83,18 @@ export async function convertImgToSvg(img: HTMLImageElement): Promise<SVGElement
       }
     });
 
-    // Ensure responsive viewBox
+    // Ensure responsive viewBox and dimensions
     if (!svg.getAttribute('viewBox') && svg.getAttribute('width') && svg.getAttribute('height')) {
       const w = svg.getAttribute('width')!.replace(/[^0-9.]/g, '');
       const h = svg.getAttribute('height')!.replace(/[^0-9.]/g, '');
       if (w && h) {
         svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      }
+    } else if (svg.getAttribute('viewBox') && (!svg.getAttribute('width') || !svg.getAttribute('height'))) {
+      const parts = svg.getAttribute('viewBox')!.trim().split(/[\s,]+/);
+      if (parts.length === 4) {
+        if (!svg.getAttribute('width')) svg.setAttribute('width', parts[2]);
+        if (!svg.getAttribute('height')) svg.setAttribute('height', parts[3]);
       }
     }
 

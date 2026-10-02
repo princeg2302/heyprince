@@ -413,8 +413,12 @@ body.modal-open .cls-1 {
   transform: scale(0.95) !important;
 }
 
-a.navbar-brand svg {
+a.navbar-brand svg,
+a.navbar-brand img {
   width: 216px;
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 .modal-backdrop.show {
@@ -2256,7 +2260,8 @@ body {
     padding-top: 18px;
   }
 
-  .navbar-brand img {
+  .navbar-brand img,
+  .navbar-brand svg {
     max-width: 155px;
     height: auto;
   }
@@ -2536,8 +2541,10 @@ body {
     height: 16px;
   }
 
-  .navbar-brand img {
+  .navbar-brand img,
+  .navbar-brand svg {
     max-width: 135px;
+    height: auto;
   }
 
   .site-tagline {
@@ -2658,8 +2665,10 @@ body {
     display: none;
   }
 
-  .navbar-brand img {
+  .navbar-brand img,
+  .navbar-brand svg {
     max-width: 120px;
+    height: auto;
   }
 
   .portal-btn .mr-right {

@@ -103,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               title="HeyPrince"
               rel="home"
             >
-              <img src={heyprinceLogo} alt="HeyPrince" className="svg" />
+              <img src={heyprinceLogo} alt="HeyPrince" className="svg" width="216" height="41" />
               <p className="site-tagline">Where Ideas Get Dressed to Impress.</p>
             </a>
           </div>
