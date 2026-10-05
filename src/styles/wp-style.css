@@ -341,6 +341,22 @@ a.navbar-brand {
   }
 }
 
+/* Freeze background scrolling on mobile & desktop when navigation modal is open */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+
+body.modal-open #menuModal,
+body.modal-open #menuModal .modal-content,
+body.modal-open #menuModal .modal-dialog {
+  touch-action: pan-y !important;
+}
+
 body.modal-open .ai-music-btn {
   background: #000;
 }
@@ -1243,14 +1259,24 @@ a.foot-brand-link:hover {
 }
 
 /********Menu Modal*********/
+#menuModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99998;
+}
+
 #menuModal .modal-content {
   width: 100%;
   border-radius: 0;
   background: #fff;
   color: #000;
   height: 100vh;
-  padding-top: 90px;
-  overflow: hidden;
+  padding-top: 100px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 50px;
 }
 
@@ -1260,58 +1286,15 @@ a.foot-brand-link:hover {
   top: 0;
   margin: 0;
   border-radius: 0;
+  height: 100%;
 }
 
-.header-get-in-touch>a {
-  display: block;
-  font-size: 32px;
-  color: #000;
-}
-
-.navbar-brand g path:nth-child(1) {
-  fill: #000;
-  stroke: #fff;
-  stroke-width: 3px;
-}
-
-.navbar-brand g path:nth-child(2) {
-  fill: #000;
-  stroke: #fff;
-  stroke-width: 3px;
-}
-
+.navbar-brand g path:nth-child(1),
+.navbar-brand g path:nth-child(2),
 .navbar-brand g path:nth-child(3) {
   fill: #000;
   stroke: #fff;
   stroke-width: 3px;
-}
-
-#menu-main a.nav-link {
-  display: inline;
-}
-
-.header-get-in-touch h2 {
-  font-size: 32px;
-  text-transform: uppercase;
-  color: #fff;
-  margin-bottom: 25px;
-  background-image: url(https://heyprince.in/wp-content/uploads/2025/09/brush-black.svg);
-  background-repeat: no-repeat;
-  padding: 10px 10px 10px 84px;
-}
-
-#menu-main a.nav-link {
-  font-family: 'Futuru';
-  font-size: 52px;
-  font-weight: 900;
-}
-
-#menu-main .menu-item {
-  list-style: none;
-}
-
-#menuModal .row {
-  align-items: end;
 }
 
 ul#menu-main {
@@ -1319,10 +1302,106 @@ ul#menu-main {
   margin: 0;
 }
 
+#menu-main .menu-item {
+  list-style: none;
+  margin-bottom: 8px;
+}
+
+#menu-main a.nav-link {
+  font-family: 'Futuru', sans-serif;
+  font-size: 52px;
+  font-weight: 900;
+  color: #000;
+  display: inline-block;
+  text-decoration: none;
+  line-height: 1.25;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s ease;
+}
+
+#menu-main a.nav-link:hover {
+  color: var(--color-primary, #d40027);
+  transform: translateX(12px);
+}
+
+#menuModal .row {
+  align-items: flex-end;
+}
+
+.header-get-in-touch {
+  padding-bottom: 15px;
+}
+
+.header-get-in-touch h2 {
+  font-family: 'Futuru', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 20px;
+  background: #000;
+  display: inline-block;
+  padding: 8px 24px;
+  border-radius: 6px;
+  letter-spacing: 1.5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.header-get-in-touch > a,
+.header-get-in-touch a.header-contact-link {
+  display: block;
+  font-family: 'Futuru', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #000;
+  text-decoration: none;
+  margin-bottom: 6px;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.header-get-in-touch > a:hover,
+.header-get-in-touch a.header-contact-link:hover {
+  color: var(--color-primary, #d40027);
+  transform: translateX(6px);
+}
+
+/* Social links in navigation matching footer design with high-contrast circular badges */
 .header-social-links {
-  margin-top: 25px;
+  margin-top: 24px;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-social-links a.social-link-icon,
+.header-social-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: #000;
+  color: #fff !important;
+  text-decoration: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+.header-social-links a.social-link-icon svg,
+.header-social-links a svg {
+  fill: #fff !important;
+  color: #fff !important;
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.header-social-links a.social-link-icon:hover,
+.header-social-links a:hover {
+  background: var(--color-primary, #d40027);
+  transform: translateY(-3px) scale(1.12);
+  box-shadow: 0 6px 18px rgba(212, 0, 39, 0.35);
 }
 
 .timeline-text h2 {
@@ -2563,16 +2642,16 @@ body {
   }
 
   .header-get-in-touch {
-    margin-top: 35px;
+    margin-top: 30px;
   }
 
   .header-get-in-touch h2 {
-    font-size: 26px;
-    padding: 8px 8px 8px 65px;
-    background-size: contain;
+    font-size: 24px;
+    padding: 7px 20px;
   }
 
-  .header-get-in-touch>a {
+  .header-get-in-touch > a,
+  .header-get-in-touch a.header-contact-link {
     font-size: 22px;
   }
 
@@ -2952,16 +3031,57 @@ body {
   }
 
   /* Modal Menu on Mobile */
+  #menuModal .modal-content {
+    padding-top: 85px;
+    padding-bottom: 50px;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #menuModal .row {
+    flex-direction: column;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+  }
+
   #menu-main a.nav-link {
-    font-size: clamp(26px, 7vw, 36px);
+    font-size: clamp(28px, 7.5vw, 38px);
+    line-height: 1.25;
+  }
+
+  #menu-main .menu-item {
+    margin-bottom: 8px;
+  }
+
+  .header-get-in-touch {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    width: 100%;
   }
 
   .header-get-in-touch h2 {
-    font-size: 22px;
+    font-size: 20px;
+    padding: 6px 18px;
+    margin-bottom: 14px;
   }
 
-  .header-get-in-touch>a {
-    font-size: 18px;
+  .header-get-in-touch > a,
+  .header-get-in-touch a.header-contact-link {
+    font-size: 20px;
+    margin-bottom: 5px;
+  }
+
+  .header-social-links {
+    margin-top: 18px;
+    gap: 14px;
+  }
+
+  .header-social-links a.social-link-icon,
+  .header-social-links a {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
   }
 
   /* Hero Banner Title */

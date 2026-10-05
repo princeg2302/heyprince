@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaLinkedinIn, FaInstagram, FaWhatsapp } from 'react-icons/fa6';
 import heyprinceLogo from '../assets/heyprince-logo.svg';
+import { getSmoothScroll } from '../utils/smoothScroll';
 
 export interface HeaderProps {
   onNavigate?: (page: 'home' | 'contact' | 'blog', sectionId?: string) => void;
@@ -51,22 +52,41 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     }
   };
 
-  // Sync body modal-open class when menu toggles
+  // Stop page scrolling & Lenis when menu is open on mobile & desktop
   useEffect(() => {
+    const lenis = getSmoothScroll();
     if (menuOpen) {
       document.body.classList.add('modal-open');
+      document.documentElement.classList.add('modal-open');
+      lenis?.stop();
     } else {
       document.body.classList.remove('modal-open');
+      document.documentElement.classList.remove('modal-open');
+      lenis?.start();
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false);
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!menuOpen) return;
+      const modalContent = document.querySelector('#menuModal .modal-content');
+      // If touch target is outside modal-content, prevent page scroll
+      if (modalContent && !modalContent.contains(e.target as Node)) {
+        e.preventDefault();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+
     return () => {
       document.body.classList.remove('modal-open');
+      document.documentElement.classList.remove('modal-open');
+      lenis?.start();
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('touchmove', handleTouchMove);
     };
   }, [menuOpen]);
 
@@ -233,36 +253,40 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                       <div className="col-lg-4">
                         <div className="header-get-in-touch">
                           <h2>Get In Touch</h2>
-                          <a href="mailto:it@heyprince.in">it@heyprince.in</a>
-                          <a href="tel:+919120900010">+91 9120900010</a>
+                          <a href="mailto:it@heyprince.in" className="header-contact-link email-link">
+                            it@heyprince.in
+                          </a>
+                          <a href="tel:+919120900010" className="header-contact-link phone-link">
+                            +91 9120900010
+                          </a>
                           <div className="header-social-links">
                             <a
                               rel="noopener noreferrer"
                               aria-label="LinkedIn"
-                              className="d-flex align-items-center Linkedin"
+                              className="social-link-icon linkedin"
                               href="https://www.linkedin.com/in/mr-goyal/"
                               target="_blank"
                             >
-                              <FaLinkedinIn size={22} color="#fff" />
+                              <FaLinkedinIn size={22} />
                             </a>
                             <a
                               rel="noopener noreferrer"
                               aria-label="Instagram"
                               title="Instagram (@heyprince.in)"
-                              className="d-flex align-items-center Instagram mx-3"
+                              className="social-link-icon instagram"
                               href="https://www.instagram.com/heyprince.in/"
                               target="_blank"
                             >
-                              <FaInstagram size={22} color="#fff" />
+                              <FaInstagram size={22} />
                             </a>
                             <a
                               rel="noopener noreferrer"
                               aria-label="WhatsApp"
-                              className="d-flex align-items-center Whatsapp"
+                              className="social-link-icon whatsapp"
                               href="https://wa.me/919120900010"
                               target="_blank"
                             >
-                              <FaWhatsapp size={22} color="#fff" />
+                              <FaWhatsapp size={22} />
                             </a>
                           </div>
                         </div>

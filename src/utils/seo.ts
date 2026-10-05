@@ -170,7 +170,7 @@ export function updatePageSeo(options: PageSeoOptions): void {
           email: 'it@heyprince.in',
           priceRange: '$$$$',
           areaServed: ['Global Remote', 'India', 'United States', 'Europe'],
-          provider: {
+          founder: {
             '@id': 'https://heyprince.in/#person',
           },
         },
