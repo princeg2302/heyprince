@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import {
   FaPlay,
   FaRotateRight,
@@ -1028,7 +1029,7 @@ Opening inquiry form...`,
                         >
                           <FaRotateRight className="me-2" /> Play Again
                         </button>
-                        <a href="#contact" className="portal-btn">
+                        <Link href="/contact/" className="portal-btn">
                           <span className="mr-right">Build Bug-Free Apps</span>
                           <span className="arrow">
                             <svg
@@ -1045,7 +1046,7 @@ Opening inquiry form...`,
                               />
                             </svg>
                           </span>
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   </div>

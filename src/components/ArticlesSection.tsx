@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -15,6 +16,14 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      return;
+    }
+
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
@@ -44,11 +53,10 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
     };
   }, []);
 
-  const handleArticleClick = (slug: string) => {
+  const handleArticleClick = (slug: string, e: React.MouseEvent) => {
     if (onSelectArticle) {
+      e.preventDefault();
       onSelectArticle(slug);
-    } else {
-      router.push(`/blog/${slug}`);
     }
   };
 
@@ -70,13 +78,10 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           <p>
             In-depth engineering breakdowns, web development trends, IT provider selection frameworks, and career insights. Actionable strategies, real production benchmarks, and architectural wisdom for modern teams.
           </p>
-          <a
+          <Link
             className="portal-btn mx-auto"
-            href="/blog/freelancing-tips-it-professionals-2026"
-            onClick={(e) => {
-              e.preventDefault();
-              handleArticleClick('freelancing-tips-it-professionals-2026');
-            }}
+            href="/blog/freelancing-tips-it-professionals-2026/"
+            onClick={(e) => handleArticleClick('freelancing-tips-it-professionals-2026', e)}
           >
             <span className="mr-right">Stories Worth Scrolling</span>
             <span className="arrow">
@@ -88,7 +93,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
                 />
               </svg>
             </span>
-          </a>
+          </Link>
         </div>
       </div>
       <div className="article-cards-sliding">
@@ -96,13 +101,10 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           {articlesList.map((article) => (
             <div className="col-xl-3 col-sm-6" key={article.slug}>
               <div className="card article-card">
-                <a
+                <Link
                   className="article-link"
-                  href={`/blog/${article.slug}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleArticleClick(article.slug);
-                  }}
+                  href={`/blog/${article.slug}/`}
+                  onClick={(e) => handleArticleClick(article.slug, e)}
                 >
                   <img
                     className="card-img card-img-bottom"
@@ -119,7 +121,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
                     <p className="card-content">{article.description}</p>
                     <span className="read-more-link">Read Full Story &rarr;</span>
                   </div>
-                </a>
+                </Link>
               </div>
             </div>
           ))}

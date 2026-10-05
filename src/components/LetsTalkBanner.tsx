@@ -1,25 +1,9 @@
-'use client';
-
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-export interface LetsTalkBannerProps {
-  onNavigateContact?: () => void;
-}
-
-export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContact }) => {
-  const router = useRouter();
-
-  const handleContactClick = () => {
-    if (onNavigateContact) {
-      onNavigateContact();
-    } else {
-      router.push('/contact');
-    }
-  };
-
+export const LetsTalkBanner: React.FC = () => {
   return (
-    <section className="lets-talk">
+    <section className="lets-talk" aria-label="Let's Talk Section">
       <div className="container">
         <div className="section-heading-group text-center text-white">
           <h2>
@@ -35,13 +19,10 @@ export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContac
           <p>
             I’m Prince — a Senior Full Stack Engineer &amp; IT Consultant with 10+ years of digital evolution. Whether you need a high-converting web platform, full-stack React/Next.js architecture, custom CMS build, or custom AI workflow automations, I partner with founders and teams to bring high-impact visions to life with zero fluff.
           </p>
-          <a
+          <Link
             className="portal-btn mx-auto"
             href="/contact"
-            onClick={(e) => {
-              e.preventDefault();
-              handleContactClick();
-            }}
+            aria-label="Let's talk about your project - go to contact page"
           >
             <span className="mr-right">Let’s Talk About It</span>
             <span className="arrow">
@@ -53,7 +34,7 @@ export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContac
                 />
               </svg>
             </span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -61,4 +42,3 @@ export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContac
 };
 
 export default LetsTalkBanner;
-

@@ -8,7 +8,11 @@ export const CustomCursor: React.FC = () => {
   useEffect(() => {
     let cursor: MouseFollower | null = null;
     try {
-      if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+      if (
+        typeof window !== 'undefined' &&
+        window.matchMedia('(pointer: fine)').matches &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
         MouseFollower.registerGSAP(gsap);
         cursor = new MouseFollower({
           speed: 0.6,

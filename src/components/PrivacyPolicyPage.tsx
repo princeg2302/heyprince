@@ -31,7 +31,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
 
   const handleContact = () => {
     if (onNavigateContact) onNavigateContact();
-    else router.push('/contact');
+    else router.push('/contact/');
   };
 
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -284,7 +284,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
                     <FaArrowRight size={14} />
                   </button>
                   <a
-                    href="https://wa.me/918708892040"
+                    href="https://wa.me/919120900010"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-privacy-whatsapp"

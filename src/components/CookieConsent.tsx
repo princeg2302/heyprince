@@ -277,7 +277,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
                       if (onOpenPrivacyPolicy) {
                         onOpenPrivacyPolicy();
                       } else {
-                        router.push('/privacy-policy');
+                        router.push('/privacy-policy/');
                       }
                     }}
                   >

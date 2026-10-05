@@ -19,7 +19,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://heyprince.in'),
-  title: 'Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince',
+  title: {
+    default: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
+    template: '%s | HeyPrince',
+  },
   description:
     'Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React web apps, scalable cloud architecture, and custom IT solutions.',
   keywords: [
@@ -232,6 +235,9 @@ export default function RootLayout({
         />
       </head>
       <body className="home front-page" suppressHydrationWarning>
+        <a href="#main" className="visually-hidden-focusable">
+          Skip to main content
+        </a>
         <div id="wrapper">
           <ClientProviders>
             <Header />

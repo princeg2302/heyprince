@@ -48,12 +48,12 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
   const handleSelectArticle = (newSlug: string) => {
     if (onSelectArticle) onSelectArticle(newSlug);
-    else router.push(`/blog/${newSlug}`);
+    else router.push(`/blog/${newSlug}/`);
   };
 
   const handleContact = () => {
     if (onNavigateContact) onNavigateContact();
-    else router.push('/contact');
+    else router.push('/contact/');
   };
 
   // Find article matching slug or default to first

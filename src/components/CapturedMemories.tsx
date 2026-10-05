@@ -18,6 +18,12 @@ export const CapturedMemories: React.FC = () => {
     const track = trackRef.current;
     if (!section || !pinWrap || !track) return;
 
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) return;
+
     const ctx = gsap.context(() => {
       // Calculate total horizontal travel needed so the last item is neatly revealed without void
       const getScrollAmount = () => {
@@ -121,10 +127,16 @@ export const CapturedMemories: React.FC = () => {
           <div className="horizontal-scroll-wrapper" ref={trackRef}>
             {memoriesList.map((item, idx) => (
               <div className={`img-wrapper ${item.speedClass}`} key={idx}>
-                <a href={item.image} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={item.image}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`View full resolution photography memory ${idx + 1}`}
+                >
                   <img
                     src={item.image}
                     alt={`Prince outdoor travel and photography memory #${idx + 1}`}
+                    loading="lazy"
                     decoding="async"
                   />
                 </a>

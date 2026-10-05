@@ -53,12 +53,12 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
 
   const handleSelectService = (newSlug: string) => {
     if (onSelectService) onSelectService(newSlug);
-    else router.push(`/services/${newSlug}`);
+    else router.push(`/services/${newSlug}/`);
   };
 
   const handleContact = (serviceTitle?: string) => {
     if (onNavigateContact) onNavigateContact(serviceTitle);
-    else router.push(`/contact${serviceTitle ? `?service=${encodeURIComponent(serviceTitle)}` : ''}`);
+    else router.push(`/contact/${serviceTitle ? `?service=${encodeURIComponent(serviceTitle)}` : ''}`);
   };
 
   // Locate matching service or default to first

@@ -11,7 +11,7 @@ import {
 } from '../components';
 
 export const metadata: Metadata = {
-  title: 'Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince',
+  title: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
   description:
     'Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance Next.js apps, bespoke WordPress/CMS development, and Next-Gen AI workflow automations.',
   alternates: {

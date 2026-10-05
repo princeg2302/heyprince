@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     if (onNavigate) {
       onNavigate('contact');
     } else {
-      router.push('/contact');
+      router.push('/contact/');
     }
   };
 
@@ -282,7 +282,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="/contact"
+                                href="/contact/"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -382,7 +382,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 
             <a
               className="portal-btn header-contact-btn"
-              href="/contact"
+              href="/contact/"
               onClick={(e) => {
                 e.preventDefault();
                 handleContactClick();

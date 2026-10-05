@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaBolt } from 'react-icons/fa6';
 import { servicesList } from '../data/servicesData';
@@ -17,19 +18,21 @@ export const Footer: React.FC<FooterProps> = ({
 }) => {
   const router = useRouter();
 
-  const handleServiceClick = (slug: string) => {
+  const handleServiceClick = (slug: string, e?: React.MouseEvent) => {
     if (onNavigateService) {
+      if (e) e.preventDefault();
       onNavigateService(slug);
     } else {
-      router.push(`/services/${slug}`);
+      router.push(`/services/${slug}/`);
     }
   };
 
-  const handlePrivacyClick = () => {
+  const handlePrivacyClick = (e?: React.MouseEvent) => {
     if (onNavigatePrivacy) {
+      if (e) e.preventDefault();
       onNavigatePrivacy();
     } else {
-      router.push('/privacy-policy');
+      router.push('/privacy-policy/');
     }
   };
 
@@ -100,13 +103,12 @@ export const Footer: React.FC<FooterProps> = ({
                         <h3>{service.title}</h3>
                         <p className="card-author">Prince</p>
                       </div>
-                      <a
+                      <Link
                         className="card-btn"
-                        href={`/services/${service.slug}`}
+                        href={`/services/${service.slug}/`}
                         onClick={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
-                          handleServiceClick(service.slug);
+                          handleServiceClick(service.slug, e);
                         }}
                       >
                         Explore Service
@@ -124,7 +126,7 @@ export const Footer: React.FC<FooterProps> = ({
                             fill="#000"
                           ></path>
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   );
                 })}
@@ -152,7 +154,7 @@ export const Footer: React.FC<FooterProps> = ({
                   <FaInstagram size={24} color="#fff" />
                 </a>
                 <a
-                  href="https://wa.me/918708892040"
+                  href="https://wa.me/919120900010"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="WhatsApp"
@@ -176,16 +178,13 @@ export const Footer: React.FC<FooterProps> = ({
                   <span>All Rights Reserved</span>
                 </p>
                 <div className="foot-legal-links">
-                  <a
-                    href="/privacy-policy"
+                  <Link
+                    href="/privacy-policy/"
                     className="foot-legal-link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handlePrivacyClick();
-                    }}
+                    onClick={(e) => handlePrivacyClick(e)}
                   >
                     Privacy Policy
-                  </a>
+                  </Link>
                   <span className="foot-sep">&bull;</span>
                   <button
                     type="button"

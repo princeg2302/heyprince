@@ -72,8 +72,8 @@ export default async function BlogRoute({ params }: BlogPageProps) {
     : `https://heyprince.in${article.image.startsWith('/') ? '' : '/'}${article.image}`;
 
   const blogSchema = {
-    '@context': 'https://schema.org',
     '@type': 'BlogPosting',
+    '@id': `https://heyprince.in/blog/${article.slug}/#article`,
     headline: article.title,
     description: article.description,
     image: [absoluteImage],
@@ -99,11 +99,40 @@ export default async function BlogRoute({ params }: BlogPageProps) {
     },
   };
 
+  const breadcrumbSchema = {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://heyprince.in/',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Insights',
+        item: 'https://heyprince.in/#articles',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: article.title,
+        item: `https://heyprince.in/blog/${article.slug}/`,
+      },
+    ],
+  };
+
+  const schemaGraph = {
+    '@context': 'https://schema.org',
+    '@graph': [blogSchema, breadcrumbSchema],
+  };
+
   return (
     <div className="page-view-wrapper">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaGraph) }}
       />
       <SingleBlogPage slug={article.slug} />
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -8,6 +9,17 @@ export const VisionAmbition: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      // In reduced motion mode, show the content statically without spinning
+      gsap.set('.about__circle', { opacity: 1 });
+      gsap.set('.about-content .section-heading-group', { opacity: 1 });
+      return;
+    }
+
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
@@ -96,7 +108,7 @@ export const VisionAmbition: React.FC = () => {
                 <p>
                   I bridge the gap between creative visual design and scalable engineering architecture. Every line of code is structured for sub-second performance, rock-solid security, and measurable ROI. Whether launching a custom React/Next.js application, scaling a WordPress platform, or deploying automated AI workflows — I build digital products designed to win.
                 </p>
-                <a className="portal-btn" href="#contact">
+                <Link className="portal-btn" href="/contact/">
                   <span className="mr-right">Curious About Me?</span>
                   <span className="arrow">
                     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -107,7 +119,7 @@ export const VisionAmbition: React.FC = () => {
                       />
                     </svg>
                   </span>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

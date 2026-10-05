@@ -18,10 +18,13 @@ export const PhysicsPills: React.FC<PhysicsPillsProps> = ({ items, count }) => {
     const container = containerRef.current;
     if (!container) return;
 
-    let animId: number;
-    let runner: Matter.Runner;
-    let engine: Matter.Engine;
+    let animId: number = 0;
+    let runner: Matter.Runner | null = null;
+    let engine: Matter.Engine | null = null;
     let removeGlobalListeners: (() => void) | null = null;
+    let handleResize: (() => void) | null = null;
+    let observer: IntersectionObserver | null = null;
+    let isVisible = true;
 
     // Start physics right as preloader begins to lift (~800ms)
     // so the falling animation is visibly witnessed on page reload
@@ -271,10 +274,49 @@ export const PhysicsPills: React.FC<PhysicsPillsProps> = ({ items, count }) => {
         animId = requestAnimationFrame(updatePositions);
       };
 
-      animId = requestAnimationFrame(updatePositions);
+      const startLoop = () => {
+        if (!animId) {
+          animId = requestAnimationFrame(updatePositions);
+        }
+      };
+
+      const stopLoop = () => {
+        if (animId) {
+          cancelAnimationFrame(animId);
+          animId = 0;
+        }
+      };
+
+      startLoop();
+
+      // Pause physics simulation and RAF loop when hero container scrolls offscreen
+      if (typeof IntersectionObserver !== 'undefined') {
+        observer = new IntersectionObserver(
+          (entries) => {
+            const [entry] = entries;
+            const intersecting = entry.isIntersecting;
+            if (intersecting !== isVisible) {
+              isVisible = intersecting;
+              if (isVisible) {
+                if (runner && engine) {
+                  Runner.run(runner, engine);
+                }
+                startLoop();
+              } else {
+                if (runner) {
+                  Runner.stop(runner);
+                }
+                stopLoop();
+              }
+            }
+          },
+          { threshold: 0.05 }
+        );
+        observer.observe(container);
+      }
 
       // Dynamically reposition floor and walls on resize
-      const handleResize = () => {
+      handleResize = () => {
         if (!container) return;
         currentWidth = container.clientWidth;
         currentHeight = container.clientHeight;
@@ -287,15 +329,12 @@ export const PhysicsPills: React.FC<PhysicsPillsProps> = ({ items, count }) => {
       };
 
       window.addEventListener('resize', handleResize);
-
-      // Return cleanup inside timeout
-      return () => {
-        window.removeEventListener('resize', handleResize);
-      };
     }, 850);
 
     return () => {
       clearTimeout(timeout);
+      if (observer) observer.disconnect();
+      if (handleResize) window.removeEventListener('resize', handleResize);
       if (animId) cancelAnimationFrame(animId);
       if (removeGlobalListeners) removeGlobalListeners();
       if (runner) Matter.Runner.stop(runner);

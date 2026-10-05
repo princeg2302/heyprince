@@ -106,7 +106,16 @@ export const JourneyTimeline: React.FC = () => {
                         <div
                           className={`grid__x-label ${isActive ? 'active' : ''}`}
                           data-cursor-text="Click Me"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Milestone year ${milestone.year}`}
                           onClick={() => handleTimelineMilestoneClick(milestone.pos, milestone.left)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleTimelineMilestoneClick(milestone.pos, milestone.left);
+                            }
+                          }}
                         >
                           {milestone.year}
                         </div>
