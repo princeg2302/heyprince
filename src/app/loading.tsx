@@ -8,16 +8,17 @@ export default function Loading() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0b0b0f',
+        background: 'transparent',
       }}
-      aria-label="Loading page..."
+      aria-live="polite"
+      aria-busy="true"
     >
       <div
         style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid rgba(212, 0, 39, 0.2)',
-          borderTopColor: '#d40027',
+          width: '42px',
+          height: '42px',
+          border: '3px solid rgba(255, 255, 255, 0.15)',
+          borderTopColor: '#ff2d55',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',
         }}

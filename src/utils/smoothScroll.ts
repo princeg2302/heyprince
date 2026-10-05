@@ -9,14 +9,6 @@ export const initSmoothScroll = (): Lenis | null => {
   if (typeof window === 'undefined') return null;
   if (lenisInstance) return lenisInstance;
 
-  // Respect user preference for reduced motion (WCAG 2.2)
-  const prefersReducedMotion = window.matchMedia(
-    '(prefers-reduced-motion: reduce)'
-  ).matches;
-  if (prefersReducedMotion) {
-    return null;
-  }
-
   // Register GSAP ScrollTrigger plugin
   gsap.registerPlugin(ScrollTrigger);
 
