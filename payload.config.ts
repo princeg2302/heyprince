@@ -52,16 +52,27 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString:
-        process.env.DATABASE_URI ||
-        process.env.POSTGRES_URL ||
-        'postgresql://postgres:postgres@127.0.0.1:5432/heyprince',
+      connectionString: (() => {
+        let uri =
+          process.env.DATABASE_URI ||
+          process.env.POSTGRES_URL ||
+          'postgresql://postgres:postgres@127.0.0.1:5432/heyprince';
+        // Auto-switch Supabase pooler from session mode (5432) to transaction mode (6543)
+        // to prevent EMAXCONNSESSION (15 max clients) on serverless deployments
+        if (uri.includes('pooler.supabase.com:5432')) {
+          uri = uri.replace(':5432', ':6543');
+        }
+        return uri;
+      })(),
       ssl:
         process.env.DATABASE_URI &&
         !process.env.DATABASE_URI.includes('127.0.0.1') &&
         !process.env.DATABASE_URI.includes('localhost')
           ? { rejectUnauthorized: false }
           : false,
+      max: 4,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 10000,
     },
   }),
 });

@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 import {
   Users,
   Briefcase,
@@ -216,10 +215,10 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
           {quickActions.map((qa, i) => {
             const IconComponent = qa.icon;
             return (
-              <Link key={i} href={qa.href} className="hp-quick-btn">
+              <a key={i} href={qa.href} className="hp-quick-btn">
                 <IconComponent size={14} style={{ color: qa.color }} />
                 <span>{qa.label}</span>
-              </Link>
+              </a>
             );
           })}
         </div>
@@ -262,13 +261,13 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
               <div className="hp-card-sub">{m.subtext}</div>
 
               <div className="hp-card-footer">
-                <Link href={m.link} className="hp-card-link">
+                <a href={m.link} className="hp-card-link">
                   Manage <ArrowUpRight size={14} />
-                </Link>
+                </a>
                 {m.createLink && (
-                  <Link href={m.createLink} className="hp-card-add" title="Create New">
+                  <a href={m.createLink} className="hp-card-add" title="Create New">
                     <Plus size={14} />
-                  </Link>
+                  </a>
                 )}
               </div>
             </div>
@@ -288,9 +287,9 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
               </h2>
               <p className="hp-section-sub">Real-time incoming submissions from heyprince.in/contact</p>
             </div>
-            <Link href="/admin/collections/leads" className="hp-link-more">
+            <a href="/admin/collections/leads" className="hp-link-more">
               View All ({leadsCount}) →
-            </Link>
+            </a>
           </div>
 
           {recentLeads.length > 0 ? (
@@ -351,12 +350,12 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
                           {dateStr}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <Link
+                          <a
                             href={`/admin/collections/leads/${lead.id}`}
                             className="hp-btn-sm"
                           >
                             Open →
-                          </Link>
+                          </a>
                         </td>
                       </tr>
                     );
@@ -409,12 +408,12 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
               </div>
               <div className="hp-catalog-actions">
                 <span className="hp-catalog-count">{servicesCount} items</span>
-                <Link href="/admin/collections/services" className="hp-btn-sm">
+                <a href="/admin/collections/services" className="hp-btn-sm">
                   View
-                </Link>
-                <Link href="/admin/collections/services/create" className="hp-btn-sm-icon">
+                </a>
+                <a href="/admin/collections/services/create" className="hp-btn-sm-icon">
                   <Plus size={13} />
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -428,12 +427,12 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
               </div>
               <div className="hp-catalog-actions">
                 <span className="hp-catalog-count">{postsCount} items</span>
-                <Link href="/admin/collections/posts" className="hp-btn-sm">
+                <a href="/admin/collections/posts" className="hp-btn-sm">
                   View
-                </Link>
-                <Link href="/admin/collections/posts/create" className="hp-btn-sm-icon">
+                </a>
+                <a href="/admin/collections/posts/create" className="hp-btn-sm-icon">
                   <Plus size={13} />
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -447,12 +446,12 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
               </div>
               <div className="hp-catalog-actions">
                 <span className="hp-catalog-count">{categoriesCount} items</span>
-                <Link href="/admin/collections/categories" className="hp-btn-sm">
+                <a href="/admin/collections/categories" className="hp-btn-sm">
                   View
-                </Link>
-                <Link href="/admin/collections/categories/create" className="hp-btn-sm-icon">
+                </a>
+                <a href="/admin/collections/categories/create" className="hp-btn-sm-icon">
                   <Plus size={13} />
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -466,12 +465,12 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
               </div>
               <div className="hp-catalog-actions">
                 <span className="hp-catalog-count">{mediaCount} files</span>
-                <Link href="/admin/collections/media" className="hp-btn-sm">
+                <a href="/admin/collections/media" className="hp-btn-sm">
                   View
-                </Link>
-                <Link href="/admin/collections/media/create" className="hp-btn-sm-icon">
+                </a>
+                <a href="/admin/collections/media/create" className="hp-btn-sm-icon">
                   <Plus size={13} />
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -485,9 +484,9 @@ export const CustomDashboard = async ({ payload, user }: CustomDashboardProps) =
               </div>
               <div className="hp-catalog-actions">
                 <span className="hp-catalog-count">{usersCount} user</span>
-                <Link href="/admin/collections/users" className="hp-btn-sm">
+                <a href="/admin/collections/users" className="hp-btn-sm">
                   View
-                </Link>
+                </a>
               </div>
             </div>
           </div>
