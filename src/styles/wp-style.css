@@ -590,24 +590,25 @@ span.arrow svg {
 
 
 
+.btn-text-short {
+  display: none;
+}
+.btn-text-full {
+  display: inline;
+}
+
+@media (max-width: 600px) {
+  .btn-text-full {
+    display: none;
+  }
+  .btn-text-short {
+    display: inline;
+  }
+}
+
 @media (max-width: 1199px) {
   a.portal-btn {
     margin-right: 0px;
-    width: 190px !important;
-  }
-}
-
-@media (max-width: 767px) {
-  .portal-btn {
-    padding: 12px 40px !important;
-    line-height: normal !important;
-  }
-}
-
-@media (max-width: 399px) {
-  a.portal-btn {
-    font-size: 13px;
-    padding: 10px 20px;
   }
 }
 
@@ -2344,35 +2345,186 @@ body {
 /* --- TABLETS & MEDIUM SCREENS (max-width: 991px) --- */
 @media screen and (max-width: 991px) {
   #header {
-    padding-top: 18px;
+    padding-top: 16px;
+    padding-bottom: 12px;
+  }
+
+  #header .container {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    max-width: 100% !important;
+  }
+
+  #header .header-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #header .logo-wrap {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: 48% !important;
+    order: 1 !important;
+    padding: 0 !important;
+  }
+
+  #header .header-actions {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    order: 2 !important;
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+    padding: 0 !important;
+  }
+
+  #header .menu-wrap {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    order: 3 !important;
+    margin-left: 12px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
   }
 
   .navbar-brand img,
   .navbar-brand svg {
-    max-width: 155px;
+    max-width: 150px;
     height: auto;
   }
 
-  .btn-toggle-menu span {
-    width: 48px;
-    height: 3px;
-    margin-bottom: 9px;
+  .btn-toggle-menu {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
   }
 
-  a.portal-btn {
+  .btn-toggle-menu span {
+    width: 32px;
+    height: 3px;
+    margin-bottom: 6px;
+    background-color: #fff;
+    border-radius: 2px;
+    transition: all ease 0.3s;
+  }
+
+  .btn-toggle-menu span:last-child {
+    margin-bottom: 0;
+  }
+
+  body.modal-open .btn-toggle-menu span {
+    background-color: #000;
+  }
+
+  /* Universal Signature Portal Button on Tablet (max-width: 991px) */
+  .portal-btn,
+  a.portal-btn,
+  button.portal-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: #0d0d11 !important;
+    background-color: #0d0d11 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-radius: 9999px !important;
+    height: 46px !important;
     width: auto !important;
-    font-size: 14px;
-    padding: 8px 18px !important;
-    height: 42px;
-    margin-left: 0;
+    min-width: 0 !important;
+    padding: 4px 6px 4px 18px !important;
+    margin-left: 0 !important;
+    position: relative !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .portal-btn:active,
+  a.portal-btn:active,
+  button.portal-btn:active {
+    transform: scale(0.96) !important;
+    border-color: #ffffff !important;
+    background: rgba(35, 35, 45, 0.98) !important;
   }
 
   .portal-btn .mr-right {
-    margin-right: 0 !important;
+    color: #ffffff !important;
+    font-family: var(--font-family--two);
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    margin-right: 12px !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
   }
 
   .portal-btn span.arrow {
-    display: none;
+    display: flex !important;
+    position: static !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    transition: transform 0.2s ease !important;
+    margin: 0 !important;
+    z-index: 1 !important;
+  }
+
+  .portal-btn span.arrow svg {
+    opacity: 1 !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: block !important;
+  }
+
+  .portal-btn:active span.arrow {
+    transform: rotate(45deg) !important;
+  }
+
+  /* Specific Header Portal Button compacting on tablet */
+  #header .portal-btn {
+    height: 42px !important;
+    padding: 3px 5px 3px 16px !important;
+  }
+
+  #header .portal-btn .mr-right {
+    font-size: 13px !important;
+    margin-right: 10px !important;
+  }
+
+  #header .portal-btn span.arrow {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+
+  #header .portal-btn span.arrow svg {
+    width: 32px !important;
+    height: 32px !important;
   }
 
   /* Modal Menu Drawer */
@@ -2649,18 +2801,67 @@ body {
 
 /* --- MOBILE DEVICES (max-width: 767px) --- */
 @media screen and (max-width: 767px) {
-  #header .logo-wrap {
-    width: 48%;
+  #header {
+    padding-top: 14px;
+    padding-bottom: 10px;
   }
 
-  #header .menu-wrap {
-    width: 18%;
+  #header .container {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    max-width: 100% !important;
+  }
+
+  #header .header-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #header .logo-wrap {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: 44% !important;
+    order: 1 !important;
+    padding: 0 !important;
   }
 
   #header .header-actions {
-    width: auto;
-    padding-left: 0;
-    gap: 8px;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    order: 2 !important;
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 0 !important;
+  }
+
+  #header .menu-wrap {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    order: 3 !important;
+    margin-left: 8px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+  }
+
+  .navbar-brand img,
+  .navbar-brand svg {
+    max-width: 125px;
+    height: auto;
+  }
+
+  .site-tagline {
+    font-size: 10px;
+    line-height: 1.2;
+    margin-top: 2px;
   }
 
   .ai-music-btn {
@@ -2670,30 +2871,66 @@ body {
   }
 
   .ai-music-btn svg {
-    width: 22px;
+    width: 24px;
     height: 16px;
   }
 
-  .navbar-brand img,
-  .navbar-brand svg {
-    max-width: 135px;
-    height: auto;
+  .btn-toggle-menu {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
   }
 
-  .site-tagline {
-    font-size: 10.5px;
-    line-height: 1.2;
+  .btn-toggle-menu span {
+    width: 26px;
+    height: 2.5px;
+    margin-bottom: 5px;
   }
 
-  .portal-btn {
-    font-size: 12px !important;
-    padding: 6px 12px !important;
-    height: 36px;
-    width: auto;
+  /* Universal Signature Portal Button on Mobile (max-width: 767px) */
+  .portal-btn,
+  a.portal-btn,
+  button.portal-btn {
+    height: 44px !important;
+    padding: 4px 6px 4px 16px !important;
   }
 
   .portal-btn .mr-right {
-    font-size: 12px;
+    font-size: 13px !important;
+    margin-right: 10px !important;
+  }
+
+  .portal-btn span.arrow {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+
+  .portal-btn span.arrow svg {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Header Portal Button on Mobile */
+  #header .portal-btn {
+    height: 38px !important;
+    padding: 3px 5px 3px 12px !important;
+  }
+
+  #header .portal-btn .mr-right {
+    font-size: 12px !important;
+    margin-right: 8px !important;
+  }
+
+  #header .portal-btn span.arrow {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+  }
+
+  #header .portal-btn span.arrow svg {
+    width: 28px !important;
+    height: 28px !important;
   }
 
   /* Modal Menu on Mobile */
@@ -2814,18 +3051,96 @@ body {
 
 /* --- SMALL MOBILE (max-width: 480px) --- */
 @media screen and (max-width: 480px) {
+  #header .container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
   .site-tagline {
     display: none;
   }
 
   .navbar-brand img,
   .navbar-brand svg {
-    max-width: 120px;
+    max-width: 110px;
     height: auto;
   }
 
+  #header .header-actions {
+    gap: 6px !important;
+  }
+
+  #header .menu-wrap {
+    margin-left: 6px !important;
+  }
+
+  .ai-music-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+  }
+
+  .ai-music-btn svg {
+    width: 22px;
+    height: 15px;
+  }
+
+  .btn-toggle-menu {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+  }
+
+  .btn-toggle-menu span {
+    width: 22px;
+    height: 2px;
+    margin-bottom: 4px;
+  }
+
+  /* Universal Signature Portal Button on Small Mobile (max-width: 480px) */
+  .portal-btn,
+  a.portal-btn,
+  button.portal-btn {
+    height: 42px !important;
+    padding: 3px 5px 3px 14px !important;
+  }
+
   .portal-btn .mr-right {
-    font-size: 11px;
+    font-size: 12px !important;
+    margin-right: 8px !important;
+  }
+
+  .portal-btn span.arrow {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+  }
+
+  .portal-btn span.arrow svg {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  /* Header Portal Button on Small Mobile */
+  #header .portal-btn {
+    height: 34px !important;
+    padding: 2px 3px 2px 10px !important;
+  }
+
+  #header .portal-btn .mr-right {
+    font-size: 11px !important;
+    margin-right: 6px !important;
+  }
+
+  #header .portal-btn span.arrow {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+  }
+
+  #header .portal-btn span.arrow svg {
+    width: 26px !important;
+    height: 26px !important;
   }
 
   .banner-title {

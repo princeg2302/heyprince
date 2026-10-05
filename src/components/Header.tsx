@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   return (
     <header id="header" className="navbar">
       <div className="container d-block">
-        <div className="row align-items-center">
+        <div className="row align-items-center header-row">
           <div className="col-4 logo-wrap">
             <a
               className="navbar-brand"
@@ -259,7 +259,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                               rel="noopener noreferrer"
                               aria-label="WhatsApp"
                               className="d-flex align-items-center Whatsapp"
-                              href="https://wa.me/"
+                              href="https://wa.me/919120900010"
                               target="_blank"
                             >
                               <FaWhatsapp size={22} color="#fff" />
@@ -312,14 +312,17 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             </button>
 
             <a
-              className="portal-btn"
+              className="portal-btn header-contact-btn"
               href="/contact"
               onClick={(e) => {
                 e.preventDefault();
                 handleContactClick();
               }}
             >
-              <span className="mr-right">Let's Build Something</span>
+              <span className="mr-right">
+                <span className="btn-text-full">Let's Build Something</span>
+                <span className="btn-text-short">Let's Talk</span>
+              </span>
               <span className="arrow">
                 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="20" cy="20" r="20" fill="white" />
