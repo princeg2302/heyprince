@@ -201,7 +201,7 @@ a img.aligncenter {
 
 a.navbar-brand {
   position: relative;
-  z-index: 9999;
+  z-index: 99999;
   display: inline-block;
 }
 
@@ -210,6 +210,8 @@ a.navbar-brand {
   align-items: center;
   justify-content: flex-end;
   gap: 14px;
+  position: relative;
+  z-index: 99999;
 }
 
 .header-actions .portal-btn {
