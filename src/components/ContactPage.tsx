@@ -194,20 +194,20 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
 
           <h1 className="contact-main-heading">
             Let’s Build Something <br />
-            <span className="text-red word">
-              <span>E</span>
-              <span>x</span>
-              <span>t</span>
-              <span>r</span>
-              <span>a</span>
-              <span>o</span>
-              <span>r</span>
-              <span>d</span>
-              <span>i</span>
-              <span>n</span>
-              <span>a</span>
-              <span>r</span>
-              <span>y</span>
+            <span className="text-red word" suppressHydrationWarning>
+              <span suppressHydrationWarning>E</span>
+              <span suppressHydrationWarning>x</span>
+              <span suppressHydrationWarning>t</span>
+              <span suppressHydrationWarning>r</span>
+              <span suppressHydrationWarning>a</span>
+              <span suppressHydrationWarning>o</span>
+              <span suppressHydrationWarning>r</span>
+              <span suppressHydrationWarning>d</span>
+              <span suppressHydrationWarning>i</span>
+              <span suppressHydrationWarning>n</span>
+              <span suppressHydrationWarning>a</span>
+              <span suppressHydrationWarning>r</span>
+              <span suppressHydrationWarning>y</span>
             </span>
           </h1>
 

@@ -8,12 +8,12 @@ export const LetsTalkBanner: React.FC = () => {
         <div className="section-heading-group text-center text-white">
           <h2>
             Just Me, <br /> No{' '}
-            <span className="text-red word">
-              <span>Fi</span>
-              <span>L</span>
-              <span>T</span>
-              <span>e</span>
-              <span>R</span>
+            <span className="text-red word" suppressHydrationWarning>
+              <span suppressHydrationWarning>Fi</span>
+              <span suppressHydrationWarning>L</span>
+              <span suppressHydrationWarning>T</span>
+              <span suppressHydrationWarning>e</span>
+              <span suppressHydrationWarning>R</span>
             </span>
           </h2>
           <p>
@@ -21,7 +21,7 @@ export const LetsTalkBanner: React.FC = () => {
           </p>
           <Link
             className="portal-btn mx-auto"
-            href="/contact"
+            href="/contact/"
             aria-label="Let's talk about your project - go to contact page"
           >
             <span className="mr-right">Let’s Talk About It</span>

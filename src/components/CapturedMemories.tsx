@@ -109,12 +109,12 @@ export const CapturedMemories: React.FC = () => {
         <div className="container">
           <div className="section-heading-group text-center">
             <h2>
-              <span className="text-red word">
-                <span>P</span>
-                <span>R</span>
-                <span style={{ marginRight: '-10px' }}>👁️</span>
-                <span>👁️</span>
-                <span>F</span>
+              <span className="text-red word" suppressHydrationWarning>
+                <span suppressHydrationWarning>P</span>
+                <span suppressHydrationWarning>R</span>
+                <span style={{ marginRight: '-10px' }} suppressHydrationWarning>👁️</span>
+                <span suppressHydrationWarning>👁️</span>
+                <span suppressHydrationWarning>F</span>
               </span>
               <br /> I Go Outside
             </h2>

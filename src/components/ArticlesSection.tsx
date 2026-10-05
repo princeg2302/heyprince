@@ -67,12 +67,12 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           <h2>
             Read This <br />
             Between{' '}
-            <span className="word text-red">
-              <span>B</span>
-              <span>i</span>
-              <span>T</span>
-              <span>e</span>
-              <span>S</span>
+            <span className="word text-red" suppressHydrationWarning>
+              <span suppressHydrationWarning>B</span>
+              <span suppressHydrationWarning>i</span>
+              <span suppressHydrationWarning>T</span>
+              <span suppressHydrationWarning>e</span>
+              <span suppressHydrationWarning>S</span>
             </span>
           </h2>
           <p>
