@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import React from 'react';
-import { PrivacyPolicyPage } from '../../components';
+import { PrivacyPolicyPage } from '@/components';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Prince — Senior IT Consultant & Web Engineer | HeyPrince',

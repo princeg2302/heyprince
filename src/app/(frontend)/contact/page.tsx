@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import React from 'react';
-import { ContactPage } from '../../components';
+import { ContactPage } from '@/components';
 
 export const metadata: Metadata = {
   title: 'Contact Prince — Senior IT Consultant & Full Stack Web Engineer | HeyPrince',

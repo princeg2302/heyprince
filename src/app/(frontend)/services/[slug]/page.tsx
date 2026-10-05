@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { getServices, getServiceBySlug } from '@/lib/cms';
-import { SingleServicePage } from '../../../components';
+import { SingleServicePage } from '@/components';
 
 interface ServicePageProps {
   params: Promise<{ slug: string }>;

@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import React from 'react';
-import '../styles/fonts.css';
-import '../styles/main.css';
-import '../styles/grid-lines.css';
-import '../styles/wp-style.css';
+import '@/styles/fonts.css';
+import '@/styles/main.css';
+import '@/styles/grid-lines.css';
+import '@/styles/wp-style.css';
 import 'mouse-follower/dist/mouse-follower.min.css';
 import 'lenis/dist/lenis.css';
 
-import { Header, Footer, ClientProviders } from '../components';
+import { Header, Footer, ClientProviders } from '@/components';
 
 export const viewport: Viewport = {
   themeColor: '#0b0b0f',

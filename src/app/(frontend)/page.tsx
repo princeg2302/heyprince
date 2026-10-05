@@ -8,7 +8,7 @@ import {
   ArticlesSection,
   LetsTalkBanner,
   CapturedMemories,
-} from '../components';
+} from '@/components';
 
 export const metadata: Metadata = {
   title: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
