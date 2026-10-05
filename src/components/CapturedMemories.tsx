@@ -113,7 +113,7 @@ export const CapturedMemories: React.FC = () => {
               <br /> I Go Outside
             </h2>
             <p>
-              Work is important, but life matters too. I step out to reset my mind, explore new places, and come back with fresh ideas.
+              Great code comes from a clear mind. Beyond the terminal and dual monitors, I explore architecture, urban landscapes, and culture to return with fresh perspectives and creative energy.
             </p>
           </div>
         </div>

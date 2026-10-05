@@ -68,7 +68,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
             </span>
           </h2>
           <p>
-            Quick, valuable reads on web development, IT services, freelancing, and business growth. No boring theory — just real tips, smart strategies, and modern trends.
+            In-depth engineering breakdowns, web development trends, IT provider selection frameworks, and career insights. Actionable strategies, real production benchmarks, and architectural wisdom for modern teams.
           </p>
           <a
             className="portal-btn mx-auto"

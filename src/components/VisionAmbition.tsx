@@ -43,7 +43,7 @@ export const VisionAmbition: React.FC = () => {
       <div className="vision-content-wrapper">
         <div className="container">
           <h2>
-            I’m not here to sound perfect — I’m here to be real. I build websites, solve problems, and keep learning every single day. Some days it’s clean code... some days it’s just coffee and hope 😄
+            I’m not here to sound corporate — I’m here to build software that works. I engineer high-speed web apps, eliminate digital bottlenecks, and obsess over performance. Some days it’s clean architectural design... some days it’s just coffee and sheer determination 😄
           </h2>
           <div className="vision-graphic">
             <div className="about-circles-wrap">
@@ -79,10 +79,10 @@ export const VisionAmbition: React.FC = () => {
               {/* BEFORE SCROLL: text-subheading (fades out on scroll) */}
               <div className="ms-auto text-subheading">
                 <p>
-                  From designing modern websites to fixing bugs and improving performance — I enjoy turning ideas into working digital products. I believe in simple design, fast speed, and smart solutions that actually help people and businesses grow online.
+                  From architecting high-performance web applications to optimizing Core Web Vitals and engineering custom full-stack solutions — I turn complex business challenges into seamless digital experiences. I believe in clean code, kinetic animations, and engineering that directly drives client growth.
                 </p>
                 <p>
-                  I don’t just create websites that “look good” — I build experiences that feel smooth, load fast, and work perfectly on every device. Whether it’s a business website, a landing page, or a custom WordPress setup, my goal is always the same: clean UI, strong functionality, and real results.
+                  I don’t build generic cookie-cutter templates. I craft bespoke web systems that feel tactile, load under one second, and command user trust across every screen. Whether you need an enterprise Next.js platform, a custom CMS build, or intelligent AI automations, I deliver clean architecture and undeniable results.
                 </p>
               </div>
 
@@ -94,7 +94,7 @@ export const VisionAmbition: React.FC = () => {
                   coffee(); &#125;
                 </h2>
                 <p>
-                  From designing modern websites to fixing bugs and improving performance — I enjoy turning ideas into working digital products. I believe in simple design, fast speed, and smart solutions that actually help people and businesses grow online.
+                  I bridge the gap between creative visual design and scalable engineering architecture. Every line of code is structured for sub-second performance, rock-solid security, and measurable ROI. Whether launching a custom React/Next.js application, scaling a WordPress platform, or deploying automated AI workflows — I build digital products designed to win.
                 </p>
                 <a className="portal-btn" href="#contact">
                   <span className="mr-right">Curious About Me?</span>

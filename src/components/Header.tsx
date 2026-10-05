@@ -210,6 +210,18 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
+                                href="/#services"
+                                className="nav-link"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleSectionClick('services');
+                                }}
+                              >
+                                Services
+                              </a>
+                            </li>
+                            <li className="menu-item">
+                              <a
                                 href="/#about"
                                 className="nav-link"
                                 onClick={(e) => {

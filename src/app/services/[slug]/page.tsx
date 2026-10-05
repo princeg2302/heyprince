@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
   }
 
   return {
-    title: `${service.metaTitle} | HeyPrince`,
+    title: service.metaTitle.includes('HeyPrince') ? service.metaTitle : `${service.metaTitle} | HeyPrince`,
     description: service.metaDescription,
     keywords: `${service.techStack.join(', ')}, ${service.category}, Prince IT Consultant, HeyPrince Services`,
     alternates: {

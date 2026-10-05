@@ -62,7 +62,7 @@ export const Footer: React.FC<FooterProps> = ({
               </div>
 
               {/* 7 Interactive Stacked Service Cards (Exact IDs mapped with CSS) */}
-              <div className="footer-cards-container">
+              <div className="footer-cards-container" id="services">
                 {servicesList.map((service, index) => {
                   const cardId = `footer-card-${index + 1}`;
                   const themeClass =

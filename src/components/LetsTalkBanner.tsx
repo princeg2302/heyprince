@@ -33,7 +33,7 @@ export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContac
             </span>
           </h2>
           <p>
-            I’m Prince — a passionate Web Developer &amp; IT Professional who loves building clean, fast, and modern websites. I focus on creating designs that look premium, work smoothly on every device, and help businesses grow online.
+            I’m Prince — a Senior Full Stack Engineer &amp; IT Consultant with 10+ years of digital evolution. Whether you need a high-converting web platform, full-stack React/Next.js architecture, custom CMS build, or custom AI workflow automations, I partner with founders and teams to bring high-impact visions to life with zero fluff.
           </p>
           <a
             className="portal-btn mx-auto"

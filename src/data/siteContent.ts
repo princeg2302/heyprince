@@ -73,9 +73,9 @@ export const timelineMilestones: Milestone[] = [
   },
   {
     pos: 10,
-    year: '2025',
+    year: '2026',
     left: 'calc(100% - (0 * 9%))',
-    text: 'Frontend Pro & Creative Innovator — bringing bold, fresh ideas to life with elite modern UI/UX, seamless animations, robust code, and next-gen web technologies.',
+    text: 'Senior Full Stack IT Consultant & AI Innovator — empowering founders and enterprises with high-performance Next.js apps, bespoke CMS engineering, autonomous AI workflows, and sub-second web experiences.',
   },
 ];
 
