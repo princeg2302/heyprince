@@ -25,6 +25,16 @@ if (typeof process.loadEnvFile === 'function') {
 export default buildConfig({
   admin: {
     user: Users.slug,
+    meta: {
+      titleSuffix: '— Admin',
+      icons: [{ url: '/favicon.svg' }],
+    },
+    components: {
+      graphics: {
+        Logo: './src/components/admin/Logo#Logo',
+        Icon: './src/components/admin/Icon#Icon',
+      },
+    },
     importMap: {
       baseDir: path.resolve(dirname),
     },

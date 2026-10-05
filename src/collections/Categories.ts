@@ -2,9 +2,14 @@ import type { CollectionConfig } from 'payload';
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
+  labels: {
+    singular: 'Category',
+    plural: 'Categories',
+  },
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'createdAt'],
+    group: 'Content Catalog',
   },
   access: {
     read: () => true,

@@ -2,9 +2,14 @@ import type { CollectionConfig } from 'payload';
 
 export const Services: CollectionConfig = {
   slug: 'services',
+  labels: {
+    singular: 'Service',
+    plural: 'Services',
+  },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'category', 'pricingType', 'published', 'sortOrder'],
+    defaultColumns: ['title', 'categoryName', 'published', 'sortOrder'],
+    group: 'Content Catalog',
   },
   access: {
     read: ({ req: { user } }) => {

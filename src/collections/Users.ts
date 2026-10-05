@@ -2,10 +2,15 @@ import type { CollectionConfig } from 'payload';
 
 export const Users: CollectionConfig = {
   slug: 'users',
+  labels: {
+    singular: 'Admin User',
+    plural: 'Admin Users',
+  },
   auth: true,
   admin: {
     useAsTitle: 'email',
     defaultColumns: ['name', 'email', 'role', 'createdAt'],
+    group: 'System',
   },
   access: {
     read: () => true,

@@ -1,5 +1,6 @@
 import config from '@payload-config';
 import '@payloadcms/ui/scss/app.scss';
+import './admin.css';
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts';
 import type { ServerFunctionClient } from 'payload';
 import React from 'react';

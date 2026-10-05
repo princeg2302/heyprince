@@ -1,0 +1,89 @@
+/* ==============================================================================
+   HeyPrince Custom Admin Panel Styling
+   Proprietary Brand Overrides (Replacing generic Payload CMS aesthetics)
+   ============================================================================== */
+
+:root {
+  --color-primary: #ff3366 !important;
+  --color-primary-hover: #e02857 !important;
+  --color-accent: #8b5cf6 !important;
+  --theme-bg-dark: #08080a !important;
+  --theme-elevation-50: #0d0d12 !important;
+  --theme-elevation-100: #121219 !important;
+  --theme-elevation-150: #181822 !important;
+  --theme-elevation-200: #1e1e2b !important;
+  --theme-border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Hide any external Payload branding / links */
+a[href*="payloadcms.com"],
+.payload-badge,
+.powered-by-payload,
+[class*="payload-logo"],
+[class*="poweredBy"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Custom Scrollbar for sleek dark feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08080a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff3366;
+}
+
+/* Navigation & Sidebar refinement */
+.nav {
+  border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Dashboard Cards with Cyber glow */
+.card,
+[class*="card"] {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card:hover,
+[class*="card"]:hover {
+  border-color: rgba(255, 51, 102, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(255, 51, 102, 0.1) !important;
+}
+
+/* Primary Action Buttons */
+.btn--style-primary,
+button[type="submit"] {
+  background: linear-gradient(135deg, #ff3366 0%, #d62250 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn--style-primary:hover,
+button[type="submit"]:hover {
+  background: linear-gradient(135deg, #ff4d7a 0%, #e02857 100%) !important;
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.4) !important;
+}
+
+/* Table headers & rows */
+.table th {
+  text-transform: uppercase !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.06em !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}

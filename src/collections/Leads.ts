@@ -2,9 +2,14 @@ import type { CollectionConfig } from 'payload';
 
 export const Leads: CollectionConfig = {
   slug: 'leads',
+  labels: {
+    singular: 'Client Lead',
+    plural: 'Client Leads',
+  },
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'email', 'service', 'budget', 'status', 'createdAt'],
+    group: 'CRM & Inquiries',
   },
   access: {
     read: ({ req: { user } }) => Boolean(user),
