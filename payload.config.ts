@@ -34,6 +34,11 @@ export default buildConfig({
         Logo: './src/components/admin/Logo#Logo',
         Icon: './src/components/admin/Icon#Icon',
       },
+      views: {
+        dashboard: {
+          Component: './src/components/admin/CustomDashboard#CustomDashboard',
+        },
+      },
     },
     importMap: {
       baseDir: path.resolve(dirname),
