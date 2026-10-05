@@ -1,23 +1,11 @@
-# Googlebot, Bingbot, and universal web crawler configuration for heyprince.in
-User-agent: *
-Allow: /
-Disallow: /dist/
-
-User-agent: Googlebot
+User-Agent: *
 Allow: /
 
-User-agent: Googlebot-Image
+User-Agent: Googlebot
 Allow: /
 
-User-agent: Bingbot
+User-Agent: Bingbot
 Allow: /
 
-User-agent: Applebot
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /
-
-# Host & Canonical XML Sitemap
 Host: https://heyprince.in
 Sitemap: https://heyprince.in/sitemap.xml

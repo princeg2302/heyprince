@@ -346,15 +346,17 @@ export interface TechPill {
   image: string;
 }
 
+const getStaticSrc = (img: any): string => (typeof img === 'object' && img !== null && 'src' in img ? img.src : String(img));
+
 export const bannerTechPills: TechPill[] = [
-  { name: 'HTML', image: htmlImg },
-  { name: 'PHP', image: phpImg },
-  { name: 'CSS', image: cssImg },
-  { name: 'JavaScript', image: jsImg },
-  { name: 'ReactJS', image: reactjsImg },
-  { name: 'Node.js', image: nodejsImg },
-  { name: 'WordPress', image: wordpressImg },
-  { name: 'Python', image: pythonImg },
-  { name: 'Shopify', image: shopifyImg },
-  { name: 'jQuery', image: jqueryImg },
+  { name: 'HTML', image: getStaticSrc(htmlImg) },
+  { name: 'PHP', image: getStaticSrc(phpImg) },
+  { name: 'CSS', image: getStaticSrc(cssImg) },
+  { name: 'JavaScript', image: getStaticSrc(jsImg) },
+  { name: 'ReactJS', image: getStaticSrc(reactjsImg) },
+  { name: 'Node.js', image: getStaticSrc(nodejsImg) },
+  { name: 'WordPress', image: getStaticSrc(wordpressImg) },
+  { name: 'Python', image: getStaticSrc(pythonImg) },
+  { name: 'Shopify', image: getStaticSrc(shopifyImg) },
+  { name: 'jQuery', image: getStaticSrc(jqueryImg) },
 ];

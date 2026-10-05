@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useRef } from 'react';
 import Matter from 'matter-js';
 import { bannerTechPills, TechPill } from '../data/siteContent';

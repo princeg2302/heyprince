@@ -1,4 +1,7 @@
-import React, { useState, useLayoutEffect, useRef, useEffect } from 'react';
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { servicesList, ServiceData } from '../data/servicesData';
 import {
   FaArrowLeft,
@@ -23,10 +26,10 @@ import {
 
 export interface SingleServicePageProps {
   slug: string;
-  onNavigateHome: () => void;
+  onNavigateHome?: () => void;
   onNavigateServices?: () => void;
-  onSelectService: (slug: string) => void;
-  onNavigateContact: (preselectedService?: string) => void;
+  onSelectService?: (slug: string) => void;
+  onNavigateContact?: (preselectedService?: string) => void;
 }
 
 export const SingleServicePage: React.FC<SingleServicePageProps> = ({
@@ -36,6 +39,28 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
   onSelectService,
   onNavigateContact,
 }) => {
+  const router = useRouter();
+
+  const handleHome = () => {
+    if (onNavigateHome) onNavigateHome();
+    else router.push('/');
+  };
+
+  const handleServices = () => {
+    if (onNavigateServices) onNavigateServices();
+    else router.push('/#footer');
+  };
+
+  const handleSelectService = (newSlug: string) => {
+    if (onSelectService) onSelectService(newSlug);
+    else router.push(`/services/${newSlug}`);
+  };
+
+  const handleContact = (serviceTitle?: string) => {
+    if (onNavigateContact) onNavigateContact(serviceTitle);
+    else router.push(`/contact${serviceTitle ? `?service=${encodeURIComponent(serviceTitle)}` : ''}`);
+  };
+
   // Locate matching service or default to first
   const service: ServiceData =
     servicesList.find((s) => s.slug === slug) || servicesList[0];
@@ -44,7 +69,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Instant scroll to top on mount / slug change
-  useLayoutEffect(() => {
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -117,13 +142,13 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
         <div className="container">
           {/* Breadcrumb Navigation */}
           <nav className="blog-breadcrumb" aria-label="Breadcrumb">
-            <button type="button" onClick={onNavigateHome} className="breadcrumb-btn">
+            <button type="button" onClick={handleHome} className="breadcrumb-btn">
               Home
             </button>
             <span className="breadcrumb-sep">&gt;</span>
             <button
               type="button"
-              onClick={onNavigateServices || onNavigateHome}
+              onClick={handleServices}
               className="breadcrumb-btn"
             >
               Services
@@ -149,7 +174,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               <button
                 type="button"
                 className="portal-btn"
-                onClick={() => onNavigateContact(service.title)}
+                onClick={() => handleContact(service.title)}
               >
                 <span className="mr-right">Request Project Scope</span>
                 <span className="arrow">
@@ -300,7 +325,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               <button
                 type="button"
                 className="portal-btn"
-                onClick={() => onNavigateContact(service.title)}
+                onClick={() => handleContact(service.title)}
               >
                 <span className="mr-right">Start a Project Discussion</span>
                 <span className="arrow">
@@ -335,11 +360,11 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               <div
                 key={other.id}
                 className={`other-service-card card-${other.cardTheme} ${other.isFeatured ? 'is-featured' : ''}`}
-                onClick={() => onSelectService(other.slug)}
+                onClick={() => handleSelectService(other.slug)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') onSelectService(other.slug);
+                  if (e.key === 'Enter') handleSelectService(other.slug);
                 }}
               >
                 <div className="other-card-top">

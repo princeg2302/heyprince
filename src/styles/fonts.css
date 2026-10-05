@@ -1,2 +1,2 @@
-@import '/fonts/arboria/arboria.css';
-@import '/fonts/futuru/futuru.css';
+/* Local Web Fonts (Arboria & Futuru) are loaded via <link> tags in app/layout.tsx for reliable browser resolution */
+

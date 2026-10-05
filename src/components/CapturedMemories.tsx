@@ -1,4 +1,6 @@
-import React, { useLayoutEffect, useRef } from 'react';
+'use client';
+
+import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { memoriesList } from '../data/siteContent';
@@ -8,7 +10,7 @@ export const CapturedMemories: React.FC = () => {
   const pinWrapRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
     const section = sectionRef.current;

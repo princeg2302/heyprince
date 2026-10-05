@@ -1,4 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FaXmark,
   FaChevronDown,
@@ -41,6 +44,7 @@ export interface CookieConsentProps {
 }
 
 export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolicy }) => {
+  const router = useRouter();
   const [bannerVisible, setBannerVisible] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [showMoreIntro, setShowMoreIntro] = useState(false);
@@ -265,18 +269,20 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
               {showMoreIntro && (
                 <p className="cookie-modal-intro-expanded">
                   We also use third-party cookies that help us analyze how you use this website, store your preferences, and provide content and advertisements that are relevant to you. These cookies will only be stored in your browser with your prior consent. You can choose to enable or disable some or all of these cookies, but disabling some of them may affect your browsing experience.
-                  {onOpenPrivacyPolicy && (
-                    <button
-                      type="button"
-                      className="cookie-privacy-link-btn"
-                      onClick={() => {
-                        setModalOpen(false);
+                  <button
+                    type="button"
+                    className="cookie-privacy-link-btn"
+                    onClick={() => {
+                      setModalOpen(false);
+                      if (onOpenPrivacyPolicy) {
                         onOpenPrivacyPolicy();
-                      }}
-                    >
-                      Read full Privacy Policy.
-                    </button>
-                  )}
+                      } else {
+                        router.push('/privacy-policy');
+                      }
+                    }}
+                  >
+                    Read full Privacy Policy.
+                  </button>
                 </p>
               )}
 

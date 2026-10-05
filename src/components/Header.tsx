@@ -1,4 +1,7 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { FaLinkedinIn, FaInstagram, FaWhatsapp } from 'react-icons/fa6';
 import heyprinceLogo from '../assets/heyprince-logo.svg';
 import { getSmoothScroll } from '../utils/smoothScroll';
@@ -8,9 +11,15 @@ export interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const logoSrc = typeof heyprinceLogo === 'object' && heyprinceLogo !== null && 'src' in heyprinceLogo
+    ? (heyprinceLogo as { src: string }).src
+    : (typeof heyprinceLogo === 'string' ? heyprinceLogo : '/assets/heyprince-logo.svg');
 
   useEffect(() => {
     const audio = new Audio('/audio/ambient.mp3');
@@ -94,8 +103,32 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     setMenuOpen(false);
     if (onNavigate) {
       onNavigate('home', sectionId);
+      return;
+    }
+
+    if (sectionId === 'home') {
+      if (pathname === '/') {
+        const lenis = getSmoothScroll();
+        if (lenis) lenis.scrollTo(0, { duration: 1.2 });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        router.push('/');
+      }
+      return;
+    }
+
+    if (pathname === '/') {
+      const el = document.getElementById(sectionId);
+      if (el) {
+        const lenis = getSmoothScroll();
+        if (lenis) {
+          lenis.scrollTo(el, { duration: 1.2, offset: -20 });
+        } else {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
     } else {
-      window.location.hash = `#${sectionId}`;
+      router.push(`/#${sectionId}`);
     }
   };
 
@@ -104,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     if (onNavigate) {
       onNavigate('contact');
     } else {
-      window.location.hash = '#/contact';
+      router.push('/contact');
     }
   };
 
@@ -124,7 +157,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               rel="home"
             >
               <img
-                src={heyprinceLogo}
+                src={logoSrc}
                 alt="HeyPrince — Senior Full Stack IT Consultant Logo"
                 className="svg"
                 width="216"
@@ -365,3 +398,4 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 };
 
 export default Header;
+

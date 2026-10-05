@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { articlesList, Article } from '../data/siteContent';
 import {
   FaArrowLeft,
@@ -18,9 +21,9 @@ import {
 
 export interface SingleBlogPageProps {
   slug: string;
-  onNavigateHome: () => void;
-  onNavigateArticles: () => void;
-  onSelectArticle: (slug: string) => void;
+  onNavigateHome?: () => void;
+  onNavigateArticles?: () => void;
+  onSelectArticle?: (slug: string) => void;
   onNavigateContact?: () => void;
 }
 
@@ -31,28 +34,44 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   onSelectArticle,
   onNavigateContact,
 }) => {
+  const router = useRouter();
+
+  const handleHome = () => {
+    if (onNavigateHome) onNavigateHome();
+    else router.push('/');
+  };
+
+  const handleArticles = () => {
+    if (onNavigateArticles) onNavigateArticles();
+    else router.push('/#articles');
+  };
+
+  const handleSelectArticle = (newSlug: string) => {
+    if (onSelectArticle) onSelectArticle(newSlug);
+    else router.push(`/blog/${newSlug}`);
+  };
+
+  const handleContact = () => {
+    if (onNavigateContact) onNavigateContact();
+    else router.push('/contact');
+  };
+
   // Find article matching slug or default to first
   const article: Article =
     articlesList.find((a) => a.slug === slug) || articlesList[0];
 
-  // Persistent dynamic likes with localStorage
+  // Persistent dynamic likes with localStorage (Hydration safe)
   const storageKey = `heyprince_likes_${article.slug}`;
-  const [likes, setLikes] = useState<number>(() => {
+  const [likes, setLikes] = useState<number>(42);
+  const [hasLiked, setHasLiked] = useState<boolean>(false);
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      return saved ? parseInt(saved, 10) : 42;
-    } catch {
-      return 42;
-    }
-  });
-
-  const [hasLiked, setHasLiked] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(`${storageKey}_user`) === 'true';
-    } catch {
-      return false;
-    }
-  });
+      if (saved) setLikes(parseInt(saved, 10));
+      setHasLiked(localStorage.getItem(`${storageKey}_user`) === 'true');
+    } catch {}
+  }, [storageKey]);
 
   const [copied, setCopied] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -60,8 +79,8 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   // Filter dynamic related articles (excluding current article)
   const relatedArticles = articlesList.filter((a) => a.slug !== article.slug).slice(0, 3);
 
-  // CRITICAL: Scroll immediately to top on mount before paint and whenever slug changes
-  useLayoutEffect(() => {
+  // Scroll immediately to top on mount before paint and whenever slug changes
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -151,12 +170,12 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
           href={url}
           className="blog-inline-link"
           onClick={(e) => {
-            if (isContact && onNavigateContact) {
+            if (isContact) {
               e.preventDefault();
-              onNavigateContact();
+              handleContact();
             } else if (matchedArticle) {
               e.preventDefault();
-              onSelectArticle(matchedArticle.slug);
+              handleSelectArticle(matchedArticle.slug);
             }
           }}
         >
@@ -188,7 +207,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
           <button
             type="button"
             className="btn-back-home"
-            onClick={onNavigateArticles}
+            onClick={handleArticles}
             aria-label="Back to Articles"
           >
             <FaArrowLeft />
@@ -200,7 +219,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               href="/"
               onClick={(e) => {
                 e.preventDefault();
-                onNavigateHome();
+                handleHome();
               }}
             >
               Home
@@ -210,7 +229,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               href="/#articles"
               onClick={(e) => {
                 e.preventDefault();
-                onNavigateArticles();
+                handleArticles();
               }}
             >
               Insights
@@ -347,13 +366,11 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                 </p>
               </div>
               <a
-                href="/contact/"
+                href="/contact"
                 className="consult-cta-btn"
                 onClick={(e) => {
-                  if (onNavigateContact) {
-                    e.preventDefault();
-                    onNavigateContact();
-                  }
+                  e.preventDefault();
+                  handleContact();
                 }}
               >
                 <span>Schedule a Consultation</span>
@@ -470,11 +487,11 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               {relatedArticles.map((rel) => (
                 <a
                   key={rel.slug}
-                  href={`/${rel.slug}/`}
+                  href={`/blog/${rel.slug}`}
                   className="related-card"
                   onClick={(e) => {
                     e.preventDefault();
-                    onSelectArticle(rel.slug);
+                    handleSelectArticle(rel.slug);
                   }}
                 >
                   <div className="related-img-wrap">

@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FaArrowLeft,
   FaEnvelope,
@@ -18,7 +21,7 @@ import {
 } from 'react-icons/fa6';
 
 export interface ContactPageProps {
-  onNavigateHome: () => void;
+  onNavigateHome?: () => void;
 }
 
 const SERVICE_OPTIONS = [
@@ -55,6 +58,13 @@ const FAQS = [
 ];
 
 export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
+  const router = useRouter();
+
+  const handleHome = () => {
+    if (onNavigateHome) onNavigateHome();
+    else router.push('/');
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -71,7 +81,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // CRITICAL: Ensure instant scroll to top on mount before paint
-  useLayoutEffect(() => {
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -153,7 +163,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
           <button
             type="button"
             className="btn-back-home"
-            onClick={onNavigateHome}
+            onClick={handleHome}
             aria-label="Back to Portfolio"
           >
             <FaArrowLeft />
@@ -165,7 +175,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
               href="/"
               onClick={(e) => {
                 e.preventDefault();
-                onNavigateHome();
+                handleHome();
               }}
             >
               Home

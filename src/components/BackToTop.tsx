@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { FaArrowUp } from 'react-icons/fa6';
 import { getSmoothScroll } from '../utils/smoothScroll';

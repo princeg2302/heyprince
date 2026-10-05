@@ -6,11 +6,33 @@
   RewriteCond %{HTTPS} off
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+  # Legacy & Alias Route Redirects
+  RewriteRule ^privacy/?$ /privacy-policy/ [R=301,L]
+  RewriteRule ^service/(.*)$ /services/$1/ [R=301,L]
+  RewriteRule ^services/?$ /services/ai-automation/ [R=302,L]
+  RewriteRule ^blog/?$ /blog/freelancing-tips-it-professionals-2026/ [R=302,L]
+  RewriteRule ^freelancing-tips-it-professionals-2026/?$ /blog/freelancing-tips-it-professionals-2026/ [R=301,L]
+  RewriteRule ^choose-it-services-provider/?$ /blog/choose-it-services-provider/ [R=301,L]
+  RewriteRule ^professional-website-2026/?$ /blog/professional-website-2026/ [R=301,L]
+  RewriteRule ^web-development-trends-2026/?$ /blog/web-development-trends-2026/ [R=301,L]
+  RewriteRule ^ai-automation/?$ /services/ai-automation/ [R=301,L]
+  RewriteRule ^cms-development/?$ /services/cms-development/ [R=301,L]
+  RewriteRule ^react-development/?$ /services/react-development/ [R=301,L]
+  RewriteRule ^php-development/?$ /services/php-development/ [R=301,L]
+  RewriteRule ^python-engineering/?$ /services/python-engineering/ [R=301,L]
+  RewriteRule ^seo-services/?$ /services/seo-services/ [R=301,L]
+  RewriteRule ^ui-ux-design/?$ /services/ui-ux-design/ [R=301,L]
+
   # Serve existing physical files directly
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
-  # SPA Fallback for all routes to index.html
+  # Serve directory index if exists
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_FILENAME}/index.html -f
+  RewriteRule ^ - [L]
+
+  # SPA Fallback for all other routes to index.html
   RewriteRule ^.*$ index.html [L]
 </IfModule>
 
@@ -40,3 +62,4 @@
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json image/svg+xml
 </IfModule>
+

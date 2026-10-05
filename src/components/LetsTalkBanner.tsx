@@ -1,10 +1,23 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 export interface LetsTalkBannerProps {
   onNavigateContact?: () => void;
 }
 
 export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContact }) => {
+  const router = useRouter();
+
+  const handleContactClick = () => {
+    if (onNavigateContact) {
+      onNavigateContact();
+    } else {
+      router.push('/contact');
+    }
+  };
+
   return (
     <section className="lets-talk">
       <div className="container">
@@ -26,10 +39,8 @@ export const LetsTalkBanner: React.FC<LetsTalkBannerProps> = ({ onNavigateContac
             className="portal-btn mx-auto"
             href="/contact"
             onClick={(e) => {
-              if (onNavigateContact) {
-                e.preventDefault();
-                onNavigateContact();
-              }
+              e.preventDefault();
+              handleContactClick();
             }}
           >
             <span className="mr-right">Let’s Talk About It</span>

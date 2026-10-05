@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useRef, useState, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { timelineMilestones } from '../data/siteContent';

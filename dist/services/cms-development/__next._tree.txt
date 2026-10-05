@@ -1,0 +1,7 @@
+:HL["/_next/static/chunks/1z_mbvpkjhpd5.css","style"]
+:HL["/_next/static/chunks/0gry_boq--yt4.css","style"]
+:HL["/_next/static/chunks/215-esi8v0uhr.css","style"]
+:HL["https://fonts.googleapis.com/css2?family=Anton&display=swap","style"]
+:HL["/fonts/arboria/arboria.css","style"]
+:HL["/fonts/futuru/futuru.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"services","param":null,"prefetchHints":4192,"slots":{"children":{"name":"slug","param":{"type":"d","key":"cms-development","siblings":[]},"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"ivsFkSXACuo2OYI2QFAiL"}

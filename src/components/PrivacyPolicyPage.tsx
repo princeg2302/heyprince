@@ -1,4 +1,7 @@
-import React, { useLayoutEffect, useRef, useEffect } from 'react';
+'use client';
+
+import React, { useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FaArrowLeft,
   FaShieldHalved,
@@ -11,7 +14,7 @@ import {
 } from 'react-icons/fa6';
 
 export interface PrivacyPolicyPageProps {
-  onNavigateHome: () => void;
+  onNavigateHome?: () => void;
   onNavigateContact?: () => void;
 }
 
@@ -19,10 +22,22 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
   onNavigateHome,
   onNavigateContact,
 }) => {
+  const router = useRouter();
+
+  const handleHome = () => {
+    if (onNavigateHome) onNavigateHome();
+    else router.push('/');
+  };
+
+  const handleContact = () => {
+    if (onNavigateContact) onNavigateContact();
+    else router.push('/contact');
+  };
+
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Scroll to top instantly on mount
-  useLayoutEffect(() => {
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -75,7 +90,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
           <nav className="blog-breadcrumb" aria-label="Breadcrumb">
             <button
               type="button"
-              onClick={onNavigateHome}
+              onClick={handleHome}
               className="breadcrumb-btn"
             >
               Home
@@ -263,10 +278,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
                   <button
                     type="button"
                     className="btn-privacy-contact"
-                    onClick={() => {
-                      if (onNavigateContact) onNavigateContact();
-                      else onNavigateHome();
-                    }}
+                    onClick={handleContact}
                   >
                     <span>Contact Form</span>
                     <FaArrowRight size={14} />

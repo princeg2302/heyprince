@@ -1,4 +1,7 @@
+'use client';
+
 import React, { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { articlesList } from '../data/siteContent';
@@ -8,6 +11,7 @@ export interface ArticlesSectionProps {
 }
 
 export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticle }) => {
+  const router = useRouter();
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -40,6 +44,14 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
     };
   }, []);
 
+  const handleArticleClick = (slug: string) => {
+    if (onSelectArticle) {
+      onSelectArticle(slug);
+    } else {
+      router.push(`/blog/${slug}`);
+    }
+  };
+
   return (
     <section className="section-articles" id="articles" ref={sectionRef}>
       <div className="container">
@@ -60,12 +72,10 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           </p>
           <a
             className="portal-btn mx-auto"
-            href="/freelancing-tips-it-professionals-2026/"
+            href="/blog/freelancing-tips-it-professionals-2026"
             onClick={(e) => {
-              if (onSelectArticle) {
-                e.preventDefault();
-                onSelectArticle('freelancing-tips-it-professionals-2026');
-              }
+              e.preventDefault();
+              handleArticleClick('freelancing-tips-it-professionals-2026');
             }}
           >
             <span className="mr-right">Stories Worth Scrolling</span>
@@ -88,12 +98,10 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
               <div className="card article-card">
                 <a
                   className="article-link"
-                  href={`/${article.slug}/`}
+                  href={`/blog/${article.slug}`}
                   onClick={(e) => {
-                    if (onSelectArticle) {
-                      e.preventDefault();
-                      onSelectArticle(article.slug);
-                    }
+                    e.preventDefault();
+                    handleArticleClick(article.slug);
                   }}
                 >
                   <img

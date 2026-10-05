@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaBolt } from 'react-icons/fa6';
 import { servicesList } from '../data/servicesData';
 
@@ -12,6 +15,24 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigateService,
   onNavigatePrivacy,
 }) => {
+  const router = useRouter();
+
+  const handleServiceClick = (slug: string) => {
+    if (onNavigateService) {
+      onNavigateService(slug);
+    } else {
+      router.push(`/services/${slug}`);
+    }
+  };
+
+  const handlePrivacyClick = () => {
+    if (onNavigatePrivacy) {
+      onNavigatePrivacy();
+    } else {
+      router.push('/privacy-policy');
+    }
+  };
+
   return (
     <footer id="footer" className="footer-main">
       <div className="footer-content">
@@ -58,13 +79,13 @@ export const Footer: React.FC<FooterProps> = ({
                       key={service.id}
                       className={`footer-card ${themeClass}`}
                       id={cardId}
-                      onClick={() => onNavigateService?.(service.slug)}
+                      onClick={() => handleServiceClick(service.slug)}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          onNavigateService?.(service.slug);
+                          handleServiceClick(service.slug);
                         }
                       }}
                       title={`Explore ${service.title} Details`}
@@ -85,7 +106,7 @@ export const Footer: React.FC<FooterProps> = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onNavigateService?.(service.slug);
+                          handleServiceClick(service.slug);
                         }}
                       >
                         Explore Service
@@ -159,10 +180,8 @@ export const Footer: React.FC<FooterProps> = ({
                     href="/privacy-policy"
                     className="foot-legal-link"
                     onClick={(e) => {
-                      if (onNavigatePrivacy) {
-                        e.preventDefault();
-                        onNavigatePrivacy();
-                      }
+                      e.preventDefault();
+                      handlePrivacyClick();
                     }}
                   >
                     Privacy Policy
@@ -190,3 +209,4 @@ export const Footer: React.FC<FooterProps> = ({
 };
 
 export default Footer;
+

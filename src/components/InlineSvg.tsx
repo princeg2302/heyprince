@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState, useRef } from 'react';
 
 export interface InlineSvgProps extends React.HTMLAttributes<HTMLSpanElement> {
