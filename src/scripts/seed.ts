@@ -30,7 +30,7 @@ export async function runSeed() {
   }
 
   // 2. Seed Categories
-  const categoryMap = new Map<string, string | number>();
+  const categoryMap = new Map<string, number>();
   const categoriesToSeed = [
     { title: 'Artificial Intelligence & Automation', slug: 'ai-automation' },
     { title: 'Content Management Systems', slug: 'cms-development' },
@@ -54,7 +54,7 @@ export async function runSeed() {
     });
 
     if (existing.totalDocs > 0) {
-      categoryMap.set(cat.title, existing.docs[0].id);
+      categoryMap.set(cat.title, Number(existing.docs[0].id));
     } else {
       const created = await payload.create({
         collection: 'categories',
@@ -64,7 +64,7 @@ export async function runSeed() {
           description: `Services and insights related to ${cat.title}.`,
         },
       });
-      categoryMap.set(cat.title, created.id);
+      categoryMap.set(cat.title, Number(created.id));
     }
   }
   console.log(`✅ [Seed] Categories synchronized (${categoriesToSeed.length} total).`);
@@ -89,7 +89,7 @@ export async function runSeed() {
           slug: s.slug,
           shortTitle: s.shortTitle,
           tagline: s.tagline,
-          category: matchedCategoryId ? matchedCategoryId : undefined,
+          category: matchedCategoryId !== undefined ? matchedCategoryId : null,
           categoryName: s.category,
           cardTheme: s.cardTheme,
           isFeatured: s.isFeatured || false,
@@ -138,7 +138,7 @@ export async function runSeed() {
           excerpt: a.description,
           readMins: a.readMins,
           coverImage: a.image,
-          category: matchedCategoryId ? matchedCategoryId : undefined,
+          category: matchedCategoryId !== undefined ? matchedCategoryId : null,
           categoryName: a.category,
           author: {
             name: a.author.name,

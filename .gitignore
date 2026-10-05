@@ -13,6 +13,7 @@ out/
 # dist
 dist-ssr
 dist/dev/
+*.tsbuildinfo
 *.local
 .env
 .env*.local
