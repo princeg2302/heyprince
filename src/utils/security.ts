@@ -9,8 +9,17 @@
  * 5. Disables image dragging and protects UI selection while keeping form inputs functional
  */
 
+// TOGGLE: Set to true when temporary debugging/console access is needed.
+// Change back to false to re-enable full security protections.
+export const TEMPORARILY_ENABLE_CONSOLE = true;
+
 export function initSecurityShield(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+  if (TEMPORARILY_ENABLE_CONSOLE) {
+    console.info('[SecurityShield] Console & DevTools protections temporarily bypassed for debugging.');
+    return;
+  }
 
   // 1. Disable Right-Click Context Menu globally
   const blockContextMenu = (e: MouseEvent) => {
