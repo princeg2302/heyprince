@@ -257,7 +257,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             it@heyprince.in
                           </a>
                           <a href="tel:+919120900010" className="header-contact-link phone-link">
-                            +91 9120900010
+                            <span className="phone-prefix">+</span>91 9120900010
                           </a>
                           <div className="header-social-links">
                             <a

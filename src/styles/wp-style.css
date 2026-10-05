@@ -1321,7 +1321,7 @@ ul#menu-main {
 }
 
 #menu-main a.nav-link:hover {
-  color: var(--color-primary, #d40027);
+  color: #d40027 !important;
   transform: translateX(12px);
 }
 
@@ -1362,8 +1362,21 @@ ul#menu-main {
 
 .header-get-in-touch > a:hover,
 .header-get-in-touch a.header-contact-link:hover {
-  color: var(--color-primary, #d40027);
+  color: #d40027 !important;
   transform: translateX(6px);
+}
+
+.header-contact-link.phone-link .phone-prefix {
+  display: inline-block;
+  color: #d40027;
+  font-weight: 900;
+  margin-right: 4px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s ease;
+}
+
+.header-contact-link.phone-link:hover .phone-prefix {
+  transform: scale(1.22);
+  color: #d40027 !important;
 }
 
 /* Social links in navigation matching footer design with high-contrast circular badges */
@@ -1401,7 +1414,7 @@ ul#menu-main {
 
 .header-social-links a.social-link-icon:hover,
 .header-social-links a:hover {
-  background: var(--color-primary, #d40027);
+  background: #d40027 !important;
   transform: translateY(-3px) scale(1.12);
   box-shadow: 0 6px 18px rgba(212, 0, 39, 0.35);
 }
