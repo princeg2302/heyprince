@@ -195,13 +195,11 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
                 <div className="cookie-cta-row">
                   <button
                     type="button"
-                    className="portal-btn"
+                    className="btn-privacy-cookie"
                     onClick={openCookieModal}
                   >
-                    <span className="mr-right">Manage Cookie Preferences</span>
-                    <span className="arrow">
-                      <FaCookieBite size={18} color="#000" />
-                    </span>
+                    <FaCookieBite size={16} />
+                    <span>Manage Cookie Preferences</span>
                   </button>
                   <span className="cookie-cta-note">
                     You can adjust or withdraw consent at any time.
@@ -261,31 +259,26 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
                 <h4>Prince — HeyPrince IT Consulting</h4>
                 <p>Email: <a href="mailto:it@heyprince.in" className="privacy-link">it@heyprince.in</a></p>
                 <p>Website: <a href="https://heyprince.in" className="privacy-link">heyprince.in</a></p>
-                <div className="d-flex flex-wrap gap-3 mt-3">
+                <div className="privacy-contact-actions">
                   <button
                     type="button"
-                    className="portal-btn"
+                    className="btn-privacy-contact"
                     onClick={() => {
                       if (onNavigateContact) onNavigateContact();
                       else onNavigateHome();
                     }}
                   >
-                    <span className="mr-right">Contact Form</span>
-                    <span className="arrow">
-                      <FaArrowRight size={16} color="#000" />
-                    </span>
+                    <span>Contact Form</span>
+                    <FaArrowRight size={14} />
                   </button>
                   <a
-                    href="https://wa.me/919120900010"
+                    href="https://wa.me/918708892040"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="portal-btn"
-                    style={{ background: '#25d366', borderColor: '#25d366' }}
+                    className="btn-privacy-whatsapp"
                   >
-                    <span className="mr-right">WhatsApp</span>
-                    <span className="arrow">
-                      <FaWhatsapp size={16} color="#000" />
-                    </span>
+                    <FaWhatsapp size={17} />
+                    <span>WhatsApp</span>
                   </a>
                 </div>
               </div>
@@ -298,3 +291,4 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
 };
 
 export default PrivacyPolicyPage;
+

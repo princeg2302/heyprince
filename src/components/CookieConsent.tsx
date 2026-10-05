@@ -380,3 +380,4 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
 };
 
 export default CookieConsent;
+

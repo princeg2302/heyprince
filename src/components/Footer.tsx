@@ -110,7 +110,7 @@ export const Footer: React.FC<FooterProps> = ({
               </div>
             </div>
 
-            <div className="col-md-2 footer-col-social">
+            <div className="col-lg-3 col-md-4 footer-col-social">
               <div className="social-links">
                 <a
                   href="https://www.linkedin.com/in/mr-goyal/"
@@ -131,7 +131,7 @@ export const Footer: React.FC<FooterProps> = ({
                   <FaInstagram size={24} color="#fff" />
                 </a>
                 <a
-                  href="https://wa.me/"
+                  href="https://wa.me/918708892040"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="WhatsApp"
