@@ -80,7 +80,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           </p>
           <Link
             className="portal-btn mx-auto"
-            href="/blog/freelancing-tips-it-professionals-2026/"
+            href="/insights/freelancing-tips-it-professionals-2026/"
             onClick={(e) => handleArticleClick('freelancing-tips-it-professionals-2026', e)}
           >
             <span className="mr-right">Stories Worth Scrolling</span>
@@ -103,7 +103,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
               <div className="card article-card">
                 <Link
                   className="article-link"
-                  href={`/blog/${article.slug}/`}
+                  href={`/insights/${article.slug}/`}
                   onClick={(e) => handleArticleClick(article.slug, e)}
                 >
                   <img

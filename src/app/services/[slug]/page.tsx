@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { servicesList } from '../../../data/servicesData';
+import { getServices, getServiceBySlug } from '@/lib/cms';
 import { SingleServicePage } from '../../../components';
 
 interface ServicePageProps {
@@ -9,14 +9,15 @@ interface ServicePageProps {
 }
 
 export async function generateStaticParams() {
-  return servicesList.map((service) => ({
+  const services = await getServices();
+  return services.map((service) => ({
     slug: service.slug,
   }));
 }
 
 export async function generateMetadata({ params }: ServicePageProps): Promise<Metadata> {
   const { slug } = await params;
-  const service = servicesList.find((s) => s.slug.toLowerCase() === slug.toLowerCase());
+  const service = await getServiceBySlug(slug);
 
   if (!service) {
     return {
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
 
 export default async function ServiceRoute({ params }: ServicePageProps) {
   const { slug } = await params;
-  const service = servicesList.find((s) => s.slug.toLowerCase() === slug.toLowerCase());
+  const service = await getServiceBySlug(slug);
 
   if (!service) {
     notFound();

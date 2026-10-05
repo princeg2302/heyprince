@@ -64,3 +64,4 @@ export function useWordAnimation(dependency?: any) {
 }
 
 export default useWordAnimation;
+

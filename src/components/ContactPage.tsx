@@ -79,6 +79,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [honeypot, setHoneypot] = useState('');
+  const [formLoadedAt] = useState(() => Date.now());
 
   // CRITICAL: Ensure instant scroll to top on mount before paint
   useEffect(() => {
@@ -100,26 +102,28 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('https://formsubmit.co/ajax/it@heyprince.in', {
+      const response = await fetch('/api/leads/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify({
-          _subject: `New Project Inquiry: ${formData.service} from ${formData.name}`,
-          _template: 'table',
-          Name: formData.name,
-          Email: formData.email,
-          Phone: formData.phone || 'Not provided',
-          'Service Needed': formData.service,
-          'Estimated Budget': formData.budget,
-          'Launch Timeline': formData.timeline,
-          'Project Details': formData.message,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || '',
+          service: formData.service,
+          budget: formData.budget,
+          timeline: formData.timeline,
+          message: formData.message,
+          honeypot: honeypot,
+          formLoadedAt: formLoadedAt,
         }),
       });
 
-      if (response.ok) {
+      const result = await response.json().catch(() => ({}));
+
+      if (response.ok && result.success) {
         setIsSubmitted(true);
       } else {
         // Fallback: trigger mailto directly so the inquiry is never missed
@@ -293,6 +297,31 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="contact-actual-form">
+                  {/* Invisible Honeypot anti-spam field */}
+                  <div
+                    style={{
+                      display: 'none',
+                      opacity: 0,
+                      position: 'absolute',
+                      left: '-9999px',
+                      height: 0,
+                      width: 0,
+                      overflow: 'hidden',
+                    }}
+                    aria-hidden="true"
+                  >
+                    <label htmlFor="hp_lead_guard">Leave this field blank</label>
+                    <input
+                      id="hp_lead_guard"
+                      type="text"
+                      name="honeypot"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
+
                   <div className="form-card-title-wrap">
                     <h3>Project Inquiry</h3>
                     <p>Share your vision, current challenges, and project requirements.</p>

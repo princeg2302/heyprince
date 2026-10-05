@@ -48,7 +48,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
   const handleSelectArticle = (newSlug: string) => {
     if (onSelectArticle) onSelectArticle(newSlug);
-    else router.push(`/blog/${newSlug}/`);
+    else router.push(`/insights/${newSlug}/`);
   };
 
   const handleContact = () => {
@@ -487,7 +487,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               {relatedArticles.map((rel) => (
                 <a
                   key={rel.slug}
-                  href={`/blog/${rel.slug}`}
+                  href={`/insights/${rel.slug}/`}
                   className="related-card"
                   onClick={(e) => {
                     e.preventDefault();

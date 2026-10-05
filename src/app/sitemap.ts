@@ -1,12 +1,11 @@
 import { MetadataRoute } from 'next';
-import { servicesList } from '../data/servicesData';
-import { articlesList } from '../data/siteContent';
+import { getServices, getPosts } from '@/lib/cms';
 
-export const dynamic = 'force-static';
+export const revalidate = 3600; // Revalidate every hour
 
 const BASE_URL = 'https://heyprince.in';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const currentDate = new Date();
 
   // Static core routes
@@ -31,22 +30,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Dynamic service routes
-  const serviceRoutes: MetadataRoute.Sitemap = servicesList.map((service) => ({
+  // Dynamic services routes from CMS
+  const services = await getServices();
+  const serviceRoutes: MetadataRoute.Sitemap = services.map((service) => ({
     url: `${BASE_URL}/services/${service.slug}/`,
     lastModified: currentDate,
     changeFrequency: 'weekly',
     priority: 0.85,
   }));
 
-  // Dynamic blog routes
-  const blogRoutes: MetadataRoute.Sitemap = articlesList.map((article) => ({
-    url: `${BASE_URL}/blog/${article.slug}/`,
-    lastModified: new Date(article.date || '2026-02-15'),
+  // Dynamic insights routes from CMS
+  const posts = await getPosts();
+  const insightRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
+    url: `${BASE_URL}/insights/${post.slug}/`,
+    lastModified: new Date(post.date || '2026-02-15'),
     changeFrequency: 'monthly',
     priority: 0.8,
   }));
 
-  return [...staticRoutes, ...serviceRoutes, ...blogRoutes];
+  return [...staticRoutes, ...serviceRoutes, ...insightRoutes];
 }
-
