@@ -130,21 +130,49 @@ export const Footer: React.FC = () => {
               </div>
             </div>
 
-            <div className="col-md-2">
+            <div className="col-md-2 footer-col-social">
               <div className="social-links">
-                <a href="https://www.linkedin.com/in/mr-goyal/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <a
+                  href="https://www.linkedin.com/in/mr-goyal/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  className="social-link-icon"
+                >
                   <FaLinkedinIn size={24} color="#fff" />
                 </a>
-                <a href="https://www.instagram.com/heyprince.in/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <a
+                  href="https://www.instagram.com/heyprince.in/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="social-link-icon"
+                >
                   <FaInstagram size={24} color="#fff" />
                 </a>
-                <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                <a
+                  href="https://wa.me/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="WhatsApp"
+                  className="social-link-icon"
+                >
                   <FaWhatsapp size={24} color="#fff" />
                 </a>
-                <p className="foot-copyright">
-                  © 2026 <a href="https://www.heyprince.in">heyprince.in</a> — All Rights Reserved
-                </p>
               </div>
+              <p className="foot-copyright">
+                &copy; 2026{' '}
+                <a
+                  href="https://www.heyprince.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="foot-brand-link"
+                >
+                  heyprince.in
+                </a>
+                <span className="foot-sep">&nbsp;&bull;&nbsp;</span>
+                <span>All Rights Reserved</span>
+              </p>
             </div>
           </div>
         </div>

@@ -1150,7 +1150,8 @@ ul.footer-menu a:hover {
   z-index: 10;
 }
 
-.social-links a {
+.social-links a.social-link-icon,
+.social-links a:not(.foot-brand-link) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1160,7 +1161,8 @@ ul.footer-menu a:hover {
   height: 32px;
 }
 
-.social-links a:hover {
+.social-links a.social-link-icon:hover,
+.social-links a:not(.foot-brand-link):hover {
   transform: translateY(-2px) scale(1.15);
   opacity: 0.85;
 }
@@ -1177,15 +1179,48 @@ ul.footer-menu a:hover {
   fill: #fff;
 }
 
+.footer-col-social {
+  position: relative;
+}
+
 p.foot-copyright {
-  color: var(--color-white);
-  font-size: 16px;
-  text-wrap: nowrap;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  white-space: nowrap;
   margin: 0;
   position: absolute;
   bottom: 50px;
   right: 0;
-  opacity: 0.5;
+  opacity: 1;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  z-index: 10;
+}
+
+p.foot-copyright a,
+a.foot-brand-link {
+  display: inline !important;
+  width: auto !important;
+  height: auto !important;
+  color: #ffffff !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px;
+  font-weight: 600 !important;
+  margin: 0 3px !important;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+p.foot-copyright a:hover,
+a.foot-brand-link:hover {
+  color: var(--color-primary, #d40027) !important;
+  transform: none !important;
+  opacity: 0.9 !important;
+}
+
+.foot-sep {
+  opacity: 0.6;
+  margin: 0 3px;
 }
 
 /********Menu Modal*********/
@@ -2281,7 +2316,9 @@ ul#menu-main {
 
 
 p.foot-copyright a {
-  display: inline-block;
+  display: inline !important;
+  width: auto !important;
+  height: auto !important;
   color: #fff;
 }
 
@@ -2535,9 +2572,12 @@ body {
   }
 
   .footer-cards-container {
-    min-height: 380px;
+    min-height: 420px;
     padding-top: 240px;
+    margin-bottom: 230px;
     max-width: 100%;
+    position: relative;
+    z-index: 5;
   }
 
   .footer-card {
@@ -2562,6 +2602,48 @@ body {
     width: 120px;
     bottom: 160px;
     right: 10px;
+  }
+
+  .footer-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .footer-col-social {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .social-links {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-top: 36px;
+    width: 100%;
+    gap: 20px;
+    padding-bottom: 0;
+  }
+
+  .social-links a.social-link-icon,
+  .social-links a {
+    margin: 0;
+  }
+
+  p.foot-copyright {
+    position: static !important;
+    margin-top: 20px;
+    text-align: center;
+    font-size: 13px;
+    white-space: normal !important;
+    width: 100%;
+    opacity: 0.8;
+    line-height: 1.6;
   }
 }
 
@@ -2639,8 +2721,11 @@ body {
 
   /* Footer Cards Fan on Mobile */
   .footer-cards-container {
-    min-height: 360px;
+    min-height: 380px;
     padding-top: 220px;
+    margin-bottom: 220px;
+    position: relative;
+    z-index: 5;
   }
 
   .footer-card {
@@ -2690,23 +2775,40 @@ body {
     align-items: center;
   }
 
-  .social-links {
+  .footer-col-social {
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    margin-top: 40px;
-    width: 100%;
   }
 
+  .social-links {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-top: 36px;
+    width: 100%;
+    gap: 20px;
+    padding-bottom: 0;
+  }
+
+  .social-links a.social-link-icon,
   .social-links a {
-    margin: 0 8px;
+    margin: 0;
   }
 
   p.foot-copyright {
-    margin-top: 16px;
+    position: static !important;
+    margin-top: 18px;
     text-align: center;
     font-size: 13px;
+    white-space: normal !important;
+    width: 100%;
+    opacity: 0.8;
+    line-height: 1.6;
   }
 }
 
@@ -2733,6 +2835,12 @@ body {
   .banner-title span:nth-child(3) {
     letter-spacing: 1.5px;
     font-size: 0.18em;
+  }
+
+  .footer-cards-container {
+    min-height: 360px;
+    padding-top: 210px;
+    margin-bottom: 200px;
   }
 
   .footer-card {
