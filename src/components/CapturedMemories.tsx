@@ -17,10 +17,10 @@ export const CapturedMemories: React.FC = () => {
     if (!section || !pinWrap || !track) return;
 
     const ctx = gsap.context(() => {
-      // Calculate total horizontal travel needed so the last item is fully revealed
+      // Calculate total horizontal travel needed so the last item is neatly revealed without void
       const getScrollAmount = () => {
         if (!track) return 0;
-        return -(track.scrollWidth - window.innerWidth + 120);
+        return -(track.scrollWidth - window.innerWidth);
       };
 
       const getScrollDistance = () => {

@@ -11,17 +11,20 @@ import {
   LetsTalkBanner,
   CapturedMemories,
   SingleBlogPage,
+  SingleServicePage,
   ContactPage,
+  BackToTop,
   Footer,
 } from './components';
 import { useWordAnimation } from './hooks/useWordAnimation';
 import { articlesList } from './data/siteContent';
+import { servicesList } from './data/servicesData';
 import { updatePageSeo } from './utils/seo';
 import 'lenis/dist/lenis.css';
 import { initSmoothScroll, getSmoothScroll, destroySmoothScroll } from './utils/smoothScroll';
 
 export interface RouteState {
-  page: 'home' | 'contact' | 'blog';
+  page: 'home' | 'contact' | 'blog' | 'service';
   slug: string;
 }
 
@@ -30,7 +33,7 @@ export const resolveRoute = (): RouteState => {
     return { page: 'home', slug: '' };
   }
 
-  // 1. Clean pathname (e.g. "/choose-it-services-provider/" -> "choose-it-services-provider")
+  // 1. Clean pathname (e.g. "/services/ai-automation/" -> "services/ai-automation")
   const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
 
   // 2. Clean hash (e.g. "#/contact" or "#contact" -> "contact")
@@ -39,6 +42,30 @@ export const resolveRoute = (): RouteState => {
   // Contact checks
   if (path === 'contact' || hash === 'contact') {
     return { page: 'contact', slug: '' };
+  }
+
+  // Services prefixed paths (e.g. /services/ai-automation/ or /service/react-development/)
+  if (path.startsWith('services/') || path.startsWith('service/') || path === 'services' || path === 'service') {
+    const slug = path.replace(/^(services|service)\/?/, '').trim();
+    return { page: 'service', slug: slug || 'ai-automation' };
+  }
+  if (hash.startsWith('services/') || hash.startsWith('service/') || hash === 'services' || hash === 'service') {
+    const slug = hash.replace(/^(services|service)\/?/, '').trim();
+    return { page: 'service', slug: slug || 'ai-automation' };
+  }
+
+  // Direct service slug in pathname or hash
+  if (path) {
+    const matchedService = servicesList.find((s) => s.slug.toLowerCase() === path);
+    if (matchedService) {
+      return { page: 'service', slug: matchedService.slug };
+    }
+  }
+  if (hash) {
+    const matchedService = servicesList.find((s) => s.slug.toLowerCase() === hash);
+    if (matchedService) {
+      return { page: 'service', slug: matchedService.slug };
+    }
   }
 
   // Blog prefixed paths (e.g. /blog/choose-it-services-provider/)
@@ -78,7 +105,7 @@ export const App: React.FC = () => {
 
   // Initialize Lenis smooth momentum scrolling with GSAP ticker sync
   useEffect(() => {
-    const lenis = initSmoothScroll();
+    initSmoothScroll();
     return () => {
       destroySmoothScroll();
     };
@@ -86,7 +113,7 @@ export const App: React.FC = () => {
 
   // Pre-paint instant scroll reset on route changes so no previous scroll position flickers
   useLayoutEffect(() => {
-    if (route.page === 'contact' || route.page === 'blog') {
+    if (route.page === 'contact' || route.page === 'blog' || route.page === 'service') {
       const lenis = getSmoothScroll();
       if (lenis) {
         lenis.scrollTo(0, { immediate: true });
@@ -107,6 +134,15 @@ export const App: React.FC = () => {
         canonicalPath: '/contact/',
         keywords:
           'Contact Prince, Hire IT Consultant, Full Stack React Developer, Web Engineer India, Remote Tech Partner, Senior Software Architect, HeyPrince Contact, Custom Web Solutions',
+        ogType: 'website',
+      });
+    } else if (route.page === 'service') {
+      const service = servicesList.find((s) => s.slug === route.slug) || servicesList[0];
+      updatePageSeo({
+        title: `${service.metaTitle} | HeyPrince`,
+        description: service.metaDescription,
+        canonicalPath: `/services/${service.slug}/`,
+        keywords: `${service.techStack.join(', ')}, ${service.category}, Prince IT Consultant, HeyPrince Services`,
         ogType: 'website',
       });
     } else if (route.page === 'blog') {
@@ -143,7 +179,7 @@ export const App: React.FC = () => {
       setRoute(parsed);
 
       const lenis = getSmoothScroll();
-      if (parsed.page === 'contact' || parsed.page === 'blog') {
+      if (parsed.page === 'contact' || parsed.page === 'blog' || parsed.page === 'service') {
         if (lenis) {
           lenis.scrollTo(0, { immediate: true });
         }
@@ -181,11 +217,19 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  const handleNavigate = (page: 'home' | 'contact' | 'blog', slugOrSection?: string) => {
+  const handleNavigate = (page: 'home' | 'contact' | 'blog' | 'service', slugOrSection?: string) => {
     const lenis = getSmoothScroll();
     if (page === 'contact') {
       window.history.pushState(null, '', '/contact');
       setRoute({ page: 'contact', slug: '' });
+      if (lenis) lenis.scrollTo(0, { immediate: true });
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    } else if (page === 'service') {
+      const slug = slugOrSection || 'ai-automation';
+      window.history.pushState(null, '', `/services/${slug}/`);
+      setRoute({ page: 'service', slug });
       if (lenis) lenis.scrollTo(0, { immediate: true });
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
       document.documentElement.scrollTop = 0;
@@ -296,7 +340,13 @@ export const App: React.FC = () => {
       <Header onNavigate={handleNavigate} />
       <main id="main" className="main-content">
         <div
-          key={route.page === 'blog' ? `view-blog-${route.slug}` : `view-${route.page}`}
+          key={
+            route.page === 'blog'
+              ? `view-blog-${route.slug}`
+              : route.page === 'service'
+              ? `view-service-${route.slug}`
+              : `view-${route.page}`
+          }
           className={route.page === 'home' ? 'home-view-container' : 'page-view-wrapper'}
         >
           {route.page === 'home' && (
@@ -311,6 +361,17 @@ export const App: React.FC = () => {
               <LetsTalkBanner onNavigateContact={() => handleNavigate('contact')} />
               <CapturedMemories />
             </>
+          )}
+
+          {route.page === 'service' && (
+            <SingleServicePage
+              key={route.slug}
+              slug={route.slug}
+              onNavigateHome={() => handleNavigate('home')}
+              onNavigateServices={() => handleNavigate('home', 'footer')}
+              onSelectService={(newSlug) => handleNavigate('service', newSlug)}
+              onNavigateContact={(serviceTitle) => handleNavigate('contact', serviceTitle)}
+            />
           )}
 
           {route.page === 'blog' && (
@@ -334,7 +395,9 @@ export const App: React.FC = () => {
           )}
         </div>
       </main>
-      <Footer />
+      <Footer onNavigateService={(slug) => handleNavigate('service', slug)} />
+      {/* Floating Back to Top Button */}
+      <BackToTop />
     </div>
   );
 };

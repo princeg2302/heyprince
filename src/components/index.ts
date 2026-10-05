@@ -11,5 +11,7 @@ export { CapturedMemories } from './CapturedMemories';
 export { Footer } from './Footer';
 export { CyberArcade } from './CyberArcade';
 export { SingleBlogPage } from './SingleBlogPage';
+export { SingleServicePage } from './SingleServicePage';
 export { ContactPage } from './ContactPage';
+export { BackToTop } from './BackToTop';
 export { InlineSvg } from './InlineSvg';

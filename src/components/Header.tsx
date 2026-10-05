@@ -4,7 +4,7 @@ import heyprinceLogo from '../assets/heyprince-logo.svg';
 import { getSmoothScroll } from '../utils/smoothScroll';
 
 export interface HeaderProps {
-  onNavigate?: (page: 'home' | 'contact' | 'blog', sectionId?: string) => void;
+  onNavigate?: (page: 'home' | 'contact' | 'blog' | 'service', sectionIdOrSlug?: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {

@@ -1,12 +1,20 @@
 import React from 'react';
-import { FaLinkedinIn, FaInstagram, FaWhatsapp } from 'react-icons/fa6';
+import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaBolt } from 'react-icons/fa6';
+import { servicesList } from '../data/servicesData';
 
-export const Footer: React.FC = () => {
+export interface FooterProps {
+  onNavigateService?: (slug: string) => void;
+  onNavigateContact?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onNavigateService }) => {
   return (
     <footer id="footer" className="footer-main">
       <div className="footer-content">
         <div className="container">
-          <h2>Caffeine + Code = <span className="text-red">Catch up?</span></h2>
+          <h2>
+            Caffeine + Code = <span className="text-red">Catch up?</span>
+          </h2>
           <a href="mailto:it@heyprince.in" className="footer-mailto">
             it@heyprince.in
           </a>
@@ -25,111 +33,76 @@ export const Footer: React.FC = () => {
                 }}
               />
               <div className="mobile-cards-hint d-md-none">
-                <span>← Swipe cards to explore →</span>
+                <span>← Swipe cards to explore services →</span>
               </div>
-              {/* 6 Interactive Stacked Footer Cards (Exact IDs from WordPress style.css) */}
+
+              {/* 7 Interactive Stacked Service Cards (Exact IDs mapped with CSS) */}
               <div className="footer-cards-container">
-                <div className="footer-card card-black" id="footer-card-1">
-                  <div className="card-heading">
-                    <h3>Building Modern Web Apps</h3>
-                    <p>Prince</p>
-                  </div>
-                  <a className="card-btn" href="mailto:it@heyprince.in">
-                    Let’s talk about it
-                    <svg className="card-btn-icn" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="20" r="20" fill="white"></circle>
-                      <path
-                        d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                        fill="#000"
-                      ></path>
-                    </svg>
-                  </a>
-                </div>
+                {servicesList.map((service, index) => {
+                  const cardId = `footer-card-${index + 1}`;
+                  const themeClass =
+                    service.cardTheme === 'featured'
+                      ? 'card-featured'
+                      : service.cardTheme === 'white'
+                      ? 'card-white'
+                      : service.cardTheme === 'red'
+                      ? 'card-red'
+                      : 'card-black';
 
-                <div className="footer-card card-white" id="footer-card-2">
-                  <div className="card-heading">
-                    <h3>High-Performance Code</h3>
-                    <p>Prince</p>
-                  </div>
-                  <a className="card-btn" href="mailto:it@heyprince.in">
-                    Let’s talk about it
-                    <svg className="card-btn-icn" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="20" r="20" fill="white"></circle>
-                      <path
-                        d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                        fill="#000"
-                      ></path>
-                    </svg>
-                  </a>
-                </div>
-
-                <div className="footer-card card-red" id="footer-card-3">
-                  <div className="card-heading">
-                    <h3>Scalable Cloud Solutions</h3>
-                    <p>Prince</p>
-                  </div>
-                  <a className="card-btn" href="mailto:it@heyprince.in">
-                    Let’s talk about it
-                    <svg className="card-btn-icn" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="20" r="20" fill="white"></circle>
-                      <path
-                        d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                        fill="#000"
-                      ></path>
-                    </svg>
-                  </a>
-                </div>
-
-                <div className="footer-card card-black" id="footer-card-4">
-                  <div className="card-heading">
-                    <h3>AI &amp; Smart Workflows</h3>
-                    <p>Prince</p>
-                  </div>
-                  <a className="card-btn" href="mailto:it@heyprince.in">
-                    Let’s talk about it
-                    <svg className="card-btn-icn" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="20" r="20" fill="white"></circle>
-                      <path
-                        d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                        fill="#000"
-                      ></path>
-                    </svg>
-                  </a>
-                </div>
-
-                <div className="footer-card card-white" id="footer-card-5">
-                  <div className="card-heading">
-                    <h3>Turn Ideas into Reality</h3>
-                    <p>Prince</p>
-                  </div>
-                  <a className="card-btn" href="mailto:it@heyprince.in">
-                    Let’s talk about it
-                    <svg className="card-btn-icn" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="20" r="20" fill="white"></circle>
-                      <path
-                        d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                        fill="#000"
-                      ></path>
-                    </svg>
-                  </a>
-                </div>
-
-                <div className="footer-card card-red" id="footer-card-6">
-                  <div className="card-heading">
-                    <h3>Bespoke Web Solutions</h3>
-                    <p>Prince</p>
-                  </div>
-                  <a className="card-btn" href="mailto:it@heyprince.in">
-                    Let’s talk about it
-                    <svg className="card-btn-icn" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="20" r="20" fill="white"></circle>
-                      <path
-                        d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                        fill="#000"
-                      ></path>
-                    </svg>
-                  </a>
-                </div>
+                  return (
+                    <div
+                      key={service.id}
+                      className={`footer-card ${themeClass}`}
+                      id={cardId}
+                      onClick={() => onNavigateService?.(service.slug)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onNavigateService?.(service.slug);
+                        }
+                      }}
+                      title={`Explore ${service.title} Details`}
+                    >
+                      {service.isFeatured && (
+                        <span className="card-featured-pill">
+                          <FaBolt size={10} /> FEATURED // AI AUTOMATIONS
+                        </span>
+                      )}
+                      <div className="card-heading">
+                        <span className="card-category-tag">{service.category}</span>
+                        <h3>{service.title}</h3>
+                        <p className="card-author">Prince</p>
+                      </div>
+                      <a
+                        className="card-btn"
+                        href={`/services/${service.slug}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onNavigateService?.(service.slug);
+                        }}
+                      >
+                        Explore Service
+                        <svg
+                          className="card-btn-icn"
+                          width="40"
+                          height="40"
+                          viewBox="0 0 40 40"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <circle cx="20" cy="20" r="20" fill="white"></circle>
+                          <path
+                            d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
+                            fill="#000"
+                          ></path>
+                        </svg>
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -185,4 +158,3 @@ export const Footer: React.FC = () => {
 };
 
 export default Footer;
-
