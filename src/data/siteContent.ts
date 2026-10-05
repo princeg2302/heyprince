@@ -1,13 +1,3 @@
-import htmlImg from '../assets/techs/html.webp';
-import cssImg from '../assets/techs/css.webp';
-import jsImg from '../assets/techs/javascript.webp';
-import reactjsImg from '../assets/techs/reactjs.webp';
-import nodejsImg from '../assets/techs/nodejs.webp';
-import pythonImg from '../assets/techs/python.webp';
-import phpImg from '../assets/techs/php.webp';
-import wordpressImg from '../assets/techs/wordpres.webp';
-import shopifyImg from '../assets/techs/shopify.webp';
-import jqueryImg from '../assets/techs/jquery.webp';
 
 export interface Milestone {
   pos: number;
@@ -346,17 +336,15 @@ export interface TechPill {
   image: string;
 }
 
-const getStaticSrc = (img: any): string => (typeof img === 'object' && img !== null && 'src' in img ? img.src : String(img));
-
 export const bannerTechPills: TechPill[] = [
-  { name: 'HTML', image: getStaticSrc(htmlImg) },
-  { name: 'PHP', image: getStaticSrc(phpImg) },
-  { name: 'CSS', image: getStaticSrc(cssImg) },
-  { name: 'JavaScript', image: getStaticSrc(jsImg) },
-  { name: 'ReactJS', image: getStaticSrc(reactjsImg) },
-  { name: 'Node.js', image: getStaticSrc(nodejsImg) },
-  { name: 'WordPress', image: getStaticSrc(wordpressImg) },
-  { name: 'Python', image: getStaticSrc(pythonImg) },
-  { name: 'Shopify', image: getStaticSrc(shopifyImg) },
-  { name: 'jQuery', image: getStaticSrc(jqueryImg) },
+  { name: 'HTML', image: '/assets/techs/html.webp' },
+  { name: 'PHP', image: '/assets/techs/php.webp' },
+  { name: 'CSS', image: '/assets/techs/css.webp' },
+  { name: 'JavaScript', image: '/assets/techs/javascript.webp' },
+  { name: 'ReactJS', image: '/assets/techs/reactjs.webp' },
+  { name: 'Node.js', image: '/assets/techs/nodejs.webp' },
+  { name: 'WordPress', image: '/assets/techs/wordpres.webp' },
+  { name: 'Python', image: '/assets/techs/python.webp' },
+  { name: 'Shopify', image: '/assets/techs/shopify.webp' },
+  { name: 'jQuery', image: '/assets/techs/jquery.webp' },
 ];
