@@ -963,7 +963,7 @@ img.aspect-square {
   position: absolute;
   max-width: 325px;
   background-color: var(--color-secondary, #333333);
-  overflow: hidden;
+  overflow: visible;
   transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     bottom 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     rotate 0.45s cubic-bezier(0.16, 1, 0.3, 1),
@@ -979,6 +979,18 @@ img.aspect-square {
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   cursor: pointer;
+}
+
+/* Hit boundary bridge: extends hit target downward when card rises so cursor never loses hover */
+.footer-card::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 280px;
+  background: transparent;
+  pointer-events: none;
 }
 
 #footer-card-1 {
@@ -1024,12 +1036,18 @@ img.aspect-square {
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
 }
 
-.footer-card:hover {
-  rotate: 0deg !important;
-  bottom: 25px !important;
-  z-index: 25 !important;
-  transform: translateY(-8px) scale(1.02) !important;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 255, 255, 0.12) !important;
+@media (hover: hover) and (pointer: fine) {
+  .footer-card:hover {
+    rotate: 0deg !important;
+    bottom: 25px !important;
+    z-index: 25 !important;
+    transform: translateY(-8px) scale(1.02) !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 255, 255, 0.12) !important;
+  }
+
+  .footer-card:hover::after {
+    pointer-events: auto;
+  }
 }
 
 .card-heading {
@@ -2956,54 +2974,128 @@ body {
     font-size: 0.2em;
   }
 
-  /* Footer Cards Fan on Mobile */
+  /* Mobile Swipeable Card Carousel (max-width: 767px) */
+  .cards-indicator {
+    display: none !important;
+  }
+
+  .mobile-cards-hint {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
   .footer-cards-container {
-    min-height: 380px;
-    padding-top: 220px;
-    margin-bottom: 220px;
-    position: relative;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 16px !important;
+    padding: 12px 20px 24px 20px !important;
+    margin: 0 -15px 36px -15px !important;
+    width: calc(100% + 30px) !important;
+    max-width: none !important;
+    min-height: auto !important;
+    position: relative !important;
     z-index: 5;
+    scrollbar-width: none !important;
+  }
+
+  .footer-cards-container::-webkit-scrollbar {
+    display: none !important;
   }
 
   .footer-card {
-    max-width: 230px;
-    height: 280px;
-    bottom: -160px;
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    rotate: 0deg !important;
+    flex: 0 0 260px !important;
+    width: 260px !important;
+    max-width: 260px !important;
+    height: 310px !important;
+    scroll-snap-align: center !important;
+    border-radius: 22px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* Balanced card deck offsets within screen width */
-  #footer-card-1 {
-    left: 2%;
-    rotate: -10deg;
-  }
-
-  #footer-card-2 {
-    left: 8%;
-    rotate: 6deg;
-  }
-
-  #footer-card-3 {
-    left: 14%;
-    rotate: -4deg;
-  }
-
-  #footer-card-4 {
-    left: 20%;
-    rotate: 8deg;
-  }
-
-  #footer-card-5 {
-    left: 26%;
-    rotate: -6deg;
-  }
-
+  /* Reset all individual card IDs on mobile */
+  #footer-card-1,
+  #footer-card-2,
+  #footer-card-3,
+  #footer-card-4,
+  #footer-card-5,
   #footer-card-6 {
-    left: 32%;
-    rotate: 4deg;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    top: auto !important;
+    rotate: 0deg !important;
+    z-index: 1 !important;
   }
 
-  .cards-indicator {
-    display: none;
+  /* Completely kill hover jump on mobile to prevent shaking */
+  .footer-card:hover {
+    rotate: 0deg !important;
+    bottom: auto !important;
+    transform: none !important;
+    z-index: 1 !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
+  }
+
+  .footer-card:active {
+    transform: scale(0.97) !important;
+  }
+
+  .footer-card .card-heading {
+    padding: 24px 22px 0 22px !important;
+  }
+
+  .footer-card h3 {
+    font-size: 20px !important;
+    line-height: 1.3 !important;
+    font-weight: 700 !important;
+  }
+
+  .footer-card .card-heading p {
+    font-size: 13px !important;
+    margin-top: 6px !important;
+    opacity: 0.8 !important;
+  }
+
+  .footer-card .card-btn {
+    padding: 16px 20px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .footer-card .card-btn-icn {
+    width: 44px !important;
+    height: 44px !important;
+    position: static !important;
+    flex-shrink: 0 !important;
   }
 
   .footer-row {
@@ -3152,46 +3244,29 @@ body {
     font-size: 0.18em;
   }
 
-  .footer-cards-container {
-    min-height: 360px;
-    padding-top: 210px;
-    margin-bottom: 200px;
-  }
-
   .footer-card {
-    max-width: 205px;
-    height: 260px;
-    bottom: -150px;
+    flex: 0 0 240px !important;
+    width: 240px !important;
+    max-width: 240px !important;
+    height: 290px !important;
   }
 
-  #footer-card-1 {
-    left: 0%;
-    rotate: -8deg;
+  .footer-card h3 {
+    font-size: 18px !important;
   }
 
-  #footer-card-2 {
-    left: 6%;
-    rotate: 5deg;
+  .footer-card .card-heading {
+    padding: 20px 18px 0 18px !important;
   }
 
-  #footer-card-3 {
-    left: 12%;
-    rotate: -3deg;
+  .footer-card .card-btn {
+    padding: 14px 18px !important;
+    font-size: 13px !important;
   }
 
-  #footer-card-4 {
-    left: 18%;
-    rotate: 6deg;
-  }
-
-  #footer-card-5 {
-    left: 24%;
-    rotate: -4deg;
-  }
-
-  #footer-card-6 {
-    left: 30%;
-    rotate: 3deg;
+  .footer-card .card-btn-icn {
+    width: 38px !important;
+    height: 38px !important;
   }
 }
 

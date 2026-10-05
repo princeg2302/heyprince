@@ -24,6 +24,7 @@ export const initSmoothScroll = (): Lenis | null => {
   });
 
   lenisInstance = lenis;
+  (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
 
   // Direct synchronization with GSAP ScrollTrigger
   lenis.on('scroll', ScrollTrigger.update);

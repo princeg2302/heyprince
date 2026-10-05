@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
           <div className="footer-row justify-content-end row">
             <div className="col-md-8">
               <img
-                className="cards-indicator"
+                className="cards-indicator d-none d-md-block"
                 src="https://heyprince.in/wp-content/uploads/2025/02/card-indicate.png"
                 alt="Interactive service cards indicator"
                 loading="lazy"
@@ -24,6 +24,9 @@ export const Footer: React.FC = () => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
+              <div className="mobile-cards-hint d-md-none">
+                <span>← Swipe cards to explore →</span>
+              </div>
               {/* 6 Interactive Stacked Footer Cards (Exact IDs from WordPress style.css) */}
               <div className="footer-cards-container">
                 <div className="footer-card card-black" id="footer-card-1">
