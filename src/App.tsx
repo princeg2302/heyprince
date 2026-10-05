@@ -12,7 +12,9 @@ import {
   CapturedMemories,
   SingleBlogPage,
   SingleServicePage,
+  PrivacyPolicyPage,
   ContactPage,
+  CookieConsent,
   BackToTop,
   Footer,
 } from './components';
@@ -24,7 +26,7 @@ import 'lenis/dist/lenis.css';
 import { initSmoothScroll, getSmoothScroll, destroySmoothScroll } from './utils/smoothScroll';
 
 export interface RouteState {
-  page: 'home' | 'contact' | 'blog' | 'service';
+  page: 'home' | 'contact' | 'blog' | 'service' | 'privacy';
   slug: string;
 }
 
@@ -42,6 +44,11 @@ export const resolveRoute = (): RouteState => {
   // Contact checks
   if (path === 'contact' || hash === 'contact') {
     return { page: 'contact', slug: '' };
+  }
+
+  // Privacy Policy checks
+  if (path === 'privacy-policy' || path === 'privacy' || hash === 'privacy-policy' || hash === 'privacy') {
+    return { page: 'privacy', slug: '' };
   }
 
   // Services prefixed paths (e.g. /services/ai-automation/ or /service/react-development/)
@@ -113,7 +120,12 @@ export const App: React.FC = () => {
 
   // Pre-paint instant scroll reset on route changes so no previous scroll position flickers
   useLayoutEffect(() => {
-    if (route.page === 'contact' || route.page === 'blog' || route.page === 'service') {
+    if (
+      route.page === 'contact' ||
+      route.page === 'blog' ||
+      route.page === 'service' ||
+      route.page === 'privacy'
+    ) {
       const lenis = getSmoothScroll();
       if (lenis) {
         lenis.scrollTo(0, { immediate: true });
@@ -134,6 +146,16 @@ export const App: React.FC = () => {
         canonicalPath: '/contact/',
         keywords:
           'Contact Prince, Hire IT Consultant, Full Stack React Developer, Web Engineer India, Remote Tech Partner, Senior Software Architect, HeyPrince Contact, Custom Web Solutions',
+        ogType: 'website',
+      });
+    } else if (route.page === 'privacy') {
+      updatePageSeo({
+        title: 'Privacy Policy | Prince — Senior IT Consultant & Web Engineer | HeyPrince',
+        description:
+          'Read the HeyPrince Privacy Policy to understand how we protect your personal data, manage cookie consent preferences, and guarantee transparency.',
+        canonicalPath: '/privacy-policy/',
+        keywords:
+          'Privacy Policy, HeyPrince, Prince IT Consultant, Cookie Consent, GDPR Compliance, Data Protection, User Rights',
         ogType: 'website',
       });
     } else if (route.page === 'service') {
@@ -179,7 +201,12 @@ export const App: React.FC = () => {
       setRoute(parsed);
 
       const lenis = getSmoothScroll();
-      if (parsed.page === 'contact' || parsed.page === 'blog' || parsed.page === 'service') {
+      if (
+        parsed.page === 'contact' ||
+        parsed.page === 'blog' ||
+        parsed.page === 'service' ||
+        parsed.page === 'privacy'
+      ) {
         if (lenis) {
           lenis.scrollTo(0, { immediate: true });
         }
@@ -217,11 +244,21 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  const handleNavigate = (page: 'home' | 'contact' | 'blog' | 'service', slugOrSection?: string) => {
+  const handleNavigate = (
+    page: 'home' | 'contact' | 'blog' | 'service' | 'privacy',
+    slugOrSection?: string
+  ) => {
     const lenis = getSmoothScroll();
     if (page === 'contact') {
       window.history.pushState(null, '', '/contact');
       setRoute({ page: 'contact', slug: '' });
+      if (lenis) lenis.scrollTo(0, { immediate: true });
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    } else if (page === 'privacy') {
+      window.history.pushState(null, '', '/privacy-policy');
+      setRoute({ page: 'privacy', slug: '' });
       if (lenis) lenis.scrollTo(0, { immediate: true });
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
       document.documentElement.scrollTop = 0;
@@ -385,6 +422,14 @@ export const App: React.FC = () => {
             />
           )}
 
+          {route.page === 'privacy' && (
+            <PrivacyPolicyPage
+              key="privacy-page"
+              onNavigateHome={() => handleNavigate('home')}
+              onNavigateContact={() => handleNavigate('contact')}
+            />
+          )}
+
           {route.page === 'contact' && (
             <ContactPage
               key="contact-page"
@@ -395,9 +440,14 @@ export const App: React.FC = () => {
           )}
         </div>
       </main>
-      <Footer onNavigateService={(slug) => handleNavigate('service', slug)} />
+      <Footer
+        onNavigateService={(slug) => handleNavigate('service', slug)}
+        onNavigatePrivacy={() => handleNavigate('privacy')}
+      />
       {/* Floating Back to Top Button */}
       <BackToTop />
+      {/* Cookie Consent Banner & Customise Preferences Modal */}
+      <CookieConsent onOpenPrivacyPolicy={() => handleNavigate('privacy')} />
     </div>
   );
 };

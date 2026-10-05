@@ -5,9 +5,13 @@ import { servicesList } from '../data/servicesData';
 export interface FooterProps {
   onNavigateService?: (slug: string) => void;
   onNavigateContact?: () => void;
+  onNavigatePrivacy?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigateService }) => {
+export const Footer: React.FC<FooterProps> = ({
+  onNavigateService,
+  onNavigatePrivacy,
+}) => {
   return (
     <footer id="footer" className="footer-main">
       <div className="footer-content">
@@ -136,19 +140,47 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateService }) => {
                   <FaWhatsapp size={24} color="#fff" />
                 </a>
               </div>
-              <p className="foot-copyright">
-                &copy; 2026{' '}
-                <a
-                  href="https://www.heyprince.in"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="foot-brand-link"
-                >
-                  heyprince.in
-                </a>
-                <span className="foot-sep">&nbsp;&bull;&nbsp;</span>
-                <span>All Rights Reserved</span>
-              </p>
+              <div className="foot-copyright-wrap">
+                <p className="foot-copyright">
+                  &copy; 2026{' '}
+                  <a
+                    href="https://www.heyprince.in"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="foot-brand-link"
+                  >
+                    heyprince.in
+                  </a>
+                  <span className="foot-sep">&nbsp;&bull;&nbsp;</span>
+                  <span>All Rights Reserved</span>
+                </p>
+                <div className="foot-legal-links">
+                  <a
+                    href="/privacy-policy"
+                    className="foot-legal-link"
+                    onClick={(e) => {
+                      if (onNavigatePrivacy) {
+                        e.preventDefault();
+                        onNavigatePrivacy();
+                      }
+                    }}
+                  >
+                    Privacy Policy
+                  </a>
+                  <span className="foot-sep">&bull;</span>
+                  <button
+                    type="button"
+                    className="foot-cookie-trigger-btn"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('open_cookie_preferences'));
+                      }
+                    }}
+                  >
+                    Cookies
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
