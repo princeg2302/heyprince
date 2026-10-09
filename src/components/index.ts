@@ -15,6 +15,7 @@ export { SingleServicePage } from './SingleServicePage';
 export { PrivacyPolicyPage } from './PrivacyPolicyPage';
 export { ContactPage } from './ContactPage';
 export { CookieConsent } from './CookieConsent';
+export { SudokuGame } from './SudokuGame';
 export { BackToTop } from './BackToTop';
 export { InlineSvg } from './InlineSvg';
 export { ClientProviders } from './providers/ClientProviders';

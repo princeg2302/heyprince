@@ -114,54 +114,106 @@ function mapPayloadPostToArticle(doc: any): Article {
 }
 
 /**
- * Retrieve all published services from Payload/PostgreSQL with static fallback
+ * Retrieve all published services from Supabase with static fallback
  */
 export async function getServices(): Promise<ServiceData[]> {
   try {
-    if (process.env.DATABASE_URI || process.env.POSTGRES_URL) {
-      const payload = await getPayload({ config });
-      const result = await payload.find({
-        collection: 'services',
-        where: {
-          published: { equals: true },
-        },
-        sort: 'sortOrder',
-        limit: 100,
-      });
+    // 1. Direct Supabase query for real-time published services
+    const { data: dbServices, error: sbError } = await supabase
+      .from('services')
+      .select('*')
+      .eq('published', true)
+      .order('sort_order', { ascending: true });
 
-      if (result.docs && result.docs.length > 0) {
-        return result.docs.map(mapPayloadServiceToServiceData);
-      }
+    if (!sbError && dbServices && dbServices.length > 0) {
+      return dbServices.map((doc: any) => {
+        const staticMatch = servicesList.find((s) => s.slug === doc.slug);
+        return {
+          id: doc.slug,
+          slug: doc.slug,
+          title: doc.title,
+          shortTitle: doc.short_title || doc.title,
+          tagline: doc.tagline || staticMatch?.tagline || '',
+          category: doc.category_name || staticMatch?.category || 'Engineering & Consulting',
+          cardTheme: (doc.card_theme as any) || (doc.is_featured ? 'featured' : 'black'),
+          isFeatured: Boolean(doc.is_featured),
+          featuredBadge: doc.featured_badge || (doc.is_featured ? '★ FEATURED // AI AUTOMATIONS' : undefined),
+          iconName: doc.icon_name || staticMatch?.iconName || 'FaBrain',
+          heroDescription: doc.hero_description || doc.short_description || staticMatch?.heroDescription || '',
+          overview: staticMatch?.overview || (doc.description ? [doc.description] : []),
+          deliverables: staticMatch?.deliverables || [],
+          techStack: staticMatch?.techStack || [],
+          process: staticMatch?.process || [],
+          highlights: staticMatch?.highlights || [],
+          faqs: staticMatch?.faqs || [],
+          metaTitle: doc.seo_title || `${doc.title} | HeyPrince`,
+          metaDescription: doc.seo_description || doc.short_description || staticMatch?.metaDescription || '',
+        };
+      });
     }
   } catch (error) {
-    // Graceful fallback to static data
+    console.warn('[getServices] Error fetching services from Supabase:', error);
   }
   return servicesList;
 }
 
 /**
- * Retrieve a single service by slug from Payload/PostgreSQL with static fallback
+ * Retrieve a single service by slug from Supabase with static fallback
  */
 export async function getServiceBySlug(slug: string): Promise<ServiceData | null> {
   const normalizedSlug = slug.toLowerCase().trim();
   try {
-    if (process.env.DATABASE_URI || process.env.POSTGRES_URL) {
-      const payload = await getPayload({ config });
-      const result = await payload.find({
-        collection: 'services',
-        where: {
-          slug: { equals: normalizedSlug },
-          published: { equals: true },
-        },
-        limit: 1,
-      });
+    // 1. Direct Supabase query for real-time service and its child relations
+    const { data: dbService, error: sbError } = await supabase
+      .from('services')
+      .select('*')
+      .eq('slug', normalizedSlug)
+      .eq('published', true)
+      .single();
 
-      if (result.docs && result.docs.length > 0) {
-        return mapPayloadServiceToServiceData(result.docs[0]);
-      }
+    if (!sbError && dbService) {
+      const [overviewRes, deliverablesRes, techRes, processRes, highlightsRes, faqsRes] = await Promise.all([
+        supabase.from('services_overview').select('*').eq('_parent_id', dbService.id).order('_order'),
+        supabase.from('services_deliverables').select('*').eq('_parent_id', dbService.id).order('_order'),
+        supabase.from('services_tech_stack').select('*').eq('_parent_id', dbService.id).order('_order'),
+        supabase.from('services_process').select('*').eq('_parent_id', dbService.id).order('_order'),
+        supabase.from('services_highlights').select('*').eq('_parent_id', dbService.id).order('_order'),
+        supabase.from('services_faqs').select('*').eq('_parent_id', dbService.id).order('_order'),
+      ]);
+
+      const staticMatch = servicesList.find((s) => s.slug.toLowerCase() === normalizedSlug);
+
+      const overview = (overviewRes.data || []).map((o: any) => o.paragraph).filter(Boolean);
+      const deliverables = (deliverablesRes.data || []).map((d: any) => ({ title: d.title || '', desc: d.desc || '' }));
+      const techStack = (techRes.data || []).map((t: any) => t.name).filter(Boolean);
+      const process = (processRes.data || []).map((p: any) => ({ step: p.step || '01', title: p.title || '', desc: p.desc || '' }));
+      const highlights = (highlightsRes.data || []).map((h: any) => h.text).filter(Boolean);
+      const faqs = (faqsRes.data || []).map((f: any) => ({ q: f.q || '', a: f.a || '' }));
+
+      return {
+        id: dbService.slug,
+        slug: dbService.slug,
+        title: dbService.title,
+        shortTitle: dbService.short_title || dbService.title,
+        tagline: dbService.tagline || staticMatch?.tagline || '',
+        category: dbService.category_name || staticMatch?.category || 'Engineering & Consulting',
+        cardTheme: (dbService.card_theme as any) || (dbService.is_featured ? 'featured' : 'black'),
+        isFeatured: Boolean(dbService.is_featured),
+        featuredBadge: dbService.featured_badge || (dbService.is_featured ? '★ FEATURED // AI AUTOMATIONS' : undefined),
+        iconName: dbService.icon_name || staticMatch?.iconName || 'FaBrain',
+        heroDescription: dbService.hero_description || dbService.short_description || staticMatch?.heroDescription || '',
+        overview: overview.length > 0 ? overview : (staticMatch?.overview || [dbService.description]),
+        deliverables: deliverables.length > 0 ? deliverables : (staticMatch?.deliverables || []),
+        techStack: techStack.length > 0 ? techStack : (staticMatch?.techStack || []),
+        process: process.length > 0 ? process : (staticMatch?.process || []),
+        highlights: highlights.length > 0 ? highlights : (staticMatch?.highlights || []),
+        faqs: faqs.length > 0 ? faqs : (staticMatch?.faqs || []),
+        metaTitle: dbService.seo_title || `${dbService.title} | HeyPrince`,
+        metaDescription: dbService.seo_description || dbService.short_description || staticMatch?.metaDescription || '',
+      };
     }
   } catch (error) {
-    // Graceful fallback
+    console.warn('[getServiceBySlug] Error fetching service from Supabase:', error);
   }
 
   const staticMatch = servicesList.find((s) => s.slug.toLowerCase() === normalizedSlug);

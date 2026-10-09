@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaBolt } from 'react-icons/fa6';
-import { servicesList } from '../data/servicesData';
+import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaStar } from 'react-icons/fa6';
+import { servicesList, ServiceData } from '../data/servicesData';
 
 export interface FooterProps {
   onNavigateService?: (slug: string) => void;
@@ -17,6 +17,31 @@ export const Footer: React.FC<FooterProps> = ({
   onNavigatePrivacy,
 }) => {
   const router = useRouter();
+  const [services, setServices] = useState<ServiceData[]>(servicesList);
+  const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
+
+  // Fetch live published services from Supabase via /api/services
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServices = async () => {
+      try {
+        const res = await fetch('/api/services', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && Array.isArray(data) && data.length > 0) {
+            setServices(data);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load dynamic services from Supabase, using static fallback:', err);
+      }
+    };
+
+    fetchServices();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleServiceClick = (slug: string, e?: React.MouseEvent) => {
     if (onNavigateService) {
@@ -64,10 +89,16 @@ export const Footer: React.FC<FooterProps> = ({
                 <span>← Swipe cards to explore services →</span>
               </div>
 
-              {/* 7 Interactive Stacked Service Cards (Exact IDs mapped with CSS) */}
-              <div className="footer-cards-container" id="services">
-                {servicesList.map((service, index) => {
+              {/* Dynamic Interactive Stacked Service Cards from Supabase */}
+              <div
+                className={`footer-cards-container ${
+                  hoveredCardIndex !== null ? 'has-active-card' : ''
+                }`}
+                id="services"
+              >
+                {services.map((service, index) => {
                   const cardId = `footer-card-${index + 1}`;
+                  const isHovered = hoveredCardIndex === index;
                   const themeClass =
                     service.cardTheme === 'featured'
                       ? 'card-featured'
@@ -79,9 +110,11 @@ export const Footer: React.FC<FooterProps> = ({
 
                   return (
                     <div
-                      key={service.id}
-                      className={`footer-card ${themeClass}`}
+                      key={service.id || service.slug || index}
+                      className={`footer-card ${themeClass} ${isHovered ? 'is-active' : ''}`}
                       id={cardId}
+                      onMouseEnter={() => setHoveredCardIndex(index)}
+                      onMouseLeave={() => setHoveredCardIndex(null)}
                       onClick={() => handleServiceClick(service.slug)}
                       role="button"
                       tabIndex={0}
@@ -93,15 +126,17 @@ export const Footer: React.FC<FooterProps> = ({
                       }}
                       title={`Explore ${service.title} Details`}
                     >
-                      {service.isFeatured && (
-                        <span className="card-featured-pill">
-                          <FaBolt size={10} /> FEATURED // AI AUTOMATIONS
-                        </span>
-                      )}
                       <div className="card-heading">
+                        {service.isFeatured && (
+                          <span className="card-featured-pill">
+                            <FaStar size={9} /> FEATURED
+                          </span>
+                        )}
                         <span className="card-category-tag">{service.category}</span>
-                        <h3>{service.title}</h3>
-                        <p className="card-author">Prince</p>
+                        <h3 className="card-title">{service.title}</h3>
+                        <div className="card-meta">
+                          <p className="card-author">Prince</p>
+                        </div>
                       </div>
                       <Link
                         className="card-btn"

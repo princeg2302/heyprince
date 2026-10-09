@@ -11,11 +11,12 @@ import {
   FaBolt,
   FaBug,
   FaTerminal,
-  FaAtom,
+  FaPuzzlePiece,
   FaGamepad,
   FaArrowRight,
   FaCircleCheck,
 } from 'react-icons/fa6';
+import { SudokuGame } from './SudokuGame';
 
 // --- TYPES FOR BUG SMASHER ---
 interface Target {
@@ -61,7 +62,7 @@ const TARGET_TYPES = [
 
 export const CyberArcade: React.FC = () => {
   // Navigation between the 3 interactive exploration zones
-  const [activeTab, setActiveTab] = useState<'arcade' | 'gravity' | 'terminal'>('arcade');
+  const [activeTab, setActiveTab] = useState<'arcade' | 'sudoku' | 'terminal'>('arcade');
 
   // Sound system
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -398,208 +399,10 @@ export const CyberArcade: React.FC = () => {
   }, [activeTab, gameState, spawnTarget]);
 
   // ==========================================
-  // 2. NEON GRAVITY MATRIX CANVAS SANDBOX
+  // 2. CYBER SUDOKU MATRIX PUZZLE ENGINE
   // ==========================================
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [gravityMode, setGravityMode] = useState<'attract' | 'vortex' | 'repel' | 'neural'>('neural');
-  const [particlePalette, setParticlePalette] = useState<'cyber' | 'matrix' | 'gold' | 'neon'>('cyber');
-  const [nodeCount, setNodeCount] = useState(70);
+  // Logic, state, and board validation handled cleanly via <SudokuGame /> component
 
-  useEffect(() => {
-    if (activeTab !== 'gravity') return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let width = (canvas.width = canvas.parentElement?.clientWidth || 900);
-    let height = (canvas.height = canvas.parentElement?.clientHeight || 480);
-
-    const handleResize = () => {
-      if (!canvas || !canvas.parentElement) return;
-      width = canvas.width = canvas.parentElement.clientWidth;
-      height = canvas.height = canvas.parentElement.clientHeight || 480;
-    };
-    window.addEventListener('resize', handleResize);
-
-    const getPaletteColors = () => {
-      if (particlePalette === 'matrix') return ['#00ff66', '#00cc44', '#11ff88', '#00ffaa'];
-      if (particlePalette === 'gold') return ['#ffd700', '#ffaa00', '#ff8800', '#ffea70'];
-      if (particlePalette === 'neon') return ['#ff007f', '#7928ca', '#00f2fe', '#ff3366'];
-      return ['#00f2fe', '#4facfe', '#d40027', '#ffffff', '#00ff88'];
-    };
-
-    interface SimParticle {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      radius: number;
-      color: string;
-      baseRadius: number;
-      trail: { x: number; y: number }[];
-    }
-
-    const particles: SimParticle[] = [];
-    const colors = getPaletteColors();
-
-    for (let i = 0; i < nodeCount; i++) {
-      const radius = Math.random() * 2.5 + 1.8;
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 1.8,
-        vy: (Math.random() - 0.5) * 1.8,
-        radius,
-        baseRadius: radius,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        trail: [],
-      });
-    }
-
-    let mouseX = width / 2;
-    let mouseY = height / 2;
-    let isHovering = false;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-      isHovering = true;
-    };
-
-    const handleMouseLeave = () => {
-      isHovering = false;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = e.touches[0].clientX - rect.left;
-        mouseY = e.touches[0].clientY - rect.top;
-        isHovering = true;
-      }
-    };
-
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseleave', handleMouseLeave);
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: true });
-
-    let simFrame: number;
-
-    const render = () => {
-      ctx.fillStyle = 'rgba(10, 12, 18, 0.28)';
-      ctx.fillRect(0, 0, width, height);
-
-      // Render connected neural energy webs
-      if (gravityMode === 'neural') {
-        ctx.lineWidth = 0.6;
-        for (let i = 0; i < particles.length; i++) {
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 110) {
-              const alpha = (1 - dist / 110) * 0.35;
-              ctx.strokeStyle = `rgba(0, 242, 254, ${alpha})`;
-              ctx.beginPath();
-              ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.stroke();
-            }
-          }
-        }
-      }
-
-      particles.forEach((p) => {
-        if (isHovering) {
-          const dx = mouseX - p.x;
-          const dy = mouseY - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-
-          if (gravityMode === 'attract') {
-            const force = 40 / (dist + 20);
-            p.vx += (dx / dist) * force;
-            p.vy += (dy / dist) * force;
-          } else if (gravityMode === 'repel') {
-            if (dist < 180) {
-              const force = (180 - dist) / 180;
-              p.vx -= (dx / dist) * force * 3;
-              p.vy -= (dy / dist) * force * 3;
-            }
-          } else if (gravityMode === 'vortex') {
-            const force = 30 / (dist + 20);
-            const perpX = -dy / dist;
-            const perpY = dx / dist;
-            p.vx += perpX * force * 1.5 + (dx / dist) * force * 0.4;
-            p.vy += perpY * force * 1.5 + (dy / dist) * force * 0.4;
-          } else if (gravityMode === 'neural') {
-            if (dist < 140) {
-              const force = (140 - dist) / 140;
-              p.vx += (dx / dist) * force * 1.2;
-              p.vy += (dy / dist) * force * 1.2;
-            }
-          }
-        }
-
-        p.vx *= 0.985;
-        p.vy *= 0.985;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Screen boundary bounce
-        if (p.x < 0) {
-          p.x = 0;
-          p.vx *= -1;
-        } else if (p.x > width) {
-          p.x = width;
-          p.vx *= -1;
-        }
-        if (p.y < 0) {
-          p.y = 0;
-          p.vy *= -1;
-        } else if (p.y > height) {
-          p.y = height;
-          p.vy *= -1;
-        }
-
-        // Draw particle with glow
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = p.color;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-
-      simFrame = requestAnimationFrame(render);
-    };
-
-    simFrame = requestAnimationFrame(render);
-
-    return () => {
-      cancelAnimationFrame(simFrame);
-      window.removeEventListener('resize', handleResize);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseleave', handleMouseLeave);
-      canvas.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [activeTab, gravityMode, particlePalette, nodeCount]);
-
-  const triggerSupernova = (e: React.MouseEvent) => {
-    playSound('supernova');
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    // Shake screen slightly
-    setScreenShake(true);
-    setTimeout(() => setScreenShake(false), 150);
-  };
 
   // ==========================================
   // 3. CYBER CLI HACKER TERMINAL
@@ -706,16 +509,15 @@ System status: ALL SERVICES OPERATIONAL [OK]`,
         });
         break;
 
+      case 'sudoku':
       case 'matrix':
         newLogs.push({
           type: 'output',
-          text: `🟢 "Wake up, Neo... The Matrix has you." Switching your visual focus to Neon Matrix Sandbox!`,
+          text: `🧩 Initializing Cyber Sudoku Matrix... Switching visual focus to 9×9 Logic Challenge!`,
         });
         setTimeout(() => {
-          setActiveTab('gravity');
-          setParticlePalette('matrix');
-          setGravityMode('vortex');
-        }, 1200);
+          setActiveTab('sudoku');
+        }, 600);
         break;
 
       case 'contact':
@@ -772,8 +574,8 @@ Opening inquiry form...`,
             Stay, Play &amp; <span className="text-red">Explore</span>
           </h2>
           <p className="arcade-subtitle">
-            Take a breather from regular portfolio scrolling. Squash production bugs, play with
-            real-time neon gravitational physics, or fire up the interactive cyber terminal!
+            Take a breather from regular portfolio scrolling. Squash production bugs, solve the
+            cyber 9×9 Sudoku logic puzzle, or fire up the interactive hacker terminal!
           </p>
 
           {/* Interactive Navigation Mode Switcher */}
@@ -793,15 +595,15 @@ Opening inquiry form...`,
 
             <button
               type="button"
-              className={`arcade-tab-btn ${activeTab === 'gravity' ? 'active' : ''}`}
+              className={`arcade-tab-btn ${activeTab === 'sudoku' ? 'active' : ''}`}
               onClick={() => {
-                setActiveTab('gravity');
+                setActiveTab('sudoku');
                 playSound('click');
               }}
             >
-              <FaAtom className="tab-icn" />
-              <span>Neon Gravity Matrix</span>
-              <span className="tab-pill">Physics Sandbox</span>
+              <FaPuzzlePiece className="tab-icn" />
+              <span>Cyber Sudoku Matrix</span>
+              <span className="tab-pill">9×9 Logic</span>
             </button>
 
             <button
@@ -833,7 +635,7 @@ Opening inquiry form...`,
                 <span className="terminal-prompt">&gt;_</span>
                 <span className="terminal-title">
                   {activeTab === 'arcade' && 'bug_crusher_sprint.exe --turbo'}
-                  {activeTab === 'gravity' && 'neon_particle_graviton.wasm --60fps'}
+                  {activeTab === 'sudoku' && 'cyber_sudoku_matrix.wasm --9x9'}
                   {activeTab === 'terminal' && 'heyprince_shell_v4.19 (bash)'}
                 </span>
                 <span className="terminal-status-badge">ONLINE</span>
@@ -867,10 +669,10 @@ Opening inquiry form...`,
                 </>
               )}
 
-              {activeTab === 'gravity' && (
+              {activeTab === 'sudoku' && (
                 <div className="stat-pill">
-                  <span className="stat-label">NODES</span>
-                  <strong className="stat-val">{nodeCount}</strong>
+                  <span className="stat-label">MODE</span>
+                  <strong className="stat-val text-green">9×9 LOGIC</strong>
                 </div>
               )}
 
@@ -1055,60 +857,10 @@ Opening inquiry form...`,
             </>
           )}
 
-          {/* TAB 2: NEON GRAVITY MATRIX (PHYSICS SANDBOX) */}
-          {activeTab === 'gravity' && (
-            <div className="sandbox-wrapper">
-              <div className="sandbox-controls-bar">
-                <div className="sandbox-options">
-                  <span className="sandbox-label">PHYSICS:</span>
-                  {(['neural', 'attract', 'vortex', 'repel'] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      className={`btn-submode ${gravityMode === m ? 'active' : ''}`}
-                      onClick={() => {
-                        setGravityMode(m);
-                        playSound('click');
-                      }}
-                    >
-                      {m.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="sandbox-options">
-                  <span className="sandbox-label">NEON:</span>
-                  {(['cyber', 'matrix', 'gold', 'neon'] as const).map((theme) => (
-                    <button
-                      key={theme}
-                      type="button"
-                      className={`btn-submode ${particlePalette === theme ? 'active' : ''}`}
-                      onClick={() => {
-                        setParticlePalette(theme);
-                        playSound('click');
-                      }}
-                    >
-                      {theme.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  className="btn-supernova"
-                  onClick={triggerSupernova}
-                  title="Click to blast shockwave"
-                >
-                  <FaBolt className="me-1" /> SUPERNOVA
-                </button>
-              </div>
-
-              <div className="sandbox-canvas-container" onClick={triggerSupernova}>
-                <canvas ref={canvasRef} className="sandbox-canvas" />
-                <div className="sandbox-hint-badge">
-                  ✦ Move cursor to bend gravity • Click anywhere for Supernova
-                </div>
-              </div>
+          {/* TAB 2: CYBER SUDOKU MATRIX PUZZLE */}
+          {activeTab === 'sudoku' && (
+            <div className="sudoku-terminal-wrapper">
+              <SudokuGame />
             </div>
           )}
 
