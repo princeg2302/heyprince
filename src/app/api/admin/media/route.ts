@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAdmin, getMediaList, createMediaRecord } from '@/lib/admin-db';
+import { getCurrentAdmin, getMediaList, createMediaRecord, supabase } from '@/lib/admin-db';
 import fs from 'fs';
 import path from 'path';
 
@@ -32,16 +32,36 @@ export async function POST(request: NextRequest) {
 
       // Clean filename
       const safeFilename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const uploadDir = path.resolve(process.cwd(), 'public/media');
+      let publicUrl = '';
 
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      // Primary: Upload directly to Supabase Storage "media" bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(safeFilename, buffer, {
+          contentType: file.type || 'image/jpeg',
+          upsert: true,
+        });
+
+      if (!uploadError && uploadData) {
+        const { data: urlData } = supabase.storage.from('media').getPublicUrl(safeFilename);
+        publicUrl = urlData.publicUrl;
+      } else {
+        // Fallback for local development if serverless filesystem allows
+        try {
+          const uploadDir = path.resolve(process.cwd(), 'public/media');
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          const filePath = path.join(uploadDir, safeFilename);
+          fs.writeFileSync(filePath, buffer);
+          publicUrl = `/media/${safeFilename}`;
+        } catch {
+          return NextResponse.json(
+            { error: uploadError?.message || 'Storage upload failed.' },
+            { status: 500 }
+          );
+        }
       }
-
-      const filePath = path.join(uploadDir, safeFilename);
-      fs.writeFileSync(filePath, buffer);
-
-      const publicUrl = `/media/${safeFilename}`;
 
       const result = await createMediaRecord({
         alt: alt || file.name,

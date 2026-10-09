@@ -1230,6 +1230,10 @@ export async function createMediaRecord(data: {
 
 export async function deleteMediaRecord(id: number): Promise<{ success: boolean; error?: string }> {
   try {
+    const { data: media } = await supabase.from('media').select('filename').eq('id', id).single();
+    if (media && media.filename) {
+      await supabase.storage.from('media').remove([media.filename]).catch(() => {});
+    }
     const { error } = await supabase.from('media').delete().eq('id', id);
     if (error) return { success: false, error: error.message };
     return { success: true };
