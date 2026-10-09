@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
-import path from 'path';
-import fs from 'fs';
 
 export interface SendLeadEmailParams {
   leadId?: string | number;
@@ -39,55 +37,7 @@ function cleanPhoneForWhatsApp(phone?: string): string | null {
   return null;
 }
 
-export interface LogoConfig {
-  logoSrc: string;
-  attachments: Array<{
-    filename: string;
-    content?: Buffer;
-    cid: string;
-  }>;
-}
-
-export function getLogoConfig(preferRemoteUrl: boolean = false): LogoConfig {
-  const remoteUrl = 'https://heyprince.in/assets/heyprince-logo.png';
-  if (preferRemoteUrl) {
-    return {
-      logoSrc: remoteUrl,
-      attachments: [],
-    };
-  }
-
-  const logoCandidates = [
-    path.join(process.cwd(), 'public/assets/heyprince-logo.png'),
-    path.join(process.cwd(), 'public/images/heyprince-logo.png'),
-    path.join(process.cwd(), 'public/heyprince-logo.png'),
-  ];
-
-  for (const candidate of logoCandidates) {
-    try {
-      if (fs.existsSync(/*turbopackIgnore: true*/ candidate)) {
-        const buffer = fs.readFileSync(/*turbopackIgnore: true*/ candidate);
-        return {
-          logoSrc: 'cid:heyprince-logo',
-          attachments: [
-            {
-              filename: 'heyprince-logo.png',
-              content: buffer,
-              cid: 'heyprince-logo',
-            },
-          ],
-        };
-      }
-    } catch {
-      // fallback to next candidate
-    }
-  }
-
-  return {
-    logoSrc: remoteUrl,
-    attachments: [],
-  };
-}
+export const BRAND_LOGO_URL = 'https://heyprince.in/assets/heyprince-logo.png';
 
 /**
  * Builds the ultra-premium dark theme notification email sent to it@heyprince.in
@@ -95,7 +45,7 @@ export function getLogoConfig(preferRemoteUrl: boolean = false): LogoConfig {
 export function buildAdminNotificationHtml(
   params: SendLeadEmailParams,
   dateFormatted: string,
-  logoSrc: string = 'cid:heyprince-logo'
+  logoSrc: string = BRAND_LOGO_URL
 ): string {
   const waNumber = cleanPhoneForWhatsApp(params.phone);
   const waLink = waNumber ? `https://wa.me/${waNumber}` : null;
@@ -295,7 +245,7 @@ export function buildAdminNotificationHtml(
  */
 export function buildCustomerRevertHtml(
   params: SendLeadEmailParams,
-  logoSrc: string = 'cid:heyprince-logo'
+  logoSrc: string = BRAND_LOGO_URL
 ): string {
   const firstName = params.name ? params.name.split(' ')[0] : 'there';
   const waDirectUrl =
@@ -527,8 +477,7 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
   const resendApiKey = cleanEnv(process.env.RESEND_API_KEY);
   if (resendApiKey) {
     try {
-      const logoCfg = getLogoConfig(true);
-      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, logoCfg.logoSrc);
+      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, BRAND_LOGO_URL);
 
       const resend = new Resend(resendApiKey);
       const { data, error } = await resend.emails.send({
@@ -558,8 +507,7 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      const logoCfg = getLogoConfig(false);
-      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, logoCfg.logoSrc);
+      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, BRAND_LOGO_URL);
 
       const port = Number(cleanEnv(process.env.SMTP_PORT)) || 465;
       const secureEnv = cleanEnv(process.env.SMTP_SECURE);
@@ -586,7 +534,6 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
         replyTo: params.email,
         subject,
         html: emailHtml,
-        attachments: logoCfg.attachments,
       });
 
       console.info(`[Email:SMTP] Admin notification sent (ID: ${info.messageId})`);
@@ -622,8 +569,7 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
   const resendApiKey = cleanEnv(process.env.RESEND_API_KEY);
   if (resendApiKey) {
     try {
-      const logoCfg = getLogoConfig(true);
-      const emailHtml = buildCustomerRevertHtml(params, logoCfg.logoSrc);
+      const emailHtml = buildCustomerRevertHtml(params, BRAND_LOGO_URL);
 
       const resend = new Resend(resendApiKey);
       const fromEmail = cleanEnv(process.env.RESEND_FROM_EMAIL) || 'Prince • HeyPrince <onboarding@resend.dev>';
@@ -651,8 +597,7 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      const logoCfg = getLogoConfig(false);
-      const emailHtml = buildCustomerRevertHtml(params, logoCfg.logoSrc);
+      const emailHtml = buildCustomerRevertHtml(params, BRAND_LOGO_URL);
 
       const port = Number(cleanEnv(process.env.SMTP_PORT)) || 465;
       const secureEnv = cleanEnv(process.env.SMTP_SECURE);
@@ -679,7 +624,6 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
         replyTo: cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || smtpUser,
         subject,
         html: emailHtml,
-        attachments: logoCfg.attachments,
       });
 
       console.info(`[Email:SMTP] Customer revert email sent to ${params.email} (ID: ${info.messageId})`);
