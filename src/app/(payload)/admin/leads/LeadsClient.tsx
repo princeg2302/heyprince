@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import { LeadRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -23,6 +24,7 @@ import { useToast } from '@/components/admin/Toast';
 
 interface LeadsClientProps {
   initialLeads: LeadRecord[];
+  isEmailConfigured?: boolean;
 }
 
 const statusOptions = [
@@ -34,11 +36,12 @@ const statusOptions = [
   { value: 'LOST', label: 'Lost / Closed', color: '#94a3b8' },
 ];
 
-export default function LeadsClient({ initialLeads }: LeadsClientProps) {
+export default function LeadsClient({ initialLeads, isEmailConfigured = true }: LeadsClientProps) {
   const { showToast } = useToast();
   const [leads, setLeads] = useState<LeadRecord[]>(initialLeads);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Single view drawer / modal
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null);
@@ -119,6 +122,24 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
     }
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/admin/leads/?limit=100');
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.leads)) {
+        setLeads(data.leads);
+        showToast('Leads refreshed from database.', 'success');
+      } else {
+        showToast('Could not refresh leads.', 'error');
+      }
+    } catch {
+      showToast('Network error while refreshing leads.', 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const opt = statusOptions.find((s) => s.value === status) || statusOptions[0];
     return (
@@ -159,7 +180,42 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
             Inbound project submissions from heyprince.in/contact. Track status and deal progression.
           </p>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+            style={{ gap: '6px' }}
+          >
+            <RefreshCw size={13} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </button>
+        </div>
       </div>
+
+      {!isEmailConfigured && (
+        <div
+          style={{
+            background: 'rgba(251, 191, 36, 0.08)',
+            border: '1px solid rgba(251, 191, 36, 0.25)',
+            borderRadius: '12px',
+            padding: '14px 18px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px',
+          }}
+        >
+          <AlertCircle size={18} style={{ color: '#fbbf24', marginTop: '2px', flexShrink: 0 }} />
+          <div style={{ fontSize: '0.82rem', lineHeight: 1.5, color: 'rgba(255, 255, 255, 0.85)' }}>
+            <strong style={{ color: '#fbbf24' }}>Notice: Notification Email Service Not Configured</strong>
+            <p style={{ margin: '4px 0 0 0', color: 'rgba(255, 255, 255, 0.65)' }}>
+              Client inquiries are successfully saved in your Supabase database below. However, transactional notification emails to <code>it@heyprince.in</code> require <code>RESEND_API_KEY</code> (or SMTP credentials) in your Vercel project environment variables.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="hpa-card">
         <div className="hpa-card-header">

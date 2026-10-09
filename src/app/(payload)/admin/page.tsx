@@ -22,6 +22,9 @@ import {
 import { getCurrentAdmin, getDashboardStats } from '@/lib/admin-db';
 import AdminLayout from '@/components/admin/AdminLayout';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata = {
   title: 'Executive Dashboard — HeyPrince Admin',
   description: 'Production administration command center for heyprince.in',

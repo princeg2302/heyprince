@@ -78,6 +78,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [honeypot, setHoneypot] = useState('');
@@ -101,6 +102,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
 
     try {
       const response = await fetch('/api/leads/', {
@@ -127,22 +129,14 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
       if (response.ok && result.success) {
         setIsSubmitted(true);
       } else {
-        // Fallback: trigger mailto directly so the inquiry is never missed
-        window.location.href = `mailto:it@heyprince.in?subject=${encodeURIComponent(
-          `Project Inquiry: ${formData.service} from ${formData.name}`
-        )}&body=${encodeURIComponent(
-          `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone || 'N/A'}\nService: ${formData.service}\nBudget: ${formData.budget}\nTimeline: ${formData.timeline}\n\nProject Details:\n${formData.message}`
-        )}`;
-        setIsSubmitted(true);
+        const errorDetail =
+          result.message ||
+          (result.errors && Object.values(result.errors).flat().join(', ')) ||
+          'Submission failed. Please check the entered information and try again.';
+        setErrorMessage(errorDetail);
       }
     } catch {
-      // Fallback: trigger mailto directly
-      window.location.href = `mailto:it@heyprince.in?subject=${encodeURIComponent(
-        `Project Inquiry: ${formData.service} from ${formData.name}`
-      )}&body=${encodeURIComponent(
-        `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone || 'N/A'}\nService: ${formData.service}\nBudget: ${formData.budget}\nTimeline: ${formData.timeline}\n\nProject Details:\n${formData.message}`
-      )}`;
-      setIsSubmitted(true);
+      setErrorMessage('Network connection error while submitting. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -444,6 +438,24 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     />
                   </div>
+
+                  {errorMessage && (
+                    <div
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        color: '#f87171',
+                        fontSize: '0.84rem',
+                        lineHeight: 1.5,
+                        marginTop: '16px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {errorMessage}
+                    </div>
+                  )}
 
                   {/* Submit Button */}
                   <div className="d-flex justify-content-center mt-3">
