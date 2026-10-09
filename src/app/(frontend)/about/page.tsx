@@ -424,7 +424,7 @@ export default function AboutPage() {
             <Link className="portal-btn mx-auto" href="/contact/">
               <span className="mr-right">Drop Me A Line</span>
               <span className="arrow">
-                <FaRocket size={16} color="#000" />
+                <FaRocket size={15} color="#000" />
               </span>
             </Link>
           </div>

@@ -73,18 +73,21 @@ export const Footer: React.FC<FooterProps> = ({
           </a>
           <div className="footer-row justify-content-end row">
             <div className="col-md-8">
-              <img
-                className="cards-indicator d-none d-md-block"
-                src="https://heyprince.in/wp-content/uploads/2025/02/card-indicate.png"
-                alt="Interactive service cards indicator"
-                loading="lazy"
-                decoding="async"
-                width="170"
-                height="80"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
+              <div className="cards-indicator d-none d-md-inline-flex align-items-center gap-2">
+                <span>Hover cards to explore</span>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 5v14M19 12l-7 7-7-7" />
+                </svg>
+              </div>
               <div className="mobile-cards-hint d-md-none">
                 <span>← Swipe cards to explore services →</span>
               </div>

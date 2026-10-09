@@ -377,7 +377,7 @@ export default async function ServicesListingPage() {
             <Link className="portal-btn mx-auto" href="/contact/">
               <span className="mr-right">Request Project Consultation</span>
               <span className="arrow">
-                <FaRocket size={16} color="#000" />
+                <FaRocket size={15} color="#000" />
               </span>
             </Link>
           </div>

@@ -178,7 +178,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               >
                 <span className="mr-right">Request Project Scope</span>
                 <span className="arrow">
-                  <FaRocket size={16} color="#000" />
+                  <FaRocket size={15} color="#000" />
                 </span>
               </button>
               <a
@@ -189,7 +189,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               >
                 <span className="mr-right">Instant WhatsApp Inquiry</span>
                 <span className="arrow">
-                  <FaWhatsapp size={16} color="#000" />
+                  <FaWhatsapp size={15} color="#000" />
                 </span>
               </a>
             </div>
@@ -328,7 +328,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               >
                 <span className="mr-right">Start a Project Discussion</span>
                 <span className="arrow">
-                  <FaRocket size={16} color="#000" />
+                  <FaRocket size={15} color="#000" />
                 </span>
               </button>
               <a
@@ -339,7 +339,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               >
                 <span className="mr-right">Chat on WhatsApp</span>
                 <span className="arrow">
-                  <FaWhatsapp size={16} color="#000" />
+                  <FaWhatsapp size={15} color="#000" />
                 </span>
               </a>
             </div>
