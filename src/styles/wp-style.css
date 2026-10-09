@@ -515,12 +515,12 @@ body.modal-open a.portal-btn:hover {
   font-weight: 600;
   color: #000;
   border-radius: 50px;
-  padding: 0 24px;
+  padding: 0 30px;
   margin-left: 0;
   position: relative;
   height: 50px;
   width: auto;
-  min-width: 210px;
+  min-width: 220px;
   max-width: 100%;
   display: inline-flex;
   justify-content: center;
@@ -575,10 +575,9 @@ button.portal-btn:hover {
 
 .portal-btn span.arrow {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 50%;
   right: 0;
-  bottom: 0;
+  transform: translateY(-50%);
   height: 100%;
   width: 100%;
   display: flex;
@@ -592,11 +591,9 @@ button.portal-btn:hover {
 }
 
 .portal-btn:hover span.arrow {
-  left: auto;
+  width: 40px;
+  height: 40px;
   right: 5px;
-  top: 5px;
-  width: 38px;
-  height: 38px;
   border-radius: 50%;
   z-index: 1 !important;
   background: #ffffff;
@@ -6162,14 +6159,25 @@ body {
 }
 
 /* Brand red accents & dark card hover protection */
+.card.insight-card,
+.page-view-wrapper .article-card {
+  background: #0e1017 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease !important;
+}
+
 .card.article-card:hover,
-.card.insight-card:hover {
+.card.insight-card:hover,
+.page-view-wrapper .article-card:hover {
   background: #141724 !important;
   border-color: rgba(212, 0, 39, 0.6) !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(212, 0, 39, 0.25) !important;
   transform: translateY(-6px);
 }
 
+.page-view-wrapper .article-card .article-link,
 .page-view-wrapper .article-card .article-link:hover,
 .article-card .article-link:hover,
 .insight-card-link,
@@ -6180,14 +6188,24 @@ body {
   text-decoration: none !important;
 }
 
+.page-view-wrapper .article-card .card-title,
+.card.insight-card .card-title,
 .page-view-wrapper .article-card:hover .card-title,
 .card.insight-card:hover .card-title {
   color: #ffffff !important;
 }
 
+.page-view-wrapper .article-card .card-content,
+.card.insight-card .card-content,
 .page-view-wrapper .article-card:hover .card-content,
 .card.insight-card:hover .card-content {
   color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.page-view-wrapper .article-card .read-more-link,
+.card.insight-card .read-more-link {
+  color: #ffffff;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .page-view-wrapper .article-card:hover .read-more-link,

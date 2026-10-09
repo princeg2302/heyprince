@@ -11,7 +11,7 @@
 
 // TOGGLE: Set to true when temporary debugging/console access is needed.
 // Change back to false to re-enable full security protections.
-export const TEMPORARILY_ENABLE_CONSOLE = false;
+export const TEMPORARILY_ENABLE_CONSOLE = true;
 
 export function initSecurityShield(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
