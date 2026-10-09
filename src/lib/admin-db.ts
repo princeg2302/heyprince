@@ -31,6 +31,11 @@ export function hashPassword(password: string): { salt: string; hash: string } {
   };
 }
 
+export function generateRowId(): string {
+  return crypto.randomBytes(12).toString('hex');
+}
+
+
 export interface AdminUser {
   id: number;
   name: string;
@@ -398,6 +403,7 @@ export async function createPost(data: Partial<PostRecord>): Promise<{ success: 
     // Insert tags if any
     if (data.tags && data.tags.length > 0) {
       const tagRows = data.tags.map((t, index) => ({
+        id: generateRowId(),
         _parent_id: postId,
         _order: index + 1,
         tag: t.tag,
@@ -409,10 +415,12 @@ export async function createPost(data: Partial<PostRecord>): Promise<{ success: 
     if (data.sections && data.sections.length > 0) {
       for (let sIdx = 0; sIdx < data.sections.length; sIdx++) {
         const sec = data.sections[sIdx];
+        const secId = generateRowId();
         const { data: createdSec } = await supabase
           .from('posts_sections')
           .insert([
             {
+              id: secId,
               _parent_id: postId,
               _order: sIdx + 1,
               heading: sec.heading,
@@ -426,6 +434,7 @@ export async function createPost(data: Partial<PostRecord>): Promise<{ success: 
         if (createdSec) {
           if (sec.paragraphs && sec.paragraphs.length > 0) {
             const pRows = sec.paragraphs.map((p, pIdx) => ({
+              id: generateRowId(),
               _parent_id: createdSec.id,
               _order: pIdx + 1,
               text: p.text,
@@ -434,6 +443,7 @@ export async function createPost(data: Partial<PostRecord>): Promise<{ success: 
           }
           if (sec.bullet_points && sec.bullet_points.length > 0) {
             const bRows = sec.bullet_points.map((b, bIdx) => ({
+              id: generateRowId(),
               _parent_id: createdSec.id,
               _order: bIdx + 1,
               point: b.point,
@@ -488,6 +498,7 @@ export async function updatePost(id: number, data: Partial<PostRecord>): Promise
       await supabase.from('posts_tags').delete().eq('_parent_id', id);
       if (data.tags.length > 0) {
         const tagRows = data.tags.map((t, idx) => ({
+          id: generateRowId(),
           _parent_id: id,
           _order: idx + 1,
           tag: t.tag,
@@ -511,10 +522,12 @@ export async function updatePost(id: number, data: Partial<PostRecord>): Promise
 
       for (let sIdx = 0; sIdx < data.sections.length; sIdx++) {
         const sec = data.sections[sIdx];
+        const secId = generateRowId();
         const { data: createdSec } = await supabase
           .from('posts_sections')
           .insert([
             {
+              id: secId,
               _parent_id: id,
               _order: sIdx + 1,
               heading: sec.heading,
@@ -528,6 +541,7 @@ export async function updatePost(id: number, data: Partial<PostRecord>): Promise
         if (createdSec) {
           if (sec.paragraphs && sec.paragraphs.length > 0) {
             const pRows = sec.paragraphs.map((p, pIdx) => ({
+              id: generateRowId(),
               _parent_id: createdSec.id,
               _order: pIdx + 1,
               text: p.text,
@@ -536,6 +550,7 @@ export async function updatePost(id: number, data: Partial<PostRecord>): Promise
           }
           if (sec.bullet_points && sec.bullet_points.length > 0) {
             const bRows = sec.bullet_points.map((b, bIdx) => ({
+              id: generateRowId(),
               _parent_id: createdSec.id,
               _order: bIdx + 1,
               point: b.point,
@@ -718,27 +733,27 @@ export async function createService(data: Partial<ServiceRecord>): Promise<{ suc
 
     // Insert child arrays
     if (data.overview && data.overview.length > 0) {
-      const rows = data.overview.map((o, idx) => ({ _parent_id: serviceId, _order: idx + 1, paragraph: o.paragraph }));
+      const rows = data.overview.map((o, idx) => ({ id: generateRowId(), _parent_id: serviceId, _order: idx + 1, paragraph: o.paragraph }));
       await supabase.from('services_overview').insert(rows);
     }
     if (data.deliverables && data.deliverables.length > 0) {
-      const rows = data.deliverables.map((d, idx) => ({ _parent_id: serviceId, _order: idx + 1, title: d.title, desc: d.desc }));
+      const rows = data.deliverables.map((d, idx) => ({ id: generateRowId(), _parent_id: serviceId, _order: idx + 1, title: d.title, desc: d.desc }));
       await supabase.from('services_deliverables').insert(rows);
     }
     if (data.tech_stack && data.tech_stack.length > 0) {
-      const rows = data.tech_stack.map((t, idx) => ({ _parent_id: serviceId, _order: idx + 1, name: t.name }));
+      const rows = data.tech_stack.map((t, idx) => ({ id: generateRowId(), _parent_id: serviceId, _order: idx + 1, name: t.name }));
       await supabase.from('services_tech_stack').insert(rows);
     }
     if (data.process && data.process.length > 0) {
-      const rows = data.process.map((p, idx) => ({ _parent_id: serviceId, _order: idx + 1, step: p.step, title: p.title, desc: p.desc }));
+      const rows = data.process.map((p, idx) => ({ id: generateRowId(), _parent_id: serviceId, _order: idx + 1, step: p.step, title: p.title, desc: p.desc }));
       await supabase.from('services_process').insert(rows);
     }
     if (data.highlights && data.highlights.length > 0) {
-      const rows = data.highlights.map((h, idx) => ({ _parent_id: serviceId, _order: idx + 1, text: h.text }));
+      const rows = data.highlights.map((h, idx) => ({ id: generateRowId(), _parent_id: serviceId, _order: idx + 1, text: h.text }));
       await supabase.from('services_highlights').insert(rows);
     }
     if (data.faqs && data.faqs.length > 0) {
-      const rows = data.faqs.map((f, idx) => ({ _parent_id: serviceId, _order: idx + 1, q: f.q, a: f.a }));
+      const rows = data.faqs.map((f, idx) => ({ id: generateRowId(), _parent_id: serviceId, _order: idx + 1, q: f.q, a: f.a }));
       await supabase.from('services_faqs').insert(rows);
     }
 
@@ -783,42 +798,42 @@ export async function updateService(id: number, data: Partial<ServiceRecord>): P
     if (data.overview !== undefined) {
       await supabase.from('services_overview').delete().eq('_parent_id', id);
       if (data.overview.length > 0) {
-        const rows = data.overview.map((o, idx) => ({ _parent_id: id, _order: idx + 1, paragraph: o.paragraph }));
+        const rows = data.overview.map((o, idx) => ({ id: generateRowId(), _parent_id: id, _order: idx + 1, paragraph: o.paragraph }));
         await supabase.from('services_overview').insert(rows);
       }
     }
     if (data.deliverables !== undefined) {
       await supabase.from('services_deliverables').delete().eq('_parent_id', id);
       if (data.deliverables.length > 0) {
-        const rows = data.deliverables.map((d, idx) => ({ _parent_id: id, _order: idx + 1, title: d.title, desc: d.desc }));
+        const rows = data.deliverables.map((d, idx) => ({ id: generateRowId(), _parent_id: id, _order: idx + 1, title: d.title, desc: d.desc }));
         await supabase.from('services_deliverables').insert(rows);
       }
     }
     if (data.tech_stack !== undefined) {
       await supabase.from('services_tech_stack').delete().eq('_parent_id', id);
       if (data.tech_stack.length > 0) {
-        const rows = data.tech_stack.map((t, idx) => ({ _parent_id: id, _order: idx + 1, name: t.name }));
+        const rows = data.tech_stack.map((t, idx) => ({ id: generateRowId(), _parent_id: id, _order: idx + 1, name: t.name }));
         await supabase.from('services_tech_stack').insert(rows);
       }
     }
     if (data.process !== undefined) {
       await supabase.from('services_process').delete().eq('_parent_id', id);
       if (data.process.length > 0) {
-        const rows = data.process.map((p, idx) => ({ _parent_id: id, _order: idx + 1, step: p.step, title: p.title, desc: p.desc }));
+        const rows = data.process.map((p, idx) => ({ id: generateRowId(), _parent_id: id, _order: idx + 1, step: p.step, title: p.title, desc: p.desc }));
         await supabase.from('services_process').insert(rows);
       }
     }
     if (data.highlights !== undefined) {
       await supabase.from('services_highlights').delete().eq('_parent_id', id);
       if (data.highlights.length > 0) {
-        const rows = data.highlights.map((h, idx) => ({ _parent_id: id, _order: idx + 1, text: h.text }));
+        const rows = data.highlights.map((h, idx) => ({ id: generateRowId(), _parent_id: id, _order: idx + 1, text: h.text }));
         await supabase.from('services_highlights').insert(rows);
       }
     }
     if (data.faqs !== undefined) {
       await supabase.from('services_faqs').delete().eq('_parent_id', id);
       if (data.faqs.length > 0) {
-        const rows = data.faqs.map((f, idx) => ({ _parent_id: id, _order: idx + 1, q: f.q, a: f.a }));
+        const rows = data.faqs.map((f, idx) => ({ id: generateRowId(), _parent_id: id, _order: idx + 1, q: f.q, a: f.a }));
         await supabase.from('services_faqs').insert(rows);
       }
     }
