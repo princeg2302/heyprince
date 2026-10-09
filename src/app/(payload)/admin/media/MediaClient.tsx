@@ -138,24 +138,24 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
 
   return (
     <div>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div>
-          <h1 className="ad-page-title">Media Vault & Assets</h1>
-          <p className="ad-page-desc">
+          <h1 className="hpa-page-title">Media Vault & Assets</h1>
+          <p className="hpa-page-desc">
             Upload and organize logos, portfolio hero banners, and blog cover illustrations.
           </p>
         </div>
-        <button onClick={() => setUploadModalOpen(true)} className="ad-btn ad-btn-primary">
+        <button onClick={() => setUploadModalOpen(true)} className="hpa-btn hpa-btn-primary">
           <Upload size={16} />
           <span>Upload Media</span>
         </button>
       </div>
 
-      <div className="ad-card">
-        <div className="ad-card-header">
-          <div className="ad-table-filters">
-            <div className="ad-search-input">
-              <Search size={16} style={{ color: 'var(--ad-text-dim)' }} />
+      <div className="hpa-card">
+        <div className="hpa-card-header">
+          <div className="hpa-table-filters">
+            <div className="hpa-search-input">
+              <Search size={16} style={{ color: 'var(--hpa-text-dim)' }} />
               <input
                 type="text"
                 placeholder="Search assets by filename or alt text..."
@@ -165,7 +165,7 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
             </div>
           </div>
 
-          <div style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
             Total <strong>{filtered.length}</strong> assets
           </div>
         </div>
@@ -184,7 +184,7 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                 key={item.id}
                 style={{
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                   borderRadius: '10px',
                   overflow: 'hidden',
                   display: 'flex',
@@ -195,7 +195,7 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                 <div
                   style={{
                     height: '140px',
-                    background: 'var(--ad-surface-2)',
+                    background: 'var(--hpa-surface-2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -232,7 +232,7 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                   >
                     {item.filename}
                   </div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--ad-text-dim)', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', marginBottom: '12px' }}>
                     {item.alt || 'Asset'}
                   </div>
 
@@ -249,17 +249,17 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                     <button
                       type="button"
                       onClick={() => handleCopyUrl(item)}
-                      className="ad-btn ad-btn-secondary ad-btn-sm"
+                      className="hpa-btn hpa-btn-secondary hpa-btn-sm"
                       style={{ padding: '4px 8px', fontSize: '0.75rem', gap: '4px' }}
                     >
-                      {copiedId === item.id ? <Check size={12} style={{ color: 'var(--ad-success)' }} /> : <Copy size={12} />}
+                      {copiedId === item.id ? <Check size={12} style={{ color: 'var(--hpa-success)' }} /> : <Copy size={12} />}
                       <span>{copiedId === item.id ? 'Copied' : 'Copy URL'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setDeletingId(item.id)}
-                      className="ad-btn ad-btn-danger ad-btn-icon"
+                      className="hpa-btn hpa-btn-danger hpa-btn-icon"
                       title="Delete Asset"
                       style={{ width: '28px', height: '28px' }}
                     >
@@ -271,13 +271,13 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
             ))}
           </div>
         ) : (
-          <div className="ad-empty-state">
-            <ImageIcon size={48} className="ad-empty-icon" />
-            <h3 className="ad-empty-title">No media assets found</h3>
-            <p className="ad-empty-sub">
+          <div className="hpa-empty-state">
+            <ImageIcon size={48} className="hpa-empty-icon" />
+            <h3 className="hpa-empty-title">No media assets found</h3>
+            <p className="hpa-empty-sub">
               Upload your logos, hero illustrations, and article cover images.
             </p>
-            <button onClick={() => setUploadModalOpen(true)} className="ad-btn ad-btn-primary ad-btn-sm">
+            <button onClick={() => setUploadModalOpen(true)} className="hpa-btn hpa-btn-primary hpa-btn-sm">
               <Upload size={14} />
               <span>Upload Media</span>
             </button>
@@ -287,66 +287,66 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
 
       {/* Upload Asset Modal */}
       {uploadModalOpen && (
-        <div className="ad-modal-backdrop" onClick={() => setUploadModalOpen(false)}>
-          <div className="ad-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="hpa-modal-backdrop" onClick={() => setUploadModalOpen(false)}>
+          <div className="hpa-modal" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 className="ad-modal-title">Upload Media Asset</h3>
+              <h3 className="hpa-modal-title">Upload Media Asset</h3>
               <button
                 type="button"
                 onClick={() => setUploadModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--ad-text-dim)', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--hpa-text-dim)', cursor: 'pointer' }}
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="ad-form-group" style={{ margin: 0 }}>
-                <label className="ad-form-label">Choose Image File</label>
+              <div className="hpa-form-group" style={{ margin: 0 }}>
+                <label className="hpa-form-label">Choose Image File</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                  className="ad-form-input"
+                  className="hpa-form-input"
                   style={{ padding: '8px' }}
                 />
               </div>
 
-              <div style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--ad-text-dim)' }}>
+              <div style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--hpa-text-dim)' }}>
                 — OR ENTER DIRECT URL —
               </div>
 
-              <div className="ad-form-group" style={{ margin: 0 }}>
-                <label className="ad-form-label">External Image URL</label>
+              <div className="hpa-form-group" style={{ margin: 0 }}>
+                <label className="hpa-form-label">External Image URL</label>
                 <input
                   type="text"
                   placeholder="https://... or /assets/blog/..."
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  className="ad-form-input"
+                  className="hpa-form-input"
                 />
               </div>
 
-              <div className="ad-form-group" style={{ margin: 0 }}>
-                <label className="ad-form-label">Alt / Descriptive Caption</label>
+              <div className="hpa-form-group" style={{ margin: 0 }}>
+                <label className="hpa-form-label">Alt / Descriptive Caption</label>
                 <input
                   type="text"
                   placeholder="e.g. Prince technical architecture diagram"
                   value={altText}
                   onChange={(e) => setAltText(e.target.value)}
-                  className="ad-form-input"
+                  className="hpa-form-input"
                 />
               </div>
 
-              <div className="ad-modal-actions">
+              <div className="hpa-modal-actions">
                 <button
                   type="button"
                   onClick={() => setUploadModalOpen(false)}
-                  className="ad-btn ad-btn-secondary"
+                  className="hpa-btn hpa-btn-secondary"
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={uploadLoading} className="ad-btn ad-btn-primary">
+                <button type="submit" disabled={uploadLoading} className="hpa-btn hpa-btn-primary">
                   <Upload size={15} />
                   <span>{uploadLoading ? 'Uploading...' : 'Save Asset'}</span>
                 </button>

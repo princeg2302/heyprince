@@ -86,41 +86,41 @@ export function UserForm({ initialData, isEdit = false }: UserFormProps) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link href="/admin/users" className="ad-btn ad-btn-secondary ad-btn-icon" title="Back">
+          <Link href="/admin/users" className="hpa-btn hpa-btn-secondary hpa-btn-icon" title="Back">
             <ArrowLeft size={16} />
           </Link>
           <div>
-            <h1 className="ad-page-title">{isEdit ? 'Edit Admin User' : 'Add Admin User'}</h1>
-            <p className="ad-page-desc">
+            <h1 className="hpa-page-title">{isEdit ? 'Edit Admin User' : 'Add Admin User'}</h1>
+            <p className="hpa-page-desc">
               {isEdit ? `Editing ${initialData?.email}` : 'Grant administrative permissions to a team member'}
             </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/admin/users" className="ad-btn ad-btn-secondary">
+          <Link href="/admin/users" className="hpa-btn hpa-btn-secondary">
             Cancel
           </Link>
-          <button type="submit" disabled={loading} className="ad-btn ad-btn-primary">
+          <button type="submit" disabled={loading} className="hpa-btn hpa-btn-primary">
             <Save size={16} />
             <span>{loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create User'}</span>
           </button>
         </div>
       </div>
 
-      <div className="ad-form-card" style={{ maxWidth: '640px' }}>
-        <div className="ad-form-group">
-          <label className="ad-form-label">Full Name *</label>
+      <div className="hpa-form-card" style={{ maxWidth: '640px' }}>
+        <div className="hpa-form-group">
+          <label className="hpa-form-label">Full Name *</label>
           <div style={{ position: 'relative' }}>
             <UserIcon
               size={17}
-              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ad-text-dim)' }}
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--hpa-text-dim)' }}
             />
             <input
               type="text"
-              className="ad-form-input"
+              className="hpa-form-input"
               style={{ paddingLeft: '38px' }}
               placeholder="e.g. Prince"
               value={name}
@@ -130,16 +130,16 @@ export function UserForm({ initialData, isEdit = false }: UserFormProps) {
           </div>
         </div>
 
-        <div className="ad-form-group">
-          <label className="ad-form-label">Email Address *</label>
+        <div className="hpa-form-group">
+          <label className="hpa-form-label">Email Address *</label>
           <div style={{ position: 'relative' }}>
             <Mail
               size={17}
-              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ad-text-dim)' }}
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--hpa-text-dim)' }}
             />
             <input
               type="email"
-              className="ad-form-input"
+              className="hpa-form-input"
               style={{ paddingLeft: '38px' }}
               placeholder="e.g. colleague@heyprince.in"
               value={email}
@@ -149,31 +149,31 @@ export function UserForm({ initialData, isEdit = false }: UserFormProps) {
           </div>
         </div>
 
-        <div className="ad-form-group">
-          <label className="ad-form-label">Role & Permissions</label>
+        <div className="hpa-form-group">
+          <label className="hpa-form-label">Role & Permissions</label>
           <select
-            className="ad-select"
+            className="hpa-select"
             value={role}
             onChange={(e) => setRole(e.target.value as any)}
           >
             <option value="admin">Administrator (Full Access)</option>
             <option value="editor">Editor (Content Management)</option>
           </select>
-          <span className="ad-form-help">
+          <span className="hpa-form-help">
             Administrators can create users and change database configurations.
           </span>
         </div>
 
-        <div className="ad-form-group">
-          <label className="ad-form-label">{isEdit ? 'New Password (Leave blank to keep current)' : 'Password *'}</label>
+        <div className="hpa-form-group">
+          <label className="hpa-form-label">{isEdit ? 'New Password (Leave blank to keep current)' : 'Password *'}</label>
           <div style={{ position: 'relative' }}>
             <Lock
               size={17}
-              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ad-text-dim)' }}
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--hpa-text-dim)' }}
             />
             <input
               type="password"
-              className="ad-form-input"
+              className="hpa-form-input"
               style={{ paddingLeft: '38px' }}
               placeholder="••••••••••••"
               value={password}
@@ -184,16 +184,16 @@ export function UserForm({ initialData, isEdit = false }: UserFormProps) {
         </div>
 
         {password && (
-          <div className="ad-form-group">
-            <label className="ad-form-label">Confirm Password *</label>
+          <div className="hpa-form-group">
+            <label className="hpa-form-label">Confirm Password *</label>
             <div style={{ position: 'relative' }}>
               <Lock
                 size={17}
-                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--ad-text-dim)' }}
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--hpa-text-dim)' }}
               />
               <input
                 type="password"
-                className="ad-form-input"
+                className="hpa-form-input"
                 style={{ paddingLeft: '38px' }}
                 placeholder="••••••••••••"
                 value={confirmPassword}

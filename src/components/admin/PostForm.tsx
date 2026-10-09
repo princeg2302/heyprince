@@ -229,28 +229,28 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
   return (
     <form onSubmit={handleSubmit}>
       {/* Header Bar */}
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <Link
             href={isEdit ? `/admin/posts/${initialData?.id}` : '/admin/posts'}
-            className="ad-btn ad-btn-secondary ad-btn-icon"
+            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
             title="Back"
           >
             <ArrowLeft size={16} />
           </Link>
           <div>
-            <h1 className="ad-page-title">{isEdit ? 'Edit Article' : 'Create New Article'}</h1>
-            <p className="ad-page-desc">
+            <h1 className="hpa-page-title">{isEdit ? 'Edit Article' : 'Create New Article'}</h1>
+            <p className="hpa-page-desc">
               {isEdit ? `Editing /${slug}` : 'Compose and publish insights to heyprince.in'}
             </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/admin/posts" className="ad-btn ad-btn-secondary">
+          <Link href="/admin/posts" className="hpa-btn hpa-btn-secondary">
             Cancel
           </Link>
-          <button type="submit" disabled={loading} className="ad-btn ad-btn-primary">
+          <button type="submit" disabled={loading} className="hpa-btn hpa-btn-primary">
             <Save size={16} />
             <span>{loading ? 'Saving to Database...' : isEdit ? 'Save Changes' : 'Publish Article'}</span>
           </button>
@@ -258,11 +258,11 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
       </div>
 
       {/* Tabs */}
-      <div className="ad-tabs">
+      <div className="hpa-tabs">
         <button
           type="button"
           onClick={() => setActiveTab('general')}
-          className={`ad-tab-btn ${activeTab === 'general' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'general' ? 'active' : ''}`}
         >
           <FileText size={15} style={{ display: 'inline', marginRight: '6px' }} />
           Article Details
@@ -270,7 +270,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
         <button
           type="button"
           onClick={() => setActiveTab('content')}
-          className={`ad-tab-btn ${activeTab === 'content' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'content' ? 'active' : ''}`}
         >
           <Sparkles size={15} style={{ display: 'inline', marginRight: '6px' }} />
           Content Sections ({sections.length})
@@ -278,7 +278,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
         <button
           type="button"
           onClick={() => setActiveTab('author')}
-          className={`ad-tab-btn ${activeTab === 'author' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'author' ? 'active' : ''}`}
         >
           <User size={15} style={{ display: 'inline', marginRight: '6px' }} />
           Author & Tags
@@ -286,7 +286,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
         <button
           type="button"
           onClick={() => setActiveTab('seo')}
-          className={`ad-tab-btn ${activeTab === 'seo' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'seo' ? 'active' : ''}`}
         >
           <Search size={15} style={{ display: 'inline', marginRight: '6px' }} />
           SEO & Meta
@@ -295,13 +295,13 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
 
       {/* Tab 1: General Details */}
       {activeTab === 'general' && (
-        <div className="ad-form-card">
-          <div className="ad-form-grid">
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Article Title *</label>
+        <div className="hpa-form-card">
+          <div className="hpa-form-grid">
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Article Title *</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="e.g. Essential Freelancing Tips for IT Professionals in 2026"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
@@ -309,23 +309,23 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
               />
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">URL Slug *</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">URL Slug *</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="freelancing-tips-it-professionals-2026"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 required
               />
-              <span className="ad-form-help">Live URL: https://heyprince.in/insights/{slug || '...'}/</span>
+              <span className="hpa-form-help">Live URL: https://heyprince.in/insights/{slug || '...'}/</span>
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Category</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Category</label>
               <select
-                className="ad-form-select"
+                className="hpa-form-select"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
               >
@@ -338,10 +338,10 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
               </select>
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Publication Status</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Publication Status</label>
               <select
-                className="ad-form-select"
+                className="hpa-form-select"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
               >
@@ -350,21 +350,21 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
               </select>
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Estimated Read Time</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Estimated Read Time</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="5 min"
                 value={readMins}
                 onChange={(e) => setReadMins(e.target.value)}
               />
             </div>
 
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Summary / Excerpt *</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Summary / Excerpt *</label>
               <textarea
-                className="ad-form-textarea"
+                className="hpa-form-textarea"
                 rows={3}
                 placeholder="A compelling 2-sentence summary of the article..."
                 value={excerpt}
@@ -373,12 +373,12 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
               />
             </div>
 
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Cover Image URL</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Cover Image URL</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <input
                   type="text"
-                  className="ad-form-input"
+                  className="hpa-form-input"
                   placeholder="/assets/blog/photo1.webp or full HTTPS URL"
                   value={coverImage}
                   onChange={(e) => setCoverImage(e.target.value)}
@@ -392,7 +392,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
                       height: '48px',
                       borderRadius: '8px',
                       objectFit: 'cover',
-                      border: '1px solid var(--ad-border)',
+                      border: '1px solid var(--hpa-border)',
                     }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
@@ -409,25 +409,25 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
       {activeTab === 'content' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {sections.map((sec, secIdx) => (
-            <div key={secIdx} className="ad-card" style={{ padding: '24px' }}>
+            <div key={secIdx} className="hpa-card" style={{ padding: '24px' }}>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   marginBottom: '16px',
-                  borderBottom: '1px solid var(--ad-border)',
+                  borderBottom: '1px solid var(--hpa-border)',
                   paddingBottom: '12px',
                 }}
               >
-                <div style={{ fontWeight: 700, color: 'var(--ad-primary)', fontSize: '0.9rem' }}>
+                <div style={{ fontWeight: 700, color: 'var(--hpa-primary)', fontSize: '0.9rem' }}>
                   Section #{secIdx + 1}
                 </div>
                 {sections.length > 1 && (
                   <button
                     type="button"
                     onClick={() => handleRemoveSection(secIdx)}
-                    className="ad-btn ad-btn-danger ad-btn-sm"
+                    className="hpa-btn hpa-btn-danger hpa-btn-sm"
                   >
                     <Trash2 size={14} />
                     <span>Delete Section</span>
@@ -435,11 +435,11 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
                 )}
               </div>
 
-              <div className="ad-form-group">
-                <label className="ad-form-label">Section Heading *</label>
+              <div className="hpa-form-group">
+                <label className="hpa-form-label">Section Heading *</label>
                 <input
                   type="text"
-                  className="ad-form-input"
+                  className="hpa-form-input"
                   placeholder="e.g. 1. Specializing in High-Leverage Domains"
                   value={sec.heading}
                   onChange={(e) => handleSectionChange(secIdx, 'heading', e.target.value)}
@@ -457,13 +457,13 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
                     marginBottom: '8px',
                   }}
                 >
-                  <label className="ad-form-label" style={{ margin: 0 }}>
+                  <label className="hpa-form-label" style={{ margin: 0 }}>
                     Paragraphs
                   </label>
                   <button
                     type="button"
                     onClick={() => handleAddParagraph(secIdx)}
-                    className="ad-btn ad-btn-secondary ad-btn-sm"
+                    className="hpa-btn hpa-btn-secondary hpa-btn-sm"
                   >
                     <Plus size={13} />
                     <span>Add Paragraph</span>
@@ -472,7 +472,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
                 {sec.paragraphs.map((p, pIdx) => (
                   <div key={pIdx} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                     <textarea
-                      className="ad-form-textarea"
+                      className="hpa-form-textarea"
                       rows={3}
                       placeholder={`Paragraph ${pIdx + 1}...`}
                       value={p}
@@ -482,7 +482,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
                       <button
                         type="button"
                         onClick={() => handleRemoveParagraph(secIdx, pIdx)}
-                        className="ad-btn ad-btn-danger ad-btn-icon"
+                        className="hpa-btn hpa-btn-danger hpa-btn-icon"
                         title="Remove paragraph"
                         style={{ alignSelf: 'flex-start' }}
                       >
@@ -494,10 +494,10 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
               </div>
 
               {/* Bullet Points */}
-              <div className="ad-form-group">
-                <label className="ad-form-label">Bullet Points (Optional - One per line)</label>
+              <div className="hpa-form-group">
+                <label className="hpa-form-label">Bullet Points (Optional - One per line)</label>
                 <textarea
-                  className="ad-form-textarea"
+                  className="hpa-form-textarea"
                   rows={3}
                   placeholder="Point 1&#10;Point 2&#10;Point 3"
                   value={sec.bulletPoints.join('\n')}
@@ -511,22 +511,22 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
                 />
               </div>
 
-              <div className="ad-form-grid">
-                <div className="ad-form-group">
-                  <label className="ad-form-label">Callout Quote (Optional)</label>
+              <div className="hpa-form-grid">
+                <div className="hpa-form-group">
+                  <label className="hpa-form-label">Callout Quote (Optional)</label>
                   <input
                     type="text"
-                    className="ad-form-input"
+                    className="hpa-form-input"
                     placeholder="Key executive takeaway..."
                     value={sec.quote || ''}
                     onChange={(e) => handleSectionChange(secIdx, 'quote', e.target.value)}
                   />
                 </div>
-                <div className="ad-form-group">
-                  <label className="ad-form-label">Pro Tip (Optional)</label>
+                <div className="hpa-form-group">
+                  <label className="hpa-form-label">Pro Tip (Optional)</label>
                   <input
                     type="text"
-                    className="ad-form-input"
+                    className="hpa-form-input"
                     placeholder="Actionable insider recommendation..."
                     value={sec.proTip || ''}
                     onChange={(e) => handleSectionChange(secIdx, 'proTip', e.target.value)}
@@ -539,7 +539,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
           <button
             type="button"
             onClick={handleAddSection}
-            className="ad-btn ad-btn-secondary"
+            className="hpa-btn hpa-btn-secondary"
             style={{ width: '100%', padding: '14px', borderStyle: 'dashed' }}
           >
             <Plus size={16} />
@@ -550,34 +550,34 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
 
       {/* Tab 3: Author & Tags */}
       {activeTab === 'author' && (
-        <div className="ad-form-card">
+        <div className="hpa-form-card">
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', marginBottom: '16px' }}>
             Author Byline
           </h3>
-          <div className="ad-form-grid" style={{ marginBottom: '28px' }}>
-            <div className="ad-form-group">
-              <label className="ad-form-label">Author Name</label>
+          <div className="hpa-form-grid" style={{ marginBottom: '28px' }}>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Author Name</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
               />
             </div>
-            <div className="ad-form-group">
-              <label className="ad-form-label">Author Role / Title</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Author Role / Title</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 value={authorRole}
                 onChange={(e) => setAuthorRole(e.target.value)}
               />
             </div>
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Author Avatar URL</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Author Avatar URL</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 value={authorAvatar}
                 onChange={(e) => setAuthorAvatar(e.target.value)}
               />
@@ -590,7 +590,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
           <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
             <input
               type="text"
-              className="ad-form-input"
+              className="hpa-form-input"
               placeholder="e.g. Next.js 16, Cloud Architecture, AI Agents"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
@@ -601,7 +601,7 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
                 }
               }}
             />
-            <button type="button" onClick={handleAddTag} className="ad-btn ad-btn-secondary">
+            <button type="button" onClick={handleAddTag} className="hpa-btn hpa-btn-secondary">
               Add Tag
             </button>
           </div>
@@ -645,37 +645,37 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
 
       {/* Tab 4: SEO & Meta */}
       {activeTab === 'seo' && (
-        <div className="ad-form-card">
-          <div className="ad-form-grid">
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">SEO Meta Title</label>
+        <div className="hpa-form-card">
+          <div className="hpa-form-grid">
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">SEO Meta Title</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="Default: [Title] | Prince — Tech Partner"
                 value={seoTitle}
                 onChange={(e) => setSeoTitle(e.target.value)}
               />
-              <span className="ad-form-help">Optimized length: 50-60 characters</span>
+              <span className="hpa-form-help">Optimized length: 50-60 characters</span>
             </div>
 
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">SEO Meta Description</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">SEO Meta Description</label>
               <textarea
-                className="ad-form-textarea"
+                className="hpa-form-textarea"
                 rows={3}
                 placeholder="A description that appears on Google and social media cards..."
                 value={seoDescription}
                 onChange={(e) => setSeoDescription(e.target.value)}
               />
-              <span className="ad-form-help">Optimized length: 140-160 characters</span>
+              <span className="hpa-form-help">Optimized length: 140-160 characters</span>
             </div>
 
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Canonical URL</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Canonical URL</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="https://heyprince.in/insights/[slug]/"
                 value={canonical}
                 onChange={(e) => setCanonical(e.target.value)}

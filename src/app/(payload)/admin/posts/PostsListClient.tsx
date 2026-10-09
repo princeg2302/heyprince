@@ -89,26 +89,26 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
   return (
     <div>
       {/* Page Header */}
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div>
-          <h1 className="ad-page-title">Insights & Articles</h1>
-          <p className="ad-page-desc">
+          <h1 className="hpa-page-title">Insights & Articles</h1>
+          <p className="hpa-page-desc">
             Manage your technical engineering insights, tutorials, and career publications.
           </p>
         </div>
-        <Link href="/admin/posts/new" className="ad-btn ad-btn-primary">
+        <Link href="/admin/posts/new" className="hpa-btn hpa-btn-primary">
           <Plus size={16} />
           <span>New Article</span>
         </Link>
       </div>
 
       {/* Main Table Card */}
-      <div className="ad-card">
+      <div className="hpa-card">
         {/* Filters Bar */}
-        <div className="ad-card-header">
-          <div className="ad-table-filters">
-            <div className="ad-search-input">
-              <Search size={16} style={{ color: 'var(--ad-text-dim)' }} />
+        <div className="hpa-card-header">
+          <div className="hpa-table-filters">
+            <div className="hpa-search-input">
+              <Search size={16} style={{ color: 'var(--hpa-text-dim)' }} />
               <input
                 type="text"
                 placeholder="Search by title, slug, or content..."
@@ -121,7 +121,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
             </div>
 
             <select
-              className="ad-select"
+              className="hpa-select"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -134,7 +134,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
             </select>
 
             <select
-              className="ad-select"
+              className="hpa-select"
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value);
@@ -150,15 +150,15 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
             </select>
           </div>
 
-          <div style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
             Showing <strong>{filtered.length}</strong> {filtered.length === 1 ? 'article' : 'articles'}
           </div>
         </div>
 
         {/* Table */}
         {paginated.length > 0 ? (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="hpa-table-wrap">
+            <table className="hpa-table">
               <thead>
                 <tr>
                   <th>Article</th>
@@ -186,7 +186,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                           <img
                             src={post.cover_image || '/assets/blog/photo1.webp'}
                             alt={post.title}
-                            className="ad-table-thumb"
+                            className="hpa-table-thumb"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = '/assets/blog/photo1.webp';
                             }}
@@ -207,7 +207,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             >
                               {post.title}
                             </Link>
-                            <span style={{ fontSize: '0.76rem', color: 'var(--ad-text-dim)' }}>
+                            <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
                               /{post.slug} • {post.read_mins || '5 min'}
                             </span>
                           </div>
@@ -228,15 +228,15 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
 
                       <td>
                         <span
-                          className={`ad-pill ${
-                            post.status === 'published' ? 'ad-pill-published' : 'ad-pill-draft'
+                          className={`hpa-pill ${
+                            post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'
                           }`}
                         >
                           {post.status}
                         </span>
                       </td>
 
-                      <td style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+                      <td style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
                         {dateStr}
                       </td>
 
@@ -244,14 +244,14 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                           <Link
                             href={`/admin/posts/${post.id}`}
-                            className="ad-btn ad-btn-secondary ad-btn-icon"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="View Full Post"
                           >
                             <Eye size={14} />
                           </Link>
                           <Link
                             href={`/admin/posts/${post.id}/edit`}
-                            className="ad-btn ad-btn-secondary ad-btn-icon"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="Edit Post"
                           >
                             <Edit2 size={14} />
@@ -260,14 +260,14 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             href={`https://heyprince.in/insights/${post.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="ad-btn ad-btn-secondary ad-btn-icon"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="Open on Live Website"
                           >
                             <ExternalLink size={14} />
                           </a>
                           <button
                             onClick={() => setDeletingId(post.id)}
-                            className="ad-btn ad-btn-danger ad-btn-icon"
+                            className="hpa-btn hpa-btn-danger hpa-btn-icon"
                             title="Delete Article"
                           >
                             <Trash2 size={14} />
@@ -281,15 +281,15 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
             </table>
           </div>
         ) : (
-          <div className="ad-empty-state">
-            <Inbox size={48} className="ad-empty-icon" />
-            <h3 className="ad-empty-title">No articles found</h3>
-            <p className="ad-empty-sub">
+          <div className="hpa-empty-state">
+            <Inbox size={48} className="hpa-empty-icon" />
+            <h3 className="hpa-empty-title">No articles found</h3>
+            <p className="hpa-empty-sub">
               {search || statusFilter !== 'all' || categoryFilter !== 'all'
                 ? 'Try adjusting your filters or search keywords.'
                 : 'Get started by creating your first article.'}
             </p>
-            <Link href="/admin/posts/new" className="ad-btn ad-btn-primary ad-btn-sm">
+            <Link href="/admin/posts/new" className="hpa-btn hpa-btn-primary hpa-btn-sm">
               <Plus size={14} />
               <span>Add New Article</span>
             </Link>
@@ -298,7 +298,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
 
         {/* Pagination */}
         {filtered.length > itemsPerPage && (
-          <div className="ad-pagination">
+          <div className="hpa-pagination">
             <span>
               Page {page} of {totalPages}
             </span>
@@ -306,14 +306,14 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="ad-btn ad-btn-secondary ad-btn-sm"
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
               >
                 Previous
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="ad-btn ad-btn-secondary ad-btn-sm"
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
               >
                 Next
               </button>

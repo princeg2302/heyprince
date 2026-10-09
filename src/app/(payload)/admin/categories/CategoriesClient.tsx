@@ -152,24 +152,24 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
 
   return (
     <div>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div>
-          <h1 className="ad-page-title">Categories & Taxonomies</h1>
-          <p className="ad-page-desc">
+          <h1 className="hpa-page-title">Categories & Taxonomies</h1>
+          <p className="hpa-page-desc">
             Classify and organize your insights, articles, and consulting services.
           </p>
         </div>
-        <button onClick={openCreateModal} className="ad-btn ad-btn-primary">
+        <button onClick={openCreateModal} className="hpa-btn hpa-btn-primary">
           <Plus size={16} />
           <span>Add Category</span>
         </button>
       </div>
 
-      <div className="ad-card">
-        <div className="ad-card-header">
-          <div className="ad-table-filters">
-            <div className="ad-search-input">
-              <Search size={16} style={{ color: 'var(--ad-text-dim)' }} />
+      <div className="hpa-card">
+        <div className="hpa-card-header">
+          <div className="hpa-table-filters">
+            <div className="hpa-search-input">
+              <Search size={16} style={{ color: 'var(--hpa-text-dim)' }} />
               <input
                 type="text"
                 placeholder="Search categories..."
@@ -178,14 +178,14 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
               />
             </div>
           </div>
-          <div style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
             Total <strong>{filtered.length}</strong> categories
           </div>
         </div>
 
         {filtered.length > 0 ? (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="hpa-table-wrap">
+            <table className="hpa-table">
               <thead>
                 <tr>
                   <th>Category Title</th>
@@ -207,7 +207,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                           padding: '3px 8px',
                           borderRadius: '4px',
                           background: 'rgba(255, 255, 255, 0.05)',
-                          color: 'var(--ad-primary)',
+                          color: 'var(--hpa-primary)',
                         }}
                       >
                         {cat.slug}
@@ -222,14 +222,14 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <button
                           onClick={() => openEditModal(cat)}
-                          className="ad-btn ad-btn-secondary ad-btn-icon"
+                          className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                           title="Edit Category"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => setDeletingId(cat.id)}
-                          className="ad-btn ad-btn-danger ad-btn-icon"
+                          className="hpa-btn hpa-btn-danger hpa-btn-icon"
                           title="Delete Category"
                         >
                           <Trash2 size={14} />
@@ -242,11 +242,11 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
             </table>
           </div>
         ) : (
-          <div className="ad-empty-state">
-            <Inbox size={48} className="ad-empty-icon" />
-            <h3 className="ad-empty-title">No categories found</h3>
-            <p className="ad-empty-sub">Create your first category tag.</p>
-            <button onClick={openCreateModal} className="ad-btn ad-btn-primary ad-btn-sm">
+          <div className="hpa-empty-state">
+            <Inbox size={48} className="hpa-empty-icon" />
+            <h3 className="hpa-empty-title">No categories found</h3>
+            <p className="hpa-empty-sub">Create your first category tag.</p>
+            <button onClick={openCreateModal} className="hpa-btn hpa-btn-primary hpa-btn-sm">
               <Plus size={14} />
               <span>Add Category</span>
             </button>
@@ -256,27 +256,27 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
 
       {/* Create / Edit Modal */}
       {modalOpen && (
-        <div className="ad-modal-backdrop" onClick={() => setModalOpen(false)}>
-          <div className="ad-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="hpa-modal-backdrop" onClick={() => setModalOpen(false)}>
+          <div className="hpa-modal" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 className="ad-modal-title">
+              <h3 className="hpa-modal-title">
                 {editingCategory ? 'Edit Category' : 'Add New Category'}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--ad-text-dim)', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--hpa-text-dim)', cursor: 'pointer' }}
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="ad-form-group" style={{ margin: 0 }}>
-                <label className="ad-form-label">Category Title *</label>
+              <div className="hpa-form-group" style={{ margin: 0 }}>
+                <label className="hpa-form-label">Category Title *</label>
                 <input
                   type="text"
-                  className="ad-form-input"
+                  className="hpa-form-input"
                   placeholder="e.g. Artificial Intelligence & Automation"
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
@@ -284,11 +284,11 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                 />
               </div>
 
-              <div className="ad-form-group" style={{ margin: 0 }}>
-                <label className="ad-form-label">URL Slug *</label>
+              <div className="hpa-form-group" style={{ margin: 0 }}>
+                <label className="hpa-form-label">URL Slug *</label>
                 <input
                   type="text"
-                  className="ad-form-input"
+                  className="hpa-form-input"
                   placeholder="ai-automation"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
@@ -296,10 +296,10 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                 />
               </div>
 
-              <div className="ad-form-group" style={{ margin: 0 }}>
-                <label className="ad-form-label">Description</label>
+              <div className="hpa-form-group" style={{ margin: 0 }}>
+                <label className="hpa-form-label">Description</label>
                 <textarea
-                  className="ad-form-textarea"
+                  className="hpa-form-textarea"
                   rows={3}
                   placeholder="Services and insights related to this topic..."
                   value={description}
@@ -307,15 +307,15 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                 />
               </div>
 
-              <div className="ad-modal-actions">
+              <div className="hpa-modal-actions">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="ad-btn ad-btn-secondary"
+                  className="hpa-btn hpa-btn-secondary"
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={modalLoading} className="ad-btn ad-btn-primary">
+                <button type="submit" disabled={modalLoading} className="hpa-btn hpa-btn-primary">
                   <Save size={15} />
                   <span>{modalLoading ? 'Saving...' : editingCategory ? 'Update' : 'Create'}</span>
                 </button>

@@ -75,7 +75,7 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
   });
 
   return (
-    <div className="ad-root">
+    <div className="hpa-root">
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div
@@ -90,26 +90,26 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`ad-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="ad-sidebar-header">
-          <Link href="/admin/" className="ad-sidebar-logo">
+      <aside className={`hpa-sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="hpa-sidebar-header">
+          <Link href="/admin/" className="hpa-sidebar-logo">
             <img src="/heyprince-logo.svg" alt="HeyPrince" />
-            <div className="ad-sidebar-logo-text">
-              <span className="ad-logo-brand">HeyPrince</span>
-              <span className="ad-logo-sub">Executive Portal</span>
+            <div className="hpa-sidebar-logo-text">
+              <span className="hpa-logo-brand">HeyPrince</span>
+              <span className="hpa-logo-sub">Executive Portal</span>
             </div>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="ad-mobile-menu-btn"
+            className="hpa-mobile-menu-btn"
             style={{ display: sidebarOpen ? 'block' : 'none' }}
           >
             <X size={20} />
           </button>
         </div>
 
-        <nav className="ad-sidebar-nav">
-          <span className="ad-nav-group-title">Navigation</span>
+        <nav className="hpa-sidebar-nav">
+          <span className="hpa-nav-group-title">Navigation</span>
           {navItems.map((item) => {
             const Icon = item.icon;
             const normalizedPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
@@ -123,13 +123,13 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`ad-nav-link ${isActive ? 'active' : ''}`}
+                className={`hpa-nav-link ${isActive ? 'active' : ''}`}
               >
-                <div className="ad-nav-link-content">
+                <div className="hpa-nav-link-content">
                   <Icon
                     size={18}
                     style={{
-                      color: isActive ? 'var(--ad-primary)' : 'var(--ad-text-muted)',
+                      color: isActive ? 'var(--hpa-primary)' : 'var(--hpa-text-muted)',
                     }}
                   />
                   <span>{item.label}</span>
@@ -139,35 +139,35 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
           })}
         </nav>
 
-        <div className="ad-sidebar-footer">
+        <div className="hpa-sidebar-footer">
           <a
             href="https://heyprince.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="ad-btn ad-btn-secondary ad-btn-sm"
+            className="hpa-btn hpa-btn-secondary hpa-btn-sm"
             style={{ width: '100%', justifyContent: 'space-between' }}
           >
             <span>Live Website</span>
             <ExternalLink size={14} />
           </a>
 
-          <div className="ad-user-pill">
-            <div className="ad-user-avatar">
+          <div className="hpa-user-pill">
+            <div className="hpa-user-avatar">
               {displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="ad-user-info">
-              <div className="ad-user-name">{displayName}</div>
-              <div className="ad-user-role">{displayRole}</div>
+            <div className="hpa-user-info">
+              <div className="hpa-user-name">{displayName}</div>
+              <div className="hpa-user-role">{displayRole}</div>
             </div>
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="ad-btn-icon"
+              className="hpa-btn-icon"
               title="Sign Out"
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--ad-text-muted)',
+                color: 'var(--hpa-text-muted)',
                 cursor: 'pointer',
               }}
             >
@@ -178,21 +178,21 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="ad-main-wrapper">
-        <header className="ad-header">
-          <div className="ad-header-left">
+      <div className="hpa-main-wrapper">
+        <header className="hpa-header">
+          <div className="hpa-header-left">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="ad-mobile-menu-btn"
+              className="hpa-mobile-menu-btn"
               title="Open Navigation"
             >
               <Menu size={22} />
             </button>
 
-            <nav className="ad-breadcrumbs" aria-label="Breadcrumb">
+            <nav className="hpa-breadcrumbs" aria-label="Breadcrumb">
               {breadcrumbs.map((b, i) => (
                 <React.Fragment key={b.href}>
-                  {i > 0 && <span className="ad-breadcrumbs-sep">/</span>}
+                  {i > 0 && <span className="hpa-breadcrumbs-sep">/</span>}
                   {b.isLast ? (
                     <span className="active">{b.label}</span>
                   ) : (
@@ -203,15 +203,15 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
             </nav>
           </div>
 
-          <div className="ad-header-right">
-            <div className="ad-status-pill">
-              <span className="ad-status-dot" />
+          <div className="hpa-header-right">
+            <div className="hpa-status-pill">
+              <span className="hpa-status-dot" />
               <span>Supabase Live</span>
             </div>
 
             <button
               onClick={handleLogout}
-              className="ad-btn ad-btn-secondary ad-btn-sm"
+              className="hpa-btn hpa-btn-secondary hpa-btn-sm"
               style={{ gap: '6px' }}
             >
               <LogOut size={14} />
@@ -220,7 +220,7 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
           </div>
         </header>
 
-        <main className="ad-content">{children}</main>
+        <main className="hpa-content">{children}</main>
       </div>
     </div>
   );

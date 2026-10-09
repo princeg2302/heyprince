@@ -192,28 +192,28 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
   return (
     <form onSubmit={handleSubmit}>
       {/* Header Bar */}
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <Link
             href={isEdit ? `/admin/services/${initialData?.id}` : '/admin/services'}
-            className="ad-btn ad-btn-secondary ad-btn-icon"
+            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
             title="Back"
           >
             <ArrowLeft size={16} />
           </Link>
           <div>
-            <h1 className="ad-page-title">{isEdit ? 'Edit Service' : 'Add New Service'}</h1>
-            <p className="ad-page-desc">
+            <h1 className="hpa-page-title">{isEdit ? 'Edit Service' : 'Add New Service'}</h1>
+            <p className="hpa-page-desc">
               {isEdit ? `Editing /${slug}` : 'Define an executive engineering offering'}
             </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/admin/services" className="ad-btn ad-btn-secondary">
+          <Link href="/admin/services" className="hpa-btn hpa-btn-secondary">
             Cancel
           </Link>
-          <button type="submit" disabled={loading} className="ad-btn ad-btn-primary">
+          <button type="submit" disabled={loading} className="hpa-btn hpa-btn-primary">
             <Save size={16} />
             <span>{loading ? 'Saving to Database...' : isEdit ? 'Save Changes' : 'Create Service'}</span>
           </button>
@@ -221,11 +221,11 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
       </div>
 
       {/* Tabs */}
-      <div className="ad-tabs">
+      <div className="hpa-tabs">
         <button
           type="button"
           onClick={() => setActiveTab('essentials')}
-          className={`ad-tab-btn ${activeTab === 'essentials' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'essentials' ? 'active' : ''}`}
         >
           <Briefcase size={15} style={{ display: 'inline', marginRight: '6px' }} />
           Essentials & Pricing
@@ -233,7 +233,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
         <button
           type="button"
           onClick={() => setActiveTab('deliverables')}
-          className={`ad-tab-btn ${activeTab === 'deliverables' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'deliverables' ? 'active' : ''}`}
         >
           <Layers size={15} style={{ display: 'inline', marginRight: '6px' }} />
           Deliverables ({deliverables.length}) & Tech ({techStack.length})
@@ -241,7 +241,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
         <button
           type="button"
           onClick={() => setActiveTab('process')}
-          className={`ad-tab-btn ${activeTab === 'process' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'process' ? 'active' : ''}`}
         >
           <Sparkles size={15} style={{ display: 'inline', marginRight: '6px' }} />
           Delivery Process ({processSteps.length})
@@ -249,7 +249,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
         <button
           type="button"
           onClick={() => setActiveTab('faqs')}
-          className={`ad-tab-btn ${activeTab === 'faqs' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'faqs' ? 'active' : ''}`}
         >
           <HelpCircle size={15} style={{ display: 'inline', marginRight: '6px' }} />
           FAQs ({faqs.length})
@@ -257,7 +257,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
         <button
           type="button"
           onClick={() => setActiveTab('seo')}
-          className={`ad-tab-btn ${activeTab === 'seo' ? 'active' : ''}`}
+          className={`hpa-tab-btn ${activeTab === 'seo' ? 'active' : ''}`}
         >
           <Search size={15} style={{ display: 'inline', marginRight: '6px' }} />
           SEO
@@ -266,13 +266,13 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
 
       {/* Tab 1: Essentials */}
       {activeTab === 'essentials' && (
-        <div className="ad-form-card">
-          <div className="ad-form-grid">
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Service Title *</label>
+        <div className="hpa-form-card">
+          <div className="hpa-form-grid">
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Service Title *</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="e.g. AI Services & Project Automations"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
@@ -280,23 +280,23 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
               />
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">URL Slug *</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">URL Slug *</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="ai-automation"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 required
               />
-              <span className="ad-form-help">Live URL: https://heyprince.in/services/{slug || '...'}/</span>
+              <span className="hpa-form-help">Live URL: https://heyprince.in/services/{slug || '...'}/</span>
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Category</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Category</label>
               <select
-                className="ad-select"
+                className="hpa-select"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
               >
@@ -309,21 +309,21 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
               </select>
             </div>
 
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Tagline</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Tagline</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="Supercharge your workflows with custom AI agents and automated pipelines."
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
               />
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Card Theme</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Card Theme</label>
               <select
-                className="ad-select"
+                className="hpa-select"
                 value={cardTheme}
                 onChange={(e) => setCardTheme(e.target.value)}
               >
@@ -334,21 +334,21 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
               </select>
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Icon Name</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Icon Name</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="FaCode, FaBrain, FaDatabase, FaRocket"
                 value={iconName}
                 onChange={(e) => setIconName(e.target.value)}
               />
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Pricing Type</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Pricing Type</label>
               <select
-                className="ad-select"
+                className="hpa-select"
                 value={pricingType}
                 onChange={(e) => setPricingType(e.target.value)}
               >
@@ -359,36 +359,36 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
               </select>
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Starting Price ($)</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Starting Price ($)</label>
               <input
                 type="number"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="e.g. 2500"
                 value={startingPrice}
                 onChange={(e) => setStartingPrice(e.target.value ? Number(e.target.value) : '')}
               />
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Sort Order</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Sort Order</label>
               <input
                 type="number"
-                className="ad-form-input"
+                className="hpa-form-input"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(Number(e.target.value))}
               />
             </div>
 
-            <div className="ad-form-group">
-              <label className="ad-form-label">Publication Status</label>
+            <div className="hpa-form-group">
+              <label className="hpa-form-label">Publication Status</label>
               <div style={{ display: 'flex', gap: '20px', marginTop: '6px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={published}
                     onChange={(e) => setPublished(e.target.checked)}
-                    style={{ accentColor: 'var(--ad-primary)' }}
+                    style={{ accentColor: 'var(--hpa-primary)' }}
                   />
                   <span>Published on Live Site</span>
                 </label>
@@ -397,17 +397,17 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                     type="checkbox"
                     checked={isFeatured}
                     onChange={(e) => setIsFeatured(e.target.checked)}
-                    style={{ accentColor: 'var(--ad-success)' }}
+                    style={{ accentColor: 'var(--hpa-success)' }}
                   />
                   <span>Featured Badge</span>
                 </label>
               </div>
             </div>
 
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">Executive Hero Description</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">Executive Hero Description</label>
               <textarea
-                className="ad-form-textarea"
+                className="hpa-form-textarea"
                 rows={4}
                 placeholder="High-impact overview explaining value and business ROI..."
                 value={heroDescription}
@@ -422,20 +422,20 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
       {activeTab === 'deliverables' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Deliverables */}
-          <div className="ad-card" style={{ padding: '24px' }}>
+          <div className="hpa-card" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                   Client Deliverables
                 </h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--ad-text-muted)', margin: '2px 0 0 0' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--hpa-text-muted)', margin: '2px 0 0 0' }}>
                   Concrete outcomes client receives upon engagement
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleAddDeliverable}
-                className="ad-btn ad-btn-secondary ad-btn-sm"
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
               >
                 <Plus size={14} />
                 <span>Add Deliverable</span>
@@ -449,7 +449,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                   padding: '16px',
                   borderRadius: '10px',
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                   marginBottom: '12px',
                   display: 'flex',
                   gap: '14px',
@@ -459,7 +459,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <input
                     type="text"
-                    className="ad-form-input"
+                    className="hpa-form-input"
                     placeholder="Deliverable Title (e.g. CI/CD Pipeline Automation)"
                     value={deliv.title}
                     onChange={(e) => {
@@ -469,7 +469,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                     }}
                   />
                   <textarea
-                    className="ad-form-textarea"
+                    className="hpa-form-textarea"
                     rows={2}
                     placeholder="Detailed description of what is built..."
                     value={deliv.desc}
@@ -484,7 +484,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                   <button
                     type="button"
                     onClick={() => setDeliverables(deliverables.filter((_, i) => i !== idx))}
-                    className="ad-btn ad-btn-danger ad-btn-icon"
+                    className="hpa-btn hpa-btn-danger hpa-btn-icon"
                     title="Remove deliverable"
                   >
                     <Trash2 size={14} />
@@ -495,7 +495,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
           </div>
 
           {/* Tech Stack */}
-          <div className="ad-card" style={{ padding: '24px' }}>
+          <div className="hpa-card" style={{ padding: '24px' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px' }}>
               Technologies & Tools
             </h3>
@@ -503,7 +503,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
             <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="e.g. Next.js 16, Supabase, Tailwind, Docker"
                 value={techStackInput}
                 onChange={(e) => setTechStackInput(e.target.value)}
@@ -514,7 +514,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                   }
                 }}
               />
-              <button type="button" onClick={handleAddTech} className="ad-btn ad-btn-secondary">
+              <button type="button" onClick={handleAddTech} className="hpa-btn hpa-btn-secondary">
                 Add Tech
               </button>
             </div>
@@ -542,7 +542,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: 'var(--ad-danger)',
+                      color: 'var(--hpa-danger)',
                       cursor: 'pointer',
                       padding: 0,
                       fontWeight: 700,
@@ -559,20 +559,20 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
 
       {/* Tab 3: Process Steps */}
       {activeTab === 'process' && (
-        <div className="ad-card" style={{ padding: '24px' }}>
+        <div className="hpa-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                 Delivery Workflow Steps
               </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--ad-text-muted)', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--hpa-text-muted)', margin: '2px 0 0 0' }}>
                 Phases through which this project is executed
               </p>
             </div>
             <button
               type="button"
               onClick={handleAddProcessStep}
-              className="ad-btn ad-btn-secondary ad-btn-sm"
+              className="hpa-btn hpa-btn-secondary hpa-btn-sm"
             >
               <Plus size={14} />
               <span>Add Step</span>
@@ -586,7 +586,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                 padding: '16px',
                 borderRadius: '10px',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--ad-border)',
+                border: '1px solid var(--hpa-border)',
                 marginBottom: '12px',
                 display: 'flex',
                 gap: '14px',
@@ -594,7 +594,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
             >
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 style={{ width: '64px', textAlign: 'center', fontWeight: 700 }}
                 value={step.step}
                 onChange={(e) => {
@@ -606,7 +606,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input
                   type="text"
-                  className="ad-form-input"
+                  className="hpa-form-input"
                   placeholder="Phase Title (e.g. Discovery & System Blueprint)"
                   value={step.title}
                   onChange={(e) => {
@@ -616,7 +616,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                   }}
                 />
                 <textarea
-                  className="ad-form-textarea"
+                  className="hpa-form-textarea"
                   rows={2}
                   placeholder="What happens in this milestone..."
                   value={step.desc}
@@ -631,7 +631,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                 <button
                   type="button"
                   onClick={() => setProcessSteps(processSteps.filter((_, i) => i !== idx))}
-                  className="ad-btn ad-btn-danger ad-btn-icon"
+                  className="hpa-btn hpa-btn-danger hpa-btn-icon"
                   title="Remove step"
                 >
                   <Trash2 size={14} />
@@ -644,17 +644,17 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
 
       {/* Tab 4: FAQs */}
       {activeTab === 'faqs' && (
-        <div className="ad-card" style={{ padding: '24px' }}>
+        <div className="hpa-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                 Frequently Asked Questions
               </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--ad-text-muted)', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--hpa-text-muted)', margin: '2px 0 0 0' }}>
                 Address prospective client inquiries
               </p>
             </div>
-            <button type="button" onClick={handleAddFaq} className="ad-btn ad-btn-secondary ad-btn-sm">
+            <button type="button" onClick={handleAddFaq} className="hpa-btn hpa-btn-secondary hpa-btn-sm">
               <Plus size={14} />
               <span>Add FAQ</span>
             </button>
@@ -667,7 +667,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                 padding: '16px',
                 borderRadius: '10px',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--ad-border)',
+                border: '1px solid var(--hpa-border)',
                 marginBottom: '12px',
                 display: 'flex',
                 gap: '14px',
@@ -676,7 +676,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input
                   type="text"
-                  className="ad-form-input"
+                  className="hpa-form-input"
                   placeholder="Question (e.g. Can this integrate with my existing database?)"
                   value={faq.q}
                   onChange={(e) => {
@@ -686,7 +686,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                   }}
                 />
                 <textarea
-                  className="ad-form-textarea"
+                  className="hpa-form-textarea"
                   rows={2}
                   placeholder="Answer..."
                   value={faq.a}
@@ -701,7 +701,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
                 <button
                   type="button"
                   onClick={() => setFaqs(faqs.filter((_, i) => i !== idx))}
-                  className="ad-btn ad-btn-danger ad-btn-icon"
+                  className="hpa-btn hpa-btn-danger hpa-btn-icon"
                   title="Remove FAQ"
                 >
                   <Trash2 size={14} />
@@ -714,22 +714,22 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
 
       {/* Tab 5: SEO */}
       {activeTab === 'seo' && (
-        <div className="ad-form-card">
-          <div className="ad-form-grid">
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">SEO Meta Title</label>
+        <div className="hpa-form-card">
+          <div className="hpa-form-grid">
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">SEO Meta Title</label>
               <input
                 type="text"
-                className="ad-form-input"
+                className="hpa-form-input"
                 placeholder="Default: [Title] | Prince — Senior IT Consultant"
                 value={seoTitle}
                 onChange={(e) => setSeoTitle(e.target.value)}
               />
             </div>
-            <div className="ad-form-group" style={{ gridColumn: 'span 2' }}>
-              <label className="ad-form-label">SEO Meta Description</label>
+            <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
+              <label className="hpa-form-label">SEO Meta Description</label>
               <textarea
-                className="ad-form-textarea"
+                className="hpa-form-textarea"
                 rows={3}
                 placeholder="Search engine summary..."
                 value={seoDescription}

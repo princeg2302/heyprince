@@ -67,24 +67,24 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
 
   return (
     <div>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div>
-          <h1 className="ad-page-title">Admin User Management</h1>
-          <p className="ad-page-desc">
+          <h1 className="hpa-page-title">Admin User Management</h1>
+          <p className="hpa-page-desc">
             Manage authorized platform administrators, credentials, and role permissions.
           </p>
         </div>
-        <Link href="/admin/users/new" className="ad-btn ad-btn-primary">
+        <Link href="/admin/users/new" className="hpa-btn hpa-btn-primary">
           <Plus size={16} />
           <span>Add Admin User</span>
         </Link>
       </div>
 
-      <div className="ad-card">
-        <div className="ad-card-header">
-          <div className="ad-table-filters">
-            <div className="ad-search-input">
-              <Search size={16} style={{ color: 'var(--ad-text-dim)' }} />
+      <div className="hpa-card">
+        <div className="hpa-card-header">
+          <div className="hpa-table-filters">
+            <div className="hpa-search-input">
+              <Search size={16} style={{ color: 'var(--hpa-text-dim)' }} />
               <input
                 type="text"
                 placeholder="Search by name or email..."
@@ -94,14 +94,14 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
             </div>
           </div>
 
-          <div style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
             Showing <strong>{filtered.length}</strong> {filtered.length === 1 ? 'account' : 'accounts'}
           </div>
         </div>
 
         {filtered.length > 0 ? (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="hpa-table-wrap">
+            <table className="hpa-table">
               <thead>
                 <tr>
                   <th>User Profile</th>
@@ -131,7 +131,7 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                               width: '36px',
                               height: '36px',
                               borderRadius: '50%',
-                              background: 'linear-gradient(135deg, var(--ad-primary), var(--ad-accent))',
+                              background: 'linear-gradient(135deg, var(--hpa-primary), var(--hpa-accent))',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -144,9 +144,9 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                           </div>
                           <div>
                             <div style={{ fontWeight: 700, color: '#ffffff' }}>
-                              {user.name} {isCurrent && <span style={{ fontSize: '0.72rem', color: 'var(--ad-primary)' }}>(You)</span>}
+                              {user.name} {isCurrent && <span style={{ fontSize: '0.72rem', color: 'var(--hpa-primary)' }}>(You)</span>}
                             </div>
-                            <div style={{ fontSize: '0.74rem', color: 'var(--ad-text-dim)' }}>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>
                               ID #{user.id}
                             </div>
                           </div>
@@ -161,11 +161,11 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
 
                       <td>
                         <span
-                          className="ad-pill"
+                          className="hpa-pill"
                           style={{
                             background: user.role === 'admin' ? 'rgba(255, 51, 102, 0.1)' : 'rgba(56, 189, 248, 0.1)',
                             borderColor: user.role === 'admin' ? 'rgba(255, 51, 102, 0.3)' : 'rgba(56, 189, 248, 0.3)',
-                            color: user.role === 'admin' ? 'var(--ad-primary)' : 'var(--ad-info)',
+                            color: user.role === 'admin' ? 'var(--hpa-primary)' : 'var(--hpa-info)',
                           }}
                         >
                           {user.role === 'admin' ? <ShieldCheck size={12} /> : <Shield size={12} />}
@@ -173,7 +173,7 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                         </span>
                       </td>
 
-                      <td style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+                      <td style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
                         {dateStr}
                       </td>
 
@@ -181,14 +181,14 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                           <Link
                             href={`/admin/users/${user.id}`}
-                            className="ad-btn ad-btn-secondary ad-btn-icon"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="View User"
                           >
                             <Eye size={14} />
                           </Link>
                           <Link
                             href={`/admin/users/${user.id}/edit`}
-                            className="ad-btn ad-btn-secondary ad-btn-icon"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="Edit User"
                           >
                             <Edit2 size={14} />
@@ -196,7 +196,7 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                           {!isCurrent && (
                             <button
                               onClick={() => setDeletingId(user.id)}
-                              className="ad-btn ad-btn-danger ad-btn-icon"
+                              className="hpa-btn hpa-btn-danger hpa-btn-icon"
                               title="Delete User"
                             >
                               <Trash2 size={14} />
@@ -211,10 +211,10 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
             </table>
           </div>
         ) : (
-          <div className="ad-empty-state">
-            <Inbox size={48} className="ad-empty-icon" />
-            <h3 className="ad-empty-title">No users matched your search</h3>
-            <p className="ad-empty-sub">Try searching with a different name or email.</p>
+          <div className="hpa-empty-state">
+            <Inbox size={48} className="hpa-empty-icon" />
+            <h3 className="hpa-empty-title">No users matched your search</h3>
+            <p className="hpa-empty-sub">Try searching with a different name or email.</p>
           </div>
         )}
       </div>

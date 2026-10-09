@@ -38,46 +38,46 @@ export default async function ViewUserPage({
 
   return (
     <AdminLayout user={user}>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link href="/admin/users" className="ad-btn ad-btn-secondary ad-btn-icon" title="Back to Users">
+          <Link href="/admin/users" className="hpa-btn hpa-btn-secondary hpa-btn-icon" title="Back to Users">
             <ArrowLeft size={16} />
           </Link>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <span
-                className="ad-pill"
+                className="hpa-pill"
                 style={{
                   background: targetUser.role === 'admin' ? 'rgba(255, 51, 102, 0.1)' : 'rgba(56, 189, 248, 0.1)',
                   borderColor: targetUser.role === 'admin' ? 'rgba(255, 51, 102, 0.3)' : 'rgba(56, 189, 248, 0.3)',
-                  color: targetUser.role === 'admin' ? 'var(--ad-primary)' : 'var(--ad-info)',
+                  color: targetUser.role === 'admin' ? 'var(--hpa-primary)' : 'var(--hpa-info)',
                 }}
               >
                 {targetUser.role === 'admin' ? <ShieldCheck size={12} /> : <Shield size={12} />}
                 <span style={{ textTransform: 'capitalize' }}>{targetUser.role} Account</span>
               </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--ad-text-dim)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)' }}>
                 User ID #{targetUser.id}
               </span>
             </div>
-            <h1 className="ad-page-title">{targetUser.name}</h1>
+            <h1 className="hpa-page-title">{targetUser.name}</h1>
           </div>
         </div>
 
-        <Link href={`/admin/users/${targetUser.id}/edit`} className="ad-btn ad-btn-primary">
+        <Link href={`/admin/users/${targetUser.id}/edit`} className="hpa-btn hpa-btn-primary">
           <Edit2 size={15} />
           <span>Edit Profile & Password</span>
         </Link>
       </div>
 
-      <div className="ad-card" style={{ maxWidth: '680px', padding: '28px' }}>
+      <div className="hpa-card" style={{ maxWidth: '680px', padding: '28px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '24px' }}>
           <div
             style={{
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--ad-primary), var(--ad-accent))',
+              background: 'linear-gradient(135deg, var(--hpa-primary), var(--hpa-accent))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -104,10 +104,10 @@ export default async function ViewUserPage({
               padding: '14px',
               borderRadius: '8px',
               background: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid var(--ad-border)',
+              border: '1px solid var(--hpa-border)',
             }}
           >
-            <div style={{ color: 'var(--ad-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
+            <div style={{ color: 'var(--hpa-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
               Access Tier
             </div>
             <div style={{ fontWeight: 700, color: '#ffffff', textTransform: 'capitalize' }}>
@@ -120,10 +120,10 @@ export default async function ViewUserPage({
               padding: '14px',
               borderRadius: '8px',
               background: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid var(--ad-border)',
+              border: '1px solid var(--hpa-border)',
             }}
           >
-            <div style={{ color: 'var(--ad-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
+            <div style={{ color: 'var(--hpa-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
               Account Created
             </div>
             <div style={{ fontWeight: 600, color: '#ffffff' }}>
@@ -140,13 +140,13 @@ export default async function ViewUserPage({
               padding: '14px',
               borderRadius: '8px',
               background: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid var(--ad-border)',
+              border: '1px solid var(--hpa-border)',
             }}
           >
-            <div style={{ color: 'var(--ad-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
+            <div style={{ color: 'var(--hpa-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
               Authentication Standard
             </div>
-            <div style={{ fontWeight: 600, color: 'var(--ad-success)' }}>
+            <div style={{ fontWeight: 600, color: 'var(--hpa-success)' }}>
               PBKDF2-SHA256 (600k rounds)
             </div>
           </div>
@@ -156,10 +156,10 @@ export default async function ViewUserPage({
               padding: '14px',
               borderRadius: '8px',
               background: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid var(--ad-border)',
+              border: '1px solid var(--hpa-border)',
             }}
           >
-            <div style={{ color: 'var(--ad-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
+            <div style={{ color: 'var(--hpa-text-dim)', fontSize: '0.78rem', marginBottom: '4px' }}>
               Database Record
             </div>
             <div style={{ fontWeight: 600, color: '#ffffff' }}>

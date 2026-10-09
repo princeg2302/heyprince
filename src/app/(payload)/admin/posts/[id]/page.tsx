@@ -50,23 +50,23 @@ export default async function ViewPostPage({
   return (
     <AdminLayout user={user}>
       {/* Top Action Bar */}
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link href="/admin/posts" className="ad-btn ad-btn-secondary ad-btn-icon" title="Back to Posts">
+          <Link href="/admin/posts" className="hpa-btn hpa-btn-secondary hpa-btn-icon" title="Back to Posts">
             <ArrowLeft size={16} />
           </Link>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <span
-                className={`ad-pill ${post.status === 'published' ? 'ad-pill-published' : 'ad-pill-draft'}`}
+                className={`hpa-pill ${post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
               >
                 {post.status}
               </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--ad-text-dim)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)' }}>
                 ID #{post.id} • /{post.slug}
               </span>
             </div>
-            <h1 className="ad-page-title">{post.title}</h1>
+            <h1 className="hpa-page-title">{post.title}</h1>
           </div>
         </div>
 
@@ -75,12 +75,12 @@ export default async function ViewPostPage({
             href={`https://heyprince.in/insights/${post.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ad-btn ad-btn-secondary"
+            className="hpa-btn hpa-btn-secondary"
           >
             <span>View on Live Site</span>
             <ExternalLink size={14} />
           </a>
-          <Link href={`/admin/posts/${post.id}/edit`} className="ad-btn ad-btn-primary">
+          <Link href={`/admin/posts/${post.id}/edit`} className="hpa-btn hpa-btn-primary">
             <Edit2 size={15} />
             <span>Edit Article</span>
           </Link>
@@ -91,7 +91,7 @@ export default async function ViewPostPage({
         {/* Main Content Preview */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Cover & Excerpt Card */}
-          <div className="ad-card" style={{ padding: '24px' }}>
+          <div className="hpa-card" style={{ padding: '24px' }}>
             {post.cover_image && (
               <img
                 src={post.cover_image}
@@ -102,7 +102,7 @@ export default async function ViewPostPage({
                   objectFit: 'cover',
                   borderRadius: '10px',
                   marginBottom: '20px',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                 }}
               />
             )}
@@ -118,7 +118,7 @@ export default async function ViewPostPage({
                 background: 'rgba(255, 255, 255, 0.03)',
                 padding: '16px 20px',
                 borderRadius: '8px',
-                borderLeft: '3px solid var(--ad-primary)',
+                borderLeft: '3px solid var(--hpa-primary)',
                 margin: 0,
               }}
             >
@@ -129,7 +129,7 @@ export default async function ViewPostPage({
           {/* Sections List */}
           {post.sections && post.sections.length > 0 ? (
             post.sections.map((sec, idx) => (
-              <div key={idx} className="ad-card" style={{ padding: '24px' }}>
+              <div key={idx} className="hpa-card" style={{ padding: '24px' }}>
                 <h2
                   style={{
                     fontSize: '1.25rem',
@@ -147,7 +147,7 @@ export default async function ViewPostPage({
                       height: '28px',
                       borderRadius: '50%',
                       background: 'rgba(255, 51, 102, 0.15)',
-                      color: 'var(--ad-primary)',
+                      color: 'var(--hpa-primary)',
                       fontSize: '0.8rem',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -198,7 +198,7 @@ export default async function ViewPostPage({
                       >
                         <CheckCircle2
                           size={16}
-                          style={{ color: 'var(--ad-success)', marginTop: '3px', flexShrink: 0 }}
+                          style={{ color: 'var(--hpa-success)', marginTop: '3px', flexShrink: 0 }}
                         />
                         <span>{b.point}</span>
                       </li>
@@ -218,7 +218,7 @@ export default async function ViewPostPage({
                       gap: '12px',
                     }}
                   >
-                    <Quote size={20} style={{ color: 'var(--ad-accent)', flexShrink: 0 }} />
+                    <Quote size={20} style={{ color: 'var(--hpa-accent)', flexShrink: 0 }} />
                     <span style={{ fontSize: '0.88rem', fontStyle: 'italic', color: '#ffffff' }}>
                       "{sec.quote}"
                     </span>
@@ -237,7 +237,7 @@ export default async function ViewPostPage({
                       gap: '12px',
                     }}
                   >
-                    <Lightbulb size={20} style={{ color: 'var(--ad-success)', flexShrink: 0 }} />
+                    <Lightbulb size={20} style={{ color: 'var(--hpa-success)', flexShrink: 0 }} />
                     <span style={{ fontSize: '0.88rem', color: 'rgba(255, 255, 255, 0.9)' }}>
                       <strong>Pro-Tip:</strong> {sec.pro_tip}
                     </span>
@@ -246,8 +246,8 @@ export default async function ViewPostPage({
               </div>
             ))
           ) : (
-            <div className="ad-card" style={{ padding: '24px' }}>
-              <p style={{ color: 'var(--ad-text-muted)', margin: 0 }}>
+            <div className="hpa-card" style={{ padding: '24px' }}>
+              <p style={{ color: 'var(--hpa-text-muted)', margin: 0 }}>
                 No structured sections added yet for this post.
               </p>
             </div>
@@ -257,36 +257,36 @@ export default async function ViewPostPage({
         {/* Sidebar Meta Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Metadata Card */}
-          <div className="ad-card" style={{ padding: '20px' }}>
+          <div className="hpa-card" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px' }}>
               Publishing Details
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.84rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Status</span>
-                <span className={`ad-pill ${post.status === 'published' ? 'ad-pill-published' : 'ad-pill-draft'}`}>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Status</span>
+                <span className={`hpa-pill ${post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'}`}>
                   {post.status}
                 </span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Category</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Category</span>
                 <span style={{ color: '#ffffff', fontWeight: 600 }}>{post.category_name || 'General'}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Read Duration</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Read Duration</span>
                 <span style={{ color: '#ffffff' }}>{post.read_mins || '5 min'}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Published Date</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Published Date</span>
                 <span style={{ color: '#ffffff' }}>{formattedDate}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Created</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Created</span>
                 <span style={{ color: '#ffffff' }}>
                   {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
@@ -295,7 +295,7 @@ export default async function ViewPostPage({
           </div>
 
           {/* Author Card */}
-          <div className="ad-card" style={{ padding: '20px' }}>
+          <div className="hpa-card" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px' }}>
               Author Byline
             </h3>
@@ -309,14 +309,14 @@ export default async function ViewPostPage({
                   height: '44px',
                   borderRadius: '50%',
                   objectFit: 'cover',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                 }}
               />
               <div>
                 <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.9rem' }}>
                   {post.author_name}
                 </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--ad-text-dim)', lineHeight: 1.3 }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', lineHeight: 1.3 }}>
                   {post.author_role}
                 </div>
               </div>
@@ -325,7 +325,7 @@ export default async function ViewPostPage({
 
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
-            <div className="ad-card" style={{ padding: '20px' }}>
+            <div className="hpa-card" style={{ padding: '20px' }}>
               <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
                 Tags ({post.tags.length})
               </h3>
@@ -338,7 +338,7 @@ export default async function ViewPostPage({
                       padding: '4px 10px',
                       borderRadius: '100px',
                       background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--ad-border)',
+                      border: '1px solid var(--hpa-border)',
                       color: 'rgba(255, 255, 255, 0.8)',
                     }}
                   >
@@ -350,22 +350,22 @@ export default async function ViewPostPage({
           )}
 
           {/* SEO Inspector */}
-          <div className="ad-card" style={{ padding: '20px' }}>
+          <div className="hpa-card" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
               SEO Metadata
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8rem' }}>
               <div>
-                <span style={{ color: 'var(--ad-text-dim)', display: 'block', marginBottom: '2px' }}>Meta Title</span>
+                <span style={{ color: 'var(--hpa-text-dim)', display: 'block', marginBottom: '2px' }}>Meta Title</span>
                 <span style={{ color: '#ffffff' }}>{post.seo_title || post.title}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--ad-text-dim)', display: 'block', marginBottom: '2px' }}>Description</span>
-                <span style={{ color: 'var(--ad-text-muted)' }}>{post.seo_description || post.excerpt}</span>
+                <span style={{ color: 'var(--hpa-text-dim)', display: 'block', marginBottom: '2px' }}>Description</span>
+                <span style={{ color: 'var(--hpa-text-muted)' }}>{post.seo_description || post.excerpt}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--ad-text-dim)', display: 'block', marginBottom: '2px' }}>Canonical URL</span>
-                <span style={{ color: 'var(--ad-primary)', wordBreak: 'break-all' }}>
+                <span style={{ color: 'var(--hpa-text-dim)', display: 'block', marginBottom: '2px' }}>Canonical URL</span>
+                <span style={{ color: 'var(--hpa-primary)', wordBreak: 'break-all' }}>
                   {post.canonical || `https://heyprince.in/insights/${post.slug}/`}
                 </span>
               </div>

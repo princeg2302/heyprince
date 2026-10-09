@@ -152,20 +152,20 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
 
   return (
     <div>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div>
-          <h1 className="ad-page-title">Client Leads & Inquiries</h1>
-          <p className="ad-page-desc">
+          <h1 className="hpa-page-title">Client Leads & Inquiries</h1>
+          <p className="hpa-page-desc">
             Inbound project submissions from heyprince.in/contact. Track status and deal progression.
           </p>
         </div>
       </div>
 
-      <div className="ad-card">
-        <div className="ad-card-header">
-          <div className="ad-table-filters">
-            <div className="ad-search-input">
-              <Search size={16} style={{ color: 'var(--ad-text-dim)' }} />
+      <div className="hpa-card">
+        <div className="hpa-card-header">
+          <div className="hpa-table-filters">
+            <div className="hpa-search-input">
+              <Search size={16} style={{ color: 'var(--hpa-text-dim)' }} />
               <input
                 type="text"
                 placeholder="Search by client, email, company, or service..."
@@ -175,7 +175,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
             </div>
 
             <select
-              className="ad-select"
+              className="hpa-select"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -188,14 +188,14 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
             </select>
           </div>
 
-          <div style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
             Total <strong>{filtered.length}</strong> inquiries
           </div>
         </div>
 
         {filtered.length > 0 ? (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="hpa-table-wrap">
+            <table className="hpa-table">
               <thead>
                 <tr>
                   <th>Client</th>
@@ -236,7 +236,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                           >
                             {lead.name}
                           </button>
-                          <div style={{ fontSize: '0.76rem', color: 'var(--ad-text-dim)' }}>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
                             {lead.email} {lead.company ? `• ${lead.company}` : ''}
                           </div>
                         </div>
@@ -253,7 +253,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                           {lead.budget ? `${lead.budget}` : 'Custom Quote'}
                         </div>
                         {lead.timeline && (
-                          <div style={{ fontSize: '0.72rem', color: 'var(--ad-text-dim)' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)' }}>
                             {lead.timeline}
                           </div>
                         )}
@@ -261,7 +261,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
 
                       <td>
                         <select
-                          className="ad-select"
+                          className="hpa-select"
                           value={lead.status}
                           onChange={(e) => handleStatusChange(lead.id, e.target.value)}
                           style={{
@@ -278,7 +278,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                         </select>
                       </td>
 
-                      <td style={{ fontSize: '0.8rem', color: 'var(--ad-text-muted)' }}>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--hpa-text-muted)' }}>
                         {dateStr}
                       </td>
 
@@ -287,7 +287,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                           <button
                             type="button"
                             onClick={() => setSelectedLead(lead)}
-                            className="ad-btn ad-btn-secondary ad-btn-icon"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="Inspect Details"
                           >
                             <Eye size={14} />
@@ -295,7 +295,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                           <button
                             type="button"
                             onClick={() => setDeletingId(lead.id)}
-                            className="ad-btn ad-btn-danger ad-btn-icon"
+                            className="hpa-btn hpa-btn-danger hpa-btn-icon"
                             title="Delete Lead"
                           >
                             <Trash2 size={14} />
@@ -309,10 +309,10 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
             </table>
           </div>
         ) : (
-          <div className="ad-empty-state">
-            <Inbox size={48} className="ad-empty-icon" />
-            <h3 className="ad-empty-title">No client inquiries found</h3>
-            <p className="ad-empty-sub">
+          <div className="hpa-empty-state">
+            <Inbox size={48} className="hpa-empty-icon" />
+            <h3 className="hpa-empty-title">No client inquiries found</h3>
+            <p className="hpa-empty-sub">
               Submissions through the website contact form will appear here in real time.
             </p>
           </div>
@@ -321,9 +321,9 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
 
       {/* Inspect Lead Modal */}
       {selectedLead && (
-        <div className="ad-modal-backdrop" onClick={() => setSelectedLead(null)}>
+        <div className="hpa-modal-backdrop" onClick={() => setSelectedLead(null)}>
           <div
-            className="ad-modal"
+            className="hpa-modal"
             style={{ maxWidth: '620px' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -333,17 +333,17 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: '18px',
-                borderBottom: '1px solid var(--ad-border)',
+                borderBottom: '1px solid var(--hpa-border)',
                 paddingBottom: '14px',
               }}
             >
               <div>
-                <h3 className="ad-modal-title" style={{ margin: '0 0 4px 0' }}>
+                <h3 className="hpa-modal-title" style={{ margin: '0 0 4px 0' }}>
                   {selectedLead.name}
                 </h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {getStatusBadge(selectedLead.status)}
-                  <span style={{ fontSize: '0.78rem', color: 'var(--ad-text-dim)' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)' }}>
                     Lead ID #{selectedLead.id}
                   </span>
                 </div>
@@ -351,7 +351,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
               <button
                 type="button"
                 onClick={() => setSelectedLead(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--ad-text-dim)', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--hpa-text-dim)', cursor: 'pointer' }}
               >
                 <X size={18} />
               </button>
@@ -363,13 +363,13 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                   padding: '12px',
                   borderRadius: '8px',
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                 }}
               >
-                <span style={{ fontSize: '0.74rem', color: 'var(--ad-text-dim)', display: 'block' }}>Email Address</span>
+                <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', display: 'block' }}>Email Address</span>
                 <a
                   href={`mailto:${selectedLead.email}`}
-                  style={{ color: 'var(--ad-primary)', fontWeight: 600, fontSize: '0.88rem', textDecoration: 'none' }}
+                  style={{ color: 'var(--hpa-primary)', fontWeight: 600, fontSize: '0.88rem', textDecoration: 'none' }}
                 >
                   {selectedLead.email}
                 </a>
@@ -380,10 +380,10 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                   padding: '12px',
                   borderRadius: '8px',
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                 }}
               >
-                <span style={{ fontSize: '0.74rem', color: 'var(--ad-text-dim)', display: 'block' }}>Phone / WhatsApp</span>
+                <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', display: 'block' }}>Phone / WhatsApp</span>
                 <span style={{ color: '#ffffff', fontWeight: 600, fontSize: '0.88rem' }}>
                   {selectedLead.phone || 'Not provided'}
                 </span>
@@ -394,10 +394,10 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                   padding: '12px',
                   borderRadius: '8px',
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                 }}
               >
-                <span style={{ fontSize: '0.74rem', color: 'var(--ad-text-dim)', display: 'block' }}>Requested Service</span>
+                <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', display: 'block' }}>Requested Service</span>
                 <span style={{ color: '#ffffff', fontWeight: 600, fontSize: '0.88rem' }}>
                   {selectedLead.service}
                 </span>
@@ -408,11 +408,11 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                   padding: '12px',
                   borderRadius: '8px',
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                 }}
               >
-                <span style={{ fontSize: '0.74rem', color: 'var(--ad-text-dim)', display: 'block' }}>Estimated Budget</span>
-                <span style={{ color: 'var(--ad-success)', fontWeight: 700, fontSize: '0.88rem' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', display: 'block' }}>Estimated Budget</span>
+                <span style={{ color: 'var(--hpa-success)', fontWeight: 700, fontSize: '0.88rem' }}>
                   {selectedLead.budget || 'Custom Quote'}
                 </span>
               </div>
@@ -430,7 +430,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                   background: 'rgba(255, 255, 255, 0.03)',
                   padding: '16px',
                   borderRadius: '8px',
-                  border: '1px solid var(--ad-border)',
+                  border: '1px solid var(--hpa-border)',
                   whiteSpace: 'pre-line',
                   margin: 0,
                 }}
@@ -441,9 +441,9 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--ad-text-dim)' }}>Change Status:</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)' }}>Change Status:</span>
                 <select
-                  className="ad-select"
+                  className="hpa-select"
                   value={selectedLead.status}
                   onChange={(e) => handleStatusChange(selectedLead.id, e.target.value)}
                   disabled={updatingStatus}
@@ -459,7 +459,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
               <div style={{ display: 'flex', gap: '10px' }}>
                 <a
                   href={`mailto:${selectedLead.email}?subject=Regarding Your Project Inquiry with Prince`}
-                  className="ad-btn ad-btn-primary ad-btn-sm"
+                  className="hpa-btn hpa-btn-primary hpa-btn-sm"
                 >
                   <Mail size={14} />
                   <span>Reply via Email</span>
@@ -467,7 +467,7 @@ export default function LeadsClient({ initialLeads }: LeadsClientProps) {
                 <button
                   type="button"
                   onClick={() => setSelectedLead(null)}
-                  className="ad-btn ad-btn-secondary ad-btn-sm"
+                  className="hpa-btn hpa-btn-secondary hpa-btn-sm"
                 >
                   Close
                 </button>

@@ -16,7 +16,7 @@ export default async function LoginPage() {
 
   return (
     <main
-      className="ad-login-page"
+      className="hpa-login-page"
       style={{
         minHeight: '100vh',
         display: 'flex',
@@ -24,7 +24,7 @@ export default async function LoginPage() {
         justifyContent: 'center',
         padding: '24px',
         background: 'radial-gradient(ellipse at 50% 20%, rgba(255, 51, 102, 0.08) 0%, #07070a 70%)',
-        fontFamily: 'var(--ad-font)',
+        fontFamily: 'var(--hpa-font)',
       }}
     >
       <LoginForm />

@@ -27,8 +27,8 @@ export function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="ad-modal-backdrop" onClick={onCancel}>
-      <div className="ad-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="hpa-modal-backdrop" onClick={onCancel}>
+      <div className="hpa-modal" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
@@ -37,7 +37,7 @@ export function ConfirmModal({
                 height: '36px',
                 borderRadius: '8px',
                 background: 'rgba(244, 63, 94, 0.15)',
-                color: 'var(--ad-danger)',
+                color: 'var(--hpa-danger)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -45,7 +45,7 @@ export function ConfirmModal({
             >
               <AlertTriangle size={20} />
             </div>
-            <h3 className="ad-modal-title" style={{ margin: 0 }}>
+            <h3 className="hpa-modal-title" style={{ margin: 0 }}>
               {title}
             </h3>
           </div>
@@ -54,7 +54,7 @@ export function ConfirmModal({
             style={{
               background: 'none',
               border: 'none',
-              color: 'var(--ad-text-dim)',
+              color: 'var(--hpa-text-dim)',
               cursor: 'pointer',
             }}
           >
@@ -62,20 +62,20 @@ export function ConfirmModal({
           </button>
         </div>
 
-        <p className="ad-modal-text">{message}</p>
+        <p className="hpa-modal-text">{message}</p>
 
-        <div className="ad-modal-actions">
+        <div className="hpa-modal-actions">
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="ad-btn ad-btn-secondary"
+            className="hpa-btn hpa-btn-secondary"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="ad-btn ad-btn-danger"
+            className="hpa-btn hpa-btn-danger"
           >
             {isLoading ? 'Processing...' : confirmLabel}
           </button>

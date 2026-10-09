@@ -171,7 +171,7 @@ export default async function AdminDashboardPage() {
                 letterSpacing: '0.04em',
               }}
             >
-              <span className="ad-status-dot" />
+              <span className="hpa-status-dot" />
               Production Live • heyprince.in
             </span>
             <span
@@ -206,7 +206,7 @@ export default async function AdminDashboardPage() {
             href="https://heyprince.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="ad-btn ad-btn-primary"
+            className="hpa-btn hpa-btn-primary"
           >
             <span>View Live Site</span>
             <ArrowUpRight size={16} />
@@ -250,7 +250,7 @@ export default async function AdminDashboardPage() {
             <Link
               key={i}
               href={qa.href}
-              className="ad-btn ad-btn-secondary ad-btn-sm"
+              className="hpa-btn hpa-btn-secondary hpa-btn-sm"
               style={{ gap: '6px' }}
             >
               <Icon size={14} style={{ color: qa.color }} />
@@ -261,27 +261,27 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* 6 Metric KPI Cards */}
-      <div className="ad-stats-grid">
+      <div className="hpa-stats-grid">
         {metrics.map((m, idx) => {
           const Icon = m.icon;
           return (
             <div
               key={idx}
-              className="ad-stat-card"
+              className="hpa-stat-card"
               style={{
                 background: `linear-gradient(145deg, ${m.bgGlow} 0%, rgba(13, 13, 20, 0.95) 100%)`,
                 borderColor: m.borderColor,
               }}
             >
-              <div className="ad-stat-top">
+              <div className="hpa-stat-top">
                 <div
-                  className="ad-stat-icon-box"
+                  className="hpa-stat-icon-box"
                   style={{ background: m.bgGlow, color: m.iconColor }}
                 >
                   <Icon size={20} />
                 </div>
                 <span
-                  className="ad-stat-badge"
+                  className="hpa-stat-badge"
                   style={{
                     color: m.badgeColor,
                     borderColor: `${m.badgeColor}40`,
@@ -292,9 +292,9 @@ export default async function AdminDashboardPage() {
                 </span>
               </div>
 
-              <div className="ad-stat-num">{m.count}</div>
-              <div className="ad-stat-title">{m.title}</div>
-              <div className="ad-stat-sub">{m.subtext}</div>
+              <div className="hpa-stat-num">{m.count}</div>
+              <div className="hpa-stat-title">{m.title}</div>
+              <div className="hpa-stat-sub">{m.subtext}</div>
 
               <div
                 style={{
@@ -323,7 +323,7 @@ export default async function AdminDashboardPage() {
                 {m.createLink && (
                   <Link
                     href={m.createLink}
-                    className="ad-btn-icon"
+                    className="hpa-btn-icon"
                     title="Add Record"
                     style={{
                       background: 'rgba(255, 255, 255, 0.05)',
@@ -343,23 +343,23 @@ export default async function AdminDashboardPage() {
       {/* Main Split Section: Recent Leads & Recent Articles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         {/* Left: Recent Inquiries & Leads */}
-        <div className="ad-card" style={{ marginBottom: 0 }}>
-          <div className="ad-card-header">
+        <div className="hpa-card" style={{ marginBottom: 0 }}>
+          <div className="hpa-card-header">
             <div>
-              <h2 className="ad-card-title">
+              <h2 className="hpa-card-title">
                 <Mail size={18} style={{ color: '#ff3366' }} />
                 Recent Client Leads
               </h2>
-              <p className="ad-card-sub">Real-time incoming submissions from contact form</p>
+              <p className="hpa-card-sub">Real-time incoming submissions from contact form</p>
             </div>
-            <Link href="/admin/leads/" className="ad-btn ad-btn-secondary ad-btn-sm">
+            <Link href="/admin/leads/" className="hpa-btn hpa-btn-secondary hpa-btn-sm">
               View All ({stats.leadsCount}) →
             </Link>
           </div>
 
           {stats.recentLeads.length > 0 ? (
-            <div className="ad-table-wrap">
-              <table className="ad-table">
+            <div className="hpa-table-wrap">
+              <table className="hpa-table">
                 <thead>
                   <tr>
                     <th>Client</th>
@@ -407,7 +407,7 @@ export default async function AdminDashboardPage() {
                         </td>
                         <td>
                           <span
-                            className="ad-pill"
+                            className="hpa-pill"
                             style={{ color: statusColor, background: statusBg, borderColor: `${statusColor}40` }}
                           >
                             {statusVal.replace('_', ' ')}
@@ -417,7 +417,7 @@ export default async function AdminDashboardPage() {
                           {dateStr}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <Link href="/admin/leads/" className="ad-btn ad-btn-secondary ad-btn-sm">
+                          <Link href="/admin/leads/" className="hpa-btn hpa-btn-secondary hpa-btn-sm">
                             Inspect
                           </Link>
                         </td>
@@ -428,10 +428,10 @@ export default async function AdminDashboardPage() {
               </table>
             </div>
           ) : (
-            <div className="ad-empty-state">
+            <div className="hpa-empty-state">
               <Inbox size={42} style={{ color: 'rgba(255, 255, 255, 0.2)', marginBottom: '12px' }} />
-              <h3 className="ad-empty-title">No Inquiries Recorded Yet</h3>
-              <p className="ad-empty-sub">
+              <h3 className="hpa-empty-title">No Inquiries Recorded Yet</h3>
+              <p className="hpa-empty-sub">
                 Client submissions from heyprince.in/contact will populate here automatically.
               </p>
             </div>
@@ -439,23 +439,23 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* Right: Latest Articles */}
-        <div className="ad-card" style={{ marginBottom: 0 }}>
-          <div className="ad-card-header">
+        <div className="hpa-card" style={{ marginBottom: 0 }}>
+          <div className="hpa-card-header">
             <div>
-              <h2 className="ad-card-title">
+              <h2 className="hpa-card-title">
                 <FileText size={18} style={{ color: '#8b5cf6' }} />
                 Published Articles
               </h2>
-              <p className="ad-card-sub">Engineering thought leadership & insights</p>
+              <p className="hpa-card-sub">Engineering thought leadership & insights</p>
             </div>
-            <Link href="/admin/posts/" className="ad-btn ad-btn-secondary ad-btn-sm">
+            <Link href="/admin/posts/" className="hpa-btn hpa-btn-secondary hpa-btn-sm">
               View All ({stats.postsCount}) →
             </Link>
           </div>
 
           {stats.recentPosts.length > 0 ? (
-            <div className="ad-table-wrap">
-              <table className="ad-table">
+            <div className="hpa-table-wrap">
+              <table className="hpa-table">
                 <thead>
                   <tr>
                     <th>Article</th>
@@ -482,13 +482,13 @@ export default async function AdminDashboardPage() {
                       </td>
                       <td>
                         <span
-                          className={`ad-pill ${post.status === 'published' ? 'ad-pill-published' : 'ad-pill-draft'}`}
+                          className={`hpa-pill ${post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
                         >
                           {post.status}
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <Link href={`/admin/posts/${post.id}/`} className="ad-btn ad-btn-secondary ad-btn-sm">
+                        <Link href={`/admin/posts/${post.id}/`} className="hpa-btn hpa-btn-secondary hpa-btn-sm">
                           View
                         </Link>
                       </td>
@@ -498,11 +498,11 @@ export default async function AdminDashboardPage() {
               </table>
             </div>
           ) : (
-            <div className="ad-empty-state">
+            <div className="hpa-empty-state">
               <FileText size={42} style={{ color: 'rgba(255, 255, 255, 0.2)', marginBottom: '12px' }} />
-              <h3 className="ad-empty-title">No Articles Found</h3>
-              <p className="ad-empty-sub">Create your first technical article or insight post.</p>
-              <Link href="/admin/posts/new/" className="ad-btn ad-btn-primary ad-btn-sm">
+              <h3 className="hpa-empty-title">No Articles Found</h3>
+              <p className="hpa-empty-sub">Create your first technical article or insight post.</p>
+              <Link href="/admin/posts/new/" className="hpa-btn hpa-btn-primary hpa-btn-sm">
                 + Create Article
               </Link>
             </div>
@@ -527,7 +527,7 @@ export default async function AdminDashboardPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span className="ad-status-dot" />
+          <span className="hpa-status-dot" />
           <span>PostgreSQL: <strong>Supabase Pooler (Healthy)</strong></span>
         </div>
         <div>

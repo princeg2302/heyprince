@@ -54,7 +54,7 @@ export default function LoginForm() {
 
   return (
     <div
-      className="ad-login-card"
+      className="hpa-login-card"
       style={{
         width: '100%',
         maxWidth: '440px',
@@ -65,7 +65,7 @@ export default function LoginForm() {
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.7)',
         position: 'relative',
         overflow: 'hidden',
-        fontFamily: 'var(--ad-font)',
+        fontFamily: 'var(--hpa-font)',
       }}
     >
       {/* Top accent bar */}
@@ -103,19 +103,19 @@ export default function LoginForm() {
         </div>
 
         <h1
-          className="ad-heading"
+          className="hpa-heading"
           style={{
             fontSize: '1.6rem',
             fontWeight: 800,
             letterSpacing: '-0.02em',
             color: '#ffffff',
             margin: '0 0 6px 0',
-            fontFamily: 'var(--ad-font-heading)',
+            fontFamily: 'var(--hpa-font-heading)',
           }}
         >
           Executive Command Center
         </h1>
-        <p style={{ fontSize: '0.86rem', color: 'rgba(255, 255, 255, 0.55)', margin: 0, fontFamily: 'var(--ad-font)' }}>
+        <p style={{ fontSize: '0.86rem', color: 'rgba(255, 255, 255, 0.55)', margin: 0, fontFamily: 'var(--hpa-font)' }}>
           Enter your authorized credentials to access management controls.
         </p>
       </div>
@@ -174,7 +174,7 @@ export default function LoginForm() {
               placeholder="e.g. it@heyprince.in"
               autoComplete="email"
               required
-              className="ad-form-input"
+              className="hpa-form-input"
               style={{ paddingLeft: '38px' }}
             />
           </div>
@@ -226,7 +226,7 @@ export default function LoginForm() {
               placeholder="••••••••••••"
               autoComplete="current-password"
               required
-              className="ad-form-input"
+              className="hpa-form-input"
               style={{ paddingLeft: '38px', paddingRight: '40px' }}
             />
             <button
@@ -273,7 +273,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="ad-btn ad-btn-primary"
+          className="hpa-btn hpa-btn-primary"
           style={{ width: '100%', padding: '12px', marginTop: '6px' }}
         >
           {loading ? (
@@ -307,15 +307,15 @@ export default function LoginForm() {
 
       {/* Forgot Password Modal */}
       {forgotModalOpen && (
-        <div className="ad-modal-backdrop" onClick={() => setForgotModalOpen(false)}>
-          <div className="ad-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="hpa-modal-backdrop" onClick={() => setForgotModalOpen(false)}>
+          <div className="hpa-modal" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
               <HelpCircle size={22} style={{ color: '#ff3366' }} />
-              <h3 className="ad-modal-title" style={{ margin: 0 }}>
+              <h3 className="hpa-modal-title" style={{ margin: 0 }}>
                 Password Recovery
               </h3>
             </div>
-            <p className="ad-modal-text">
+            <p className="hpa-modal-text">
               For administrative security, password resets are controlled via the server environment or direct Supabase administrative authorization.
             </p>
             <div
@@ -341,7 +341,7 @@ export default function LoginForm() {
               <button
                 type="button"
                 onClick={() => setForgotModalOpen(false)}
-                className="ad-btn ad-btn-primary ad-btn-sm"
+                className="hpa-btn hpa-btn-primary hpa-btn-sm"
               >
                 Close
               </button>

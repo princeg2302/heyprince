@@ -40,23 +40,23 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="ad-toast-container">
+      <div className="hpa-toast-container">
         {toasts.map((toast) => {
-          let icon = <CheckCircle2 size={18} style={{ color: 'var(--ad-success)' }} />;
+          let icon = <CheckCircle2 size={18} style={{ color: 'var(--hpa-success)' }} />;
           let borderColor = 'rgba(0, 245, 160, 0.3)';
 
           if (toast.type === 'error') {
-            icon = <AlertCircle size={18} style={{ color: 'var(--ad-danger)' }} />;
+            icon = <AlertCircle size={18} style={{ color: 'var(--hpa-danger)' }} />;
             borderColor = 'rgba(244, 63, 94, 0.3)';
           } else if (toast.type === 'info') {
-            icon = <Info size={18} style={{ color: 'var(--ad-info)' }} />;
+            icon = <Info size={18} style={{ color: 'var(--hpa-info)' }} />;
             borderColor = 'rgba(56, 189, 248, 0.3)';
           }
 
           return (
             <div
               key={toast.id}
-              className="ad-toast"
+              className="hpa-toast"
               style={{ borderColor }}
             >
               {icon}
@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--ad-text-dim)',
+                  color: 'var(--hpa-text-dim)',
                   cursor: 'pointer',
                   padding: '2px',
                 }}

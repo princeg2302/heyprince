@@ -84,25 +84,25 @@ export default function ServicesListClient({ initialServices, categories }: Serv
 
   return (
     <div>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div>
-          <h1 className="ad-page-title">Services Catalog</h1>
-          <p className="ad-page-desc">
+          <h1 className="hpa-page-title">Services Catalog</h1>
+          <p className="hpa-page-desc">
             Manage your high-ticket consulting offerings, full-stack packages, and AI automations.
           </p>
         </div>
-        <Link href="/admin/services/new" className="ad-btn ad-btn-primary">
+        <Link href="/admin/services/new" className="hpa-btn hpa-btn-primary">
           <Plus size={16} />
           <span>Add New Service</span>
         </Link>
       </div>
 
-      <div className="ad-card">
+      <div className="hpa-card">
         {/* Filters */}
-        <div className="ad-card-header">
-          <div className="ad-table-filters">
-            <div className="ad-search-input">
-              <Search size={16} style={{ color: 'var(--ad-text-dim)' }} />
+        <div className="hpa-card-header">
+          <div className="hpa-table-filters">
+            <div className="hpa-search-input">
+              <Search size={16} style={{ color: 'var(--hpa-text-dim)' }} />
               <input
                 type="text"
                 placeholder="Search services..."
@@ -115,7 +115,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
             </div>
 
             <select
-              className="ad-select"
+              className="hpa-select"
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value);
@@ -131,7 +131,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
             </select>
 
             <select
-              className="ad-select"
+              className="hpa-select"
               value={publishedFilter}
               onChange={(e) => {
                 setPublishedFilter(e.target.value);
@@ -144,15 +144,15 @@ export default function ServicesListClient({ initialServices, categories }: Serv
             </select>
           </div>
 
-          <div style={{ fontSize: '0.82rem', color: 'var(--ad-text-muted)' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
             Showing <strong>{filtered.length}</strong> {filtered.length === 1 ? 'service' : 'services'}
           </div>
         </div>
 
         {/* Table */}
         {paginated.length > 0 ? (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="hpa-table-wrap">
+            <table className="hpa-table">
               <thead>
                 <tr>
                   <th>Service Offering</th>
@@ -180,7 +180,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                         >
                           {srv.title}
                         </Link>
-                        <span style={{ fontSize: '0.76rem', color: 'var(--ad-text-dim)' }}>
+                        <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
                           /{srv.slug} • {srv.tagline || 'Engineering Service'}
                         </span>
                       </div>
@@ -201,7 +201,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                             padding: '2px 8px',
                             borderRadius: '4px',
                             background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid var(--ad-border)',
+                            border: '1px solid var(--hpa-border)',
                             color: 'rgba(255,255,255,0.8)',
                             textTransform: 'capitalize',
                           }}
@@ -217,7 +217,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                               borderRadius: '4px',
                               background: 'rgba(0, 245, 160, 0.12)',
                               border: '1px solid rgba(0, 245, 160, 0.3)',
-                              color: 'var(--ad-success)',
+                              color: 'var(--hpa-success)',
                             }}
                           >
                             ★ Featured
@@ -234,7 +234,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
 
                     <td>
                       <span
-                        className={`ad-pill ${srv.published ? 'ad-pill-published' : 'ad-pill-draft'}`}
+                        className={`hpa-pill ${srv.published ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
                       >
                         {srv.published ? 'Live' : 'Draft'}
                       </span>
@@ -244,14 +244,14 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <Link
                           href={`/admin/services/${srv.id}`}
-                          className="ad-btn ad-btn-secondary ad-btn-icon"
+                          className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                           title="View Service"
                         >
                           <Eye size={14} />
                         </Link>
                         <Link
                           href={`/admin/services/${srv.id}/edit`}
-                          className="ad-btn ad-btn-secondary ad-btn-icon"
+                          className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                           title="Edit Service"
                         >
                           <Edit2 size={14} />
@@ -260,14 +260,14 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                           href={`https://heyprince.in/services/${srv.slug}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="ad-btn ad-btn-secondary ad-btn-icon"
+                          className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                           title="Open on Live Website"
                         >
                           <ExternalLink size={14} />
                         </a>
                         <button
                           onClick={() => setDeletingId(srv.id)}
-                          className="ad-btn ad-btn-danger ad-btn-icon"
+                          className="hpa-btn hpa-btn-danger hpa-btn-icon"
                           title="Delete Service"
                         >
                           <Trash2 size={14} />
@@ -280,15 +280,15 @@ export default function ServicesListClient({ initialServices, categories }: Serv
             </table>
           </div>
         ) : (
-          <div className="ad-empty-state">
-            <Inbox size={48} className="ad-empty-icon" />
-            <h3 className="ad-empty-title">No services found</h3>
-            <p className="ad-empty-sub">
+          <div className="hpa-empty-state">
+            <Inbox size={48} className="hpa-empty-icon" />
+            <h3 className="hpa-empty-title">No services found</h3>
+            <p className="hpa-empty-sub">
               {search || publishedFilter !== 'all' || categoryFilter !== 'all'
                 ? 'Try adjusting your filters.'
                 : 'Get started by creating your first service.'}
             </p>
-            <Link href="/admin/services/new" className="ad-btn ad-btn-primary ad-btn-sm">
+            <Link href="/admin/services/new" className="hpa-btn hpa-btn-primary hpa-btn-sm">
               <Plus size={14} />
               <span>Add New Service</span>
             </Link>
@@ -297,7 +297,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
 
         {/* Pagination */}
         {filtered.length > itemsPerPage && (
-          <div className="ad-pagination">
+          <div className="hpa-pagination">
             <span>
               Page {page} of {totalPages}
             </span>
@@ -305,14 +305,14 @@ export default function ServicesListClient({ initialServices, categories }: Serv
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="ad-btn ad-btn-secondary ad-btn-sm"
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
               >
                 Previous
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="ad-btn ad-btn-secondary ad-btn-sm"
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
               >
                 Next
               </button>

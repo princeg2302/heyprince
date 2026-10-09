@@ -41,21 +41,21 @@ export default async function ViewServicePage({
   return (
     <AdminLayout user={user}>
       {/* Header Bar */}
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link href="/admin/services" className="ad-btn ad-btn-secondary ad-btn-icon" title="Back to Services">
+          <Link href="/admin/services" className="hpa-btn hpa-btn-secondary hpa-btn-icon" title="Back to Services">
             <ArrowLeft size={16} />
           </Link>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span className={`ad-pill ${service.published ? 'ad-pill-published' : 'ad-pill-draft'}`}>
+              <span className={`hpa-pill ${service.published ? 'hpa-pill-published' : 'hpa-pill-draft'}`}>
                 {service.published ? 'Live / Published' : 'Draft / Hidden'}
               </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--ad-text-dim)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)' }}>
                 ID #{service.id} • /{service.slug}
               </span>
             </div>
-            <h1 className="ad-page-title">{service.title}</h1>
+            <h1 className="hpa-page-title">{service.title}</h1>
           </div>
         </div>
 
@@ -64,12 +64,12 @@ export default async function ViewServicePage({
             href={`https://heyprince.in/services/${service.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ad-btn ad-btn-secondary"
+            className="hpa-btn hpa-btn-secondary"
           >
             <span>View on Live Site</span>
             <ExternalLink size={14} />
           </a>
-          <Link href={`/admin/services/${service.id}/edit`} className="ad-btn ad-btn-primary">
+          <Link href={`/admin/services/${service.id}/edit`} className="hpa-btn hpa-btn-primary">
             <Edit2 size={15} />
             <span>Edit Service</span>
           </Link>
@@ -80,13 +80,13 @@ export default async function ViewServicePage({
         {/* Main Content */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Overview Card */}
-          <div className="ad-card" style={{ padding: '24px' }}>
+          <div className="hpa-card" style={{ padding: '24px' }}>
             {service.tagline && (
               <div
                 style={{
                   fontSize: '1.05rem',
                   fontWeight: 600,
-                  color: 'var(--ad-primary)',
+                  color: 'var(--hpa-primary)',
                   marginBottom: '14px',
                 }}
               >
@@ -102,7 +102,7 @@ export default async function ViewServicePage({
             </p>
 
             {service.description && service.description !== service.hero_description && (
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--ad-border)' }}>
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--hpa-border)' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
                   Comprehensive Description
                 </h3>
@@ -115,7 +115,7 @@ export default async function ViewServicePage({
 
           {/* Deliverables */}
           {service.deliverables && service.deliverables.length > 0 && (
-            <div className="ad-card" style={{ padding: '24px' }}>
+            <div className="hpa-card" style={{ padding: '24px' }}>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#ffffff', marginBottom: '16px' }}>
                 Included Deliverables ({service.deliverables.length})
               </h2>
@@ -127,7 +127,7 @@ export default async function ViewServicePage({
                       padding: '14px 18px',
                       borderRadius: '8px',
                       background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--ad-border)',
+                      border: '1px solid var(--hpa-border)',
                     }}
                   >
                     <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.92rem', marginBottom: '4px' }}>
@@ -144,7 +144,7 @@ export default async function ViewServicePage({
 
           {/* Process Steps */}
           {service.process && service.process.length > 0 && (
-            <div className="ad-card" style={{ padding: '24px' }}>
+            <div className="hpa-card" style={{ padding: '24px' }}>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#ffffff', marginBottom: '16px' }}>
                 Delivery Roadmap
               </h2>
@@ -159,7 +159,7 @@ export default async function ViewServicePage({
                       padding: '14px',
                       borderRadius: '8px',
                       background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--ad-border)',
+                      border: '1px solid var(--hpa-border)',
                     }}
                   >
                     <div
@@ -168,7 +168,7 @@ export default async function ViewServicePage({
                         borderRadius: '6px',
                         background: 'rgba(0, 245, 160, 0.1)',
                         border: '1px solid rgba(0, 245, 160, 0.3)',
-                        color: 'var(--ad-success)',
+                        color: 'var(--hpa-success)',
                         fontWeight: 800,
                         fontSize: '0.85rem',
                       }}
@@ -191,7 +191,7 @@ export default async function ViewServicePage({
 
           {/* FAQs */}
           {service.faqs && service.faqs.length > 0 && (
-            <div className="ad-card" style={{ padding: '24px' }}>
+            <div className="hpa-card" style={{ padding: '24px' }}>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#ffffff', marginBottom: '16px' }}>
                 Service FAQs
               </h2>
@@ -203,7 +203,7 @@ export default async function ViewServicePage({
                       padding: '14px',
                       borderRadius: '8px',
                       background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--ad-border)',
+                      border: '1px solid var(--hpa-border)',
                     }}
                   >
                     <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.9rem', marginBottom: '4px' }}>
@@ -222,19 +222,19 @@ export default async function ViewServicePage({
         {/* Sidebar Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Key Specs Card */}
-          <div className="ad-card" style={{ padding: '20px' }}>
+          <div className="hpa-card" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px' }}>
               Service Configuration
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.84rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Category</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Category</span>
                 <span style={{ color: '#ffffff', fontWeight: 600 }}>{service.category_name || 'General'}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Pricing Type</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Pricing Type</span>
                 <span style={{ color: '#ffffff', textTransform: 'capitalize' }}>
                   {service.pricing_type.replace('_', ' ')}
                 </span>
@@ -242,27 +242,27 @@ export default async function ViewServicePage({
 
               {service.starting_price && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--ad-text-dim)' }}>Starting Price</span>
-                  <span style={{ color: 'var(--ad-success)', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--hpa-text-dim)' }}>Starting Price</span>
+                  <span style={{ color: 'var(--hpa-success)', fontWeight: 700 }}>
                     ${service.starting_price}
                   </span>
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Card Theme</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Card Theme</span>
                 <span style={{ color: '#ffffff', textTransform: 'capitalize' }}>{service.card_theme}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Featured Status</span>
-                <span style={{ color: service.is_featured ? 'var(--ad-success)' : 'var(--ad-text-muted)' }}>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Featured Status</span>
+                <span style={{ color: service.is_featured ? 'var(--hpa-success)' : 'var(--hpa-text-muted)' }}>
                   {service.is_featured ? '★ Yes' : 'No'}
                 </span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ad-text-dim)' }}>Sort Order</span>
+                <span style={{ color: 'var(--hpa-text-dim)' }}>Sort Order</span>
                 <span style={{ color: '#ffffff' }}>#{service.sort_order}</span>
               </div>
             </div>
@@ -270,7 +270,7 @@ export default async function ViewServicePage({
 
           {/* Tech Stack Pills */}
           {service.tech_stack && service.tech_stack.length > 0 && (
-            <div className="ad-card" style={{ padding: '20px' }}>
+            <div className="hpa-card" style={{ padding: '20px' }}>
               <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
                 Tech Stack ({service.tech_stack.length})
               </h3>
@@ -295,18 +295,18 @@ export default async function ViewServicePage({
           )}
 
           {/* SEO Details */}
-          <div className="ad-card" style={{ padding: '20px' }}>
+          <div className="hpa-card" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
               SEO Configuration
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8rem' }}>
               <div>
-                <span style={{ color: 'var(--ad-text-dim)', display: 'block', marginBottom: '2px' }}>Meta Title</span>
+                <span style={{ color: 'var(--hpa-text-dim)', display: 'block', marginBottom: '2px' }}>Meta Title</span>
                 <span style={{ color: '#ffffff' }}>{service.seo_title || service.title}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--ad-text-dim)', display: 'block', marginBottom: '2px' }}>Description</span>
-                <span style={{ color: 'var(--ad-text-muted)' }}>{service.seo_description || service.short_description}</span>
+                <span style={{ color: 'var(--hpa-text-dim)', display: 'block', marginBottom: '2px' }}>Description</span>
+                <span style={{ color: 'var(--hpa-text-muted)' }}>{service.seo_description || service.short_description}</span>
               </div>
             </div>
           </div>

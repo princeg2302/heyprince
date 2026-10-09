@@ -29,10 +29,10 @@ export default async function SettingsPage() {
 
   return (
     <AdminLayout user={user}>
-      <div className="ad-page-title-row">
+      <div className="hpa-page-title-row">
         <div>
-          <h1 className="ad-page-title">Platform & System Settings</h1>
-          <p className="ad-page-desc">
+          <h1 className="hpa-page-title">Platform & System Settings</h1>
+          <p className="hpa-page-desc">
             Environment specifications, security keys, and administrator profile.
           </p>
         </div>
@@ -40,9 +40,9 @@ export default async function SettingsPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
         {/* Administrator Profile */}
-        <div className="ad-card" style={{ padding: '24px', marginBottom: 0 }}>
+        <div className="hpa-card" style={{ padding: '24px', marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-            <User size={20} style={{ color: 'var(--ad-primary)' }} />
+            <User size={20} style={{ color: 'var(--hpa-primary)' }} />
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
               Active Administrator
             </h2>
@@ -54,7 +54,7 @@ export default async function SettingsPage() {
                 width: '48px',
                 height: '48px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--ad-primary), var(--ad-accent))',
+                background: 'linear-gradient(135deg, var(--hpa-primary), var(--hpa-accent))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -77,31 +77,31 @@ export default async function SettingsPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.84rem', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--ad-text-dim)' }}>Role Tier</span>
-              <span className="ad-pill ad-pill-admin" style={{ textTransform: 'capitalize' }}>
+              <span style={{ color: 'var(--hpa-text-dim)' }}>Role Tier</span>
+              <span className="hpa-pill hpa-pill-admin" style={{ textTransform: 'capitalize' }}>
                 {user.role}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--ad-text-dim)' }}>Session Duration</span>
+              <span style={{ color: 'var(--hpa-text-dim)' }}>Session Duration</span>
               <span style={{ color: '#ffffff' }}>7 Days (HTTP-only)</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--ad-text-dim)' }}>Encryption</span>
-              <span style={{ color: 'var(--ad-success)' }}>PBKDF2-SHA256 (600k)</span>
+              <span style={{ color: 'var(--hpa-text-dim)' }}>Encryption</span>
+              <span style={{ color: 'var(--hpa-success)' }}>PBKDF2-SHA256 (600k)</span>
             </div>
           </div>
 
-          <Link href={`/admin/users/${user.id}/edit`} className="ad-btn ad-btn-primary" style={{ width: '100%' }}>
+          <Link href={`/admin/users/${user.id}/edit`} className="hpa-btn hpa-btn-primary" style={{ width: '100%' }}>
             <Key size={14} />
             <span>Update Profile or Password</span>
           </Link>
         </div>
 
         {/* Database & Supabase */}
-        <div className="ad-card" style={{ padding: '24px', marginBottom: 0 }}>
+        <div className="hpa-card" style={{ padding: '24px', marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-            <Database size={20} style={{ color: 'var(--ad-success)' }} />
+            <Database size={20} style={{ color: 'var(--hpa-success)' }} />
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
               Supabase Infrastructure
             </h2>
@@ -109,29 +109,29 @@ export default async function SettingsPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.84rem', marginBottom: '20px' }}>
             <div>
-              <span style={{ color: 'var(--ad-text-dim)', display: 'block', marginBottom: '2px' }}>
+              <span style={{ color: 'var(--hpa-text-dim)', display: 'block', marginBottom: '2px' }}>
                 Project REST URL
               </span>
-              <code style={{ fontSize: '0.8rem', color: 'var(--ad-primary)', wordBreak: 'break-all' }}>
+              <code style={{ fontSize: '0.8rem', color: 'var(--hpa-primary)', wordBreak: 'break-all' }}>
                 {supabaseUrl}
               </code>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--ad-text-dim)' }}>Connection Pooler</span>
-              <span className="ad-status-pill">
-                <span className="ad-status-dot" />
+              <span style={{ color: 'var(--hpa-text-dim)' }}>Connection Pooler</span>
+              <span className="hpa-status-pill">
+                <span className="hpa-status-dot" />
                 <span>Port 6543 (Transaction)</span>
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--ad-text-dim)' }}>SSL Enforcement</span>
-              <span style={{ color: 'var(--ad-success)', fontWeight: 600 }}>Enabled (Verified)</span>
+              <span style={{ color: 'var(--hpa-text-dim)' }}>SSL Enforcement</span>
+              <span style={{ color: 'var(--hpa-success)', fontWeight: 600 }}>Enabled (Verified)</span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--ad-text-dim)' }}>Host Region</span>
+              <span style={{ color: 'var(--hpa-text-dim)' }}>Host Region</span>
               <span style={{ color: '#ffffff' }}>AWS us-west-2</span>
             </div>
           </div>
@@ -140,7 +140,7 @@ export default async function SettingsPage() {
             href="https://supabase.com/dashboard"
             target="_blank"
             rel="noopener noreferrer"
-            className="ad-btn ad-btn-secondary"
+            className="hpa-btn hpa-btn-secondary"
             style={{ width: '100%', justifyContent: 'space-between' }}
           >
             <span>Open Supabase Cloud Console</span>
@@ -149,9 +149,9 @@ export default async function SettingsPage() {
         </div>
 
         {/* Runtime Engine */}
-        <div className="ad-card" style={{ padding: '24px', gridColumn: 'span 2', marginBottom: 0 }}>
+        <div className="hpa-card" style={{ padding: '24px', gridColumn: 'span 2', marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-            <Server size={20} style={{ color: 'var(--ad-info)' }} />
+            <Server size={20} style={{ color: 'var(--hpa-info)' }} />
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
               Framework Architecture & Deployment
             </h2>
@@ -170,10 +170,10 @@ export default async function SettingsPage() {
                 padding: '12px',
                 borderRadius: '8px',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--ad-border)',
+                border: '1px solid var(--hpa-border)',
               }}
             >
-              <div style={{ color: 'var(--ad-text-dim)', marginBottom: '4px' }}>Next.js Version</div>
+              <div style={{ color: 'var(--hpa-text-dim)', marginBottom: '4px' }}>Next.js Version</div>
               <div style={{ fontWeight: 700, color: '#ffffff' }}>16.3.8 (App Router)</div>
             </div>
 
@@ -182,10 +182,10 @@ export default async function SettingsPage() {
                 padding: '12px',
                 borderRadius: '8px',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--ad-border)',
+                border: '1px solid var(--hpa-border)',
               }}
             >
-              <div style={{ color: 'var(--ad-text-dim)', marginBottom: '4px' }}>Compiler</div>
+              <div style={{ color: 'var(--hpa-text-dim)', marginBottom: '4px' }}>Compiler</div>
               <div style={{ fontWeight: 700, color: '#ffffff' }}>Turbopack Engine</div>
             </div>
 
@@ -194,10 +194,10 @@ export default async function SettingsPage() {
                 padding: '12px',
                 borderRadius: '8px',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--ad-border)',
+                border: '1px solid var(--hpa-border)',
               }}
             >
-              <div style={{ color: 'var(--ad-text-dim)', marginBottom: '4px' }}>UI Runtime</div>
+              <div style={{ color: 'var(--hpa-text-dim)', marginBottom: '4px' }}>UI Runtime</div>
               <div style={{ fontWeight: 700, color: '#ffffff' }}>React 19.3</div>
             </div>
 
@@ -206,11 +206,11 @@ export default async function SettingsPage() {
                 padding: '12px',
                 borderRadius: '8px',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--ad-border)',
+                border: '1px solid var(--hpa-border)',
               }}
             >
-              <div style={{ color: 'var(--ad-text-dim)', marginBottom: '4px' }}>Hosting Compatibility</div>
-              <div style={{ fontWeight: 700, color: 'var(--ad-success)' }}>Vercel Ready</div>
+              <div style={{ color: 'var(--hpa-text-dim)', marginBottom: '4px' }}>Hosting Compatibility</div>
+              <div style={{ fontWeight: 700, color: 'var(--hpa-success)' }}>Vercel Ready</div>
             </div>
           </div>
         </div>
