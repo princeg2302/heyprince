@@ -16,7 +16,7 @@ export default async function EditUserPage({
 }) {
   const user = await getCurrentAdmin();
   if (!user) {
-    redirect('/admin/login');
+    redirect('/admin/login/');
   }
 
   const { id } = await params;

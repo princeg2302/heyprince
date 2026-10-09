@@ -44,9 +44,8 @@ export default function LoginForm() {
         return;
       }
 
-      // Success
-      router.push('/admin');
-      router.refresh();
+      // Success: full navigation ensures session cookie is immediately sent to SSR
+      window.location.href = '/admin/';
     } catch {
       setError('A connection error occurred. Please verify your network and try again.');
       setLoading(false);

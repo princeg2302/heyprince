@@ -28,7 +28,7 @@ export default async function ViewServicePage({
 }) {
   const user = await getCurrentAdmin();
   if (!user) {
-    redirect('/admin/login');
+    redirect('/admin/login/');
   }
 
   const { id } = await params;

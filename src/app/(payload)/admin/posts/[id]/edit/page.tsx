@@ -16,7 +16,7 @@ export default async function EditPostPage({
 }) {
   const user = await getCurrentAdmin();
   if (!user) {
-    redirect('/admin/login');
+    redirect('/admin/login/');
   }
 
   const { id } = await params;

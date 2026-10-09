@@ -12,7 +12,7 @@ export const metadata = {
 export default async function NewUserPage() {
   const user = await getCurrentAdmin();
   if (!user) {
-    redirect('/admin/login');
+    redirect('/admin/login/');
   }
 
   return (

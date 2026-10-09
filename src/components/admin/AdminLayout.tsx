@@ -41,24 +41,23 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
   const displayRole = user?.role || 'admin';
 
   const navItems = [
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { label: 'Posts & Insights', href: '/admin/posts', icon: FileText },
-    { label: 'Services', href: '/admin/services', icon: Briefcase },
-    { label: 'Admin Users', href: '/admin/users', icon: Users },
-    { label: 'Categories', href: '/admin/categories', icon: FolderOpen },
-    { label: 'Client Leads', href: '/admin/leads', icon: Mail },
-    { label: 'Media Vault', href: '/admin/media', icon: ImageIcon },
-    { label: 'Settings', href: '/admin/settings', icon: Settings },
+    { label: 'Dashboard', href: '/admin/', icon: LayoutDashboard },
+    { label: 'Posts & Insights', href: '/admin/posts/', icon: FileText },
+    { label: 'Services', href: '/admin/services/', icon: Briefcase },
+    { label: 'Admin Users', href: '/admin/users/', icon: Users },
+    { label: 'Categories', href: '/admin/categories/', icon: FolderOpen },
+    { label: 'Client Leads', href: '/admin/leads/', icon: Mail },
+    { label: 'Media Vault', href: '/admin/media/', icon: ImageIcon },
+    { label: 'Settings', href: '/admin/settings/', icon: Settings },
   ];
 
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
       await fetch('/api/admin/logout', { method: 'POST' });
-      router.push('/admin/login');
-      router.refresh();
+      window.location.href = '/admin/login/';
     } catch {
-      window.location.href = '/admin/login';
+      window.location.href = '/admin/login/';
     }
   };
 
@@ -112,10 +111,11 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
           <span className="ad-nav-group-title">Navigation</span>
           {navItems.map((item) => {
             const Icon = item.icon;
+            const normalizedPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
             const isActive =
-              item.href === '/admin'
-                ? pathname === '/admin'
-                : pathname.startsWith(item.href);
+              item.href === '/admin/'
+                ? normalizedPath === '/admin/'
+                : normalizedPath.startsWith(item.href);
 
             return (
               <Link

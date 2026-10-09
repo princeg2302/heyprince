@@ -30,7 +30,7 @@ export const metadata = {
 export default async function AdminDashboardPage() {
   const user = await getCurrentAdmin();
   if (!user) {
-    redirect('/admin/login');
+    redirect('/admin/login/');
   }
 
   const stats = await getDashboardStats();
