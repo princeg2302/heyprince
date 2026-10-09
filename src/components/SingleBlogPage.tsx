@@ -138,15 +138,17 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   };
 
   const handleCopyLink = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    const urlToCopy = typeof window !== 'undefined' ? window.location.href : `https://heyprince.in/insights/${article.slug}/`;
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(urlToCopy).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {});
     }
   };
 
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const shareUrl = encodeURIComponent(currentUrl);
+  const canonicalUrl = `https://heyprince.in/insights/${article.slug}/`;
+  const shareUrl = encodeURIComponent(canonicalUrl);
   const shareText = encodeURIComponent(`${article.title} — By Prince`);
 
   const renderParagraphWithLinks = (text: string) => {
