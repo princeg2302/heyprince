@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import fs from 'fs';
 
 export interface SendLeadEmailParams {
   leadId?: string | number;
@@ -14,9 +16,19 @@ export interface SendLeadEmailParams {
   createdAt?: string;
 }
 
+function cleanEnv(val?: string): string | undefined {
+  if (!val) return undefined;
+  const trimmed = val.trim();
+  return trimmed.replace(/^["']|["']$/g, '');
+}
+
 export function isEmailConfigured(): boolean {
-  const hasResend = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim().length > 0);
-  const hasSmtp = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  const hasResend = Boolean(cleanEnv(process.env.RESEND_API_KEY));
+  const hasSmtp = Boolean(
+    cleanEnv(process.env.SMTP_HOST) &&
+    cleanEnv(process.env.SMTP_USER) &&
+    cleanEnv(process.env.SMTP_PASS)
+  );
   return hasResend || hasSmtp;
 }
 
@@ -27,10 +39,64 @@ function cleanPhoneForWhatsApp(phone?: string): string | null {
   return null;
 }
 
+export interface LogoConfig {
+  logoSrc: string;
+  attachments: Array<{
+    filename: string;
+    content?: Buffer;
+    cid: string;
+  }>;
+}
+
+export function getLogoConfig(preferRemoteUrl: boolean = false): LogoConfig {
+  const remoteUrl = 'https://heyprince.in/assets/heyprince-logo.png';
+  if (preferRemoteUrl) {
+    return {
+      logoSrc: remoteUrl,
+      attachments: [],
+    };
+  }
+
+  const logoCandidates = [
+    path.join(process.cwd(), 'public/assets/heyprince-logo.png'),
+    path.join(process.cwd(), 'public/images/heyprince-logo.png'),
+    path.join(process.cwd(), 'public/heyprince-logo.png'),
+  ];
+
+  for (const candidate of logoCandidates) {
+    try {
+      if (fs.existsSync(/*turbopackIgnore: true*/ candidate)) {
+        const buffer = fs.readFileSync(/*turbopackIgnore: true*/ candidate);
+        return {
+          logoSrc: 'cid:heyprince-logo',
+          attachments: [
+            {
+              filename: 'heyprince-logo.png',
+              content: buffer,
+              cid: 'heyprince-logo',
+            },
+          ],
+        };
+      }
+    } catch {
+      // fallback to next candidate
+    }
+  }
+
+  return {
+    logoSrc: remoteUrl,
+    attachments: [],
+  };
+}
+
 /**
  * Builds the ultra-premium dark theme notification email sent to it@heyprince.in
  */
-export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateFormatted: string): string {
+export function buildAdminNotificationHtml(
+  params: SendLeadEmailParams,
+  dateFormatted: string,
+  logoSrc: string = 'cid:heyprince-logo'
+): string {
   const waNumber = cleanPhoneForWhatsApp(params.phone);
   const waLink = waNumber ? `https://wa.me/${waNumber}` : null;
   const adminUrl = 'https://heyprince.in/admin/leads/';
@@ -79,24 +145,35 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
             <td height="4" style="background: linear-gradient(90deg, #ff3366 0%, #8b5cf6 50%, #00f5a0 100%);"></td>
           </tr>
 
-          <!-- Header -->
+          <!-- Brand Header Bar with Official Logo -->
           <tr>
-            <td bgcolor="#0b0b12" style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #181826; background-color: #0b0b12;">
+            <td bgcolor="#07070d" style="padding: 24px 32px 18px 32px; border-bottom: 1px solid #161624; background-color: #07070d;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td>
-                    <span style="display: inline-block; background-color: rgba(255, 51, 102, 0.14); border: 1px solid rgba(255, 51, 102, 0.38); color: #ff3366; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 100px; margin-bottom: 10px;">
+                  <td valign="middle">
+                    <a href="https://heyprince.in" target="_blank" style="text-decoration: none; display: inline-block;">
+                      <img src="${logoSrc}" width="140" height="26" alt="HeyPrince" style="display: block; height: 26px; width: auto; max-width: 160px; border: 0; outline: none;" />
+                    </a>
+                  </td>
+                  <td align="right" valign="middle">
+                    <span style="display: inline-block; background-color: rgba(255, 51, 102, 0.14); border: 1px solid rgba(255, 51, 102, 0.38); color: #ff3366; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 100px; white-space: nowrap;">
                       ⚡ New Project Inquiry
                     </span>
-                    <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
-                      ${params.name} <span style="font-weight: 400; color: #8e8ea2; font-size: 16px;">${params.company ? `• ${params.company}` : ''}</span>
-                    </h1>
-                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #76768e;">
-                      Received on ${dateFormatted} via <a href="https://heyprince.in" style="color: #ff3366; font-weight: 600;">heyprince.in</a>
-                    </p>
                   </td>
                 </tr>
               </table>
+            </td>
+          </tr>
+
+          <!-- Lead Summary Bar -->
+          <tr>
+            <td bgcolor="#0b0b12" style="padding: 22px 32px 18px 32px; border-bottom: 1px solid #181826; background-color: #0b0b12;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
+                ${params.name} <span style="font-weight: 400; color: #8e8ea2; font-size: 16px;">${params.company ? `• ${params.company}` : ''}</span>
+              </h1>
+              <p style="margin: 6px 0 0 0; font-size: 13px; color: #76768e;">
+                Received on ${dateFormatted} via <a href="https://heyprince.in" style="color: #ff3366; font-weight: 600;">heyprince.in</a>
+              </p>
             </td>
           </tr>
 
@@ -194,7 +271,10 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
 
           <!-- Footer -->
           <tr>
-            <td bgcolor="#07070c" style="background-color: #07070c; padding: 18px 32px; border-top: 1px solid #161622; text-align: center;">
+            <td bgcolor="#07070c" style="background-color: #07070c; padding: 22px 32px; border-top: 1px solid #161622; text-align: center;">
+              <a href="https://heyprince.in" target="_blank" style="text-decoration: none; display: inline-block; margin-bottom: 8px;">
+                <img src="${logoSrc}" width="105" height="20" alt="HeyPrince" style="display: inline-block; height: 20px; width: auto; max-width: 115px; border: 0; outline: none; opacity: 0.75;" />
+              </a>
               <p style="margin: 0; font-size: 12px; color: #5a5a6e;">
                 Lead Record ${params.leadId ? `<strong>#${params.leadId}</strong>` : ''} • Recorded securely in Supabase PostgreSQL
               </p>
@@ -213,7 +293,10 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
 /**
  * Builds the ultra-premium dark theme confirmation & 4-hour commitment revert email sent to the customer
  */
-export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
+export function buildCustomerRevertHtml(
+  params: SendLeadEmailParams,
+  logoSrc: string = 'cid:heyprince-logo'
+): string {
   const firstName = params.name ? params.name.split(' ')[0] : 'there';
   const waDirectUrl =
     'https://wa.me/919120900010?text=' +
@@ -263,21 +346,21 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
             <td height="4" style="background: linear-gradient(90deg, #ff3366 0%, #8b5cf6 50%, #00f5a0 100%);"></td>
           </tr>
 
-          <!-- Brand Header -->
+          <!-- Brand Header with Official Logo -->
           <tr>
-            <td bgcolor="#0a0a10" style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #181826; background-color: #0a0a10;">
+            <td bgcolor="#0a0a10" style="padding: 26px 32px 20px 32px; border-bottom: 1px solid #181826; background-color: #0a0a10;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td>
-                    <span style="font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
-                      HEY<span style="color: #ff3366;">PRINCE</span>
-                    </span>
-                    <span style="display: block; font-size: 11px; color: #76768e; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px;">
+                  <td valign="middle">
+                    <a href="https://heyprince.in" target="_blank" style="text-decoration: none; display: inline-block;">
+                      <img src="${logoSrc}" width="140" height="26" alt="HeyPrince" style="display: block; height: 26px; width: auto; max-width: 160px; border: 0; outline: none;" />
+                    </a>
+                    <span style="display: block; font-size: 11px; color: #76768e; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px;">
                       Senior Full Stack Engineer &amp; Tech Partner
                     </span>
                   </td>
-                  <td align="right">
-                    <span style="display: inline-block; background-color: rgba(0, 245, 160, 0.1); border: 1px solid rgba(0, 245, 160, 0.32); color: #00f5a0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px;">
+                  <td align="right" valign="middle">
+                    <span style="display: inline-block; background-color: rgba(0, 245, 160, 0.1); border: 1px solid rgba(0, 245, 160, 0.32); color: #00f5a0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; white-space: nowrap;">
                       ● Inquiry Received
                     </span>
                   </td>
@@ -397,12 +480,15 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td>
+                    <a href="https://heyprince.in" target="_blank" style="text-decoration: none; display: inline-block; margin-bottom: 8px;">
+                      <img src="${logoSrc}" width="115" height="21" alt="HeyPrince" style="display: block; height: 21px; width: auto; max-width: 125px; border: 0; outline: none; opacity: 0.9;" />
+                    </a>
                     <strong style="color: #ffffff; font-size: 14px; display: block;">Prince</strong>
                     <span style="color: #76768e; font-size: 12px; display: block; margin-top: 2px;">
                       Senior Full Stack Engineer &amp; Tech Partner
                     </span>
-                    <span style="color: #76768e; font-size: 12px; display: block; margin-top: 2px;">
-                      <a href="https://heyprince.in" style="color: #ff3366;">heyprince.in</a> • <a href="mailto:it@heyprince.in" style="color: #76768e;">it@heyprince.in</a>
+                    <span style="color: #76768e; font-size: 12px; display: block; margin-top: 4px;">
+                      <a href="https://heyprince.in" style="color: #ff3366; font-weight: 600;">heyprince.in</a> • <a href="mailto:it@heyprince.in" style="color: #76768e;">it@heyprince.in</a>
                     </span>
                   </td>
                 </tr>
@@ -427,8 +513,8 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
   messageId?: string;
   error?: string;
 }> {
-  const recipient = process.env.LEAD_NOTIFICATION_EMAIL || 'it@heyprince.in';
-  const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_FROM || 'HeyPrince Inquiries <onboarding@resend.dev>';
+  const recipient = cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || 'it@heyprince.in';
+  const fromEmail = cleanEnv(process.env.RESEND_FROM_EMAIL) || cleanEnv(process.env.SMTP_FROM) || 'HeyPrince Inquiries <onboarding@resend.dev>';
   const subject = `⚡ New Project Inquiry: [${params.service}] from ${params.name}`;
 
   const dateFormatted = new Date().toLocaleString('en-US', {
@@ -437,12 +523,13 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
     timeStyle: 'short',
   });
 
-  const emailHtml = buildAdminNotificationHtml(params, dateFormatted);
-
   // 1. Try Resend if RESEND_API_KEY is configured
-  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const resendApiKey = cleanEnv(process.env.RESEND_API_KEY);
   if (resendApiKey) {
     try {
+      const logoCfg = getLogoConfig(true);
+      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, logoCfg.logoSrc);
+
       const resend = new Resend(resendApiKey);
       const { data, error } = await resend.emails.send({
         from: fromEmail,
@@ -465,14 +552,18 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
   }
 
   // 2. Try SMTP if SMTP credentials are configured (Hostinger, Zoho, cPanel)
-  const smtpHost = process.env.SMTP_HOST?.trim();
-  const smtpUser = process.env.SMTP_USER?.trim();
-  const smtpPass = process.env.SMTP_PASS?.trim();
+  const smtpHost = cleanEnv(process.env.SMTP_HOST);
+  const smtpUser = cleanEnv(process.env.SMTP_USER);
+  const smtpPass = cleanEnv(process.env.SMTP_PASS);
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      const port = Number(process.env.SMTP_PORT) || 465;
-      const isSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : port === 465;
+      const logoCfg = getLogoConfig(false);
+      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, logoCfg.logoSrc);
+
+      const port = Number(cleanEnv(process.env.SMTP_PORT)) || 465;
+      const secureEnv = cleanEnv(process.env.SMTP_SECURE);
+      const isSecure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
 
       const transporter = nodemailer.createTransport({
         host: smtpHost,
@@ -487,7 +578,7 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
         socketTimeout: 12000,
       });
 
-      const senderFrom = process.env.SMTP_FROM || `"HeyPrince Inquiries" <${smtpUser}>`;
+      const senderFrom = cleanEnv(process.env.SMTP_FROM) || `"HeyPrince Inquiries" <${smtpUser}>`;
 
       const info = await transporter.sendMail({
         from: senderFrom,
@@ -495,6 +586,7 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
         replyTo: params.email,
         subject,
         html: emailHtml,
+        attachments: logoCfg.attachments,
       });
 
       console.info(`[Email:SMTP] Admin notification sent (ID: ${info.messageId})`);
@@ -525,18 +617,20 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
   }
 
   const subject = `Inquiry Received: We'll be in touch within 2 to 4 hours | Prince`;
-  const emailHtml = buildCustomerRevertHtml(params);
 
   // 1. Try Resend if configured
-  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const resendApiKey = cleanEnv(process.env.RESEND_API_KEY);
   if (resendApiKey) {
     try {
+      const logoCfg = getLogoConfig(true);
+      const emailHtml = buildCustomerRevertHtml(params, logoCfg.logoSrc);
+
       const resend = new Resend(resendApiKey);
-      const fromEmail = process.env.RESEND_FROM_EMAIL || 'Prince • HeyPrince <onboarding@resend.dev>';
+      const fromEmail = cleanEnv(process.env.RESEND_FROM_EMAIL) || 'Prince • HeyPrince <onboarding@resend.dev>';
       const { data, error } = await resend.emails.send({
         from: fromEmail,
         to: [params.email],
-        replyTo: process.env.LEAD_NOTIFICATION_EMAIL || 'it@heyprince.in',
+        replyTo: cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || 'it@heyprince.in',
         subject,
         html: emailHtml,
       });
@@ -551,14 +645,18 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
   }
 
   // 2. Try SMTP if configured (Hostinger)
-  const smtpHost = process.env.SMTP_HOST?.trim();
-  const smtpUser = process.env.SMTP_USER?.trim();
-  const smtpPass = process.env.SMTP_PASS?.trim();
+  const smtpHost = cleanEnv(process.env.SMTP_HOST);
+  const smtpUser = cleanEnv(process.env.SMTP_USER);
+  const smtpPass = cleanEnv(process.env.SMTP_PASS);
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      const port = Number(process.env.SMTP_PORT) || 465;
-      const isSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : port === 465;
+      const logoCfg = getLogoConfig(false);
+      const emailHtml = buildCustomerRevertHtml(params, logoCfg.logoSrc);
+
+      const port = Number(cleanEnv(process.env.SMTP_PORT)) || 465;
+      const secureEnv = cleanEnv(process.env.SMTP_SECURE);
+      const isSecure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
 
       const transporter = nodemailer.createTransport({
         host: smtpHost,
@@ -573,14 +671,15 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
         socketTimeout: 12000,
       });
 
-      const senderFrom = process.env.SMTP_FROM || `"Prince • HeyPrince" <${smtpUser}>`;
+      const senderFrom = cleanEnv(process.env.SMTP_FROM) || `"Prince • HeyPrince" <${smtpUser}>`;
 
       const info = await transporter.sendMail({
         from: senderFrom,
         to: params.email,
-        replyTo: process.env.LEAD_NOTIFICATION_EMAIL || smtpUser,
+        replyTo: cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || smtpUser,
         subject,
         html: emailHtml,
+        attachments: logoCfg.attachments,
       });
 
       console.info(`[Email:SMTP] Customer revert email sent to ${params.email} (ID: ${info.messageId})`);
