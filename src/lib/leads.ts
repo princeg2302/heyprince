@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { supabase } from './admin-db';
-import { sendLeadNotificationEmail } from './email';
+import { dispatchLeadEmails } from './email';
 
 export const LeadSubmissionSchema = z.object({
   name: z.string().trim().min(2, 'Name must contain at least 2 characters').max(100),
@@ -129,9 +129,9 @@ export async function processLeadSubmission(
       });
   }
 
-  // 6. Send Transactional Notification Email (Resend or SMTP)
+  // 6. Send Transactional Notification & Customer 4-Hour Revert Email (Hostinger SMTP or Resend)
   try {
-    await sendLeadNotificationEmail({
+    await dispatchLeadEmails({
       leadId: createdLeadId,
       name: data.name,
       email: data.email,
