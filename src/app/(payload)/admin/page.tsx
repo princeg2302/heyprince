@@ -46,7 +46,7 @@ export default async function AdminDashboardPage() {
       iconColor: '#ff3366',
       bgGlow: 'rgba(255, 51, 102, 0.08)',
       borderColor: 'rgba(255, 51, 102, 0.25)',
-      link: '/admin/leads',
+      link: '/admin/leads/',
       createLink: null,
     },
     {
@@ -59,8 +59,8 @@ export default async function AdminDashboardPage() {
       iconColor: '#00f5a0',
       bgGlow: 'rgba(0, 245, 160, 0.08)',
       borderColor: 'rgba(0, 245, 160, 0.25)',
-      link: '/admin/services',
-      createLink: '/admin/services/new',
+      link: '/admin/services/',
+      createLink: '/admin/services/new/',
     },
     {
       title: 'Insights & Articles',
@@ -72,8 +72,8 @@ export default async function AdminDashboardPage() {
       iconColor: '#a78bfa',
       bgGlow: 'rgba(139, 92, 246, 0.08)',
       borderColor: 'rgba(139, 92, 246, 0.25)',
-      link: '/admin/posts',
-      createLink: '/admin/posts/new',
+      link: '/admin/posts/',
+      createLink: '/admin/posts/new/',
     },
     {
       title: 'Taxonomies',
@@ -85,8 +85,8 @@ export default async function AdminDashboardPage() {
       iconColor: '#fbbf24',
       bgGlow: 'rgba(245, 158, 11, 0.08)',
       borderColor: 'rgba(245, 158, 11, 0.25)',
-      link: '/admin/categories',
-      createLink: '/admin/categories',
+      link: '/admin/categories/',
+      createLink: '/admin/categories/',
     },
     {
       title: 'Media Library',
@@ -98,8 +98,8 @@ export default async function AdminDashboardPage() {
       iconColor: '#38bdf8',
       bgGlow: 'rgba(56, 189, 248, 0.08)',
       borderColor: 'rgba(56, 189, 248, 0.25)',
-      link: '/admin/media',
-      createLink: '/admin/media',
+      link: '/admin/media/',
+      createLink: '/admin/media/',
     },
     {
       title: 'Admin Security',
@@ -111,17 +111,17 @@ export default async function AdminDashboardPage() {
       iconColor: '#f472b6',
       bgGlow: 'rgba(236, 72, 153, 0.08)',
       borderColor: 'rgba(236, 72, 153, 0.25)',
-      link: '/admin/users',
-      createLink: '/admin/users/new',
+      link: '/admin/users/',
+      createLink: '/admin/users/new/',
     },
   ];
 
   const quickActions = [
-    { label: '+ Add Article', href: '/admin/posts/new', icon: FileText, color: '#8b5cf6' },
-    { label: '+ Add Service', href: '/admin/services/new', icon: Sparkles, color: '#00f5a0' },
-    { label: '+ Add User', href: '/admin/users/new', icon: Users, color: '#ec4899' },
-    { label: 'Review Leads', href: '/admin/leads', icon: Mail, color: '#ff3366' },
-    { label: 'Manage Media', href: '/admin/media', icon: ImageIcon, color: '#38bdf8' },
+    { label: '+ Add Article', href: '/admin/posts/new/', icon: FileText, color: '#8b5cf6' },
+    { label: '+ Add Service', href: '/admin/services/new/', icon: Sparkles, color: '#00f5a0' },
+    { label: '+ Add User', href: '/admin/users/new/', icon: Users, color: '#ec4899' },
+    { label: 'Review Leads', href: '/admin/leads/', icon: Mail, color: '#ff3366' },
+    { label: 'Manage Media', href: '/admin/media/', icon: ImageIcon, color: '#38bdf8' },
   ];
 
   return (
@@ -352,7 +352,7 @@ export default async function AdminDashboardPage() {
               </h2>
               <p className="ad-card-sub">Real-time incoming submissions from contact form</p>
             </div>
-            <Link href="/admin/leads" className="ad-btn ad-btn-secondary ad-btn-sm">
+            <Link href="/admin/leads/" className="ad-btn ad-btn-secondary ad-btn-sm">
               View All ({stats.leadsCount}) →
             </Link>
           </div>
@@ -375,7 +375,7 @@ export default async function AdminDashboardPage() {
                     let statusColor = '#38bdf8';
                     let statusBg = 'rgba(56, 189, 248, 0.12)';
                     if (statusVal === 'WON') {
-                      statusColor = '#00f5a0';
+                       statusColor = '#00f5a0';
                       statusBg = 'rgba(0, 245, 160, 0.12)';
                     } else if (statusVal === 'CONTACTED' || statusVal === 'QUALIFIED') {
                       statusColor = '#fbbf24';
@@ -417,7 +417,7 @@ export default async function AdminDashboardPage() {
                           {dateStr}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <Link href="/admin/leads" className="ad-btn ad-btn-secondary ad-btn-sm">
+                          <Link href="/admin/leads/" className="ad-btn ad-btn-secondary ad-btn-sm">
                             Inspect
                           </Link>
                         </td>
@@ -448,7 +448,7 @@ export default async function AdminDashboardPage() {
               </h2>
               <p className="ad-card-sub">Engineering thought leadership & insights</p>
             </div>
-            <Link href="/admin/posts" className="ad-btn ad-btn-secondary ad-btn-sm">
+            <Link href="/admin/posts/" className="ad-btn ad-btn-secondary ad-btn-sm">
               View All ({stats.postsCount}) →
             </Link>
           </div>
@@ -488,7 +488,7 @@ export default async function AdminDashboardPage() {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <Link href={`/admin/posts/${post.id}`} className="ad-btn ad-btn-secondary ad-btn-sm">
+                        <Link href={`/admin/posts/${post.id}/`} className="ad-btn ad-btn-secondary ad-btn-sm">
                           View
                         </Link>
                       </td>
@@ -502,7 +502,7 @@ export default async function AdminDashboardPage() {
               <FileText size={42} style={{ color: 'rgba(255, 255, 255, 0.2)', marginBottom: '12px' }} />
               <h3 className="ad-empty-title">No Articles Found</h3>
               <p className="ad-empty-sub">Create your first technical article or insight post.</p>
-              <Link href="/admin/posts/new" className="ad-btn ad-btn-primary ad-btn-sm">
+              <Link href="/admin/posts/new/" className="ad-btn ad-btn-primary ad-btn-sm">
                 + Create Article
               </Link>
             </div>

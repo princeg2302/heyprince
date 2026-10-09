@@ -22,7 +22,7 @@ export default function AdminRootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         style={{
           margin: 0,
@@ -31,6 +31,7 @@ export default function AdminRootLayout({
           color: '#ffffff',
           fontFamily: "'Arboria-Book', 'Arboria', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         }}
+        suppressHydrationWarning
       >
         <ToastProvider>{children}</ToastProvider>
       </body>

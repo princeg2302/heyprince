@@ -32,7 +32,8 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, user }: AdminLayoutProps) {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname || '/admin/';
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -61,10 +62,10 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
     }
   };
 
-  // Generate breadcrumbs from pathname
+  // Generate breadcrumbs from pathname safely
   const segments = pathname.split('/').filter(Boolean);
   const breadcrumbs = segments.map((seg, idx) => {
-    const href = '/' + segments.slice(0, idx + 1).join('/');
+    const href = '/' + segments.slice(0, idx + 1).join('/') + '/';
     const label =
       seg === 'admin'
         ? 'Dashboard'
@@ -91,7 +92,7 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside className={`ad-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="ad-sidebar-header">
-          <Link href="/admin" className="ad-sidebar-logo">
+          <Link href="/admin/" className="ad-sidebar-logo">
             <img src="/heyprince-logo.svg" alt="HeyPrince" />
             <div className="ad-sidebar-logo-text">
               <span className="ad-logo-brand">HeyPrince</span>
