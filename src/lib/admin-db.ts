@@ -41,6 +41,7 @@ export interface AdminUser {
   name: string;
   email: string;
   role: 'admin' | 'editor';
+  avatar_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -51,7 +52,7 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
     const sessionCookie = cookieStore.get('hp_admin_session')?.value;
     if (!sessionCookie) return null;
 
-    let payload: { id: number; email: string; name?: string; role?: string; exp: number };
+    let payload: { id: number; email: string; name?: string; role?: string; avatar_url?: string | null; exp: number };
     try {
       payload = JSON.parse(Buffer.from(sessionCookie, 'base64').toString('utf8'));
     } catch {
@@ -70,7 +71,7 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
     try {
       const { data: user, error } = await supabase
         .from('users')
-        .select('id, name, email, role, created_at, updated_at')
+        .select('id, name, email, role, avatar_url, created_at, updated_at')
         .eq('id', payload.id)
         .single();
 
@@ -87,6 +88,7 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
       name: payload.name || payload.email.split('@')[0],
       email: payload.email,
       role: (payload.role as 'admin' | 'editor') || 'admin',
+      avatar_url: payload.avatar_url || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -119,6 +121,7 @@ export async function authenticateAdmin(email: string, password: string): Promis
       email: user.email,
       role: user.role,
       name: user.name,
+      avatar_url: user.avatar_url || null,
       exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
     };
     const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64');
@@ -138,6 +141,7 @@ export async function authenticateAdmin(email: string, password: string): Promis
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar_url: user.avatar_url || null,
         created_at: user.created_at,
         updated_at: user.updated_at,
       },
@@ -870,7 +874,7 @@ export async function getUsersList(): Promise<AdminUser[]> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, role, created_at, updated_at')
+      .select('id, name, email, role, avatar_url, created_at, updated_at')
       .order('created_at', { ascending: false });
     if (error) {
       console.error('Error fetching users:', error);
@@ -886,7 +890,7 @@ export async function getUserById(id: number): Promise<AdminUser | null> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, role, created_at, updated_at')
+      .select('id, name, email, role, avatar_url, created_at, updated_at')
       .eq('id', id)
       .single();
     if (error || !data) return null;
@@ -901,6 +905,7 @@ export async function createUser(data: {
   email: string;
   password?: string;
   role: 'admin' | 'editor';
+  avatar_url?: string | null;
 }): Promise<{ success: boolean; user?: AdminUser; error?: string }> {
   try {
     const normalizedEmail = data.email.trim().toLowerCase();
@@ -917,6 +922,7 @@ export async function createUser(data: {
       name: data.name.trim(),
       email: normalizedEmail,
       role: data.role || 'admin',
+      avatar_url: data.avatar_url && data.avatar_url.trim().length > 0 ? data.avatar_url.trim() : null,
       salt,
       hash,
       created_at: now,
@@ -926,7 +932,7 @@ export async function createUser(data: {
     const { data: created, error } = await supabase
       .from('users')
       .insert([insertPayload])
-      .select('id, name, email, role, created_at, updated_at')
+      .select('id, name, email, role, avatar_url, created_at, updated_at')
       .single();
 
     if (error || !created) {
@@ -946,6 +952,7 @@ export async function updateUser(
     email?: string;
     role?: 'admin' | 'editor';
     password?: string;
+    avatar_url?: string | null;
   }
 ): Promise<{ success: boolean; user?: AdminUser; error?: string }> {
   try {
@@ -955,6 +962,9 @@ export async function updateUser(
     if (data.name !== undefined) updatePayload.name = data.name.trim();
     if (data.email !== undefined) updatePayload.email = data.email.trim().toLowerCase();
     if (data.role !== undefined) updatePayload.role = data.role;
+    if (data.avatar_url !== undefined) {
+      updatePayload.avatar_url = data.avatar_url && data.avatar_url.trim().length > 0 ? data.avatar_url.trim() : null;
+    }
 
     if (data.password && data.password.trim().length > 0) {
       const { salt, hash } = hashPassword(data.password.trim());
@@ -966,11 +976,23 @@ export async function updateUser(
       .from('users')
       .update(updatePayload)
       .eq('id', id)
-      .select('id, name, email, role, created_at, updated_at')
+      .select('id, name, email, role, avatar_url, created_at, updated_at')
       .single();
 
     if (error || !updated) {
       return { success: false, error: error?.message || 'Failed to update user' };
+    }
+
+    // Cascade updated author profile picture to all posts so changes take effect everywhere
+    if (data.avatar_url && data.avatar_url.trim().length > 0) {
+      try {
+        await supabase
+          .from('posts')
+          .update({ author_avatar: data.avatar_url.trim() })
+          .neq('id', 0);
+      } catch (cascadeErr) {
+        console.warn('[updateUser] Could not cascade author_avatar to posts:', cascadeErr);
+      }
     }
 
     return { success: true, user: updated as AdminUser };

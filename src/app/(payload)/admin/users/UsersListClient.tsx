@@ -138,9 +138,19 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                               fontWeight: 700,
                               fontSize: '0.88rem',
                               color: '#ffffff',
+                              overflow: 'hidden',
+                              flexShrink: 0,
                             }}
                           >
-                            {user.name.charAt(0).toUpperCase()}
+                            {user.avatar_url ? (
+                              <img
+                                src={user.avatar_url}
+                                alt={user.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              user.name.charAt(0).toUpperCase()
+                            )}
                           </div>
                           <div>
                             <div style={{ fontWeight: 700, color: '#ffffff' }}>

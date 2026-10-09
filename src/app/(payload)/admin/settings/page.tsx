@@ -51,19 +51,30 @@ export default async function SettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
             <div
               style={{
-                width: '48px',
-                height: '48px',
+                width: '54px',
+                height: '54px',
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, var(--hpa-primary), var(--hpa-accent))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: '1.2rem',
+                fontSize: '1.3rem',
                 color: '#ffffff',
+                overflow: 'hidden',
+                flexShrink: 0,
+                border: '2px solid rgba(255, 255, 255, 0.2)',
               }}
             >
-              {user.name.charAt(0).toUpperCase()}
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div>
               <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '1rem' }}>
@@ -92,9 +103,9 @@ export default async function SettingsPage() {
             </div>
           </div>
 
-          <Link href={`/admin/users/${user.id}/edit`} className="hpa-btn hpa-btn-primary" style={{ width: '100%' }}>
+          <Link href={`/admin/users/${user.id}/edit`} className="hpa-btn hpa-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
             <Key size={14} />
-            <span>Update Profile or Password</span>
+            <span>Change Profile Picture & Password</span>
           </Link>
         </div>
 

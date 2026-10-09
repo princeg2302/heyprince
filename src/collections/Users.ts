@@ -31,6 +31,13 @@ export const Users: CollectionConfig = {
       ],
       required: true,
     },
+    {
+      name: 'avatar_url',
+      type: 'text',
+      admin: {
+        description: 'Public URL to the author / user profile picture',
+      },
+    },
   ],
 };
 

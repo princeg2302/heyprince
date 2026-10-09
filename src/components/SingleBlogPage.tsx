@@ -21,6 +21,7 @@ import {
 
 export interface SingleBlogPageProps {
   slug: string;
+  post?: Article;
   onNavigateHome?: () => void;
   onNavigateArticles?: () => void;
   onSelectArticle?: (slug: string) => void;
@@ -29,6 +30,7 @@ export interface SingleBlogPageProps {
 
 export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   slug,
+  post,
   onNavigateHome,
   onNavigateArticles,
   onSelectArticle,
@@ -56,9 +58,9 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
     else router.push('/contact/');
   };
 
-  // Find article matching slug or default to first
+  // Find article matching slug or default to passed post or first
   const article: Article =
-    articlesList.find((a) => a.slug === slug) || articlesList[0];
+    post || articlesList.find((a) => a.slug === slug) || articlesList[0];
 
   // Persistent dynamic likes with localStorage (Hydration safe)
   const storageKey = `heyprince_likes_${article.slug}`;
@@ -250,7 +252,21 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
           <div className="blog-meta-row justify-content-center">
             <div className="meta-item">
-              <FaUser size={14} />
+              {article.author?.avatar ? (
+                <img
+                  src={article.author.avatar}
+                  alt={article.author.name || 'Prince'}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    display: 'inline-block',
+                  }}
+                />
+              ) : (
+                <FaUser size={14} />
+              )}
               <span>{article.author?.name || 'Prince'}</span>
             </div>
             <div className="meta-item">

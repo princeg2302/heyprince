@@ -28,6 +28,7 @@ interface AdminLayoutProps {
     name?: string;
     email?: string;
     role?: string;
+    avatar_url?: string | null;
   };
 }
 
@@ -152,8 +153,16 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
           </a>
 
           <div className="hpa-user-pill">
-            <div className="hpa-user-avatar">
-              {displayName.charAt(0).toUpperCase()}
+            <div className="hpa-user-avatar" style={{ overflow: 'hidden', padding: 0 }}>
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={displayName}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                displayName.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="hpa-user-info">
               <div className="hpa-user-name">{displayName}</div>

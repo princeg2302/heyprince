@@ -19,7 +19,11 @@ export default async function NewPostPage() {
 
   return (
     <AdminLayout user={user}>
-      <PostForm categories={categories} />
+      <PostForm
+        categories={categories}
+        defaultAuthorAvatar={user.avatar_url || undefined}
+        defaultAuthorName={user.name}
+      />
     </AdminLayout>
   );
 }

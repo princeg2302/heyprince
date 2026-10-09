@@ -23,9 +23,17 @@ interface PostFormProps {
   initialData?: PostRecord;
   categories: { id: number; title: string }[];
   isEdit?: boolean;
+  defaultAuthorAvatar?: string;
+  defaultAuthorName?: string;
 }
 
-export function PostForm({ initialData, categories, isEdit = false }: PostFormProps) {
+export function PostForm({
+  initialData,
+  categories,
+  isEdit = false,
+  defaultAuthorAvatar,
+  defaultAuthorName,
+}: PostFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -42,10 +50,16 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
   const [coverImage, setCoverImage] = useState(initialData?.cover_image || '/assets/blog/photo1.webp');
 
   // Author
-  const [authorName, setAuthorName] = useState(initialData?.author_name || 'Prince');
-  const [authorRole, setAuthorRole] = useState(initialData?.author_role || 'Senior Full Stack Engineer & IT Consultant');
+  const [authorName, setAuthorName] = useState(
+    initialData?.author_name || defaultAuthorName || 'Prince'
+  );
+  const [authorRole, setAuthorRole] = useState(
+    initialData?.author_role || 'Senior Full Stack Engineer & IT Consultant'
+  );
   const [authorAvatar, setAuthorAvatar] = useState(
-    initialData?.author_avatar || 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp'
+    initialData?.author_avatar ||
+      defaultAuthorAvatar ||
+      'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp'
   );
 
   // Tags
@@ -575,12 +589,31 @@ export function PostForm({ initialData, categories, isEdit = false }: PostFormPr
             </div>
             <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
               <label className="hpa-form-label">Author Avatar URL</label>
-              <input
-                type="text"
-                className="hpa-form-input"
-                value={authorAvatar}
-                onChange={(e) => setAuthorAvatar(e.target.value)}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                {authorAvatar && (
+                  <img
+                    src={authorAvatar}
+                    alt={authorName}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1px solid var(--hpa-border)',
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+                <input
+                  type="text"
+                  className="hpa-form-input"
+                  value={authorAvatar}
+                  onChange={(e) => setAuthorAvatar(e.target.value)}
+                />
+              </div>
+              <span className="hpa-form-help">
+                💡 To update your author photo globally across all articles at once, go to <strong>Settings &gt; Change Profile Picture</strong>.
+              </span>
             </div>
           </div>
 

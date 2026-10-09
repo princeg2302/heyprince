@@ -135,7 +135,7 @@ export default async function InsightRoute({ params }: InsightPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaGraph) }}
       />
-      <SingleBlogPage slug={post.slug} />
+      <SingleBlogPage slug={post.slug} post={post} />
     </div>
   );
 }

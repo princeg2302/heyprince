@@ -1,7 +1,12 @@
 import config from '@payload-config';
 import { getPayload } from 'payload';
+import { createClient } from '@supabase/supabase-js';
 import { servicesList, ServiceData } from '../data/servicesData';
 import { articlesList, Article } from '../data/siteContent';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
  * Maps a database Service document to the frontend ServiceData format
@@ -164,10 +169,46 @@ export async function getServiceBySlug(slug: string): Promise<ServiceData | null
 }
 
 /**
- * Retrieve all published insights/posts from Payload/PostgreSQL with static fallback
+ * Retrieve all published insights/posts from Supabase / Payload with static fallback
  */
 export async function getPosts(): Promise<Article[]> {
   try {
+    // 1. Direct Supabase query for real-time posts
+    const { data: dbPosts, error: sbError } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false });
+
+    if (!sbError && dbPosts && dbPosts.length > 0) {
+      return dbPosts.map((doc: any) => ({
+        slug: doc.slug,
+        title: doc.title,
+        description: doc.excerpt || doc.seo_description || '',
+        readMins: doc.read_mins || '5 min',
+        image: doc.cover_image || '/assets/blog/photo1.webp',
+        url: `/insights/${doc.slug}/`,
+        date: doc.published_at
+          ? new Date(doc.published_at).toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : 'Recent',
+        category: doc.category_name || 'Engineering & Strategy',
+        author: {
+          name: doc.author_name || 'Prince',
+          role: doc.author_role || 'Senior Full Stack Engineer & IT Consultant',
+          avatar:
+            doc.author_avatar ||
+            'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+        },
+        tags: [],
+        sections: [],
+      }));
+    }
+
+    // 2. Payload query fallback
     if (process.env.DATABASE_URI || process.env.POSTGRES_URL) {
       const payload = await getPayload({ config });
       const result = await payload.find({
@@ -186,15 +227,90 @@ export async function getPosts(): Promise<Article[]> {
   } catch (error) {
     // Graceful fallback
   }
+
+  // Fallback to static articles with dynamic avatar sync
+  try {
+    const { data: adminUser } = await supabase.from('users').select('avatar_url').limit(1).single();
+    if (adminUser?.avatar_url) {
+      return articlesList.map((a) => ({
+        ...a,
+        author: {
+          ...a.author,
+          avatar: adminUser.avatar_url,
+        },
+      }));
+    }
+  } catch {}
+
   return articlesList;
 }
 
 /**
- * Retrieve a single insight/post by slug from Payload/PostgreSQL with static fallback
+ * Retrieve a single insight/post by slug from Supabase / Payload with static fallback
  */
 export async function getPostBySlug(slug: string): Promise<Article | null> {
   const normalizedSlug = slug.toLowerCase().trim();
   try {
+    // 1. Direct Supabase query for real-time article data & live sections
+    const { data: dbPost, error: sbError } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('slug', normalizedSlug)
+      .eq('status', 'published')
+      .single();
+
+    if (!sbError && dbPost) {
+      const [tagsRes, sectionsRes] = await Promise.all([
+        supabase.from('posts_tags').select('*').eq('_parent_id', dbPost.id).order('_order'),
+        supabase.from('posts_sections').select('*').eq('_parent_id', dbPost.id).order('_order'),
+      ]);
+
+      const tags = (tagsRes.data || []).map((t: any) => t.tag);
+      const rawSections = sectionsRes.data || [];
+      const sections = await Promise.all(
+        rawSections.map(async (sec: any) => {
+          const [pRes, bRes] = await Promise.all([
+            supabase.from('posts_sections_paragraphs').select('*').eq('_parent_id', sec.id).order('_order'),
+            supabase.from('posts_sections_bullet_points').select('*').eq('_parent_id', sec.id).order('_order'),
+          ]);
+          return {
+            heading: sec.heading || '',
+            quote: sec.quote || undefined,
+            proTip: sec.pro_tip || undefined,
+            paragraphs: (pRes.data || []).map((p: any) => p.text),
+            bulletPoints: (bRes.data || []).length > 0 ? (bRes.data || []).map((b: any) => b.point) : undefined,
+          };
+        })
+      );
+
+      return {
+        slug: dbPost.slug,
+        title: dbPost.title,
+        description: dbPost.excerpt || dbPost.seo_description || '',
+        readMins: dbPost.read_mins || '5 min',
+        image: dbPost.cover_image || '/assets/blog/photo1.webp',
+        url: `/insights/${dbPost.slug}/`,
+        date: dbPost.published_at
+          ? new Date(dbPost.published_at).toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : 'Recent',
+        category: dbPost.category_name || 'Engineering & Strategy',
+        author: {
+          name: dbPost.author_name || 'Prince',
+          role: dbPost.author_role || 'Senior Full Stack Engineer & IT Consultant',
+          avatar:
+            dbPost.author_avatar ||
+            'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+        },
+        tags: tags.length > 0 ? tags : ['Technology', 'Engineering'],
+        sections: sections.length > 0 ? sections : [],
+      };
+    }
+
+    // 2. Payload query fallback
     if (process.env.DATABASE_URI || process.env.POSTGRES_URL) {
       const payload = await getPayload({ config });
       const result = await payload.find({
@@ -215,6 +331,21 @@ export async function getPostBySlug(slug: string): Promise<Article | null> {
   }
 
   const staticMatch = articlesList.find((a) => a.slug.toLowerCase() === normalizedSlug);
-  return staticMatch || null;
+  if (staticMatch) {
+    try {
+      const { data: adminUser } = await supabase.from('users').select('avatar_url').limit(1).single();
+      if (adminUser?.avatar_url) {
+        return {
+          ...staticMatch,
+          author: {
+            ...staticMatch.author,
+            avatar: adminUser.avatar_url,
+          },
+        };
+      }
+    } catch {}
+    return staticMatch;
+  }
+  return null;
 }
 

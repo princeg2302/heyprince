@@ -133,6 +133,10 @@ export interface User {
   id: number;
   name: string;
   role: 'admin' | 'editor';
+  /**
+   * Public URL to the author / user profile picture
+   */
+  avatar_url?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -436,6 +440,7 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
+  avatar_url?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
