@@ -62,6 +62,43 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   const article: Article =
     post || articlesList.find((a) => a.slug === slug) || articlesList[0];
 
+  const DEFAULT_AUTHOR_AVATAR =
+    'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg';
+
+  const [authorAvatar, setAuthorAvatar] = useState<string>(
+    article.author?.avatar || DEFAULT_AUTHOR_AVATAR
+  );
+  const [authorName, setAuthorName] = useState<string>(
+    article.author?.name || 'Prince'
+  );
+  const [authorRole, setAuthorRole] = useState<string>(
+    article.author?.role || 'Senior Full Stack Engineer & IT Consultant'
+  );
+
+  useEffect(() => {
+    if (article.author?.avatar) setAuthorAvatar(article.author.avatar);
+    if (article.author?.name) setAuthorName(article.author.name);
+    if (article.author?.role) setAuthorRole(article.author.role);
+  }, [article.author?.avatar, article.author?.name, article.author?.role]);
+
+  // Live dynamic hydration from /api/author for real-time profile picture sync
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/author', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data) {
+          if (data.avatar) setAuthorAvatar(data.avatar);
+          if (data.name) setAuthorName(data.name);
+          if (data.role) setAuthorRole(data.role);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Persistent dynamic likes with localStorage (Hydration safe)
   const storageKey = `heyprince_likes_${article.slug}`;
   const [likes, setLikes] = useState<number>(42);
@@ -252,22 +289,24 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
           <div className="blog-meta-row justify-content-center">
             <div className="meta-item">
-              {article.author?.avatar ? (
-                <img
-                  src={article.author.avatar}
-                  alt={article.author.name || 'Prince'}
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    display: 'inline-block',
-                  }}
-                />
-              ) : (
-                <FaUser size={14} />
-              )}
-              <span>{article.author?.name || 'Prince'}</span>
+              <img
+                src={authorAvatar}
+                alt={authorName}
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  if (target.src !== DEFAULT_AUTHOR_AVATAR) {
+                    target.src = DEFAULT_AUTHOR_AVATAR;
+                  }
+                }}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  display: 'inline-block',
+                }}
+              />
+              <span>{authorName}</span>
             </div>
             <div className="meta-item">
               <FaCalendarDays size={14} />
@@ -468,24 +507,24 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
             {/* Dynamic Author Bio Box */}
             <aside className="author-bio-card">
               <img
-                src={
-                  article.author?.avatar ||
-                  'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp'
-                }
-                alt={`${article.author?.name || 'Prince'} - Senior Full Stack Engineer & Author`}
+                src={authorAvatar}
+                alt={`${authorName} - ${authorRole}`}
                 className="author-avatar"
                 loading="lazy"
                 decoding="async"
                 width="96"
                 height="96"
                 onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
+                  const target = e.currentTarget as HTMLImageElement;
+                  if (target.src !== DEFAULT_AUTHOR_AVATAR) {
+                    target.src = DEFAULT_AUTHOR_AVATAR;
+                  }
                 }}
               />
               <div className="author-info">
-                <h4>{article.author?.name || 'Prince'}</h4>
+                <h4>{authorName}</h4>
                 <p className="author-title">
-                  {article.author?.role || 'Full-Stack Web Developer & IT Consultant'}
+                  {authorRole}
                 </p>
                 <p className="author-bio">
                   I design and engineer lightning-fast digital products with clean code, modern UX, and

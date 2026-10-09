@@ -193,12 +193,48 @@ export default async function AdminDashboardPage() {
             </span>
           </div>
 
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', margin: '0 0 6px 0' }}>
-            Executive Command Center
-          </h1>
-          <p style={{ fontSize: '0.88rem', color: 'rgba(255, 255, 255, 0.6)', margin: 0, maxWidth: '640px' }}>
-            Welcome back, <strong style={{ color: '#ffffff' }}>{user.name}</strong>. Manage your client leads, service portfolio, technical articles, and system security in real time.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginTop: '6px' }}>
+            <Link
+              href={`/admin/users/${user.id}/edit`}
+              title="Click to change profile picture"
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid rgba(255, 51, 102, 0.5)',
+                boxShadow: '0 0 25px rgba(255, 51, 102, 0.35)',
+                background: 'linear-gradient(135deg, #ff3366, #8b5cf6)',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                fontWeight: 800,
+                color: '#fff',
+                cursor: 'pointer',
+                textDecoration: 'none',
+              }}
+            >
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
+            </Link>
+            <div>
+              <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', margin: '0 0 6px 0' }}>
+                Executive Command Center
+              </h1>
+              <p style={{ fontSize: '0.88rem', color: 'rgba(255, 255, 255, 0.6)', margin: 0, maxWidth: '640px' }}>
+                Welcome back, <strong style={{ color: '#ffffff' }}>{user.name}</strong>. Manage your client leads, service portfolio, technical articles, and system security in real time.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>

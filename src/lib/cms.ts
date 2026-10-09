@@ -92,7 +92,7 @@ function mapPayloadPostToArticle(doc: any): Article {
       role: doc.author?.role || 'Senior Full Stack Engineer & IT Consultant',
       avatar:
         doc.author?.avatar ||
-        'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+        'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
     },
     tags: Array.isArray(doc.tags)
       ? doc.tags.map((t: any) => (typeof t === 'string' ? t : t.tag || ''))
@@ -174,11 +174,18 @@ export async function getServiceBySlug(slug: string): Promise<ServiceData | null
 export async function getPosts(): Promise<Article[]> {
   try {
     // 1. Direct Supabase query for real-time posts
-    const { data: dbPosts, error: sbError } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false });
+    const [{ data: dbPosts, error: sbError }, { data: adminUser }] = await Promise.all([
+      supabase
+        .from('posts')
+        .select('*')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false }),
+      supabase
+        .from('users')
+        .select('name, role, avatar_url')
+        .limit(1)
+        .single(),
+    ]);
 
     if (!sbError && dbPosts && dbPosts.length > 0) {
       return dbPosts.map((doc: any) => ({
@@ -197,11 +204,17 @@ export async function getPosts(): Promise<Article[]> {
           : 'Recent',
         category: doc.category_name || 'Engineering & Strategy',
         author: {
-          name: doc.author_name || 'Prince',
-          role: doc.author_role || 'Senior Full Stack Engineer & IT Consultant',
+          name: adminUser?.name || doc.author_name || 'Prince',
+          role:
+            (adminUser?.role === 'admin'
+              ? 'Senior Full Stack Engineer & IT Consultant'
+              : adminUser?.role) ||
+            doc.author_role ||
+            'Senior Full Stack Engineer & IT Consultant',
           avatar:
+            adminUser?.avatar_url ||
             doc.author_avatar ||
-            'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+            'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
         },
         tags: [],
         sections: [],
@@ -260,11 +273,13 @@ export async function getPostBySlug(slug: string): Promise<Article | null> {
       .single();
 
     if (!sbError && dbPost) {
-      const [tagsRes, sectionsRes] = await Promise.all([
+      const [tagsRes, sectionsRes, userRes] = await Promise.all([
         supabase.from('posts_tags').select('*').eq('_parent_id', dbPost.id).order('_order'),
         supabase.from('posts_sections').select('*').eq('_parent_id', dbPost.id).order('_order'),
+        supabase.from('users').select('name, role, avatar_url').limit(1).single(),
       ]);
 
+      const adminUser = userRes.data;
       const tags = (tagsRes.data || []).map((t: any) => t.tag);
       const rawSections = sectionsRes.data || [];
       const sections = await Promise.all(
@@ -299,11 +314,17 @@ export async function getPostBySlug(slug: string): Promise<Article | null> {
           : 'Recent',
         category: dbPost.category_name || 'Engineering & Strategy',
         author: {
-          name: dbPost.author_name || 'Prince',
-          role: dbPost.author_role || 'Senior Full Stack Engineer & IT Consultant',
+          name: adminUser?.name || dbPost.author_name || 'Prince',
+          role:
+            (adminUser?.role === 'admin'
+              ? 'Senior Full Stack Engineer & IT Consultant'
+              : adminUser?.role) ||
+            dbPost.author_role ||
+            'Senior Full Stack Engineer & IT Consultant',
           avatar:
+            adminUser?.avatar_url ||
             dbPost.author_avatar ||
-            'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+            'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
         },
         tags: tags.length > 0 ? tags : ['Technology', 'Engineering'],
         sections: sections.length > 0 ? sections : [],

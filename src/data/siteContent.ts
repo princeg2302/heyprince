@@ -109,7 +109,7 @@ export const articlesList: Article[] = [
     author: {
       name: 'Prince',
       role: 'Senior Full Stack Engineer & IT Consultant',
-      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+      avatar: 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
     },
     tags: ['Freelancing Tips', 'IT Freelancing 2026', 'Career Growth', 'Remote Tech Partner', 'Value Pricing', 'Full Stack Consultant'],
     sections: [
@@ -169,7 +169,7 @@ export const articlesList: Article[] = [
     author: {
       name: 'Prince',
       role: 'Senior Full Stack Engineer & IT Consultant',
-      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+      avatar: 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
     },
     tags: ['IT Services Provider', 'Vendor Selection', 'Tech Partner', 'Software Development', 'Cloud Architecture', 'IT Consulting'],
     sections: [
@@ -221,7 +221,7 @@ export const articlesList: Article[] = [
     author: {
       name: 'Prince',
       role: 'Senior Full Stack Engineer & IT Consultant',
-      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+      avatar: 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
     },
     tags: ['Professional Website 2026', 'Conversion Rate Optimization', 'Core Web Vitals', 'Modern Web Engineering', 'SEO Strategy', 'Brand Authority'],
     sections: [
@@ -268,7 +268,7 @@ export const articlesList: Article[] = [
     author: {
       name: 'Prince',
       role: 'Senior Full Stack Engineer & IT Consultant',
-      avatar: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+      avatar: 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
     },
     tags: ['Web Development Trends 2026', 'Physics UI', 'AI Integration', 'View Transitions', 'Frontend Architecture', 'Zero Trust Security'],
     sections: [

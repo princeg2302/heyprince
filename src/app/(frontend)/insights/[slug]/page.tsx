@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 import { getPostBySlug, getPosts } from '@/lib/cms';
 import { SingleBlogPage } from '@/components';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface InsightPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -84,7 +87,10 @@ export default async function InsightRoute({ params }: InsightPageProps) {
       '@type': 'Person',
       name: post.author?.name || 'Prince',
       url: 'https://heyprince.in/',
-      jobTitle: 'Senior Full Stack Engineer & IT Consultant',
+      jobTitle: post.author?.role || 'Senior Full Stack Engineer & IT Consultant',
+      image:
+        post.author?.avatar ||
+        'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
     },
     publisher: {
       '@type': 'Person',

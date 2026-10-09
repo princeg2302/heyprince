@@ -17,7 +17,7 @@ export interface PageSeoOptions {
 }
 
 const DEFAULT_ORIGIN = 'https://heyprince.in';
-const DEFAULT_IMAGE = 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp';
+const DEFAULT_IMAGE = 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg';
 
 function setMetaTag(selector: string, attributeName: string, attributeValue: string, content: string): void {
   let element = document.querySelector(selector);

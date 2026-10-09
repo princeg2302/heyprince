@@ -213,6 +213,53 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
           </div>
 
           <div className="hpa-header-right">
+            <Link
+              href="/admin/settings/"
+              title="Click to view profile & settings"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '4px 12px 4px 4px',
+                borderRadius: '999px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  background: 'var(--hpa-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  color: '#fff',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  flexShrink: 0,
+                }}
+              >
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={displayName}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  displayName.charAt(0).toUpperCase()
+                )}
+              </div>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#ffffff' }}>
+                {displayName}
+              </span>
+            </Link>
+
             <div className="hpa-status-pill">
               <span className="hpa-status-dot" />
               <span>Supabase Live</span>

@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+        url: 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
         width: 1200,
         height: 630,
         alt: 'Prince - Senior Full Stack Engineer and IT Consultant',
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     title: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
     description:
       'Senior Full Stack Engineer & IT Consultant specializing in high-performance React web applications, scalable cloud architectures, and interactive digital solutions.',
-    images: ['https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp'],
+    images: ['https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'],
   },
   icons: {
     icon: '/favicon.svg',
@@ -100,7 +100,7 @@ const jsonLdData = {
       name: 'Prince',
       jobTitle: 'Senior Full Stack Engineer & IT Consultant',
       url: 'https://heyprince.in/',
-      image: 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+      image: 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
       email: 'it@heyprince.in',
       sameAs: [
         'https://www.linkedin.com/in/mr-goyal/',

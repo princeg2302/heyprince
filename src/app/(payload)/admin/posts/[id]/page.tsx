@@ -302,7 +302,7 @@ export default async function ViewPostPage({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img
-                src={post.author_avatar || 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp'}
+                src={post.author_avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
                 alt={post.author_name}
                 style={{
                   width: '44px',

@@ -386,7 +386,7 @@ export async function createPost(data: Partial<PostRecord>): Promise<{ success: 
       category_name: data.category_name || null,
       author_name: data.author_name || 'Prince',
       author_role: data.author_role || 'Senior Full Stack Engineer & IT Consultant',
-      author_avatar: data.author_avatar || 'https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp',
+      author_avatar: data.author_avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
       cover_image: data.cover_image || '/assets/blog/photo1.webp',
       status: data.status || 'published',
       published_at: data.published_at || (data.status === 'published' ? now : null),
