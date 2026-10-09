@@ -26,6 +26,21 @@ export interface LeadSubmissionResult {
   errors?: Record<string, string[]>;
 }
 
+export function normalizeBudget(raw?: string | null): string {
+  if (!raw || !raw.trim()) return 'Custom Quote';
+  let val = raw.trim();
+  // Fix dropped currency symbols or leading comma artifacts
+  val = val.replace(/,\s*000\+/g, '$5,000+');
+  val = val.replace(/,\s*500\s*-\s*,\s*000/g, '$3,500 - $5,000');
+  val = val.replace(/,\s*500\s*-\s*,\s*500/g, '$1,500 - $3,500');
+  val = val.replace(/^,\s*(\d)/, '$$$1');
+  val = val.replace(/-\s*,\s*(\d)/, '- $$$1');
+  if (/^\d/.test(val)) {
+    val = `$${val}`;
+  }
+  return val;
+}
+
 export async function processLeadSubmission(
   rawInput: unknown,
   source = 'website_contact_form'
@@ -64,10 +79,13 @@ export async function processLeadSubmission(
     }
   }
 
+  // Normalize budget representation to ensure crisp currency formatting
+  const cleanBudget = normalizeBudget(data.budget);
+
   let createdLeadId: string | number | undefined;
 
   // 4. Primary Persistence: Save directly to Supabase leads table
-  // This executes in <50ms and guarantees immediate visibility in /admin/leads
+  // Single source of truth — executes in ~40ms and prevents duplicate entries
   try {
     const now = new Date().toISOString();
     const { data: createdLead, error: insertError } = await supabase
@@ -79,7 +97,7 @@ export async function processLeadSubmission(
           phone: data.phone || '',
           company: data.company || '',
           service: data.service,
-          budget: data.budget || '',
+          budget: cleanBudget,
           timeline: data.timeline || '',
           message: data.message,
           source: source,
@@ -101,35 +119,7 @@ export async function processLeadSubmission(
     console.error('[Leads] Database insertion exception:', dbError);
   }
 
-  // 5. Optional background sync to Payload CMS if configured (non-blocking)
-  if (process.env.DATABASE_URI || process.env.POSTGRES_URL) {
-    import('@payload-config')
-      .then((cfgModule) => import('payload').then((pModule) => ({ config: cfgModule.default, getPayload: pModule.getPayload })))
-      .then(async ({ config, getPayload }) => {
-        const payload = await getPayload({ config });
-        await payload.create({
-          collection: 'leads',
-          data: {
-            name: data.name,
-            email: data.email,
-            phone: data.phone || '',
-            company: data.company || '',
-            service: data.service,
-            budget: data.budget || '',
-            timeline: data.timeline || '',
-            message: data.message,
-            source: source,
-            status: 'NEW',
-          },
-        });
-      })
-      .catch((pErr) => {
-        // Log softly without blocking or failing the lead response
-        console.warn('[Leads] Background Payload sync notice:', pErr?.message);
-      });
-  }
-
-  // 6. Send Transactional Notification & Customer 4-Hour Revert Email (Hostinger SMTP or Resend)
+  // 5. Send Transactional Notification & Customer 4-Hour Revert Email (Hostinger SMTP or Resend)
   try {
     await dispatchLeadEmails({
       leadId: createdLeadId,
@@ -138,7 +128,7 @@ export async function processLeadSubmission(
       phone: data.phone,
       company: data.company,
       service: data.service,
-      budget: data.budget,
+      budget: cleanBudget,
       timeline: data.timeline,
       message: data.message,
     });

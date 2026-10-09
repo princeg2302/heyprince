@@ -36,6 +36,20 @@ const statusOptions = [
   { value: 'LOST', label: 'Lost / Closed', color: '#94a3b8' },
 ];
 
+function formatBudget(raw?: string | null): string {
+  if (!raw || !raw.trim()) return 'Custom Quote';
+  let val = raw.trim();
+  val = val.replace(/,\s*000\+/g, '$5,000+');
+  val = val.replace(/,\s*500\s*-\s*,\s*000/g, '$3,500 - $5,000');
+  val = val.replace(/,\s*500\s*-\s*,\s*500/g, '$1,500 - $3,500');
+  val = val.replace(/^,\s*(\d)/, '$$$1');
+  val = val.replace(/-\s*,\s*(\d)/, '- $$$1');
+  if (/^\d/.test(val)) {
+    val = `$${val}`;
+  }
+  return val;
+}
+
 export default function LeadsClient({ initialLeads, isEmailConfigured = true }: LeadsClientProps) {
   const { showToast } = useToast();
   const [leads, setLeads] = useState<LeadRecord[]>(initialLeads);
@@ -51,7 +65,10 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const filtered = leads.filter((l) => {
+  // Ensure unique list by ID
+  const uniqueLeads = Array.from(new Map(leads.map((l) => [l.id, l])).values());
+
+  const filtered = uniqueLeads.filter((l) => {
     const matchesSearch =
       search === '' ||
       l.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -305,8 +322,8 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
                       </td>
 
                       <td>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
-                          {lead.budget ? `${lead.budget}` : 'Custom Quote'}
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                          {formatBudget(lead.budget)}
                         </div>
                         {lead.timeline && (
                           <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)' }}>
@@ -469,7 +486,7 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
               >
                 <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', display: 'block' }}>Estimated Budget</span>
                 <span style={{ color: 'var(--hpa-success)', fontWeight: 700, fontSize: '0.88rem' }}>
-                  {selectedLead.budget || 'Custom Quote'}
+                  {formatBudget(selectedLead.budget)}
                 </span>
               </div>
             </div>
