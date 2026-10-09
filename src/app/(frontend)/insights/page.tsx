@@ -121,11 +121,10 @@ export default async function InsightsListingPage() {
           <div className="row g-4 justify-content-center">
             {posts.map((post) => (
               <div key={post.slug} className="col-lg-4 col-md-6 col-12 d-flex">
-                <div className="card article-card w-100 d-flex flex-column" style={{ background: '#0e1017', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden' }}>
+                <div className="card article-card insight-card w-100 d-flex flex-column">
                   <Link
-                    className="article-link d-flex flex-column h-100"
+                    className="insight-card-link d-flex flex-column h-100"
                     href={`/insights/${post.slug}/`}
-                    style={{ textDecoration: 'none', color: 'inherit' }}
                   >
                     <div style={{ position: 'relative', width: '100%', height: '220px', overflow: 'hidden', background: '#13151f' }}>
                       <img
@@ -193,7 +192,7 @@ export default async function InsightsListingPage() {
             <Link className="portal-btn mx-auto" href="/contact/">
               <span className="mr-right">Start a Conversation</span>
               <span className="arrow">
-                <FaRocket size={18} color="#000" />
+                <FaRocket size={16} color="#000" />
               </span>
             </Link>
           </div>

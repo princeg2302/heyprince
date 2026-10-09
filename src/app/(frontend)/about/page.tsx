@@ -10,9 +10,6 @@ import {
   FaMugHot,
   FaGamepad,
   FaArrowRight,
-  FaLinkedinIn,
-  FaInstagram,
-  FaWhatsapp,
 } from 'react-icons/fa6';
 import { timelineMilestones } from '@/data/siteContent';
 
@@ -424,44 +421,10 @@ export default function AboutPage() {
             <p style={{ maxWidth: '600px', margin: '0 auto 28px', color: 'rgba(255, 255, 255, 0.7)' }}>
               Got an engineering dilemma, custom project concept, or just want to geek out over tech? Reach out directly.
             </p>
-
-            <div className="d-flex justify-content-center gap-3 mb-4">
-              <a
-                href="https://www.linkedin.com/in/mr-goyal/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="social-link-icon linkedin"
-                aria-label="LinkedIn"
-                style={{ width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.06)', color: '#fff' }}
-              >
-                <FaLinkedinIn size={18} />
-              </a>
-              <a
-                href="https://www.instagram.com/heyprince.in/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="social-link-icon instagram"
-                aria-label="Instagram"
-                style={{ width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.06)', color: '#fff' }}
-              >
-                <FaInstagram size={18} />
-              </a>
-              <a
-                href="https://wa.me/919120900010"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="social-link-icon whatsapp"
-                aria-label="WhatsApp"
-                style={{ width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.06)', color: '#fff' }}
-              >
-                <FaWhatsapp size={18} />
-              </a>
-            </div>
-
             <Link className="portal-btn mx-auto" href="/contact/">
               <span className="mr-right">Drop Me A Line</span>
               <span className="arrow">
-                <FaRocket size={18} color="#000" />
+                <FaRocket size={16} color="#000" />
               </span>
             </Link>
           </div>

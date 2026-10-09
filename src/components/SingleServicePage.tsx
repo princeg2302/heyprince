@@ -178,19 +178,18 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               >
                 <span className="mr-right">Request Project Scope</span>
                 <span className="arrow">
-                  <FaRocket size={18} color="#000" />
+                  <FaRocket size={16} color="#000" />
                 </span>
               </button>
               <a
                 href={whatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="portal-btn"
-                style={{ background: '#25d366', borderColor: '#25d366' }}
+                className="portal-btn portal-btn-whatsapp"
               >
                 <span className="mr-right">Instant WhatsApp Inquiry</span>
                 <span className="arrow">
-                  <FaWhatsapp size={18} color="#000" />
+                  <FaWhatsapp size={16} color="#000" />
                 </span>
               </a>
             </div>
@@ -329,19 +328,18 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
               >
                 <span className="mr-right">Start a Project Discussion</span>
                 <span className="arrow">
-                  <FaArrowRight size={18} color="#000" />
+                  <FaRocket size={16} color="#000" />
                 </span>
               </button>
               <a
                 href={whatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="portal-btn"
-                style={{ background: '#25d366', borderColor: '#25d366' }}
+                className="portal-btn portal-btn-whatsapp"
               >
                 <span className="mr-right">Chat on WhatsApp</span>
                 <span className="arrow">
-                  <FaWhatsapp size={18} color="#000" />
+                  <FaWhatsapp size={16} color="#000" />
                 </span>
               </a>
             </div>

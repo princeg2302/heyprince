@@ -257,18 +257,16 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                       href={whatsAppUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="portal-btn"
-                      style={{ background: '#25d366', borderColor: '#25d366' }}
+                      className="portal-btn portal-btn-whatsapp"
                     >
                       <span className="mr-right">Also Send via WhatsApp</span>
                       <span className="arrow">
-                        <FaWhatsapp size={18} color="#000" />
+                        <FaWhatsapp size={16} color="#000" />
                       </span>
                     </a>
                     <button
                       type="button"
                       className="portal-btn"
-                      style={{ width: '260px' }}
                       onClick={() => {
                         setIsSubmitted(false);
                         setFormData({
@@ -458,7 +456,6 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                       type="submit"
                       className="portal-btn mx-auto"
                       disabled={isSubmitting}
-                      style={{ width: '260px' }}
                     >
                       <span className="mr-right">
                         {isSubmitting ? 'Transmitting Request...' : 'Send Project Inquiry'}
