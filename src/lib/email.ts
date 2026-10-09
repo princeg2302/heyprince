@@ -28,7 +28,7 @@ function cleanPhoneForWhatsApp(phone?: string): string | null {
 }
 
 /**
- * Builds the executive notification email template sent to it@heyprince.in
+ * Builds the ultra-premium dark theme notification email sent to it@heyprince.in
  */
 export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateFormatted: string): string {
   const waNumber = cleanPhoneForWhatsApp(params.phone);
@@ -37,38 +37,62 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
 
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark only">
+  <meta name="supported-color-schemes" content="dark">
   <title>New Project Inquiry</title>
+  <style>
+    :root {
+      color-scheme: dark only;
+      supported-color-schemes: dark;
+    }
+    body, table, td, p, a, div {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    }
+    body, .email-bg {
+      background-color: #06060a !important;
+    }
+    .card-bg {
+      background-color: #0e0e16 !important;
+    }
+    .subcard-bg {
+      background-color: #08080f !important;
+    }
+    a {
+      text-decoration: none;
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #07070b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f4f4f7; -webkit-font-smoothing: antialiased;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #07070b; padding: 32px 12px;">
+<body bgcolor="#06060a" style="margin: 0; padding: 0; background-color: #06060a; color: #f4f4f7; -webkit-font-smoothing: antialiased;">
+  <!-- Outer Canvas Table -->
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#06060a" style="background-color: #06060a; padding: 36px 12px;">
     <tr>
       <td align="center">
-        <!-- Main Card Container -->
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 620px; background-color: #101018; border: 1px solid #1f1f2e; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);">
+        <!-- Main Dark Card Container -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#0e0e16" style="max-width: 620px; background-color: #0e0e16; border: 1px solid #1c1c2b; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);">
           
-          <!-- Gradient Top Accent Bar -->
+          <!-- Glowing Top Neon Accent Bar -->
           <tr>
-            <td height="4" style="background: linear-gradient(90deg, #ff3366 0%, #a855f7 50%, #00f5a0 100%);"></td>
+            <td height="4" style="background: linear-gradient(90deg, #ff3366 0%, #8b5cf6 50%, #00f5a0 100%);"></td>
           </tr>
 
           <!-- Header -->
           <tr>
-            <td style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #1a1a27;">
+            <td bgcolor="#0b0b12" style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #181826; background-color: #0b0b12;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td>
-                    <span style="display: inline-block; background-color: rgba(255, 51, 102, 0.12); border: 1px solid rgba(255, 51, 102, 0.35); color: #ff3366; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 100px; margin-bottom: 10px;">
+                    <span style="display: inline-block; background-color: rgba(255, 51, 102, 0.14); border: 1px solid rgba(255, 51, 102, 0.38); color: #ff3366; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 100px; margin-bottom: 10px;">
                       ⚡ New Project Inquiry
                     </span>
                     <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
-                      ${params.name} <span style="font-weight: 400; color: #8e8ea0; font-size: 16px;">${params.company ? `• ${params.company}` : ''}</span>
+                      ${params.name} <span style="font-weight: 400; color: #8e8ea2; font-size: 16px;">${params.company ? `• ${params.company}` : ''}</span>
                     </h1>
-                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #7a7a90;">
-                      Received on ${dateFormatted} via <a href="https://heyprince.in" style="color: #ff3366; text-decoration: none;">heyprince.in</a>
+                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #76768e;">
+                      Received on ${dateFormatted} via <a href="https://heyprince.in" style="color: #ff3366; font-weight: 600;">heyprince.in</a>
                     </p>
                   </td>
                 </tr>
@@ -76,35 +100,35 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
             </td>
           </tr>
 
-          <!-- Inquiry Metadata Grid -->
+          <!-- Client Metadata Grid -->
           <tr>
-            <td style="padding: 24px 32px 12px 32px;">
+            <td style="padding: 24px 32px 14px 32px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <!-- Email -->
-                  <td width="50%" valign="top" style="padding-bottom: 16px; padding-right: 12px;">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a90; margin-bottom: 4px; font-weight: 600;">Client Email</div>
-                    <a href="mailto:${params.email}" style="font-size: 14px; font-weight: 600; color: #ff3366; text-decoration: none; word-break: break-all;">${params.email}</a>
+                  <td width="50%" valign="top" style="padding-bottom: 18px; padding-right: 12px;">
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a92; margin-bottom: 5px; font-weight: 700;">Client Email</div>
+                    <a href="mailto:${params.email}" style="font-size: 14px; font-weight: 600; color: #ff3366; word-break: break-all;">${params.email}</a>
                   </td>
                   <!-- Phone / WhatsApp -->
-                  <td width="50%" valign="top" style="padding-bottom: 16px; padding-left: 12px;">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a90; margin-bottom: 4px; font-weight: 600;">Phone / WhatsApp</div>
+                  <td width="50%" valign="top" style="padding-bottom: 18px; padding-left: 12px;">
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a92; margin-bottom: 5px; font-weight: 700;">Phone / WhatsApp</div>
                     <div style="font-size: 14px; font-weight: 600; color: #ffffff;">${params.phone || 'Not provided'}</div>
                   </td>
                 </tr>
                 <tr>
                   <!-- Service -->
-                  <td width="50%" valign="top" style="padding-bottom: 16px; padding-right: 12px;">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a90; margin-bottom: 4px; font-weight: 600;">Selected Service</div>
-                    <span style="display: inline-block; background-color: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: #ffffff; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 6px;">
+                  <td width="50%" valign="top" style="padding-bottom: 18px; padding-right: 12px;">
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a92; margin-bottom: 5px; font-weight: 700;">Selected Service</div>
+                    <span style="display: inline-block; background-color: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); color: #ffffff; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 6px;">
                       ${params.service}
                     </span>
                   </td>
                   <!-- Budget & Timeline -->
-                  <td width="50%" valign="top" style="padding-bottom: 16px; padding-left: 12px;">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a90; margin-bottom: 4px; font-weight: 600;">Budget & Timeline</div>
+                  <td width="50%" valign="top" style="padding-bottom: 18px; padding-left: 12px;">
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a92; margin-bottom: 5px; font-weight: 700;">Budget & Timeline</div>
                     <div style="font-size: 13px; font-weight: 600; color: #00f5a0;">
-                      ${params.budget || 'Custom Quote'} <span style="color: #7a7a90; font-weight: 400;">(${params.timeline || 'Flexible'})</span>
+                      ${params.budget || 'Custom Quote'} <span style="color: #76768e; font-weight: 400;">(${params.timeline || 'Flexible'})</span>
                     </div>
                   </td>
                 </tr>
@@ -115,11 +139,11 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
           <!-- Project Message Card -->
           <tr>
             <td style="padding: 0 32px 24px 32px;">
-              <div style="background-color: #0b0b12; border: 1px solid #1a1a27; border-radius: 12px; padding: 18px 20px;">
+              <div bgcolor="#07070d" style="background-color: #07070d; border: 1px solid #181826; border-radius: 12px; padding: 20px;">
                 <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #ff3366; margin-bottom: 8px; font-weight: 700;">
                   Project Brief & Requirements
                 </div>
-                <div style="font-size: 14px; line-height: 1.6; color: #e4e4ed; white-space: pre-line; margin: 0;">
+                <div style="font-size: 14px; line-height: 1.6; color: #e4e4ee; white-space: pre-line; margin: 0;">
                   ${params.message}
                 </div>
               </div>
@@ -136,7 +160,7 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
                       <tr>
                         <!-- Reply Button -->
                         <td align="center" style="border-radius: 8px; background: #ff3366; padding: 0;">
-                          <a href="mailto:${params.email}?subject=${encodeURIComponent(`Regarding Your Inquiry with Prince: ${params.service}`)}" style="display: inline-block; padding: 12px 22px; font-size: 13px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 8px;">
+                          <a href="mailto:${params.email}?subject=${encodeURIComponent(`Regarding Your Inquiry with Prince: ${params.service}`)}" style="display: inline-block; padding: 12px 22px; font-size: 13px; font-weight: 700; color: #ffffff; border-radius: 8px;">
                             ✉️ Reply to ${params.name.split(' ')[0]}
                           </a>
                         </td>
@@ -146,7 +170,7 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
                         <td width="10"></td>
                         <!-- WhatsApp Button -->
                         <td align="center" style="border-radius: 8px; background: #25d366; padding: 0;">
-                          <a href="${waLink}" target="_blank" style="display: inline-block; padding: 12px 20px; font-size: 13px; font-weight: 700; color: #000000; text-decoration: none; border-radius: 8px;">
+                          <a href="${waLink}" target="_blank" style="display: inline-block; padding: 12px 20px; font-size: 13px; font-weight: 700; color: #000000; border-radius: 8px;">
                             💬 WhatsApp Chat
                           </a>
                         </td>
@@ -155,8 +179,8 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
                         }
                         <td width="10"></td>
                         <!-- CRM Link -->
-                        <td align="center" style="border-radius: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 0;">
-                          <a href="${adminUrl}" target="_blank" style="display: inline-block; padding: 12px 20px; font-size: 13px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px;">
+                        <td align="center" style="border-radius: 8px; background: #161622; border: 1px solid #28283c; padding: 0;">
+                          <a href="${adminUrl}" target="_blank" style="display: inline-block; padding: 12px 20px; font-size: 13px; font-weight: 600; color: #ffffff; border-radius: 8px;">
                             📊 View CRM
                           </a>
                         </td>
@@ -170,8 +194,8 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
 
           <!-- Footer -->
           <tr>
-            <td style="background-color: #0b0b12; padding: 18px 32px; border-top: 1px solid #1a1a27; text-align: center;">
-              <p style="margin: 0; font-size: 12px; color: #626274;">
+            <td bgcolor="#07070c" style="background-color: #07070c; padding: 18px 32px; border-top: 1px solid #161622; text-align: center;">
+              <p style="margin: 0; font-size: 12px; color: #5a5a6e;">
                 Lead Record ${params.leadId ? `<strong>#${params.leadId}</strong>` : ''} • Recorded securely in Supabase PostgreSQL
               </p>
             </td>
@@ -187,7 +211,7 @@ export function buildAdminNotificationHtml(params: SendLeadEmailParams, dateForm
 }
 
 /**
- * Builds the professional confirmation & 4-hour commitment revert email sent directly to the customer
+ * Builds the ultra-premium dark theme confirmation & 4-hour commitment revert email sent to the customer
  */
 export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
   const firstName = params.name ? params.name.split(' ')[0] : 'there';
@@ -197,39 +221,63 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
 
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark only">
+  <meta name="supported-color-schemes" content="dark">
   <title>Inquiry Received — HeyPrince</title>
+  <style>
+    :root {
+      color-scheme: dark only;
+      supported-color-schemes: dark;
+    }
+    body, table, td, p, a, div {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    }
+    body, .email-bg {
+      background-color: #06060a !important;
+    }
+    .card-bg {
+      background-color: #0e0e16 !important;
+    }
+    .subcard-bg {
+      background-color: #07070d !important;
+    }
+    a {
+      text-decoration: none;
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #07070b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f4f4f7; -webkit-font-smoothing: antialiased;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #07070b; padding: 36px 12px;">
+<body bgcolor="#06060a" style="margin: 0; padding: 0; background-color: #06060a; color: #f4f4f7; -webkit-font-smoothing: antialiased;">
+  <!-- Outer Canvas Table -->
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#06060a" style="background-color: #06060a; padding: 36px 12px;">
     <tr>
       <td align="center">
-        <!-- Main Card Container -->
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; background-color: #11111a; border: 1px solid #20202e; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65);">
+        <!-- Main Dark Card Container -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#0e0e16" style="max-width: 600px; background-color: #0e0e16; border: 1px solid #1c1c2b; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);">
           
-          <!-- Top Accent Bar -->
+          <!-- Glowing Top Neon Accent Bar -->
           <tr>
             <td height="4" style="background: linear-gradient(90deg, #ff3366 0%, #8b5cf6 50%, #00f5a0 100%);"></td>
           </tr>
 
           <!-- Brand Header -->
           <tr>
-            <td style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #1b1b28;">
+            <td bgcolor="#0a0a10" style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #181826; background-color: #0a0a10;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td>
-                    <span style="font-size: 18px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
+                    <span style="font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
                       HEY<span style="color: #ff3366;">PRINCE</span>
                     </span>
-                    <span style="display: block; font-size: 11px; color: #7a7a90; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px;">
+                    <span style="display: block; font-size: 11px; color: #76768e; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px;">
                       Senior Full Stack Engineer &amp; Tech Partner
                     </span>
                   </td>
                   <td align="right">
-                    <span style="display: inline-block; background-color: rgba(0, 245, 160, 0.1); border: 1px solid rgba(0, 245, 160, 0.3); color: #00f5a0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px;">
+                    <span style="display: inline-block; background-color: rgba(0, 245, 160, 0.1); border: 1px solid rgba(0, 245, 160, 0.32); color: #00f5a0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px;">
                       ● Inquiry Received
                     </span>
                   </td>
@@ -241,15 +289,15 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
           <!-- Welcome & 4-Hour Commitment -->
           <tr>
             <td style="padding: 28px 32px 20px 32px;">
-              <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
+              <h2 style="margin: 0 0 12px 0; font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
                 Hi ${firstName}, thank you for reaching out!
               </h2>
-              <p style="margin: 0 0 18px 0; font-size: 14px; line-height: 1.6; color: #c8c8d8;">
+              <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #c4c4d6;">
                 I’ve personally received your project inquiry regarding <strong style="color: #ffffff;">${params.service}</strong>.
               </p>
 
-              <!-- Turnaround Guarantee Box -->
-              <div style="background: linear-gradient(135deg, rgba(255, 51, 102, 0.1) 0%, rgba(139, 92, 246, 0.08) 100%); border: 1px solid rgba(255, 51, 102, 0.28); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+              <!-- Turnaround Guarantee Box (Dark Glass) -->
+              <div bgcolor="#130d18" style="background-color: #130d18; border: 1px solid rgba(255, 51, 102, 0.35); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td width="36" valign="top">
@@ -268,28 +316,28 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
               </div>
 
               <!-- Brief Recap of Submitted Inquiry -->
-              <div style="background-color: #0b0b12; border: 1px solid #1a1a27; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #7a7a90; font-weight: 700; margin-bottom: 12px;">
+              <div bgcolor="#07070d" style="background-color: #07070d; border: 1px solid #181826; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #76768e; font-weight: 700; margin-bottom: 12px;">
                   📋 Summary of Your Submitted Scope
                 </div>
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 12px;">
                   <tr>
-                    <td width="35%" style="font-size: 12px; color: #7a7a90; padding-bottom: 8px;">Requested Service:</td>
+                    <td width="35%" style="font-size: 12px; color: #76768e; padding-bottom: 8px;">Requested Service:</td>
                     <td style="font-size: 13px; color: #ffffff; font-weight: 600; padding-bottom: 8px;">${params.service}</td>
                   </tr>
                   <tr>
-                    <td style="font-size: 12px; color: #7a7a90; padding-bottom: 8px;">Estimated Budget:</td>
+                    <td style="font-size: 12px; color: #76768e; padding-bottom: 8px;">Estimated Budget:</td>
                     <td style="font-size: 13px; color: #00f5a0; font-weight: 600; padding-bottom: 8px;">${params.budget || 'Custom Quote'}</td>
                   </tr>
                   <tr>
-                    <td style="font-size: 12px; color: #7a7a90; padding-bottom: 8px;">Target Timeline:</td>
+                    <td style="font-size: 12px; color: #76768e; padding-bottom: 8px;">Target Timeline:</td>
                     <td style="font-size: 13px; color: #ffffff; font-weight: 600; padding-bottom: 8px;">${params.timeline || 'Flexible'}</td>
                   </tr>
                 </table>
 
-                <div style="border-top: 1px solid #1a1a27; padding-top: 12px;">
-                  <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7a90; font-weight: 700; display: block; margin-bottom: 6px;">Your Project Notes:</span>
-                  <p style="font-size: 13px; line-height: 1.55; color: #d0d0e0; margin: 0; white-space: pre-line;">
+                <div style="border-top: 1px solid #181826; padding-top: 12px;">
+                  <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #76768e; font-weight: 700; display: block; margin-bottom: 6px;">Your Project Notes:</span>
+                  <p style="font-size: 13px; line-height: 1.55; color: #d0d0e2; margin: 0; white-space: pre-line;">
                     "${params.message}"
                   </p>
                 </div>
@@ -303,7 +351,7 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td width="28" valign="top" style="padding-bottom: 10px;">
-                      <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color: rgba(255, 51, 102, 0.15); color: #ff3366; font-size: 12px; font-weight: 700; text-align: center; line-height: 22px;">1</span>
+                      <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color: rgba(255, 51, 102, 0.16); color: #ff3366; font-size: 12px; font-weight: 700; text-align: center; line-height: 22px;">1</span>
                     </td>
                     <td style="padding-bottom: 10px; padding-left: 8px;">
                       <strong style="color: #ffffff; font-size: 13px;">Technical Scope Review:</strong>
@@ -312,7 +360,7 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
                   </tr>
                   <tr>
                     <td width="28" valign="top" style="padding-bottom: 10px;">
-                      <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color: rgba(255, 51, 102, 0.15); color: #ff3366; font-size: 12px; font-weight: 700; text-align: center; line-height: 22px;">2</span>
+                      <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color: rgba(255, 51, 102, 0.16); color: #ff3366; font-size: 12px; font-weight: 700; text-align: center; line-height: 22px;">2</span>
                     </td>
                     <td style="padding-bottom: 10px; padding-left: 8px;">
                       <strong style="color: #ffffff; font-size: 13px;">Direct Response:</strong>
@@ -321,7 +369,7 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
                   </tr>
                   <tr>
                     <td width="28" valign="top">
-                      <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color: rgba(255, 51, 102, 0.15); color: #ff3366; font-size: 12px; font-weight: 700; text-align: center; line-height: 22px;">3</span>
+                      <span style="display: inline-block; width: 22px; height: 22px; border-radius: 50%; background-color: rgba(255, 51, 102, 0.16); color: #ff3366; font-size: 12px; font-weight: 700; text-align: center; line-height: 22px;">3</span>
                     </td>
                     <td style="padding-left: 8px;">
                       <strong style="color: #ffffff; font-size: 13px;">Discovery Call (Optional):</strong>
@@ -331,12 +379,12 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
                 </table>
               </div>
 
-              <!-- Urgent Contact Option -->
-              <div style="background-color: rgba(37, 211, 102, 0.08); border: 1px solid rgba(37, 211, 102, 0.25); border-radius: 12px; padding: 16px 20px; text-align: center;">
-                <p style="margin: 0 0 10px 0; font-size: 13px; color: #d0d0e0;">
+              <!-- Urgent WhatsApp Card (Dark Forest Glass) -->
+              <div bgcolor="#08140c" style="background-color: #08140c; border: 1px solid rgba(37, 211, 102, 0.28); border-radius: 12px; padding: 16px 20px; text-align: center;">
+                <p style="margin: 0 0 10px 0; font-size: 13px; color: #cfcfde;">
                   Have an urgent sprint requirement or tight deadline?
                 </p>
-                <a href="${waDirectUrl}" target="_blank" style="display: inline-block; background-color: #25d366; color: #000000; font-weight: 700; font-size: 13px; text-decoration: none; padding: 10px 22px; border-radius: 8px;">
+                <a href="${waDirectUrl}" target="_blank" style="display: inline-block; background-color: #25d366; color: #000000; font-weight: 700; font-size: 13px; padding: 10px 22px; border-radius: 8px;">
                   💬 Chat Directly on WhatsApp (+91 9120900010)
                 </a>
               </div>
@@ -345,16 +393,16 @@ export function buildCustomerRevertHtml(params: SendLeadEmailParams): string {
 
           <!-- Signature & Footer -->
           <tr>
-            <td style="background-color: #0b0b12; padding: 24px 32px; border-top: 1px solid #1b1b28;">
+            <td bgcolor="#07070c" style="background-color: #07070c; padding: 24px 32px; border-top: 1px solid #161622;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td>
                     <strong style="color: #ffffff; font-size: 14px; display: block;">Prince</strong>
-                    <span style="color: #7a7a90; font-size: 12px; display: block; margin-top: 2px;">
+                    <span style="color: #76768e; font-size: 12px; display: block; margin-top: 2px;">
                       Senior Full Stack Engineer &amp; Tech Partner
                     </span>
-                    <span style="color: #7a7a90; font-size: 12px; display: block; margin-top: 2px;">
-                      <a href="https://heyprince.in" style="color: #ff3366; text-decoration: none;">heyprince.in</a> • <a href="mailto:it@heyprince.in" style="color: #7a7a90; text-decoration: none;">it@heyprince.in</a>
+                    <span style="color: #76768e; font-size: 12px; display: block; margin-top: 2px;">
+                      <a href="https://heyprince.in" style="color: #ff3366;">heyprince.in</a> • <a href="mailto:it@heyprince.in" style="color: #76768e;">it@heyprince.in</a>
                     </span>
                   </td>
                 </tr>
