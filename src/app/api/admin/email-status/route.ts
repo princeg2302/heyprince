@@ -53,9 +53,12 @@ export async function GET(request: NextRequest) {
         user: smtpUser,
         pass: smtpPass,
       },
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 12000,
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     });
 
     await transporter.verify();
@@ -76,3 +79,4 @@ export async function GET(request: NextRequest) {
     });
   }
 }
+

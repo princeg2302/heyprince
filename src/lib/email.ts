@@ -513,18 +513,7 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
       const secureEnv = cleanEnv(process.env.SMTP_SECURE);
       const isSecure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
 
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: port,
-        secure: isSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-        connectionTimeout: 8000,
-        greetingTimeout: 8000,
-        socketTimeout: 12000,
-      });
+      const transporter = getSmtpTransporter(smtpHost, port, isSecure, smtpUser, smtpPass);
 
       const senderFrom = cleanEnv(process.env.SMTP_FROM) || `"HeyPrince Inquiries" <${smtpUser}>`;
 
@@ -549,6 +538,30 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
     success: false,
     error: 'No email service credentials configured in environment (RESEND_API_KEY or SMTP)',
   };
+}
+
+function getSmtpTransporter(
+  host: string,
+  port: number,
+  secure: boolean,
+  user: string,
+  pass: string
+) {
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user,
+      pass,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+  });
 }
 
 /**
@@ -603,18 +616,7 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
       const secureEnv = cleanEnv(process.env.SMTP_SECURE);
       const isSecure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
 
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: port,
-        secure: isSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-        connectionTimeout: 8000,
-        greetingTimeout: 8000,
-        socketTimeout: 12000,
-      });
+      const transporter = getSmtpTransporter(smtpHost, port, isSecure, smtpUser, smtpPass);
 
       const senderFrom = cleanEnv(process.env.SMTP_FROM) || `"Prince • HeyPrince" <${smtpUser}>`;
 
