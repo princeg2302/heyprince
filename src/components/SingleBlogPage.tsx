@@ -45,7 +45,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
   const handleArticles = () => {
     if (onNavigateArticles) onNavigateArticles();
-    else router.push('/#articles');
+    else router.push('/insights');
   };
 
   const handleSelectArticle = (newSlug: string) => {
@@ -267,7 +267,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
             </a>
             <span className="breadcrumb-sep">/</span>
             <a
-              href="/#articles"
+              href="/insights"
               onClick={(e) => {
                 e.preventDefault();
                 handleArticles();

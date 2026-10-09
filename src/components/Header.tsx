@@ -198,23 +198,12 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                           <ul className="navbar-menu" id="menu-main">
                             <li className="menu-item">
                               <a
-                                href="/"
+                                href="/services"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  handleSectionClick('home');
-                                }}
-                              >
-                                Portfolio
-                              </a>
-                            </li>
-                            <li className="menu-item">
-                              <a
-                                href="/#services"
-                                className="nav-link"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleSectionClick('services');
+                                  setMenuOpen(false);
+                                  router.push('/services');
                                 }}
                               >
                                 Services
@@ -222,11 +211,12 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="/#about"
+                                href="/about"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  handleSectionClick('about');
+                                  setMenuOpen(false);
+                                  router.push('/about');
                                 }}
                               >
                                 Unfiltered Me
@@ -258,11 +248,12 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="/#articles"
+                                href="/insights"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  handleSectionClick('articles');
+                                  setMenuOpen(false);
+                                  router.push('/insights');
                                 }}
                               >
                                 Insights
@@ -282,7 +273,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                             </li>
                             <li className="menu-item">
                               <a
-                                href="/contact/"
+                                href="/contact"
                                 className="nav-link"
                                 onClick={(e) => {
                                   e.preventDefault();

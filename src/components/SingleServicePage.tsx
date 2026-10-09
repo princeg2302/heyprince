@@ -48,7 +48,7 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
 
   const handleServices = () => {
     if (onNavigateServices) onNavigateServices();
-    else router.push('/#footer');
+    else router.push('/services');
   };
 
   const handleSelectService = (newSlug: string) => {
