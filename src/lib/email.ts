@@ -147,25 +147,33 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
     }
   }
 
-  // 2. Try SMTP if SMTP credentials are configured
+  // 2. Try SMTP if SMTP credentials are configured (e.g. Hostinger, Zoho, cPanel)
   const smtpHost = process.env.SMTP_HOST?.trim();
   const smtpUser = process.env.SMTP_USER?.trim();
   const smtpPass = process.env.SMTP_PASS?.trim();
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
+      const port = Number(process.env.SMTP_PORT) || 465;
+      const isSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : port === 465;
+
       const transporter = nodemailer.createTransport({
         host: smtpHost,
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
+        port: port,
+        secure: isSecure,
         auth: {
           user: smtpUser,
           pass: smtpPass,
         },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 12000,
       });
 
+      const senderFrom = process.env.SMTP_FROM || `"HeyPrince Inquiries" <${smtpUser}>`;
+
       const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || `HeyPrince <${smtpUser}>`,
+        from: senderFrom,
         to: recipient,
         replyTo: params.email,
         subject,

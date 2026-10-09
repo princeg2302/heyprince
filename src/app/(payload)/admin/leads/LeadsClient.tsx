@@ -209,9 +209,9 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
         >
           <AlertCircle size={18} style={{ color: '#fbbf24', marginTop: '2px', flexShrink: 0 }} />
           <div style={{ fontSize: '0.82rem', lineHeight: 1.5, color: 'rgba(255, 255, 255, 0.85)' }}>
-            <strong style={{ color: '#fbbf24' }}>Notice: Notification Email Service Not Configured</strong>
+            <strong style={{ color: '#fbbf24' }}>Notice: Notification Email Service Pending</strong>
             <p style={{ margin: '4px 0 0 0', color: 'rgba(255, 255, 255, 0.65)' }}>
-              Client inquiries are successfully saved in your Supabase database below. However, transactional notification emails to <code>it@heyprince.in</code> require <code>RESEND_API_KEY</code> (or SMTP credentials) in your Vercel project environment variables.
+              Client inquiries are automatically saved in your Supabase database below. To have notifications forwarded directly to your inbox, add your Hostinger email settings (<code>SMTP_HOST</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>) to your Vercel Environment Variables.
             </p>
           </div>
         </div>
