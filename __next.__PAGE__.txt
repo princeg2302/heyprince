@@ -1,0 +1,37 @@
+1:"$Sreact.fragment"
+2:I[94497,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"HeroBanner"]
+3:I[65896,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"VisionAmbition"]
+4:I[22429,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"JourneyTimeline"]
+5:I[86135,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"CyberArcade"]
+6:I[62682,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"ArticlesSection"]
+7:I[22016,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],""]
+8:I[11505,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"CapturedMemories"]
+9:I[97367,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"OutletBoundary"]
+a:"$Sreact.suspense"
+e:I[97367,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"ViewportBoundary"]
+f:I[97367,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"MetadataBoundary"]
+d:X
+0:{"buildId":"pT_KTNGXMug1dwAU7ho47","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"home-view-container","children":[["$","$L2",null,{}],["$","$L3",null,{}],["$","$L4",null,{}],["$","$L5",null,{}],["$","$L6",null,{}],["$","section",null,{"className":"lets-talk","aria-label":"Let's Talk Section","children":["$","div",null,{"className":"container","children":["$","div",null,{"className":"section-heading-group text-center text-white","children":[["$","h2",null,{"children":["Just Me, ",["$","br",null,{}]," No"," ",["$","span",null,{"className":"text-red word","suppressHydrationWarning":true,"children":[["$","span",null,{"suppressHydrationWarning":true,"children":"Fi"}],["$","span",null,{"suppressHydrationWarning":true,"children":"L"}],["$","span",null,{"suppressHydrationWarning":true,"children":"T"}],["$","span",null,{"suppressHydrationWarning":true,"children":"e"}],["$","span",null,{"suppressHydrationWarning":true,"children":"R"}]]}]]}],["$","p",null,{"children":"I’m Prince — a Senior Full Stack Engineer & IT Consultant with 10+ years of digital evolution. Whether you need a high-converting web platform, full-stack React/Next.js architecture, custom CMS build, or custom AI workflow automations, I partner with founders and teams to bring high-impact visions to life with zero fluff."}],["$","$L7",null,{"className":"portal-btn mx-auto","href":"/contact/","aria-label":"Let's talk about your project - go to contact page","children":[["$","span",null,{"className":"mr-right","children":"Let’s Talk About It"}],["$","span",null,{"className":"arrow","children":["$","svg",null,{"width":"40","height":"40","viewBox":"0 0 40 40","fill":"none","xmlns":"http://www.w3.org/2000/svg","children":[["$","circle",null,{"cx":"20","cy":"20","r":"20","fill":"white"}],["$","path",null,{"d":"M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z","fill":"#000"}]]}]}]]}]]}]}]}],["$","$L8",null,{}]]}],null,["$","$L9",null,{"children":["$","$a",null,{"name":"Next.MetadataOutlet","children":"$@b"}]}]]}],"isPartial":"$@c","staleTime":"$d","varyParams":null},{"rsc":["$","$1","h",{"children":[null,["$","$Le",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}],["$","meta","2",{"name":"theme-color","content":"#0b0b0f"}],["$","meta","3",{"name":"color-scheme","content":"dark"}]]}],["$","div",null,{"hidden":true,"children":["$","$Lf",null,{"children":["$","$a",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Prince — Senior Full Stack IT Consultant & Web Engineer"}],["$","meta","1",{"name":"description","content":"Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance Next.js apps, bespoke WordPress/CMS development, and Next-Gen AI workflow automations."}],["$","link","2",{"rel":"author","href":"https://heyprince.in"}],["$","meta","3",{"name":"author","content":"Prince"}],["$","meta","4",{"name":"keywords","content":"Prince,HeyPrince,IT Consultant,Senior Full Stack Engineer,Next.js Developer,React Developer,WordPress Developer,Shopify Expert,Web Engineering,Custom Software Development,PHP Backend Engineer,Python Automation,Technical SEO Consultant,AI Services and Automations,UI/UX Design,IT Services India,Global Tech Partner"}],["$","meta","5",{"name":"creator","content":"Prince"}],["$","meta","6",{"name":"publisher","content":"HeyPrince"}],["$","meta","7",{"name":"robots","content":"index, follow"}],["$","meta","8",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","link","9",{"rel":"canonical","href":"https://heyprince.in/"}],["$","meta","10",{"property":"og:title","content":"Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince"}],["$","meta","11",{"property":"og:description","content":"Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React & Next.js apps, custom CMS engineering, and AI workflow automations."}],"$L10","$L11","$L12","$L13","$L14","$L15","$L16","$L17","$L18","$L19","$L1a","$L1b","$L1c","$L1d","$L1e"]}]}]}],null]}],"isPartial":"$@1f","staleTime":"$d","varyParams":null}],"isUpgradeableISRFallback":false,"a":"$@20","rootVaryParams":null,"needsRuntimeRequest":"$@21"}
+22:I[27201,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"IconMark"]
+b:null
+10:["$","meta","12",{"property":"og:url","content":"https://heyprince.in/"}]
+11:["$","meta","13",{"property":"og:site_name","content":"HeyPrince"}]
+12:["$","meta","14",{"property":"og:locale","content":"en_US"}]
+13:["$","meta","15",{"property":"og:image","content":"https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp"}]
+14:["$","meta","16",{"property":"og:image:width","content":"1200"}]
+15:["$","meta","17",{"property":"og:image:height","content":"630"}]
+16:["$","meta","18",{"property":"og:image:alt","content":"Prince - Senior Full Stack Engineer and IT Consultant"}]
+17:["$","meta","19",{"property":"og:type","content":"website"}]
+18:["$","meta","20",{"name":"twitter:card","content":"summary_large_image"}]
+19:["$","meta","21",{"name":"twitter:title","content":"Prince — Senior Full Stack IT Consultant & Web Engineer"}]
+1a:["$","meta","22",{"name":"twitter:description","content":"Senior Full Stack Engineer & IT Consultant specializing in high-performance React web applications, scalable cloud architectures, and interactive digital solutions."}]
+1b:["$","meta","23",{"name":"twitter:image","content":"https://heyprince.in/wp-content/uploads/2025/09/cropped-prince-profile.webp"}]
+1c:["$","link","24",{"rel":"icon","href":"/favicon.svg"}]
+1d:["$","link","25",{"rel":"apple-touch-icon","href":"/favicon.svg"}]
+1e:["$","$L22","26",{}]
+21:true
+d:300
+d:C
+20:0
+1f:"$undefined"
+c:"$undefined"

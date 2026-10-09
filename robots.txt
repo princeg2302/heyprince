@@ -1,0 +1,11 @@
+User-Agent: *
+Allow: /
+
+User-Agent: Googlebot
+Allow: /
+
+User-Agent: Bingbot
+Allow: /
+
+Host: https://heyprince.in
+Sitemap: https://heyprince.in/sitemap.xml
