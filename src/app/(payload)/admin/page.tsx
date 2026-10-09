@@ -375,7 +375,7 @@ export default async function AdminDashboardPage() {
                     let statusColor = '#38bdf8';
                     let statusBg = 'rgba(56, 189, 248, 0.12)';
                     if (statusVal === 'WON') {
-                       statusColor = '#00f5a0';
+                      statusColor = '#00f5a0';
                       statusBg = 'rgba(0, 245, 160, 0.12)';
                     } else if (statusVal === 'CONTACTED' || statusVal === 'QUALIFIED') {
                       statusColor = '#fbbf24';
