@@ -19,3 +19,4 @@ export { SudokuGame } from './SudokuGame';
 export { BackToTop } from './BackToTop';
 export { InlineSvg } from './InlineSvg';
 export { ClientProviders } from './providers/ClientProviders';
+export { Turnstile } from './Turnstile';

@@ -7,7 +7,11 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const result = await processLeadSubmission(body, 'website_contact_page');
+    const clientIp =
+      request.headers.get('cf-connecting-ip') ||
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip');
+    const result = await processLeadSubmission(body, 'website_contact_page', clientIp);
 
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });

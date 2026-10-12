@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { supabase } from './admin-db';
 import { dispatchLeadEmails } from './email';
+import { verifyTurnstileToken } from './turnstile';
 
 export const LeadSubmissionSchema = z.object({
   name: z.string().trim().min(2, 'Name must contain at least 2 characters').max(100),
@@ -15,6 +16,8 @@ export const LeadSubmissionSchema = z.object({
   honeypot: z.string().max(0, 'Spam detected').optional().or(z.literal('')),
   // Submission timestamp for timing-based bot detection
   formLoadedAt: z.number().optional(),
+  // Cloudflare Turnstile token
+  turnstileToken: z.string().optional(),
 });
 
 export type LeadSubmissionInput = z.infer<typeof LeadSubmissionSchema>;
@@ -43,7 +46,8 @@ export function normalizeBudget(raw?: string | null): string {
 
 export async function processLeadSubmission(
   rawInput: unknown,
-  source = 'website_contact_form'
+  source = 'website_contact_form',
+  clientIp?: string | null
 ): Promise<LeadSubmissionResult> {
   // 1. Zod Validation
   const validation = LeadSubmissionSchema.safeParse(rawInput);
@@ -77,6 +81,19 @@ export async function processLeadSubmission(
         message: 'Thank you for your message! We will get back to you shortly.',
       };
     }
+  }
+
+  // 4. CAPTCHA Verification: Cloudflare Turnstile Check
+  const turnstileCheck = await verifyTurnstileToken(data.turnstileToken, clientIp);
+  if (!turnstileCheck.success) {
+    console.warn('[Turnstile Guard] Verification failed:', turnstileCheck.errorCodes);
+    return {
+      success: false,
+      message: 'Security verification failed. Please complete the CAPTCHA check to verify you are human.',
+      errors: {
+        captcha: ['Security verification failed or expired. Please retry.'],
+      },
+    };
   }
 
   // Normalize budget representation to ensure crisp currency formatting

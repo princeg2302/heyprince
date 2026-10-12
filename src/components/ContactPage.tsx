@@ -20,6 +20,7 @@ import {
   FaCode,
   FaRocket,
 } from 'react-icons/fa6';
+import { Turnstile } from './Turnstile';
 
 export interface ContactPageProps {
   onNavigateHome?: () => void;
@@ -82,6 +83,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [honeypot, setHoneypot] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [formLoadedAt] = useState(() => Date.now());
 
   // CRITICAL: Ensure instant scroll to top on mount before paint
@@ -121,6 +123,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
           message: formData.message,
           honeypot: honeypot,
           formLoadedAt: formLoadedAt,
+          turnstileToken: turnstileToken,
         }),
       });
 
@@ -436,6 +439,23 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                       placeholder="Tell me about your goals, current challenges, reference designs, or any specific requirements..."
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Cloudflare Turnstile CAPTCHA */}
+                  <div className="d-flex justify-content-center">
+                    <Turnstile
+                      theme="dark"
+                      onSuccess={(token) => {
+                        setTurnstileToken(token);
+                        setErrorMessage(null);
+                      }}
+                      onError={() => {
+                        setTurnstileToken('');
+                      }}
+                      onExpire={() => {
+                        setTurnstileToken('');
+                      }}
                     />
                   </div>
 
