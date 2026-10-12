@@ -324,6 +324,8 @@ code, pre, kbd, samp, .hpa-code {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow-x: hidden;
+  max-width: calc(100vw - var(--hpa-sidebar-width));
 }
 
 /* Header */
@@ -419,6 +421,8 @@ code, pre, kbd, samp, .hpa-code {
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Typography & Titles */
@@ -975,6 +979,7 @@ code, pre, kbd, samp, .hpa-code {
   }
   .hpa-main-wrapper {
     margin-left: 0;
+    max-width: 100vw;
   }
   .hpa-mobile-menu-btn {
     display: inline-flex;

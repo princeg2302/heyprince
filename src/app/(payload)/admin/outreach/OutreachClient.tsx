@@ -676,17 +676,37 @@ export default function OutreachClient({
         </div>
       </div>
 
+      {/* Styles for scrollbar suppression and responsive layouts */}
+      <style>{`
+        .hpa-outreach-tabs-bar::-webkit-scrollbar {
+          display: none !important;
+          height: 0px !important;
+        }
+        .hpa-outreach-tabs-bar {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+        @media (max-width: 1200px) {
+          .hpa-leads-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+
       {/* Navigation Sub-Tabs */}
       <div
+        className="hpa-outreach-tabs-bar"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           borderBottom: '1px solid #1c1c2b',
-          paddingBottom: '14px',
+          paddingBottom: '12px',
           marginBottom: '24px',
           overflowX: 'auto',
           whiteSpace: 'nowrap',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
       >
         {[
@@ -857,7 +877,7 @@ export default function OutreachClient({
                 </select>
                 <button
                   disabled={isProcessingQueue || queuedEmailCount === 0}
-                  onClick={handleProcessQueueBatch}
+                  onClick={() => handleProcessQueueBatch(false)}
                   style={{
                     background: queuedEmailCount > 0 ? '#ff3366' : '#2d2d42',
                     color: '#ffffff',
@@ -983,8 +1003,25 @@ export default function OutreachClient({
 
       {/* TAB 3: BUSINESSES LEADS TABLE */}
       {activeTab === 'leads' && (
-        <div style={{ display: 'grid', gridTemplateColumns: selectedBusiness ? '1fr 440px' : '1fr', gap: '20px' }}>
-          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
+        <div
+          className="hpa-leads-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: selectedBusiness ? 'minmax(0, 1fr) 420px' : 'minmax(0, 1fr)',
+            gap: '20px',
+            minWidth: 0,
+            width: '100%',
+          }}
+        >
+          <div
+            style={{
+              background: '#0e0e16',
+              border: '1px solid #1c1c2b',
+              borderRadius: '12px',
+              padding: '20px',
+              minWidth: 0,
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
@@ -1149,6 +1186,8 @@ export default function OutreachClient({
                 padding: '24px',
                 maxHeight: '850px',
                 overflowY: 'auto',
+                minWidth: 0,
+                boxSizing: 'border-box',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
