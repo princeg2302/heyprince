@@ -240,6 +240,47 @@ export default function RootLayout({
         />
       </head>
       <body className="home front-page" suppressHydrationWarning>
+        {/* Google Consent Mode v2 Default (denied until user grants consent via banner) */}
+        <Script id="google-consent-mode" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+
+            // Check if user has previously saved cookie preferences in localStorage
+            var savedPrefs = null;
+            try {
+              var stored = localStorage.getItem('heyprince_cookie_consent_v1');
+              if (stored) savedPrefs = JSON.parse(stored).preferences;
+            } catch(e) {}
+
+            if (savedPrefs) {
+              gtag('consent', 'default', {
+                'ad_storage': savedPrefs.advertisement ? 'granted' : 'denied',
+                'ad_user_data': savedPrefs.advertisement ? 'granted' : 'denied',
+                'ad_personalization': savedPrefs.advertisement ? 'granted' : 'denied',
+                'analytics_storage': savedPrefs.analytics ? 'granted' : 'denied'
+              });
+            } else {
+              gtag('consent', 'default', {
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'analytics_storage': 'denied'
+              });
+            }
+
+            // Expose allConsentGranted globally for direct banner interaction
+            window.allConsentGranted = function() {
+              gtag('consent', 'update', {
+                'ad_user_data': 'granted',
+                'ad_personalization': 'granted',
+                'ad_storage': 'granted',
+                'analytics_storage': 'granted'
+              });
+            };
+          `}
+        </Script>
+
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-BT5N589MRH"
@@ -247,10 +288,7 @@ export default function RootLayout({
         />
         <Script id="google-analytics" strategy="afterInteractive">
           {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-
             gtag('config', 'G-BT5N589MRH');
           `}
         </Script>

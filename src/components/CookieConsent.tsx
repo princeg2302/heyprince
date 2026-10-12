@@ -58,13 +58,27 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
     uncategorised: false,
   });
 
+  // Dispatch Google Consent Mode v2 update to gtag
+  const updateGtagConsent = (prefs: CookiePreferences) => {
+    if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
+      (window as any).gtag('consent', 'update', {
+        ad_user_data: prefs.advertisement ? 'granted' : 'denied',
+        ad_personalization: prefs.advertisement ? 'granted' : 'denied',
+        ad_storage: prefs.advertisement ? 'granted' : 'denied',
+        analytics_storage: prefs.analytics ? 'granted' : 'denied',
+      });
+    }
+  };
+
   // On mount: check if consent already stored
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setPreferences({ ...DEFAULT_PREFERENCES, ...parsed.preferences, necessary: true });
+        const saved = { ...DEFAULT_PREFERENCES, ...parsed.preferences, necessary: true };
+        setPreferences(saved);
+        updateGtagConsent(saved);
         setBannerVisible(false);
       } else {
         // Small delay so entrance animation is smooth
@@ -86,6 +100,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
     };
 
     window.addEventListener('open_cookie_preferences', handleOpenCustomise);
+    (window as any).allConsentGranted = handleAcceptAll;
     return () => {
       window.removeEventListener('open_cookie_preferences', handleOpenCustomise);
     };
@@ -108,6 +123,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
   const handleAcceptAll = () => {
     setPreferences(ALL_ACCEPTED_PREFERENCES);
     saveToStorage(ALL_ACCEPTED_PREFERENCES);
+    updateGtagConsent(ALL_ACCEPTED_PREFERENCES);
     setBannerVisible(false);
     setModalOpen(false);
   };
@@ -115,6 +131,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
   const handleRejectAll = () => {
     setPreferences(DEFAULT_PREFERENCES);
     saveToStorage(DEFAULT_PREFERENCES);
+    updateGtagConsent(DEFAULT_PREFERENCES);
     setBannerVisible(false);
     setModalOpen(false);
   };
@@ -123,6 +140,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ onOpenPrivacyPolic
     const finalPrefs = { ...preferences, necessary: true };
     setPreferences(finalPrefs);
     saveToStorage(finalPrefs);
+    updateGtagConsent(finalPrefs);
     setModalOpen(false);
     setBannerVisible(false);
   };
