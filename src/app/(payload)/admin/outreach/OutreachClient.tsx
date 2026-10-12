@@ -51,6 +51,7 @@ interface OutreachClientProps {
   initialJobs: DiscoveryJobEntity[];
   queuedCount: number;
   initialContacts?: any[];
+  initialMessages?: any[];
   adminEmail: string;
 }
 
@@ -62,6 +63,7 @@ export default function OutreachClient({
   initialJobs,
   queuedCount,
   initialContacts = [],
+  initialMessages = [],
 }: OutreachClientProps) {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<
@@ -73,6 +75,7 @@ export default function OutreachClient({
   const [businesses, setBusinesses] = useState<BusinessEntity[]>(initialBusinesses);
   const [jobs, setJobs] = useState<DiscoveryJobEntity[]>(initialJobs);
   const [contacts, setContacts] = useState<any[]>(initialContacts);
+  const [messages, setMessages] = useState<any[]>(initialMessages);
 
   // Discovery Form State
   const [discoverCountry, setDiscoverCountry] = useState('US');
@@ -322,23 +325,33 @@ export default function OutreachClient({
     }
   };
 
-  // Process Outbound Queue Batch
-  const handleProcessQueueBatch = async () => {
+  // Refresh Queue
+  const refreshQueueMessages = async () => {
+    try {
+      const res = await fetch('/api/admin/outreach/queue');
+      const data = await res.json();
+      if (data.messages) setMessages(data.messages);
+    } catch {}
+  };
+
+  // Process Outbound Queue Batch (Supports standard due check or forceNow override)
+  const handleProcessQueueBatch = async (forceNow = false) => {
     setIsProcessingQueue(true);
     try {
       const res = await fetch('/api/admin/outreach/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'process_batch', batchSize: queueBatchSize }),
+        body: JSON.stringify({ action: 'process_batch', batchSize: queueBatchSize, forceNow }),
       });
       const data = await res.json();
       if (data.success) {
         showToast(data.message, data.outcome?.killSwitchActive ? 'info' : 'success');
+        refreshQueueMessages();
         if (data.outcome && !data.outcome.killSwitchActive) {
-          setQueuedEmailCount((prev) => Math.max(0, prev - data.outcome.processed));
+          setQueuedEmailCount((prev) => Math.max(0, prev - data.outcome.sent));
           setAnalytics((prev) => ({
             ...prev,
-            queuedEmails: Math.max(0, prev.queuedEmails - data.outcome.processed),
+            queuedEmails: Math.max(0, prev.queuedEmails - data.outcome.sent),
             sentEmails: prev.sentEmails + data.outcome.sent,
           }));
         }
@@ -349,6 +362,52 @@ export default function OutreachClient({
       showToast('Error processing outbound queue', 'error');
     } finally {
       setIsProcessingQueue(false);
+    }
+  };
+
+  // Send single queued email immediately
+  const handleSendSingle = async (messageId: string) => {
+    try {
+      const res = await fetch('/api/admin/outreach/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_single', messageId, forceNow: true }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        refreshQueueMessages();
+        setQueuedEmailCount((prev) => Math.max(0, prev - 1));
+        setAnalytics((prev) => ({
+          ...prev,
+          queuedEmails: Math.max(0, prev.queuedEmails - 1),
+          sentEmails: prev.sentEmails + 1,
+        }));
+      } else {
+        showToast(data.error || data.message || 'Send failed', 'error');
+      }
+    } catch {
+      showToast('Error sending message', 'error');
+    }
+  };
+
+  // Cancel queued message
+  const handleCancelMessage = async (messageId: string) => {
+    try {
+      const res = await fetch('/api/admin/outreach/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel_message', messageId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Message cancelled', 'info');
+        refreshQueueMessages();
+        setQueuedEmailCount((prev) => Math.max(0, prev - 1));
+        setAnalytics((prev) => ({ ...prev, queuedEmails: Math.max(0, prev.queuedEmails - 1) }));
+      }
+    } catch {
+      showToast('Error cancelling message', 'error');
     }
   };
 
@@ -506,11 +565,13 @@ export default function OutreachClient({
       <div
         style={{
           display: 'flex',
+          alignItems: 'center',
           gap: '8px',
           borderBottom: '1px solid #1c1c2b',
-          paddingBottom: '12px',
+          paddingBottom: '14px',
           marginBottom: '24px',
           overflowX: 'auto',
+          whiteSpace: 'nowrap',
         }}
       >
         {[
@@ -529,22 +590,24 @@ export default function OutreachClient({
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '8px 16px',
+                padding: '9px 16px',
                 borderRadius: '8px',
-                border: 'none',
-                background: isActive ? '#1c1c2b' : 'transparent',
+                border: isActive ? '1px solid rgba(255, 51, 102, 0.45)' : '1px solid #1c1c2b',
+                background: isActive ? 'rgba(255, 51, 102, 0.12)' : '#0e0e16',
                 color: isActive ? '#ffffff' : '#9ca3af',
                 fontSize: '13px',
                 fontWeight: isActive ? 700 : 500,
                 cursor: 'pointer',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
                 transition: 'all 0.15s ease',
               }}
             >
-              <Icon size={16} color={isActive ? '#ff3366' : '#9ca3af'} />
-              {tab.label}
+              <Icon size={15} color={isActive ? '#ff3366' : '#9ca3af'} />
+              <span>{tab.label}</span>
             </button>
           );
         })}
@@ -1246,34 +1309,215 @@ export default function OutreachClient({
       {/* TAB 4: QUEUE & DISPATCH */}
       {activeTab === 'queue' && (
         <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>Outbound Dispatch Queue</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                Outbound Dispatch Queue ({messages.length})
+              </h2>
               <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>
-                Governed by pre-send suppression verification, RFC 8058 one-click headers, and domain throttling.
+                Protected by SPF/DKIM verification, domain hourly rate limiting (1/hr per domain), and pre-send suppression checks.
               </p>
             </div>
-            <button
-              onClick={handleProcessQueueBatch}
-              disabled={isProcessingQueue}
-              style={{
-                background: '#ff3366',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '10px 18px',
-                fontWeight: 600,
-                fontSize: '13px',
-                cursor: 'pointer',
-              }}
-            >
-              {isProcessingQueue ? 'Processing...' : 'Run Dispatch Worker'}
-            </button>
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                value={queueBatchSize}
+                onChange={(e) => setQueueBatchSize(Number(e.target.value))}
+                style={{
+                  background: '#07070d',
+                  border: '1px solid #2d2d42',
+                  color: '#ffffff',
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                }}
+              >
+                <option value={1}>Batch: 1</option>
+                <option value={5}>Batch: 5</option>
+                <option value={10}>Batch: 10</option>
+              </select>
+
+              <button
+                onClick={() => handleProcessQueueBatch(false)}
+                disabled={isProcessingQueue}
+                style={{
+                  background: '#161622',
+                  border: '1px solid #2d2d42',
+                  color: '#ffffff',
+                  borderRadius: '8px',
+                  padding: '9px 16px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: isProcessingQueue ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Play size={14} color="#00f5a0" />
+                {isProcessingQueue ? 'Processing...' : 'Run Due Queue'}
+              </button>
+
+              <button
+                onClick={() => handleProcessQueueBatch(true)}
+                disabled={isProcessingQueue}
+                style={{
+                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '9px 18px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: isProcessingQueue ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Send size={14} />
+                Force Dispatch All
+              </button>
+
+              <button
+                onClick={refreshQueueMessages}
+                style={{
+                  background: '#161622',
+                  border: '1px solid #2d2d42',
+                  color: '#9ca3af',
+                  borderRadius: '8px',
+                  padding: '9px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title="Refresh Queue List"
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
           </div>
 
-          <p style={{ color: '#6b7280', fontSize: '13px' }}>
-            Queue messages are created when approved drafts are queued. To enqueue drafts, click "Inspect" on any business lead and approve the draft.
-          </p>
+          {messages.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#6b7280' }}>
+              <Mail size={36} style={{ margin: '0 auto 12px auto', opacity: 0.5 }} />
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#d1d5db', margin: '0 0 4px 0' }}>Queue is Empty</p>
+              <p style={{ fontSize: '12px', margin: 0 }}>
+                To enqueue emails, inspect any business lead in the Businesses tab, generate an AI draft, and click "Approve & Enqueue for Dispatch".
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
+                    <th style={{ padding: '12px 10px' }}>Recipient</th>
+                    <th style={{ padding: '12px 10px' }}>Business</th>
+                    <th style={{ padding: '12px 10px' }}>Subject</th>
+                    <th style={{ padding: '12px 10px' }}>Status</th>
+                    <th style={{ padding: '12px 10px' }}>Dispatch Schedule / Note</th>
+                    <th style={{ padding: '12px 10px' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {messages.map((m) => (
+                    <tr key={m.id} style={{ borderBottom: '1px solid #161622' }}>
+                      <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
+                        {m.recipient_email}
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <div style={{ fontWeight: 600, color: '#ffffff' }}>{m.business_name || 'Business'}</div>
+                        {m.business_domain && (
+                          <div style={{ fontSize: '11px', color: '#38bdf8' }}>{m.business_domain}</div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 10px', color: '#d1d5db', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.subject}
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            background:
+                              m.status === 'SENT'
+                                ? 'rgba(0, 245, 160, 0.15)'
+                                : m.status === 'QUEUED'
+                                ? 'rgba(245, 158, 11, 0.15)'
+                                : m.status === 'SENDING'
+                                ? 'rgba(56, 189, 248, 0.15)'
+                                : 'rgba(107, 114, 128, 0.15)',
+                            color:
+                              m.status === 'SENT'
+                                ? '#00f5a0'
+                                : m.status === 'QUEUED'
+                                ? '#f59e0b'
+                                : m.status === 'SENDING'
+                                ? '#38bdf8'
+                                : '#9ca3af',
+                          }}
+                        >
+                          {m.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 10px', fontSize: '12px', color: '#9ca3af' }}>
+                        {m.status === 'SENT' ? (
+                          <span style={{ color: '#00f5a0' }}>✓ Sent {new Date(m.sent_at || m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        ) : m.error_message ? (
+                          <span style={{ color: '#f59e0b' }}>{m.error_message}</span>
+                        ) : m.scheduled_for ? (
+                          <span>Scheduled: {new Date(m.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        ) : (
+                          'Ready to send'
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        {m.status === 'QUEUED' ? (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => handleSendSingle(m.id)}
+                              style={{
+                                background: '#ff3366',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Send Now
+                            </button>
+                            <button
+                              onClick={() => handleCancelMessage(m.id)}
+                              style={{
+                                background: '#161622',
+                                border: '1px solid #2d2d42',
+                                color: '#9ca3af',
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : m.status === 'SENT' ? (
+                          <span style={{ fontSize: '11px', color: '#00f5a0' }}>Dispatched</span>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#6b7280' }}>Closed</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

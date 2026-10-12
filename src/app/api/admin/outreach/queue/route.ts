@@ -15,13 +15,15 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get('status');
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '50', 10);
 
-    let sql = `SELECT * FROM email_messages`;
+    let sql = `SELECT m.*, b.name as business_name, b.domain as business_domain 
+               FROM email_messages m 
+               LEFT JOIN businesses b ON m.business_id = b.id`;
     const params: any[] = [];
     if (status) {
-      sql += ` WHERE status = $1`;
+      sql += ` WHERE m.status = $1`;
       params.push(status);
     }
-    sql += ` ORDER BY created_at DESC LIMIT $${params.length + 1};`;
+    sql += ` ORDER BY m.created_at DESC LIMIT $${params.length + 1};`;
     params.push(limit);
 
     const messages = await query(sql, params);
@@ -45,13 +47,40 @@ export async function POST(request: NextRequest) {
     const action = body.action || 'process_batch';
 
     if (action === 'process_batch') {
-      const outcome = await queueWorker.processBatch(body.batchSize || 5);
+      const outcome = await queueWorker.processBatch(body.batchSize || 5, { forceNow: Boolean(body.forceNow) });
+      const summaryParts = [`Processed ${outcome.processed} queue items (${outcome.sent} sent, ${outcome.failed} failed, ${outcome.cancelled} cancelled)`];
+      if (outcome.throttled > 0) {
+        summaryParts.push(`${outcome.throttled} throttled by domain hourly cap`);
+      }
       return NextResponse.json({
         success: true,
         message: outcome.killSwitchActive
           ? 'Emergency Kill Switch is ACTIVE. Outbound emails paused.'
-          : `Processed ${outcome.processed} queue items (${outcome.sent} sent, ${outcome.failed} failed, ${outcome.cancelled} cancelled).`,
+          : summaryParts.join('; '),
         outcome,
+      });
+    }
+
+    if (action === 'send_single') {
+      if (!body.messageId) {
+        return NextResponse.json({ success: false, error: 'messageId is required' }, { status: 400 });
+      }
+      const outcome = await queueWorker.dispatchMessageById(body.messageId, { forceNow: body.forceNow !== false });
+      return NextResponse.json({
+        success: outcome.status === 'SENT',
+        message: outcome.status === 'SENT' ? 'Email dispatched successfully!' : `Outcome: ${outcome.status} ${outcome.error || ''}`,
+        outcome,
+      });
+    }
+
+    if (action === 'cancel_message') {
+      if (!body.messageId) {
+        return NextResponse.json({ success: false, error: 'messageId is required' }, { status: 400 });
+      }
+      await queueWorker.cancelMessage(body.messageId);
+      return NextResponse.json({
+        success: true,
+        message: 'Email cancelled.',
       });
     }
 

@@ -28,11 +28,12 @@ export class QueueWorker {
   /**
    * Processes the next batch of queued emails with safety gates
    */
-  async processBatch(batchSize = 5): Promise<{
+  async processBatch(batchSize = 5, options?: { forceNow?: boolean }): Promise<{
     processed: number;
     sent: number;
     failed: number;
     cancelled: number;
+    throttled: number;
     killSwitchActive: boolean;
   }> {
     const settings = await getOutreachSettings();
@@ -40,38 +41,81 @@ export class QueueWorker {
     // 1. Emergency Kill Switch Gate
     if (settings.global_kill_switch) {
       console.warn('[QueueWorker] 🛑 Global Kill Switch is ACTIVE. No outbound emails will be dispatched.');
-      return { processed: 0, sent: 0, failed: 0, cancelled: 0, killSwitchActive: true };
+      return { processed: 0, sent: 0, failed: 0, cancelled: 0, throttled: 0, killSwitchActive: true };
     }
 
-    const dueMessages = await getDueQueuedEmails(batchSize);
-    if (dueMessages.length === 0) {
-      return { processed: 0, sent: 0, failed: 0, cancelled: 0, killSwitchActive: false };
+    let messagesToProcess: EmailMessageEntity[];
+    if (options?.forceNow) {
+      messagesToProcess = await query<EmailMessageEntity>(
+        `SELECT * FROM email_messages WHERE status = 'QUEUED' ORDER BY created_at ASC LIMIT $1;`,
+        [batchSize]
+      );
+    } else {
+      messagesToProcess = await getDueQueuedEmails(batchSize);
+    }
+
+    if (messagesToProcess.length === 0) {
+      return { processed: 0, sent: 0, failed: 0, cancelled: 0, throttled: 0, killSwitchActive: false };
     }
 
     let sentCount = 0;
     let failedCount = 0;
     let cancelledCount = 0;
+    let throttledCount = 0;
 
-    for (const msg of dueMessages) {
-      const outcome = await this.dispatchSingleMessage(msg, settings.test_mode, settings.domain_hourly_cap);
+    for (const msg of messagesToProcess) {
+      const outcome = await this.dispatchSingleMessage(msg, settings.test_mode, settings.domain_hourly_cap, options?.forceNow);
       if (outcome.status === 'SENT') sentCount++;
       else if (outcome.status === 'FAILED') failedCount++;
+      else if (outcome.status === 'THROTTLED') throttledCount++;
       else cancelledCount++;
     }
 
     return {
-      processed: dueMessages.length,
+      processed: messagesToProcess.length,
       sent: sentCount,
       failed: failedCount,
       cancelled: cancelledCount,
+      throttled: throttledCount,
       killSwitchActive: false,
     };
+  }
+
+  /**
+   * Dispatch a single queued message by ID
+   */
+  async dispatchMessageById(messageId: string, options?: { forceNow?: boolean }): Promise<{ status: string; error?: string }> {
+    const settings = await getOutreachSettings();
+    if (settings.global_kill_switch) {
+      return { status: 'BLOCKED', error: 'Global Kill Switch is ACTIVE' };
+    }
+
+    const rows = await query<EmailMessageEntity>(
+      `SELECT * FROM email_messages WHERE id = $1 LIMIT 1;`,
+      [messageId]
+    );
+    if (rows.length === 0) {
+      return { status: 'NOT_FOUND', error: 'Message not found' };
+    }
+
+    return this.dispatchSingleMessage(rows[0], settings.test_mode, settings.domain_hourly_cap, options?.forceNow ?? true);
+  }
+
+  /**
+   * Cancel a queued email message
+   */
+  async cancelMessage(messageId: string): Promise<boolean> {
+    await updateEmailStatus(messageId, 'CANCELLED', {
+      error_message: 'Manually cancelled by administrator',
+    });
+    return true;
   }
 
   private async dispatchSingleMessage(
     msg: EmailMessageEntity,
     testMode: boolean,
-    domainHourlyCap: number
+    domainHourlyCap: number,
+    forceNow = false
   ): Promise<{ status: string; error?: string }> {
     // Atomically claim message
     await updateEmailStatus(msg.id, 'SENDING');
@@ -88,26 +132,30 @@ export class QueueWorker {
       return { status: 'SUPPRESSED' };
     }
 
-    // 3. Domain Rate-Limit Throttling Gate
-    const recentDomainSends = await query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM email_messages 
-       WHERE recipient_email LIKE $1 
-         AND status = 'SENT' 
-         AND sent_at >= NOW() - INTERVAL '1 hour';`,
-      [`%@${domain}`]
-    );
-    const domainSendsLastHour = parseInt(recentDomainSends[0]?.count || '0', 10);
-    if (domainSendsLastHour >= domainHourlyCap) {
-      // Re-queue with 30-minute delay
-      await query(
-        `UPDATE email_messages SET 
-          status = 'QUEUED', 
-          scheduled_for = NOW() + INTERVAL '30 minutes',
-          updated_at = NOW() 
-         WHERE id = $1;`,
-        [msg.id]
+    // 3. Domain Rate-Limit Throttling Gate (bypassed if forceNow is explicitly requested)
+    if (!forceNow) {
+      const recentDomainSends = await query<{ count: string }>(
+        `SELECT COUNT(*) as count FROM email_messages 
+         WHERE recipient_email LIKE $1 
+           AND status = 'SENT' 
+           AND sent_at >= NOW() - INTERVAL '1 hour';`,
+        [`%@${domain}`]
       );
-      return { status: 'THROTTLED' };
+      const domainSendsLastHour = parseInt(recentDomainSends[0]?.count || '0', 10);
+      if (domainSendsLastHour >= domainHourlyCap) {
+        // Re-queue with 30-minute delay and descriptive reason
+        const resumeTime = new Date(Date.now() + 30 * 60 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        await query(
+          `UPDATE email_messages SET 
+            status = 'QUEUED', 
+            scheduled_for = NOW() + INTERVAL '30 minutes',
+            error_message = $2,
+            updated_at = NOW() 
+           WHERE id = $1;`,
+          [msg.id, `Throttled: Domain rate limit (${domainHourlyCap}/hr for @${domain}). Auto-resumes at ~${resumeTime} UTC.`]
+        );
+        return { status: 'THROTTLED' };
+      }
     }
 
     // 4. Pre-Send Compliance Eligibility Recheck

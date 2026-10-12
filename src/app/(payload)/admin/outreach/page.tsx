@@ -27,13 +27,14 @@ export default async function OutreachAdminPage() {
   }
 
   // Fetch persisted data
-  const [analytics, settings, businessesRes, jobs, queuedCountRes, contacts] = await Promise.all([
+  const [analytics, settings, businessesRes, jobs, queuedCountRes, contacts, messages] = await Promise.all([
     getOutreachAnalyticsSummary(),
     getOutreachSettings(),
     getBusinesses({ limit: 25 }),
     getDiscoveryJobs(15),
     query<{ count: string }>(`SELECT COUNT(*) as count FROM email_messages WHERE status = 'QUEUED';`),
     getAllContacts(100),
+    query(`SELECT m.*, b.name as business_name, b.domain as business_domain FROM email_messages m LEFT JOIN businesses b ON m.business_id = b.id ORDER BY m.created_at DESC LIMIT 50;`),
   ]);
 
   return (
@@ -46,6 +47,7 @@ export default async function OutreachAdminPage() {
         initialJobs={jobs}
         queuedCount={parseInt(queuedCountRes[0]?.count || '0', 10)}
         initialContacts={contacts}
+        initialMessages={messages}
         adminEmail={user.email}
       />
     </AdminLayout>
