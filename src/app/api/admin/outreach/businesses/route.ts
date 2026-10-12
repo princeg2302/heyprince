@@ -1,0 +1,34 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '../auth-check';
+import { getBusinesses } from '@/lib/outreach/db';
+import { BusinessStatus } from '@/lib/outreach/types';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const countryCode = searchParams.get('country') || undefined;
+    const category = searchParams.get('category') || undefined;
+    const status = (searchParams.get('status') as BusinessStatus) || undefined;
+    const search = searchParams.get('q') || undefined;
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
+
+    const { items, total } = await getBusinesses({
+      countryCode,
+      category,
+      status,
+      search,
+      limit,
+      offset,
+    });
+
+    return NextResponse.json({ success: true, items, total, limit, offset });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}

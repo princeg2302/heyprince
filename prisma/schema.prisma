@@ -1,0 +1,382 @@
+// Prisma Schema for HeyPrince Global AI Business Discovery & Compliant Outreach Platform
+// Database: PostgreSQL (Supabase)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URI")
+}
+
+enum BusinessStatus {
+  DISCOVERED
+  AUDITED
+  ENRICHED
+  DISQUALIFIED
+}
+
+enum VerificationStatus {
+  VALID
+  INVALID
+  RISKY
+  UNKNOWN
+}
+
+enum DiscoveryJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  PAUSED
+}
+
+enum ComplianceDecision {
+  ELIGIBLE
+  INELIGIBLE
+  REVIEW_REQUIRED
+  UNKNOWN
+}
+
+enum SuppressionReason {
+  UNSUBSCRIBE
+  HARD_BOUNCE
+  SPAM_COMPLAINT
+  MANUAL_BLOCK
+  LEGAL_REQUEST
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum EmailMessageStatus {
+  DRAFT
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  BOUNCED
+  COMPLAINED
+  FAILED
+  CANCELLED
+  SUPPRESSED
+}
+
+enum EmailEventType {
+  QUEUED
+  SEND_ATTEMPT
+  SENT
+  DELIVERED
+  BOUNCE
+  COMPLAINT
+  OPEN
+  CLICK
+  UNSUBSCRIBE
+  REPLY
+  FAILED
+}
+
+model Business {
+  id                 String         @id @default(uuid())
+  name               String
+  domain             String?
+  normalizedDomain   String?        @map("normalized_domain")
+  websiteUrl         String?        @map("website_url")
+  countryCode        String         @map("country_code") // ISO-3166-1 alpha-2
+  region             String?
+  city               String?
+  address            String?
+  postalCode         String?        @map("postal_code")
+  latitude           Decimal?       @db.Decimal(10, 7)
+  longitude          Decimal?       @db.Decimal(10, 7)
+  industry           String?
+  category           String?
+  sourceProvider     String         @map("source_provider")
+  sourceProviderId   String         @map("source_provider_id")
+  metadata           Json?          @default("{}")
+  status             BusinessStatus @default(DISCOVERED)
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  contacts           Contact[]
+  websiteAudits      WebsiteAudit[]
+  aiAnalyses         AIAnalysis[]
+  complianceRecords  ComplianceEvidence[]
+  emailMessages      EmailMessage[]
+
+  @@unique([sourceProvider, sourceProviderId], name: "provider_record_unique")
+  @@index([normalizedDomain])
+  @@index([countryCode, category])
+  @@index([status])
+  @@map("businesses")
+}
+
+model Contact {
+  id                     String             @id @default(uuid())
+  businessId             String             @map("business_id")
+  business               Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  email                  String             // Normalized lowercase
+  rawEmail               String?            @map("raw_email")
+  name                   String?
+  roleOrTitle            String?            @map("role_or_title")
+  phone                  String?
+  sourceUrl              String?            @map("source_url")
+  provenance             String?            // public_contact_page, footer_mailto, etc.
+  syntaxValid            Boolean            @default(true) @map("syntax_valid")
+  mxValid                Boolean?           @map("mx_valid")
+  verificationStatus     VerificationStatus @default(UNKNOWN) @map("verification_status")
+  verificationConfidence Decimal?           @map("verification_confidence") @db.Decimal(3, 2)
+  verificationDetails    Json?              @default("{}") @map("verification_details")
+  isRoleAccount          Boolean            @default(false) @map("is_role_account")
+  isDisposable           Boolean            @default(false) @map("is_disposable")
+  isCatchall             Boolean?           @map("is_catchall")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  complianceRecords      ComplianceEvidence[]
+  emailMessages          EmailMessage[]
+
+  @@unique([businessId, email], name: "business_contact_unique")
+  @@index([email])
+  @@index([verificationStatus])
+  @@map("contacts")
+}
+
+model DiscoveryJob {
+  id               String             @id @default(uuid())
+  provider         String             // openstreetmap, google_places, etc.
+  countryCode      String             @map("country_code")
+  region           String?
+  city             String?
+  category         String?
+  query            String?
+  status           DiscoveryJobStatus @default(PENDING)
+  totalFound       Int                @default(0) @map("total_found")
+  totalInserted    Int                @default(0) @map("total_inserted")
+  totalDuplicates  Int                @default(0) @map("total_duplicates")
+  cursor           Json?              @default("{}")
+  errorMessage     String?            @map("error_message")
+  startedAt        DateTime?          @map("started_at")
+  completedAt      DateTime?          @map("completed_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("discovery_jobs")
+}
+
+model DiscoverySource {
+  id             String    @id @default(uuid())
+  provider       String
+  operation      String
+  unitsUsed      Int       @default(0) @map("units_used")
+  costEstimateUsd Decimal? @map("cost_estimate_usd") @db.Decimal(8, 4)
+  periodDate     DateTime  @default(now()) @map("period_date") @db.Date
+  quotaLimit     Int?      @map("quota_limit")
+  metadata       Json?     @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([provider, periodDate])
+  @@map("discovery_sources")
+}
+
+model WebsiteAudit {
+  id                   String    @id @default(uuid())
+  businessId           String    @map("business_id")
+  business             Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  targetUrl            String    @map("target_url")
+  finalUrl             String?   @map("final_url")
+  httpStatus           Int?      @map("http_status")
+  isReachable          Boolean   @default(false) @map("is_reachable")
+  hasHttps             Boolean   @default(false) @map("has_https")
+  mobileFriendly       Boolean   @default(false) @map("mobile_friendly")
+  hasContactPage       Boolean   @default(false) @map("has_contact_page")
+  hasBookingSystem     Boolean   @default(false) @map("has_booking_system")
+  hasEcommerce         Boolean   @default(false) @map("has_ecommerce")
+  hasNewsletter        Boolean   @default(false) @map("has_newsletter")
+  hasLiveChat          Boolean   @default(false) @map("has_live_chat")
+  speedIndexMs         Int?      @map("speed_index_ms")
+  detectedTechnologies Json?     @default("[]") @map("detected_technologies")
+  signals              Json?     @default("{}")
+  error                String?
+  auditedAt            DateTime  @default(now()) @map("audited_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  @@index([businessId, auditedAt])
+  @@map("website_audits")
+}
+
+model AIAnalysis {
+  id                       String    @id @default(uuid())
+  businessId               String    @map("business_id")
+  business                 Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  modelProvider            String    @map("model_provider") // gemini, openai, deterministic
+  modelName                String    @map("model_name")
+  businessSummary          String    @map("business_summary")
+  observedOpportunity      String    @map("observed_digital_opportunity")
+  recommendedService       String    @map("recommended_service")
+  evidence                 String
+  confidenceLevel          Decimal   @map("confidence_level") @db.Decimal(3, 2)
+  suggestedSubject         String    @map("suggested_subject")
+  personalizedDraft        String    @map("personalized_draft")
+  unsupportedClaimWarnings Json?     @default("[]") @map("unsupported_claim_warnings")
+  promptTokens             Int?      @map("prompt_tokens")
+  completionTokens         Int?      @map("completion_tokens")
+  estimatedCostUsd         Decimal?  @map("estimated_cost_usd") @db.Decimal(8, 5)
+  createdAt                DateTime  @default(now()) @map("created_at")
+
+  emailMessages            EmailMessage[]
+
+  @@index([businessId, createdAt])
+  @@map("ai_analyses")
+}
+
+model Campaign {
+  id                String         @id @default(uuid())
+  name              String
+  serviceOffering   String         @map("service_offering")
+  targetCountries   String[]       @map("target_countries")
+  targetCategories  String[]       @map("target_categories")
+  status            CampaignStatus @default(DRAFT)
+  dailyLimit        Int            @default(20) @map("daily_limit")
+  domainHourlyLimit Int            @default(1) @map("domain_hourly_limit")
+  totalSent         Int            @default(0) @map("total_sent")
+  totalDelivered    Int            @default(0) @map("total_delivered")
+  totalBounced      Int            @default(0) @map("total_bounced")
+  totalComplaints   Int            @default(0) @map("total_complaints")
+  totalUnsubscribed Int            @default(0) @map("total_unsubscribed")
+  settings          Json?          @default("{}")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  emailMessages     EmailMessage[]
+
+  @@map("campaigns")
+}
+
+model ComplianceEvidence {
+  id               String             @id @default(uuid())
+  contactId        String             @map("contact_id")
+  contact          Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  businessId       String             @map("business_id")
+  business         Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  jurisdiction     String             // US_CAN_SPAM, EU_GDPR_B2B, UK_PECR_B2B, CA_CASL, etc.
+  decision         ComplianceDecision @default(UNKNOWN)
+  legalBasis       String             @map("legal_basis")
+  reason           String
+  policyVersion    String             @map("policy_version")
+  evidenceSnapshot Json?              @default("{}") @map("evidence_snapshot")
+  evaluatedAt      DateTime           @default(now()) @map("evaluated_at")
+  expiresAt        DateTime?          @map("expires_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  @@index([contactId, decision])
+  @@map("compliance_evidence")
+}
+
+model Suppression {
+  id         String            @id @default(uuid())
+  email      String            @unique // Normalized lowercase
+  domain     String?
+  reason     SuppressionReason
+  source     String            // unsubscribe_link, bounce_webhook, spam_complaint, manual
+  campaignId String?           @map("campaign_id")
+  metadata   Json?             @default("{}")
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  @@index([domain])
+  @@map("suppressions")
+}
+
+model EmailMessage {
+  id                 String             @id @default(uuid())
+  campaignId         String?            @map("campaign_id")
+  campaign           Campaign?          @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  businessId         String             @map("business_id")
+  business           Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  contactId          String             @map("contact_id")
+  contact            Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  aiAnalysisId       String?            @map("ai_analysis_id")
+  aiAnalysis         AIAnalysis?        @relation(fields: [aiAnalysisId], references: [id], onDelete: SetNull)
+  recipientEmail     String             @map("recipient_email")
+  recipientName      String?            @map("recipient_name")
+  senderEmail        String             @map("sender_email")
+  senderName         String             @map("sender_name")
+  subject            String
+  bodyHtml           String             @map("body_html")
+  bodyText           String             @map("body_text")
+  unsubscribeToken   String             @unique @map("unsubscribe_token")
+  status             EmailMessageStatus @default(DRAFT)
+  provider           String?            // hostinger_smtp, resend, mock
+  providerMessageId  String?            @map("provider_message_id")
+  errorMessage       String?            @map("error_message")
+  attempts           Int                @default(0)
+  maxAttempts        Int                @default(3) @map("max_attempts")
+  scheduledFor       DateTime?          @map("scheduled_for")
+  sentAt             DateTime?          @map("sent_at")
+  deliveredAt        DateTime?          @map("delivered_at")
+  bouncedAt          DateTime?          @map("bounced_at")
+  unsubscribedAt     DateTime?          @map("unsubscribed_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  events             EmailEvent[]
+
+  @@index([status, scheduledFor])
+  @@index([providerMessageId])
+  @@index([recipientEmail])
+  @@map("email_messages")
+}
+
+model EmailEvent {
+  id              String         @id @default(uuid())
+  emailMessageId  String         @map("email_message_id")
+  emailMessage    EmailMessage   @relation(fields: [emailMessageId], references: [id], onDelete: Cascade)
+  eventType       EmailEventType @map("event_type")
+  provider        String?
+  providerEventId String?        @map("provider_event_id")
+  rawPayload      Json?          @default("{}") @map("raw_payload")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  @@index([emailMessageId, eventType])
+  @@map("email_events")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminEmail String   @map("admin_email")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  details    Json?    @default("{}")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([adminEmail, createdAt])
+  @@map("audit_logs")
+}
+
+model OutreachSettings {
+  id                          String   @id @default("default_settings")
+  globalKillSwitch            Boolean  @default(true) @map("global_kill_switch") // OUTBOUND SENDING DISABLED BY DEFAULT
+  testMode                    Boolean  @default(true) @map("test_mode")
+  dailySendCap                Int      @default(10) @map("daily_send_cap")
+  domainHourlyCap             Int      @default(1) @map("domain_hourly_cap")
+  minDelayBetweenSendsSeconds Int      @default(30) @map("min_delay_between_sends_seconds")
+  defaultAiProvider           String   @default("deterministic") @map("default_ai_provider")
+  defaultDiscoveryProvider    String   @default("openstreetmap") @map("default_discovery_provider")
+  requireManualReview         Boolean  @default(true) @map("require_manual_review")
+  companyName                 String   @default("HeyPrince") @map("company_name")
+  physicalAddress             String   @default("Kolkata, West Bengal, India") @map("physical_address")
+  contactEmail                String   @default("it@heyprince.in") @map("contact_email")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+
+  @@map("outreach_settings")
+}
