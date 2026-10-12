@@ -230,6 +230,13 @@ export class QueueWorker {
         [msg.id, sendResult.provider, sendResult.providerMessageId || null, JSON.stringify(sendResult)]
       );
 
+      // Auto-update business status to CONTACTED if still in discovery/enrichment stage
+      await query(
+        `UPDATE businesses SET status = 'CONTACTED', updated_at = NOW()
+         WHERE id = $1 AND status IN ('DISCOVERED', 'AUDITED', 'ENRICHED');`,
+        [msg.business_id]
+      );
+
       return { status: 'SENT' };
     } else {
       const nextAttempt = msg.attempts + 1;

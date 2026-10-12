@@ -29,6 +29,7 @@ import {
   BusinessEntity,
   DiscoveryJobEntity,
   OutreachSettingsEntity,
+  BusinessStatus,
 } from '@/lib/outreach/types';
 
 interface OutreachClientProps {
@@ -105,6 +106,81 @@ export default function OutreachClient({
   const [suppressEmail, setSuppressEmail] = useState('');
   const [suppressReason, setSuppressReason] = useState('MANUAL_BLOCK');
   const [isAddingSuppression, setIsAddingSuppression] = useState(false);
+
+  // CRM & Pipeline State
+  const [pipelineFilter, setPipelineFilter] = useState('ALL');
+  const [crmNotesInput, setCrmNotesInput] = useState('');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const getStatusBadgeStyle = (status?: string) => {
+    switch (status) {
+      case 'CLOSED_WON':
+        return {
+          bg: 'rgba(16, 185, 129, 0.2)',
+          color: '#10b981',
+          border: 'rgba(16, 185, 129, 0.4)',
+          label: 'Won 🎉',
+          longLabel: 'Closed / Won 🎉',
+        };
+      case 'CLOSED_LOST':
+        return {
+          bg: 'rgba(239, 68, 68, 0.2)',
+          color: '#ef4444',
+          border: 'rgba(239, 68, 68, 0.4)',
+          label: 'Lost ❌',
+          longLabel: 'Closed / Lost ❌',
+        };
+      case 'IN_DISCUSSION':
+        return {
+          bg: 'rgba(245, 158, 11, 0.2)',
+          color: '#f59e0b',
+          border: 'rgba(245, 158, 11, 0.4)',
+          label: 'Talking 💬',
+          longLabel: 'In Discussion 💬',
+        };
+      case 'CONTACTED':
+        return {
+          bg: 'rgba(56, 189, 248, 0.2)',
+          color: '#38bdf8',
+          border: 'rgba(56, 189, 248, 0.4)',
+          label: 'Contacted ✉️',
+          longLabel: 'Contacted ✉️',
+        };
+      case 'ENRICHED':
+        return {
+          bg: 'rgba(168, 85, 247, 0.2)',
+          color: '#c084fc',
+          border: 'rgba(168, 85, 247, 0.4)',
+          label: 'Enriched ⚡',
+          longLabel: 'AI Enriched ⚡',
+        };
+      case 'AUDITED':
+        return {
+          bg: 'rgba(99, 102, 241, 0.2)',
+          color: '#818cf8',
+          border: 'rgba(99, 102, 241, 0.4)',
+          label: 'Audited 🔍',
+          longLabel: 'Audited 🔍',
+        };
+      case 'DISQUALIFIED':
+        return {
+          bg: 'rgba(107, 114, 128, 0.2)',
+          color: '#9ca3af',
+          border: 'rgba(107, 114, 128, 0.4)',
+          label: 'Disqualified 🚫',
+          longLabel: 'Disqualified 🚫',
+        };
+      case 'DISCOVERED':
+      default:
+        return {
+          bg: 'rgba(148, 163, 184, 0.15)',
+          color: '#cbd5e1',
+          border: 'rgba(148, 163, 184, 0.3)',
+          label: 'Fresh 📍',
+          longLabel: 'Discovered 📍',
+        };
+    }
+  };
 
   // Toggle Kill Switch
   const toggleKillSwitch = async () => {
@@ -195,17 +271,56 @@ export default function OutreachClient({
   // Open Business Detail
   const handleSelectBusiness = async (b: BusinessEntity) => {
     setSelectedBusiness(b);
+    setCrmNotesInput((b.metadata as any)?.crm_notes || '');
     setIsLoadingDetail(true);
     try {
       const res = await fetch(`/api/admin/outreach/businesses/${b.id}`);
       const data = await res.json();
       if (data.success) {
         setBusinessDetail(data);
+        if (data.business?.metadata?.crm_notes !== undefined) {
+          setCrmNotesInput(data.business.metadata.crm_notes || '');
+        }
       }
     } catch {
       showToast('Error fetching business intelligence record', 'error');
     } finally {
       setIsLoadingDetail(false);
+    }
+  };
+
+  // Update Business Status & CRM Notes
+  const handleUpdateBusinessStatus = async (
+    businessId: string,
+    newStatus: BusinessStatus,
+    notes?: string
+  ) => {
+    setIsUpdatingStatus(true);
+    try {
+      const res = await fetch(`/api/admin/outreach/businesses/${businessId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          crmNotes: notes !== undefined ? notes : crmNotesInput,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.business) {
+        showToast(`Lead marked as ${newStatus}`, 'success');
+        setBusinesses((prev) =>
+          prev.map((biz) => (biz.id === businessId ? { ...biz, ...data.business } : biz))
+        );
+        if (selectedBusiness?.id === businessId) {
+          setSelectedBusiness((prev) => (prev ? { ...prev, ...data.business } : null));
+        }
+      } else {
+        showToast(data.error || 'Failed to update lead status', 'error');
+      }
+    } catch {
+      showToast('Network error updating status', 'error');
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -868,11 +983,48 @@ export default function OutreachClient({
 
       {/* TAB 3: BUSINESSES LEADS TABLE */}
       {activeTab === 'leads' && (
-        <div style={{ display: 'grid', gridTemplateColumns: selectedBusiness ? '1fr 420px' : '1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: selectedBusiness ? '1fr 440px' : '1fr', gap: '20px' }}>
           <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>
-              Discovered Business Records ({businesses.length})
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                  Discovered Business Records ({businesses.length})
+                </h2>
+                <p style={{ color: '#9ca3af', fontSize: '12px', margin: '4px 0 0 0' }}>
+                  Track contacts and lead stages from discovery through closed deals.
+                </p>
+              </div>
+
+              {/* Status / Pipeline Filters */}
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {[
+                  { id: 'ALL', label: `All (${businesses.length})` },
+                  { id: 'DISCOVERED', label: `Fresh (${businesses.filter((b) => b.status === 'DISCOVERED').length})` },
+                  { id: 'CONTACTED', label: `Contacted (${businesses.filter((b) => b.status === 'CONTACTED').length})` },
+                  { id: 'IN_DISCUSSION', label: `Talking (${businesses.filter((b) => b.status === 'IN_DISCUSSION').length})` },
+                  { id: 'CLOSED_WON', label: `Won 🎉 (${businesses.filter((b) => b.status === 'CLOSED_WON').length})` },
+                  { id: 'CLOSED_LOST', label: `Lost (${businesses.filter((b) => b.status === 'CLOSED_LOST').length})` },
+                ].map((pill) => (
+                  <button
+                    key={pill.id}
+                    onClick={() => setPipelineFilter(pill.id)}
+                    style={{
+                      background: pipelineFilter === pill.id ? 'rgba(255, 51, 102, 0.15)' : '#161622',
+                      border: pipelineFilter === pill.id ? '1px solid #ff3366' : '1px solid #2d2d42',
+                      color: pipelineFilter === pill.id ? '#ff3366' : '#d1d5db',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {businesses.length === 0 ? (
               <p style={{ color: '#6b7280', fontSize: '13px' }}>No businesses in database yet. Run a discovery scan above!</p>
@@ -885,68 +1037,102 @@ export default function OutreachClient({
                       <th style={{ padding: '10px' }}>Location</th>
                       <th style={{ padding: '10px' }}>Category</th>
                       <th style={{ padding: '10px' }}>Website</th>
-                      <th style={{ padding: '10px' }}>Status</th>
+                      <th style={{ padding: '10px' }}>Lead Stage</th>
                       <th style={{ padding: '10px' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {businesses.map((b) => (
-                      <tr
-                        key={b.id}
-                        style={{
-                          borderBottom: '1px solid #161622',
-                          background: selectedBusiness?.id === b.id ? 'rgba(255, 51, 102, 0.08)' : 'transparent',
-                        }}
-                      >
-                        <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>{b.name}</td>
-                        <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.city || b.country_code}</td>
-                        <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.category}</td>
-                        <td style={{ padding: '12px 10px' }}>
-                          {b.website_url ? (
-                            <a
-                              href={b.website_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
-                              {b.domain || 'Visit'} <ExternalLink size={12} />
-                            </a>
-                          ) : (
-                            <span style={{ color: '#6b7280' }}>None</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '12px 10px' }}>
-                          <span
+                    {businesses
+                      .filter((b) => pipelineFilter === 'ALL' || b.status === pipelineFilter)
+                      .map((b) => {
+                        const badge = getStatusBadgeStyle(b.status);
+                        return (
+                          <tr
+                            key={b.id}
                             style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '10px',
-                              background: b.status === 'ENRICHED' ? 'rgba(0, 245, 160, 0.15)' : 'rgba(139, 92, 246, 0.15)',
-                              color: b.status === 'ENRICHED' ? '#00f5a0' : '#a78bfa',
+                              borderBottom: '1px solid #161622',
+                              background: selectedBusiness?.id === b.id ? 'rgba(255, 51, 102, 0.08)' : 'transparent',
                             }}
                           >
-                            {b.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 10px' }}>
-                          <button
-                            onClick={() => handleSelectBusiness(b)}
-                            style={{
-                              background: '#161622',
-                              border: '1px solid #2d2d42',
-                              color: '#ffffff',
-                              padding: '6px 12px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Inspect
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                            <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>{b.name}</td>
+                            <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.city || b.country_code}</td>
+                            <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.category}</td>
+                            <td style={{ padding: '12px 10px' }}>
+                              {b.website_url ? (
+                                <a
+                                  href={b.website_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                  {b.domain || 'Visit'} <ExternalLink size={12} />
+                                </a>
+                              ) : (
+                                <span style={{ color: '#6b7280' }}>None</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 10px' }}>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '3px 8px',
+                                  borderRadius: '8px',
+                                  background: badge.bg,
+                                  color: badge.color,
+                                  border: `1px solid ${badge.border}`,
+                                  whiteSpace: 'nowrap',
+                                  display: 'inline-block',
+                                }}
+                              >
+                                {badge.label}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 10px' }}>
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <button
+                                  onClick={() => handleSelectBusiness(b)}
+                                  style={{
+                                    background: selectedBusiness?.id === b.id ? '#ff3366' : '#161622',
+                                    border: selectedBusiness?.id === b.id ? '1px solid #ff3366' : '1px solid #2d2d42',
+                                    color: '#ffffff',
+                                    padding: '6px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  Inspect & CRM
+                                </button>
+                                {b.status !== 'CLOSED_WON' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUpdateBusinessStatus(b.id, 'CLOSED_WON');
+                                    }}
+                                    title="Mark Deal as Won"
+                                    style={{
+                                      background: 'rgba(16, 185, 129, 0.1)',
+                                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                                      color: '#10b981',
+                                      padding: '6px 8px',
+                                      borderRadius: '6px',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    Won 🎉
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -961,7 +1147,7 @@ export default function OutreachClient({
                 border: '1px solid #1c1c2b',
                 borderRadius: '12px',
                 padding: '24px',
-                maxHeight: '800px',
+                maxHeight: '850px',
                 overflowY: 'auto',
               }}
             >
@@ -976,6 +1162,185 @@ export default function OutreachClient({
                 >
                   ✕
                 </button>
+              </div>
+
+              {/* CRM Pipeline & Deal Stage Card */}
+              <div
+                style={{
+                  background: '#161622',
+                  border: '1px solid #2d2d42',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>
+                    Lead Pipeline Stage
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '8px',
+                      background: getStatusBadgeStyle(selectedBusiness.status).bg,
+                      color: getStatusBadgeStyle(selectedBusiness.status).color,
+                      border: `1px solid ${getStatusBadgeStyle(selectedBusiness.status).border}`,
+                    }}
+                  >
+                    {getStatusBadgeStyle(selectedBusiness.status).longLabel}
+                  </span>
+                </div>
+
+                {/* Quick 1-Click Status Changers */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '12px' }}>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CONTACTED')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'CONTACTED'}
+                    style={{
+                      background: selectedBusiness.status === 'CONTACTED' ? 'rgba(56, 189, 248, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'CONTACTED' ? '1px solid #38bdf8' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'CONTACTED' ? '#38bdf8' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    ✉️ Contacted
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'IN_DISCUSSION')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'IN_DISCUSSION'}
+                    style={{
+                      background: selectedBusiness.status === 'IN_DISCUSSION' ? 'rgba(245, 158, 11, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'IN_DISCUSSION' ? '1px solid #f59e0b' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'IN_DISCUSSION' ? '#f59e0b' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    💬 Talking
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_WON')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_WON'}
+                    style={{
+                      background: selectedBusiness.status === 'CLOSED_WON' ? 'rgba(16, 185, 129, 0.25)' : '#0e0e16',
+                      border: selectedBusiness.status === 'CLOSED_WON' ? '1px solid #10b981' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'CLOSED_WON' ? '#10b981' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    🎉 Won!
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_LOST')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_LOST'}
+                    style={{
+                      background: selectedBusiness.status === 'CLOSED_LOST' ? 'rgba(239, 68, 68, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'CLOSED_LOST' ? '1px solid #ef4444' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'CLOSED_LOST' ? '#ef4444' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    ❌ Lost
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISQUALIFIED')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISQUALIFIED'}
+                    style={{
+                      background: selectedBusiness.status === 'DISQUALIFIED' ? 'rgba(107, 114, 128, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'DISQUALIFIED' ? '1px solid #9ca3af' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'DISQUALIFIED' ? '#9ca3af' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    🚫 Disqualify
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISCOVERED')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISCOVERED'}
+                    style={{
+                      background: selectedBusiness.status === 'DISCOVERED' ? 'rgba(148, 163, 184, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'DISCOVERED' ? '1px solid #cbd5e1' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'DISCOVERED' ? '#cbd5e1' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    📍 Fresh
+                  </button>
+                </div>
+
+                {/* CRM Notes & Follow-up log */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', color: '#9ca3af' }}>Deal Notes & Meeting Recap:</label>
+                    {isUpdatingStatus && <span style={{ fontSize: '10px', color: '#ff3366' }}>Saving...</span>}
+                  </div>
+                  <textarea
+                    value={crmNotesInput}
+                    onChange={(e) => setCrmNotesInput(e.target.value)}
+                    placeholder="e.g. Spoke with manager on call. Interested in redesign, quoted $2,500. Follow-up meeting Friday."
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      background: '#0a0a10',
+                      border: '1px solid #2d2d42',
+                      borderRadius: '6px',
+                      color: '#ffffff',
+                      padding: '8px',
+                      fontSize: '12px',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                    <button
+                      onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, selectedBusiness.status, crmNotesInput)}
+                      disabled={isUpdatingStatus}
+                      style={{
+                        background: '#2d2d42',
+                        border: 'none',
+                        color: '#ffffff',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Save Note
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -1258,6 +1623,24 @@ export default function OutreachClient({
                         {c.business_domain && (
                           <div style={{ fontSize: '11px', color: '#38bdf8' }}>{c.business_domain}</div>
                         )}
+                        {c.business_status && (
+                          <div style={{ marginTop: '4px' }}>
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                padding: '2px 6px',
+                                borderRadius: '6px',
+                                background: getStatusBadgeStyle(c.business_status).bg,
+                                color: getStatusBadgeStyle(c.business_status).color,
+                                border: `1px solid ${getStatusBadgeStyle(c.business_status).border}`,
+                                display: 'inline-block',
+                              }}
+                            >
+                              {getStatusBadgeStyle(c.business_status).label}
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '12px 10px', color: '#9ca3af' }}>
                         {c.business_city ? `${c.business_city}, ` : ''}{c.business_country}
@@ -1273,29 +1656,60 @@ export default function OutreachClient({
                         </span>
                       </td>
                       <td style={{ padding: '12px 10px' }}>
-                        <button
-                          onClick={() => {
-                            const foundBiz = businesses.find((b) => b.id === c.business_id);
-                            if (foundBiz) {
-                              setActiveTab('leads');
-                              handleSelectBusiness(foundBiz);
-                            } else {
-                              showToast(`Business record loaded: ${c.business_name}`, 'info');
-                            }
-                          }}
-                          style={{
-                            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Inspect & Pitch
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <button
+                            onClick={() => {
+                              const foundBiz = businesses.find((b) => b.id === c.business_id);
+                              if (foundBiz) {
+                                setActiveTab('leads');
+                                handleSelectBusiness(foundBiz);
+                              } else {
+                                showToast(`Business record loaded: ${c.business_name}`, 'info');
+                              }
+                            }}
+                            style={{
+                              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                              color: '#ffffff',
+                              border: 'none',
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Inspect & CRM
+                          </button>
+                          {c.business_status !== 'CLOSED_WON' && (
+                            <button
+                              onClick={async () => {
+                                await handleUpdateBusinessStatus(c.business_id, 'CLOSED_WON');
+                                setContacts((prev) =>
+                                  prev.map((item) =>
+                                    item.business_id === c.business_id
+                                      ? { ...item, business_status: 'CLOSED_WON' }
+                                      : item
+                                  )
+                                );
+                              }}
+                              title="Mark Deal Won"
+                              style={{
+                                background: 'rgba(16, 185, 129, 0.15)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                color: '#10b981',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              Won 🎉
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

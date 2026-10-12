@@ -4,7 +4,15 @@ import { z } from 'zod';
 // 1. Core Enums
 // ============================================================================
 
-export type BusinessStatus = 'DISCOVERED' | 'AUDITED' | 'ENRICHED' | 'DISQUALIFIED';
+export type BusinessStatus =
+  | 'DISCOVERED'
+  | 'AUDITED'
+  | 'ENRICHED'
+  | 'CONTACTED'
+  | 'IN_DISCUSSION'
+  | 'CLOSED_WON'
+  | 'CLOSED_LOST'
+  | 'DISQUALIFIED';
 export type VerificationStatus = 'VALID' | 'INVALID' | 'RISKY' | 'UNKNOWN';
 export type DiscoveryJobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PAUSED';
 export type ComplianceDecision = 'ELIGIBLE' | 'INELIGIBLE' | 'REVIEW_REQUIRED' | 'UNKNOWN';

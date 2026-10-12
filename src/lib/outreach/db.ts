@@ -268,6 +268,30 @@ export async function getBusinessById(id: string): Promise<BusinessEntity | null
   return rows[0] || null;
 }
 
+export async function updateBusinessStatus(
+  id: string,
+  status: BusinessStatus,
+  crmNotes?: string
+): Promise<BusinessEntity | null> {
+  let queryText: string;
+  let params: any[];
+
+  if (crmNotes !== undefined) {
+    queryText = `UPDATE businesses SET 
+      status = $1, 
+      metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('crm_notes', $2::text, 'status_updated_at', NOW()),
+      updated_at = NOW() 
+      WHERE id = $3 RETURNING *;`;
+    params = [status, crmNotes, id];
+  } else {
+    queryText = `UPDATE businesses SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *;`;
+    params = [status, id];
+  }
+
+  const rows = await query<BusinessEntity>(queryText, params);
+  return rows[0] || null;
+}
+
 // ============================================================================
 // 3. Contacts & Verification
 // ============================================================================
@@ -342,13 +366,15 @@ export async function getAllContacts(limit = 100): Promise<(ContactEntity & {
   business_domain: string | null;
   business_city: string | null;
   business_country: string;
+  business_status?: string;
 })[]> {
   return query(
     `SELECT c.*, 
             b.name as business_name, 
             b.domain as business_domain, 
             b.city as business_city, 
-            b.country_code as business_country
+            b.country_code as business_country,
+            b.status as business_status
      FROM contacts c
      JOIN businesses b ON c.business_id = b.id
      ORDER BY c.created_at DESC
