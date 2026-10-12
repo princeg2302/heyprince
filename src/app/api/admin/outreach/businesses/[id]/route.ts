@@ -62,7 +62,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Valid email address is required' }, { status: 400 });
     }
 
-    const contact = await contactVerifier.verifyAndStoreContact(id, email, {
+    const contact = await contactVerifier.verifyAndSaveContact(id, email, {
       name: body.name || null,
       roleOrTitle: body.roleOrTitle || null,
       provenance: 'admin_manual',

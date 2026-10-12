@@ -232,6 +232,20 @@ export class ContactVerifier {
       is_disposable: outcome.isDisposable,
     });
   }
+
+  async verifyAndStoreContact(
+    businessId: string,
+    rawEmail: string,
+    meta: {
+      name?: string | null;
+      roleOrTitle?: string | null;
+      phone?: string | null;
+      sourceUrl?: string | null;
+      provenance?: string | null;
+    } = {}
+  ): Promise<ContactEntity> {
+    return this.verifyAndSaveContact(businessId, rawEmail, meta);
+  }
 }
 
 export const contactVerifier = new ContactVerifier();
