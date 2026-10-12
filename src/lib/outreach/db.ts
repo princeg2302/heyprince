@@ -356,7 +356,11 @@ export async function upsertContact(data: {
 
 export async function getContactsForBusiness(businessId: string): Promise<ContactEntity[]> {
   return query<ContactEntity>(
-    `SELECT * FROM contacts WHERE business_id = $1 ORDER BY created_at DESC;`,
+    `SELECT c.*, COALESCE(c.phone, b.metadata->>'phone') as phone 
+     FROM contacts c 
+     JOIN businesses b ON c.business_id = b.id 
+     WHERE c.business_id = $1 
+     ORDER BY c.created_at DESC;`,
     [businessId]
   );
 }
@@ -370,6 +374,7 @@ export async function getAllContacts(limit = 100): Promise<(ContactEntity & {
 })[]> {
   return query(
     `SELECT c.*, 
+            COALESCE(c.phone, b.metadata->>'phone') as phone,
             b.name as business_name, 
             b.domain as business_domain, 
             b.city as business_city, 

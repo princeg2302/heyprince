@@ -23,6 +23,8 @@ import {
   Layers,
   FileText,
   UserCheck,
+  Phone,
+  MessageSquare,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import {
@@ -182,6 +184,16 @@ export default function OutreachClient({
     }
   };
 
+  const getWhatsAppUrl = (phone?: string | null, businessName?: string) => {
+    if (!phone) return null;
+    const digits = phone.replace(/[^0-9]/g, '');
+    if (digits.length < 7) return null;
+    const greeting = encodeURIComponent(
+      `Hello ${businessName ? businessName + ' team' : 'there'}! 👋 I came across your website. I'm Prince from HeyPrince (https://heyprince.in). We analyzed your website and identified high-impact opportunities to improve your online presence and customer bookings. Would you be open to a quick chat?`
+    );
+    return `https://wa.me/${digits}?text=${greeting}`;
+  };
+
   // Toggle Kill Switch
   const toggleKillSwitch = async () => {
     try {
@@ -324,7 +336,7 @@ export default function OutreachClient({
     }
   };
 
-  // Trigger Website Audit
+  // Trigger Website Audit & Deep Multi-Page Crawl
   const handleRunAudit = async (businessId: string) => {
     setIsAuditing(true);
     try {
@@ -335,9 +347,30 @@ export default function OutreachClient({
       });
       const data = await res.json();
       if (data.success) {
-        showToast('SSRF-safe website audit completed.', 'success');
-        // Refresh detail
-        if (selectedBusiness) handleSelectBusiness(selectedBusiness);
+        const pagesCrawled = data.crawledPages || 1;
+        const emailsFound = data.discoveredContacts?.length || 0;
+        const phonesFound = data.discoveredPhones?.length || 0;
+        showToast(
+          `Deep audit complete! Crawled ${pagesCrawled} pages. Discovered ${emailsFound} emails & ${phonesFound} phones/WhatsApp.`,
+          'success'
+        );
+        // Refresh businesses list with newly discovered phone/metadata
+        if (data.business) {
+          setBusinesses((prev) =>
+            prev.map((biz) => (biz.id === businessId ? { ...biz, ...data.business } : biz))
+          );
+        }
+        // Refresh contacts list
+        fetch('/api/admin/outreach/contacts')
+          .then((r) => r.json())
+          .then((cData) => {
+            if (cData.contacts) setContacts(cData.contacts);
+          })
+          .catch(() => {});
+        // Refresh detail drawer
+        if (selectedBusiness) {
+          handleSelectBusiness(data.business || selectedBusiness);
+        }
       } else {
         showToast(data.error || 'Audit failed', 'error');
       }
@@ -711,7 +744,7 @@ export default function OutreachClient({
       >
         {[
           { key: 'telemetry', label: 'Overview & Metrics', icon: Layers },
-          { key: 'discovery', label: 'Discovery Scanner', icon: Globe },
+          { key: 'discovery', label: 'Scanner', icon: Globe },
           { key: 'leads', label: `Businesses (${totalBusinesses})`, icon: Search },
           { key: 'contacts', label: `Contacts (${contacts.length})`, icon: UserCheck },
           { key: 'queue', label: `Outbox Queue (${queuedEmailCount})`, icon: Mail },
@@ -1091,7 +1124,40 @@ export default function OutreachClient({
                               background: selectedBusiness?.id === b.id ? 'rgba(255, 51, 102, 0.08)' : 'transparent',
                             }}
                           >
-                            <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>{b.name}</td>
+                            <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
+                              <div>{b.name}</div>
+                              {((b.metadata as any)?.phone || (b.metadata as any)?.whatsapp_url) && (
+                                <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 500 }}>
+                                  {(b.metadata as any)?.phone && (
+                                    <span style={{ color: '#9ca3af' }}>📞 {(b.metadata as any).phone}</span>
+                                  )}
+                                  {getWhatsAppUrl((b.metadata as any)?.phone, b.name) && (
+                                    <a
+                                      href={getWhatsAppUrl((b.metadata as any)?.phone, b.name)!}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      title="Open WhatsApp chat with pre-filled pitch"
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        background: 'rgba(37, 211, 102, 0.15)',
+                                        border: '1px solid rgba(37, 211, 102, 0.4)',
+                                        color: '#25d366',
+                                        padding: '1px 6px',
+                                        borderRadius: '4px',
+                                        textDecoration: 'none',
+                                        fontWeight: 700,
+                                        fontSize: '11px',
+                                      }}
+                                    >
+                                      💬 WhatsApp
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                            </td>
                             <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.city || b.country_code}</td>
                             <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.category}</td>
                             <td style={{ padding: '12px 10px' }}>
@@ -1399,7 +1465,7 @@ export default function OutreachClient({
                     cursor: isAuditing ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {isAuditing ? 'Auditing...' : 'Run Website Audit'}
+                  {isAuditing ? 'Auditing & Crawling Pages...' : 'Deep Audit & Crawl Pages'}
                 </button>
                 <button
                   disabled={isGeneratingAi}
@@ -1429,6 +1495,80 @@ export default function OutreachClient({
                 <p style={{ color: '#9ca3af', fontSize: '13px' }}>Loading intelligence data...</p>
               ) : businessDetail ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
+                  {/* Direct Outreach Channels (Phone & WhatsApp) */}
+                  {(() => {
+                    const phone = (businessDetail.business?.metadata as any)?.phone || (selectedBusiness.metadata as any)?.phone;
+                    const phones = (businessDetail.business?.metadata as any)?.phones || (selectedBusiness.metadata as any)?.phones || [];
+                    const whatsappUrl = getWhatsAppUrl(phone, selectedBusiness.name);
+                    const crawledPages = (businessDetail.business?.metadata as any)?.crawled_pages || (selectedBusiness.metadata as any)?.crawled_pages || [];
+
+                    return (
+                      <div style={{ background: '#161622', border: '1px solid #2d2d42', borderRadius: '8px', padding: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Phone size={14} /> Direct Outreach (Phone &amp; WhatsApp)
+                          </span>
+                          {crawledPages.length > 0 && (
+                            <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                              Crawled {crawledPages.length} {crawledPages.length === 1 ? 'page' : 'pages'}
+                            </span>
+                          )}
+                        </div>
+
+                        {phone ? (
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                              <div>
+                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>Phone: </span>
+                                <a href={`tel:${phone}`} style={{ color: '#ffffff', fontWeight: 600, textDecoration: 'none' }}>
+                                  {phone}
+                                </a>
+                              </div>
+                              {whatsappUrl && (
+                                <a
+                                  href={whatsappUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: '#25d366',
+                                    color: '#ffffff',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    textDecoration: 'none',
+                                    fontWeight: 700,
+                                    fontSize: '12px',
+                                  }}
+                                >
+                                  <MessageSquare size={14} /> Chat &amp; Pitch on WhatsApp
+                                </a>
+                              )}
+                            </div>
+                            {phones.length > 1 && (
+                              <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                Additional numbers: {phones.filter((p: string) => p !== phone).join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            <p style={{ color: '#9ca3af', margin: '0 0 8px 0', fontSize: '12px' }}>
+                              No phone found yet. Click &quot;Deep Audit &amp; Crawl Pages&quot; to crawl subpages (/contact, /about) and auto-extract phone numbers and WhatsApp links.
+                            </p>
+                          </div>
+                        )}
+
+                        {crawledPages.length > 0 && (
+                          <div style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
+                            Crawled routes: {crawledPages.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Verified Contacts */}
                   <div>
                     <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 700, color: '#ff3366' }}>
@@ -1437,10 +1577,38 @@ export default function OutreachClient({
                     {businessDetail.contacts?.length > 0 ? (
                       businessDetail.contacts.map((c: any) => (
                         <div key={c.id} style={{ background: '#07070d', border: '1px solid #1c1c2b', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
-                          <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.email}</div>
-                          <span style={{ fontSize: '11px', color: c.verification_status === 'VALID' ? '#00f5a0' : '#f59e0b' }}>
-                            Status: {c.verification_status}
-                          </span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.email}</div>
+                            <span style={{ fontSize: '11px', color: c.verification_status === 'VALID' ? '#00f5a0' : '#f59e0b' }}>
+                              Status: {c.verification_status}
+                            </span>
+                          </div>
+                          {c.phone && (
+                            <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                              <span style={{ color: '#9ca3af' }}>📞 {c.phone}</span>
+                              {getWhatsAppUrl(c.phone, selectedBusiness.name) && (
+                                <a
+                                  href={getWhatsAppUrl(c.phone, selectedBusiness.name)!}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: 'rgba(37, 211, 102, 0.15)',
+                                    border: '1px solid rgba(37, 211, 102, 0.4)',
+                                    color: '#25d366',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    textDecoration: 'none',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  💬 WhatsApp
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))
                     ) : (
@@ -1619,6 +1787,7 @@ export default function OutreachClient({
                 <thead>
                   <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
                     <th style={{ padding: '12px 10px' }}>Contact Email</th>
+                    <th style={{ padding: '12px 10px' }}>Phone / WhatsApp</th>
                     <th style={{ padding: '12px 10px' }}>Verification Status</th>
                     <th style={{ padding: '12px 10px' }}>Associated Business</th>
                     <th style={{ padding: '12px 10px' }}>Location</th>
@@ -1632,6 +1801,38 @@ export default function OutreachClient({
                     <tr key={c.id} style={{ borderBottom: '1px solid #161622' }}>
                       <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
                         {c.email}
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        {c.phone ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ color: '#ffffff', fontSize: '12px' }}>{c.phone}</span>
+                            {getWhatsAppUrl(c.phone, c.business_name) && (
+                              <a
+                                href={getWhatsAppUrl(c.phone, c.business_name)!}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Open WhatsApp chat with pre-filled pitch"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  background: 'rgba(37, 211, 102, 0.15)',
+                                  border: '1px solid rgba(37, 211, 102, 0.4)',
+                                  color: '#25d366',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  textDecoration: 'none',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                💬 WhatsApp
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#6b7280', fontSize: '11px' }}>None</span>
+                        )}
                       </td>
                       <td style={{ padding: '12px 10px' }}>
                         <span

@@ -103,7 +103,10 @@ export class DiscoveryService {
           category: record.category,
           source_provider: record.sourceProvider,
           source_provider_id: record.sourceProviderId,
-          metadata: record.metadata,
+          metadata: {
+            ...record.metadata,
+            phone: record.phone || (record.metadata as any)?.phone || null,
+          },
           status: 'DISCOVERED',
         });
 
