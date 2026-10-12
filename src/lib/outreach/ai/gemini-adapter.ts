@@ -29,7 +29,7 @@ RULES:
 2. Never claim a website is broken without explicit evidence in the audit signals.
 3. Never fabricate personal details, customer relationships, prior conversations, or previous consent.
 4. Output MUST strictly be valid JSON matching the required schema.
-5. In personalizedDraft: Identify sender as "Prince from HeyPrince", clearly state commercial intent, keep concise (< 200 words), and include "{{UNSUBSCRIBE_URL}}" at the bottom.`;
+5. In personalizedDraft: Identify sender as "Prince from HeyPrince", clearly state commercial intent, keep concise (< 200 words), do NOT mention any physical address, city, state, or country for either sender or recipient, and include "To stop receiving updates, unsubscribe here:\n{{UNSUBSCRIBE_URL}}" at the bottom.`;
 
     const userPrompt = `Analyze the following business and verified audit signals:
 Business Name: ${input.businessName}

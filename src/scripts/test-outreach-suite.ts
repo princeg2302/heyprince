@@ -9,6 +9,7 @@ import { complianceEngine } from '../lib/outreach/compliance/compliance-engine';
 import { generateUnsubscribeToken, verifyUnsubscribeToken } from '../lib/outreach/compliance/tokens';
 import { DeterministicRuleEngineAdapter } from '../lib/outreach/ai/deterministic-adapter';
 import { MockDiscoveryAdapter } from '../lib/outreach/discovery/mock-adapter';
+import { buildOutreachEmailHtml, getOutreachProductionBaseUrl } from '../lib/outreach/email-template';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -195,6 +196,31 @@ async function runAllTests() {
     assert.ok(result.analysis.confidenceLevel > 0.8);
     assert.ok(result.analysis.personalizedDraft.includes('{{UNSUBSCRIBE_URL}}'));
     assert.ok(result.analysis.personalizedDraft.includes('HeyPrince'));
+    assert.strictEqual(result.analysis.personalizedDraft.includes('Kolkata'), false);
+  });
+
+  // 9. Outreach Email Template & Asset Tests
+  await runTest('Email Template: Contains brand logo, sender profile avatar, and clean unsubscribe link', () => {
+    const html = buildOutreachEmailHtml({
+      subject: 'Digital Architecture Review',
+      bodyText: 'Hello team,\n\nWe reviewed your digital footprint.\n\nBest regards,\nPrince\nKolkata, West Bengal, India\n\n--\n{{UNSUBSCRIBE_URL}}',
+      businessName: 'Apex Law',
+      unsubscribeUrl: 'https://heyprince.in/api/outreach/unsubscribe?token=sample123',
+    });
+
+    assert.ok(html.includes('heyprince-logo.png'), 'Must include brand logo');
+    assert.ok(html.includes('profile-icon.png'), 'Must include profile icon / avatar');
+    assert.ok(html.includes('<a href="https://heyprince.in/api/outreach/unsubscribe?token=sample123"'), 'Must have clickable unsubscribe anchor');
+    assert.ok(html.includes('unsubscribe here</a>'), 'Must have clean anchor text instead of raw URL');
+    assert.strictEqual(html.includes('Kolkata'), false, 'Location must be removed from email');
+    assert.strictEqual(html.includes('West Bengal'), false, 'State/region must be removed from email');
+  });
+
+  await runTest('Email Base URL: Production URL sanitizer never returns localhost', () => {
+    const prodUrl = getOutreachProductionBaseUrl();
+    assert.strictEqual(prodUrl.includes('localhost'), false, 'Must not be localhost');
+    assert.strictEqual(prodUrl.includes('127.0.0.1'), false, 'Must not be 127.0.0.1');
+    assert.ok(prodUrl.startsWith('https://'), 'Must be secure https URL');
   });
 
   console.log('\n------------------------------------------------------');

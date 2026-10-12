@@ -14,6 +14,10 @@ import {
   OutboundSendResult,
 } from './sender-adapter';
 import { EmailMessageEntity } from '../types';
+import {
+  getOutreachProductionBaseUrl,
+  buildOutreachEmailHtml,
+} from '../email-template';
 
 export class QueueWorker {
   private senderAdapters: Map<string, EmailSenderAdapter> = new Map();
@@ -195,13 +199,34 @@ export class QueueWorker {
       }
     }
 
-    // Build absolute unsubscribe URL
-    const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'https://heyprince.in';
+    // Build absolute production unsubscribe URL (never localhost in outbound emails!)
+    const baseUrl = getOutreachProductionBaseUrl();
     const unsubscribeUrl = `${baseUrl}/api/outreach/unsubscribe?token=${encodeURIComponent(msg.unsubscribe_token)}`;
 
-    // Replace unsubscribe placeholder in body
-    const finalHtml = msg.body_html.replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubscribeUrl);
-    const finalText = msg.body_text.replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubscribeUrl);
+    // Prepare final HTML: if old format (<pre>) upgrade to branded card template, or replace unsubscribe placeholders
+    let finalHtml = msg.body_html;
+    if (!finalHtml || finalHtml.startsWith('<pre') || !finalHtml.includes('<!DOCTYPE html>')) {
+      finalHtml = buildOutreachEmailHtml({
+        subject: msg.subject,
+        bodyText: msg.body_text,
+        recipientName: msg.recipient_name,
+        unsubscribeUrl,
+      });
+    } else {
+      // Replace href placeholder
+      finalHtml = finalHtml.replace(/href=["']\{\{UNSUBSCRIBE_URL\}\}["']/g, `href="${unsubscribeUrl}"`);
+      // Replace any raw text placeholder with a clean clickable link
+      finalHtml = finalHtml.replace(
+        /\{\{UNSUBSCRIBE_URL\}\}/g,
+        `<a href="${unsubscribeUrl}" style="color: #ff3366; text-decoration: underline; font-weight: 600;">unsubscribe here</a>`
+      );
+      // Remove any residual location strings
+      finalHtml = finalHtml.replace(/Kolkata,\s*West Bengal(?:,\s*India)?/gi, '');
+    }
+
+    // Clean plain-text version (no location)
+    let finalText = msg.body_text.replace(/\{\{UNSUBSCRIBE_URL\}\}/g, unsubscribeUrl);
+    finalText = finalText.replace(/Kolkata,\s*West Bengal(?:,\s*India)?/gi, '');
 
     // 6. Execute Send
     const sendResult: OutboundSendResult = await sender.send({

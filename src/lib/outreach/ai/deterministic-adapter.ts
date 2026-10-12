@@ -9,10 +9,9 @@ export class DeterministicRuleEngineAdapter implements AIModelProvider {
   }
 
   async analyzeBusiness(input: AIAnalysisInput): Promise<AIAnalysisResult> {
-    const { businessName, category, city, websiteUrl, auditSignals } = input;
-    const loc = city ? ` in ${city}` : '';
+    const { businessName, category, websiteUrl, auditSignals } = input;
 
-    let summary = `${businessName} is a ${category || 'local enterprise'}${loc}.`;
+    let summary = `${businessName} is a ${category || 'local enterprise'}.`;
     let opportunity = '';
     let recommendedService: AIAnalysisPayload['recommendedService'] = 'Website Design & Development';
     let evidence = '';
@@ -81,7 +80,7 @@ export class DeterministicRuleEngineAdapter implements AIModelProvider {
 
     const personalizedDraft = `Hi ${businessName} Team,
 
-I came across ${businessName}${loc} while researching established businesses in your sector.
+I came across ${businessName} while researching established businesses in your sector.
 
 While reviewing your digital footprint, I noted that your current setup could benefit from ${opportunity.toLowerCase()} Specifically: ${evidence}
 
@@ -94,10 +93,9 @@ Best regards,
 Prince
 Principal Engineer & Founder, HeyPrince
 https://heyprince.in | it@heyprince.in
-Kolkata, West Bengal, India
 
 --
-If you would prefer not to receive future updates, you may unsubscribe at any time:
+To stop receiving updates, unsubscribe here:
 {{UNSUBSCRIBE_URL}}`;
 
     const rawPayload: AIAnalysisPayload = {

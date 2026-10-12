@@ -4,6 +4,7 @@ import { query, createQueuedEmail, getBusinessById } from '@/lib/outreach/db';
 import { queueWorker } from '@/lib/outreach/queue/queue-worker';
 import { generateUnsubscribeToken } from '@/lib/outreach/compliance/tokens';
 import { complianceEngine } from '@/lib/outreach/compliance/compliance-engine';
+import { buildOutreachEmailHtml } from '@/lib/outreach/email-template';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,7 +126,14 @@ export async function POST(request: NextRequest) {
         sender_email: 'it@heyprince.in',
         sender_name: 'Prince • HeyPrince',
         subject,
-        body_html: bodyHtml || `<pre style="font-family: sans-serif; white-space: pre-wrap;">${bodyText}</pre>`,
+        body_html:
+          bodyHtml ||
+          buildOutreachEmailHtml({
+            subject,
+            bodyText,
+            recipientName: contact.name,
+            businessName: business.name,
+          }),
         body_text: bodyText,
         unsubscribe_token: unsubscribeToken,
         status: 'QUEUED',
