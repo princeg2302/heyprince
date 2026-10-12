@@ -88,6 +88,12 @@ export default function OutreachClient({
   // Queue Processing State
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [queueBatchSize, setQueueBatchSize] = useState(5);
+  const [queuedEmailCount, setQueuedEmailCount] = useState(queuedCount);
+  const [isQueueingEmail, setIsQueueingEmail] = useState(false);
+
+  // Contact Form State
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [isAddingContact, setIsAddingContact] = useState(false);
 
   // Suppression State
   const [suppressEmail, setSuppressEmail] = useState('');
@@ -244,6 +250,75 @@ export default function OutreachClient({
     }
   };
 
+  // Add & Verify Contact Email
+  const handleAddContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBusiness || !newContactEmail) return;
+    setIsAddingContact(true);
+    try {
+      const res = await fetch(`/api/admin/outreach/businesses/${selectedBusiness.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newContactEmail }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        setNewContactEmail('');
+        setAnalytics((prev) => ({
+          ...prev,
+          totalContacts: prev.totalContacts + 1,
+          validContacts: data.contact?.verification_status === 'VALID' ? prev.validContacts + 1 : prev.validContacts,
+        }));
+        handleSelectBusiness(selectedBusiness);
+      } else {
+        showToast(data.error || 'Failed to add contact', 'error');
+      }
+    } catch {
+      showToast('Error adding contact', 'error');
+    } finally {
+      setIsAddingContact(false);
+    }
+  };
+
+  // Enqueue Approved AI Draft for Dispatch
+  const handleEnqueueDraft = async () => {
+    if (!selectedBusiness || !businessDetail?.aiAnalysis) return;
+    const contact = businessDetail.contacts?.[0];
+    if (!contact) {
+      showToast('Please add or discover a verified contact email first', 'error');
+      return;
+    }
+
+    setIsQueueingEmail(true);
+    try {
+      const res = await fetch('/api/admin/outreach/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'enqueue_draft',
+          businessId: selectedBusiness.id,
+          contactId: contact.id,
+          aiAnalysisId: businessDetail.aiAnalysis.id,
+          subject: businessDetail.aiAnalysis.suggested_subject,
+          bodyText: businessDetail.aiAnalysis.personalized_draft,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Email draft approved and added to outbound queue!', 'success');
+        setQueuedEmailCount((prev) => prev + 1);
+        setAnalytics((prev) => ({ ...prev, queuedEmails: prev.queuedEmails + 1 }));
+      } else {
+        showToast(data.error || 'Failed to queue email draft', 'error');
+      }
+    } catch {
+      showToast('Network error enqueuing draft', 'error');
+    } finally {
+      setIsQueueingEmail(false);
+    }
+  };
+
   // Process Outbound Queue Batch
   const handleProcessQueueBatch = async () => {
     setIsProcessingQueue(true);
@@ -256,6 +331,14 @@ export default function OutreachClient({
       const data = await res.json();
       if (data.success) {
         showToast(data.message, data.outcome?.killSwitchActive ? 'info' : 'success');
+        if (data.outcome && !data.outcome.killSwitchActive) {
+          setQueuedEmailCount((prev) => Math.max(0, prev - data.outcome.processed));
+          setAnalytics((prev) => ({
+            ...prev,
+            queuedEmails: Math.max(0, prev.queuedEmails - data.outcome.processed),
+            sentEmails: prev.sentEmails + data.outcome.sent,
+          }));
+        }
       } else {
         showToast(data.error || 'Queue processing failed', 'error');
       }
@@ -431,7 +514,7 @@ export default function OutreachClient({
           { key: 'telemetry', label: 'Overview & Metrics', icon: Layers },
           { key: 'discovery', label: 'Discovery Scanner', icon: Globe },
           { key: 'leads', label: `Businesses (${totalBusinesses})`, icon: Search },
-          { key: 'queue', label: `Outbox Queue (${queuedCount})`, icon: Mail },
+          { key: 'queue', label: `Outbox Queue (${queuedEmailCount})`, icon: Mail },
           { key: 'compliance', label: 'Compliance & Suppression', icon: ShieldCheck },
           { key: 'settings', label: 'Safety Settings', icon: Sliders },
         ].map((tab) => {
@@ -571,7 +654,7 @@ export default function OutreachClient({
                 Queue Dispatch Control
               </h3>
               <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: 1.6 }}>
-                There are currently <strong>{queuedCount}</strong> emails queued. When processed, each email undergoes live pre-send suppression checks, domain rate-limiting, and jurisdiction eligibility verification.
+                There are currently <strong>{queuedEmailCount}</strong> emails queued. When processed, each email undergoes live pre-send suppression checks, domain rate-limiting, and jurisdiction eligibility verification.
               </p>
               <div style={{ marginTop: '20px', display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <select
@@ -591,10 +674,10 @@ export default function OutreachClient({
                   <option value={10}>Batch: 10 emails</option>
                 </select>
                 <button
-                  disabled={isProcessingQueue || queuedCount === 0}
+                  disabled={isProcessingQueue || queuedEmailCount === 0}
                   onClick={handleProcessQueueBatch}
                   style={{
-                    background: queuedCount > 0 ? '#ff3366' : '#2d2d42',
+                    background: queuedEmailCount > 0 ? '#ff3366' : '#2d2d42',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '8px',
@@ -882,14 +965,54 @@ export default function OutreachClient({
                     </h4>
                     {businessDetail.contacts?.length > 0 ? (
                       businessDetail.contacts.map((c: any) => (
-                        <div key={c.id} style={{ background: '#07070d', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
+                        <div key={c.id} style={{ background: '#07070d', border: '1px solid #1c1c2b', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
                           <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.email}</div>
-                          <span style={{ fontSize: '11px', color: '#00f5a0' }}>Status: {c.verification_status}</span>
+                          <span style={{ fontSize: '11px', color: c.verification_status === 'VALID' ? '#00f5a0' : '#f59e0b' }}>
+                            Status: {c.verification_status}
+                          </span>
                         </div>
                       ))
                     ) : (
-                      <p style={{ color: '#6b7280', margin: 0 }}>No contacts discovered yet. Run website audit to scrape public mailto links.</p>
+                      <p style={{ color: '#6b7280', margin: '0 0 8px 0', fontSize: '12px' }}>
+                        No email discovered yet. Audit the website or enter a public contact email below:
+                      </p>
                     )}
+
+                    {/* Inline Add Contact */}
+                    <form onSubmit={handleAddContact} style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <input
+                        type="email"
+                        placeholder="e.g. info@business.com"
+                        value={newContactEmail}
+                        onChange={(e) => setNewContactEmail(e.target.value)}
+                        required
+                        style={{
+                          flex: 1,
+                          background: '#07070d',
+                          border: '1px solid #2d2d42',
+                          color: '#ffffff',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={isAddingContact}
+                        style={{
+                          background: '#161622',
+                          border: '1px solid #2d2d42',
+                          color: '#ffffff',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: isAddingContact ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {isAddingContact ? 'Verifying...' : 'Save & Verify'}
+                      </button>
+                    </form>
                   </div>
 
                   {/* AI Recommendation & Personalized Draft */}
@@ -918,6 +1041,37 @@ export default function OutreachClient({
                       <pre style={{ background: '#0e0e16', padding: '10px', borderRadius: '4px', color: '#d1d5db', fontSize: '11px', whiteSpace: 'pre-wrap', maxHeight: '160px', overflowY: 'auto' }}>
                         {businessDetail.aiAnalysis.personalized_draft}
                       </pre>
+
+                      {/* Approve & Enqueue Action Button */}
+                      <div style={{ marginTop: '14px' }}>
+                        <button
+                          disabled={isQueueingEmail || !businessDetail.contacts || businessDetail.contacts.length === 0}
+                          onClick={handleEnqueueDraft}
+                          style={{
+                            width: '100%',
+                            background: businessDetail.contacts && businessDetail.contacts.length > 0 ? '#ff3366' : '#2d2d42',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            cursor: businessDetail.contacts && businessDetail.contacts.length > 0 ? 'pointer' : 'not-allowed',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                          }}
+                        >
+                          <Send size={15} />
+                          {isQueueingEmail ? 'Enqueuing...' : 'Approve & Enqueue for Dispatch'}
+                        </button>
+                        {(!businessDetail.contacts || businessDetail.contacts.length === 0) && (
+                          <p style={{ color: '#f59e0b', fontSize: '11px', marginTop: '6px', textAlign: 'center' }}>
+                            Add a contact email above to enable enqueuing.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
