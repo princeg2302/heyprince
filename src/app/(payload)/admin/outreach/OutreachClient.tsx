@@ -58,6 +58,18 @@ interface OutreachClientProps {
   adminEmail: string;
 }
 
+const WhatsAppIcon = ({ size = 13 }: { size?: number }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="currentColor"
+    style={{ display: 'inline-block', verticalAlign: 'middle' }}
+  >
+    <path d="M17.472 14.382c-.301-.15-1.78-.878-2.056-.978-.276-.1-.476-.15-.676.15-.2.301-.776.978-.952 1.179-.176.2-.352.226-.653.076-.301-.15-1.272-.469-2.424-1.496-.897-.799-1.503-1.787-1.68-2.088-.176-.301-.019-.464.131-.614.136-.135.301-.351.452-.527.15-.176.2-.301.301-.501.1-.2.05-.376-.025-.527-.075-.15-.676-1.63-.927-2.232-.245-.586-.494-.506-.676-.516-.176-.01-.376-.01-.577-.01-.2 0-.526.075-.802.376-.276.301-1.053 1.029-1.053 2.509 0 1.48 1.078 2.91 1.229 3.11.15.201 2.122 3.24 5.141 4.544.718.311 1.279.497 1.716.636.721.23 1.377.197 1.895.12.578-.087 1.78-.727 2.03-1.43.251-.703.251-1.305.176-1.43-.075-.126-.276-.201-.577-.351zM12.042 22C6.541 22 2.07 17.529 2.07 12.028c0-2.02.597-3.904 1.63-5.49L2.07 2l4.664 1.599C8.286 2.628 10.111 2.056 12.042 2.056c5.501 0 9.972 4.471 9.972 9.972 0 5.501-4.471 9.972-9.972 9.972z" />
+  </svg>
+);
+
 export default function OutreachClient({
   initialAnalytics,
   initialSettings,
@@ -187,11 +199,25 @@ export default function OutreachClient({
   const getWhatsAppUrl = (phone?: string | null, businessName?: string) => {
     if (!phone) return null;
     const digits = phone.replace(/[^0-9]/g, '');
-    if (digits.length < 7) return null;
+    if (digits.length < 8) return null;
+    if (/^(1?(800|888|877|866|855|844|833)|1800|44(800|808|845|844|870)|0800|0808)/.test(digits)) return null;
     const greeting = encodeURIComponent(
       `Hello ${businessName ? businessName + ' team' : 'there'}! 👋 I came across your website. I'm Prince from HeyPrince (https://heyprince.in). We analyzed your website and identified high-impact opportunities to improve your online presence and customer bookings. Would you be open to a quick chat?`
     );
     return `https://wa.me/${digits}?text=${greeting}`;
+  };
+
+  // Check if a phone number is eligible for WhatsApp vs standard phone only (e.g. landline/toll-free)
+  const isWhatsAppEligible = (phone?: string | null, whatsappUrl?: string | null): boolean => {
+    if (whatsappUrl) return true;
+    if (!phone) return false;
+    const digits = phone.replace(/[^0-9]/g, '');
+    if (digits.length < 8) return false;
+    // Toll-free prefixes (US 800, 888, 877, 866, 855, 844, 833; UK 0800, 0808; India 1800) are landlines
+    if (/^(1?(800|888|877|866|855|844|833)|1800|44(800|808|845|844|870)|0800|0808)/.test(digits)) {
+      return false;
+    }
+    return true;
   };
 
   // Toggle Kill Switch
@@ -1044,6 +1070,7 @@ export default function OutreachClient({
             gap: '20px',
             minWidth: 0,
             width: '100%',
+            alignItems: 'start',
           }}
         >
           <div
@@ -1053,6 +1080,7 @@ export default function OutreachClient({
               borderRadius: '12px',
               padding: '20px',
               minWidth: 0,
+              overflow: 'hidden',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
@@ -1099,8 +1127,8 @@ export default function OutreachClient({
             {businesses.length === 0 ? (
               <p style={{ color: '#6b7280', fontSize: '13px' }}>No businesses in database yet. Run a discovery scan above!</p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
+                <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
                       <th style={{ padding: '10px' }}>Business</th>
@@ -1126,37 +1154,73 @@ export default function OutreachClient({
                           >
                             <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
                               <div>{b.name}</div>
-                              {((b.metadata as any)?.phone || (b.metadata as any)?.whatsapp_url) && (
-                                <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 500 }}>
-                                  {(b.metadata as any)?.phone && (
-                                    <span style={{ color: '#9ca3af' }}>📞 {(b.metadata as any).phone}</span>
-                                  )}
-                                  {getWhatsAppUrl((b.metadata as any)?.phone, b.name) && (
-                                    <a
-                                      href={getWhatsAppUrl((b.metadata as any)?.phone, b.name)!}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      title="Open WhatsApp chat with pre-filled pitch"
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '3px',
-                                        background: 'rgba(37, 211, 102, 0.15)',
-                                        border: '1px solid rgba(37, 211, 102, 0.4)',
-                                        color: '#25d366',
-                                        padding: '1px 6px',
-                                        borderRadius: '4px',
-                                        textDecoration: 'none',
-                                        fontWeight: 700,
-                                        fontSize: '11px',
-                                      }}
-                                    >
-                                      💬 WhatsApp
-                                    </a>
-                                  )}
-                                </div>
-                              )}
+                              {(() => {
+                                const phone = (b.metadata as any)?.phone;
+                                const waUrl = (b.metadata as any)?.whatsapp_url || getWhatsAppUrl(phone, b.name);
+                                const isWa = isWhatsAppEligible(phone, (b.metadata as any)?.whatsapp_url);
+
+                                if (!phone && !waUrl) return null;
+
+                                return (
+                                  <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 500 }}>
+                                    {phone && (
+                                      <a
+                                        href={`tel:${phone}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title={`Call ${phone}`}
+                                        style={{ color: '#9ca3af', textDecoration: 'none' }}
+                                      >
+                                        {phone}
+                                      </a>
+                                    )}
+                                    {isWa && waUrl ? (
+                                      <a
+                                        href={waUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        title="Open WhatsApp chat"
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '22px',
+                                          height: '22px',
+                                          background: 'rgba(37, 211, 102, 0.15)',
+                                          border: '1px solid rgba(37, 211, 102, 0.4)',
+                                          color: '#25d366',
+                                          borderRadius: '50%',
+                                          textDecoration: 'none',
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        <WhatsAppIcon size={12} />
+                                      </a>
+                                    ) : phone ? (
+                                      <a
+                                        href={`tel:${phone}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        title={`Call landline / toll-free: ${phone}`}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '22px',
+                                          height: '22px',
+                                          background: 'rgba(56, 189, 248, 0.12)',
+                                          border: '1px solid rgba(56, 189, 248, 0.35)',
+                                          color: '#38bdf8',
+                                          borderRadius: '50%',
+                                          textDecoration: 'none',
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        <Phone size={11} />
+                                      </a>
+                                    ) : null}
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.city || b.country_code}</td>
                             <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.category}</td>
@@ -1246,14 +1310,20 @@ export default function OutreachClient({
           {selectedBusiness && (
             <div
               style={{
+                position: 'sticky',
+                top: '20px',
+                alignSelf: 'start',
                 background: '#0e0e16',
                 border: '1px solid #1c1c2b',
                 borderRadius: '12px',
                 padding: '24px',
-                maxHeight: '850px',
+                maxHeight: 'calc(100vh - 40px)',
                 overflowY: 'auto',
                 minWidth: 0,
+                width: '100%',
                 boxSizing: 'border-box',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+                zIndex: 20,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
@@ -1499,14 +1569,15 @@ export default function OutreachClient({
                   {(() => {
                     const phone = (businessDetail.business?.metadata as any)?.phone || (selectedBusiness.metadata as any)?.phone;
                     const phones = (businessDetail.business?.metadata as any)?.phones || (selectedBusiness.metadata as any)?.phones || [];
-                    const whatsappUrl = getWhatsAppUrl(phone, selectedBusiness.name);
+                    const whatsappUrl = (businessDetail.business?.metadata as any)?.whatsapp_url || getWhatsAppUrl(phone, selectedBusiness.name);
+                    const isWa = isWhatsAppEligible(phone, (businessDetail.business?.metadata as any)?.whatsapp_url);
                     const crawledPages = (businessDetail.business?.metadata as any)?.crawled_pages || (selectedBusiness.metadata as any)?.crawled_pages || [];
 
                     return (
                       <div style={{ background: '#161622', border: '1px solid #2d2d42', borderRadius: '8px', padding: '14px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <span style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Phone size={14} /> Direct Outreach (Phone &amp; WhatsApp)
+                            {isWa ? <WhatsAppIcon size={15} /> : <Phone size={14} />} Direct Outreach {isWa ? '(WhatsApp & Phone)' : '(Phone / Landline)'}
                           </span>
                           {crawledPages.length > 0 && (
                             <span style={{ fontSize: '11px', color: '#9ca3af' }}>
@@ -1518,17 +1589,18 @@ export default function OutreachClient({
                         {phone ? (
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                              <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span style={{ fontSize: '11px', color: '#9ca3af' }}>Phone: </span>
                                 <a href={`tel:${phone}`} style={{ color: '#ffffff', fontWeight: 600, textDecoration: 'none' }}>
                                   {phone}
                                 </a>
                               </div>
-                              {whatsappUrl && (
+                              {isWa && whatsappUrl ? (
                                 <a
                                   href={whatsappUrl}
                                   target="_blank"
                                   rel="noreferrer"
+                                  title="Open WhatsApp chat with pre-filled pitch"
                                   style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -1542,7 +1614,27 @@ export default function OutreachClient({
                                     fontSize: '12px',
                                   }}
                                 >
-                                  <MessageSquare size={14} /> Chat &amp; Pitch on WhatsApp
+                                  <WhatsAppIcon size={14} /> Chat &amp; Pitch
+                                </a>
+                              ) : (
+                                <a
+                                  href={`tel:${phone}`}
+                                  title={`Call ${phone}`}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: 'rgba(56, 189, 248, 0.15)',
+                                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                                    color: '#38bdf8',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    textDecoration: 'none',
+                                    fontWeight: 700,
+                                    fontSize: '12px',
+                                  }}
+                                >
+                                  <Phone size={13} /> Call Direct
                                 </a>
                               )}
                             </div>
@@ -1583,32 +1675,60 @@ export default function OutreachClient({
                               Status: {c.verification_status}
                             </span>
                           </div>
-                          {c.phone && (
-                            <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
-                              <span style={{ color: '#9ca3af' }}>📞 {c.phone}</span>
-                              {getWhatsAppUrl(c.phone, selectedBusiness.name) && (
-                                <a
-                                  href={getWhatsAppUrl(c.phone, selectedBusiness.name)!}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    background: 'rgba(37, 211, 102, 0.15)',
-                                    border: '1px solid rgba(37, 211, 102, 0.4)',
-                                    color: '#25d366',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    textDecoration: 'none',
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  💬 WhatsApp
+                          {c.phone && (() => {
+                            const isWa = isWhatsAppEligible(c.phone);
+                            const waUrl = getWhatsAppUrl(c.phone, selectedBusiness.name);
+                            return (
+                              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+                                <a href={`tel:${c.phone}`} style={{ color: '#9ca3af', textDecoration: 'none' }}>
+                                  {c.phone}
                                 </a>
-                              )}
-                            </div>
-                          )}
+                                {isWa && waUrl ? (
+                                  <a
+                                    href={waUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    title="Open WhatsApp chat"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '20px',
+                                      height: '20px',
+                                      background: 'rgba(37, 211, 102, 0.15)',
+                                      border: '1px solid rgba(37, 211, 102, 0.4)',
+                                      color: '#25d366',
+                                      borderRadius: '50%',
+                                      textDecoration: 'none',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <WhatsAppIcon size={11} />
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={`tel:${c.phone}`}
+                                    title={`Call ${c.phone}`}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '20px',
+                                      height: '20px',
+                                      background: 'rgba(56, 189, 248, 0.12)',
+                                      border: '1px solid rgba(56, 189, 248, 0.35)',
+                                      color: '#38bdf8',
+                                      borderRadius: '50%',
+                                      textDecoration: 'none',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <Phone size={10} />
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       ))
                     ) : (
@@ -1783,7 +1903,7 @@ export default function OutreachClient({
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
                     <th style={{ padding: '12px 10px' }}>Contact Email</th>
@@ -1803,34 +1923,64 @@ export default function OutreachClient({
                         {c.email}
                       </td>
                       <td style={{ padding: '12px 10px' }}>
-                        {c.phone ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ color: '#ffffff', fontSize: '12px' }}>{c.phone}</span>
-                            {getWhatsAppUrl(c.phone, c.business_name) && (
+                        {c.phone ? (() => {
+                          const isWa = isWhatsAppEligible(c.phone);
+                          const waUrl = getWhatsAppUrl(c.phone, c.business_name);
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <a
-                                href={getWhatsAppUrl(c.phone, c.business_name)!}
-                                target="_blank"
-                                rel="noreferrer"
-                                title="Open WhatsApp chat with pre-filled pitch"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  background: 'rgba(37, 211, 102, 0.15)',
-                                  border: '1px solid rgba(37, 211, 102, 0.4)',
-                                  color: '#25d366',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  textDecoration: 'none',
-                                  fontSize: '11px',
-                                  fontWeight: 700,
-                                }}
+                                href={`tel:${c.phone}`}
+                                title={`Call ${c.phone}`}
+                                style={{ color: '#ffffff', fontSize: '12px', textDecoration: 'none' }}
                               >
-                                💬 WhatsApp
+                                {c.phone}
                               </a>
-                            )}
-                          </div>
-                        ) : (
+                              {isWa && waUrl ? (
+                                <a
+                                  href={waUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Open WhatsApp chat"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '22px',
+                                    height: '22px',
+                                    background: 'rgba(37, 211, 102, 0.15)',
+                                    border: '1px solid rgba(37, 211, 102, 0.4)',
+                                    color: '#25d366',
+                                    borderRadius: '50%',
+                                    textDecoration: 'none',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <WhatsAppIcon size={12} />
+                                </a>
+                              ) : (
+                                <a
+                                  href={`tel:${c.phone}`}
+                                  title={`Call ${c.phone}`}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '22px',
+                                    height: '22px',
+                                    background: 'rgba(56, 189, 248, 0.12)',
+                                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                                    color: '#38bdf8',
+                                    borderRadius: '50%',
+                                    textDecoration: 'none',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <Phone size={11} />
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })() : (
                           <span style={{ color: '#6b7280', fontSize: '11px' }}>None</span>
                         )}
                       </td>
