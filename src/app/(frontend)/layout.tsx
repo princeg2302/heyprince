@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import React from 'react';
 import '@/styles/fonts.css';
 import '@/styles/main.css';
@@ -88,6 +89,9 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.svg',
     apple: '/favicon.svg',
+  },
+  verification: {
+    google: 'DTYZ06bg-WLMAH8U5dWbZvr6XRzTFVv_pOidUPq9UQU',
   },
 };
 
@@ -221,6 +225,7 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#" suppressHydrationWarning>
       <head>
+        <meta name="google-site-verification" content="DTYZ06bg-WLMAH8U5dWbZvr6XRzTFVv_pOidUPq9UQU" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
@@ -235,6 +240,20 @@ export default function RootLayout({
         />
       </head>
       <body className="home front-page" suppressHydrationWarning>
+        {/* Google tag (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-BT5N589MRH"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-BT5N589MRH');
+          `}
+        </Script>
         <a href="#main" className="visually-hidden-focusable">
           Skip to main content
         </a>
