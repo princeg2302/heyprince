@@ -337,6 +337,26 @@ export async function getContactsForBusiness(businessId: string): Promise<Contac
   );
 }
 
+export async function getAllContacts(limit = 100): Promise<(ContactEntity & {
+  business_name: string;
+  business_domain: string | null;
+  business_city: string | null;
+  business_country: string;
+})[]> {
+  return query(
+    `SELECT c.*, 
+            b.name as business_name, 
+            b.domain as business_domain, 
+            b.city as business_city, 
+            b.country_code as business_country
+     FROM contacts c
+     JOIN businesses b ON c.business_id = b.id
+     ORDER BY c.created_at DESC
+     LIMIT $1;`,
+    [limit]
+  );
+}
+
 // ============================================================================
 // 4. Discovery Jobs
 // ============================================================================

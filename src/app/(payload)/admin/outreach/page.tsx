@@ -6,6 +6,7 @@ import {
   getOutreachSettings,
   getBusinesses,
   getDiscoveryJobs,
+  getAllContacts,
   query,
 } from '@/lib/outreach/db';
 import OutreachClient from './OutreachClient';
@@ -26,12 +27,13 @@ export default async function OutreachAdminPage() {
   }
 
   // Fetch persisted data
-  const [analytics, settings, businessesRes, jobs, queuedCountRes] = await Promise.all([
+  const [analytics, settings, businessesRes, jobs, queuedCountRes, contacts] = await Promise.all([
     getOutreachAnalyticsSummary(),
     getOutreachSettings(),
     getBusinesses({ limit: 25 }),
     getDiscoveryJobs(15),
     query<{ count: string }>(`SELECT COUNT(*) as count FROM email_messages WHERE status = 'QUEUED';`),
+    getAllContacts(100),
   ]);
 
   return (
@@ -43,6 +45,7 @@ export default async function OutreachAdminPage() {
         totalBusinesses={businessesRes.total}
         initialJobs={jobs}
         queuedCount={parseInt(queuedCountRes[0]?.count || '0', 10)}
+        initialContacts={contacts}
         adminEmail={user.email}
       />
     </AdminLayout>

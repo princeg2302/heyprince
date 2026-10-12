@@ -50,6 +50,7 @@ interface OutreachClientProps {
   totalBusinesses: number;
   initialJobs: DiscoveryJobEntity[];
   queuedCount: number;
+  initialContacts?: any[];
   adminEmail: string;
 }
 
@@ -60,16 +61,18 @@ export default function OutreachClient({
   totalBusinesses,
   initialJobs,
   queuedCount,
+  initialContacts = [],
 }: OutreachClientProps) {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<
-    'telemetry' | 'discovery' | 'leads' | 'queue' | 'compliance' | 'settings'
+    'telemetry' | 'discovery' | 'leads' | 'contacts' | 'queue' | 'compliance' | 'settings'
   >('telemetry');
 
   const [settings, setSettings] = useState<OutreachSettingsEntity>(initialSettings);
   const [analytics, setAnalytics] = useState(initialAnalytics);
   const [businesses, setBusinesses] = useState<BusinessEntity[]>(initialBusinesses);
   const [jobs, setJobs] = useState<DiscoveryJobEntity[]>(initialJobs);
+  const [contacts, setContacts] = useState<any[]>(initialContacts);
 
   // Discovery Form State
   const [discoverCountry, setDiscoverCountry] = useState('US');
@@ -514,6 +517,7 @@ export default function OutreachClient({
           { key: 'telemetry', label: 'Overview & Metrics', icon: Layers },
           { key: 'discovery', label: 'Discovery Scanner', icon: Globe },
           { key: 'leads', label: `Businesses (${totalBusinesses})`, icon: Search },
+          { key: 'contacts', label: `Contacts (${contacts.length})`, icon: UserCheck },
           { key: 'queue', label: `Outbox Queue (${queuedEmailCount})`, icon: Mail },
           { key: 'compliance', label: 'Compliance & Suppression', icon: ShieldCheck },
           { key: 'settings', label: 'Safety Settings', icon: Sliders },
@@ -1076,6 +1080,164 @@ export default function OutreachClient({
                   )}
                 </div>
               ) : null}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: CONTACTS DIRECTORY */}
+      {activeTab === 'contacts' && (
+        <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                Discovered Business Contacts ({contacts.length})
+              </h2>
+              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>
+                Verified against MX DNS records, disposable domain blocklists, and role accounts.
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/admin/outreach/contacts');
+                const data = await res.json();
+                if (data.contacts) setContacts(data.contacts);
+                showToast('Contact directory refreshed.', 'info');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#161622',
+                border: '1px solid #2d2d42',
+                color: '#ffffff',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <RefreshCw size={13} /> Refresh Contacts
+            </button>
+          </div>
+
+          {contacts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#6b7280' }}>
+              <UserCheck size={36} style={{ margin: '0 auto 12px auto', opacity: 0.5 }} />
+              <p style={{ fontSize: '14px', fontWeight: 600, color: '#d1d5db', margin: '0 0 4px 0' }}>No Contacts Recorded Yet</p>
+              <p style={{ fontSize: '12px', margin: 0 }}>
+                Contacts are discovered automatically during website audits or can be added manually when inspecting any business lead.
+              </p>
+              <button
+                onClick={() => setActiveTab('leads')}
+                style={{
+                  marginTop: '16px',
+                  background: '#ff3366',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Inspect Businesses & Add Contacts
+              </button>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
+                    <th style={{ padding: '12px 10px' }}>Contact Email</th>
+                    <th style={{ padding: '12px 10px' }}>Verification Status</th>
+                    <th style={{ padding: '12px 10px' }}>Associated Business</th>
+                    <th style={{ padding: '12px 10px' }}>Location</th>
+                    <th style={{ padding: '12px 10px' }}>Type</th>
+                    <th style={{ padding: '12px 10px' }}>MX DNS</th>
+                    <th style={{ padding: '12px 10px' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.map((c) => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #161622' }}>
+                      <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
+                        {c.email}
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            background:
+                              c.verification_status === 'VALID'
+                                ? 'rgba(0, 245, 160, 0.15)'
+                                : c.verification_status === 'RISKY'
+                                ? 'rgba(245, 158, 11, 0.15)'
+                                : 'rgba(239, 68, 68, 0.15)',
+                            color:
+                              c.verification_status === 'VALID'
+                                ? '#00f5a0'
+                                : c.verification_status === 'RISKY'
+                                ? '#f59e0b'
+                                : '#ef4444',
+                          }}
+                        >
+                          {c.verification_status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.business_name}</div>
+                        {c.business_domain && (
+                          <div style={{ fontSize: '11px', color: '#38bdf8' }}>{c.business_domain}</div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 10px', color: '#9ca3af' }}>
+                        {c.business_city ? `${c.business_city}, ` : ''}{c.business_country}
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <span style={{ fontSize: '11px', color: c.is_role_account ? '#f59e0b' : '#9ca3af' }}>
+                          {c.is_role_account ? 'Team / Role' : 'Direct Mailbox'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <span style={{ fontSize: '11px', color: c.mx_valid ? '#00f5a0' : '#6b7280' }}>
+                          {c.mx_valid ? 'Verified' : 'Unchecked'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 10px' }}>
+                        <button
+                          onClick={() => {
+                            const foundBiz = businesses.find((b) => b.id === c.business_id);
+                            if (foundBiz) {
+                              setActiveTab('leads');
+                              handleSelectBusiness(foundBiz);
+                            } else {
+                              showToast(`Business record loaded: ${c.business_name}`, 'info');
+                            }
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Inspect & Pitch
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
