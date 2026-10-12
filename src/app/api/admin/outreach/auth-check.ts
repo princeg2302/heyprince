@@ -11,3 +11,4 @@ export async function requireAdmin(): Promise<AdminUser | NextResponse> {
   }
   return admin;
 }
+

@@ -59,3 +59,4 @@ export function verifyUnsubscribeToken(token: string): { valid: boolean; payload
     return { valid: false, error: err.message || 'Token verification exception' };
   }
 }
+

@@ -380,3 +380,4 @@ model OutreachSettings {
 
   @@map("outreach_settings")
 }
+

@@ -35,3 +35,4 @@ export interface AIModelProvider {
   isConfigured(): boolean;
   analyzeBusiness(input: AIAnalysisInput): Promise<AIAnalysisResult>;
 }
+

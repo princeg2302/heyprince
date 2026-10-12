@@ -116,3 +116,4 @@ export class OpenStreetMapDiscoveryAdapter implements DiscoveryProvider {
     }
   }
 }
+

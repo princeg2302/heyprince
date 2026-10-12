@@ -55,3 +55,4 @@ export function extractDomain(urlStr?: string | null): { domain: string | null; 
     return { domain: null, normalizedDomain: null };
   }
 }
+

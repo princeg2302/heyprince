@@ -455,6 +455,54 @@ export function buildCustomerRevertHtml(
   `;
 }
 
+export function buildAdminNotificationText(params: SendLeadEmailParams, dateFormatted: string): string {
+  return `NEW PROJECT INQUIRY — HEYPRINCE
+Date: ${dateFormatted}
+
+Client Details:
+- Name: ${params.name}
+- Email: ${params.email}
+- Phone: ${params.phone || 'Not provided'}
+- Company: ${params.company || 'Not provided'}
+
+Project Scope:
+- Service: ${params.service}
+- Estimated Budget: ${params.budget || 'Custom Quote'}
+- Target Timeline: ${params.timeline || 'Flexible'}
+
+Project Brief:
+${params.message}
+
+--
+HeyPrince Executive Lead Notification
+https://heyprince.in/admin/leads/`;
+}
+
+export function buildCustomerRevertText(params: SendLeadEmailParams): string {
+  const firstName = params.name ? params.name.split(' ')[0] : 'there';
+  return `Hi ${firstName}, thank you for reaching out!
+
+I have personally received your project inquiry regarding "${params.service}".
+
+Expected Response Time: Within 2 to 4 Hours
+I am reviewing your technical specifications right now and will revert with initial architectural thoughts and timeline feasibility shortly.
+
+Summary of Submitted Scope:
+- Requested Service: ${params.service}
+- Estimated Budget: ${params.budget || 'Custom Quote'}
+- Target Timeline: ${params.timeline || 'Flexible'}
+
+Your Notes:
+"${params.message}"
+
+Best regards,
+
+Prince
+Senior Full Stack Engineer & Tech Partner
+HeyPrince • https://heyprince.in
+contact@heyprince.in | it@heyprince.in`;
+}
+
 /**
  * Sends the internal notification email to it@heyprince.in
  */
@@ -473,18 +521,20 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
     timeStyle: 'short',
   });
 
+  const emailHtml = buildAdminNotificationHtml(params, dateFormatted, BRAND_LOGO_URL);
+  const emailText = buildAdminNotificationText(params, dateFormatted);
+
   // 1. Try Resend if RESEND_API_KEY is configured
   const resendApiKey = cleanEnv(process.env.RESEND_API_KEY);
   if (resendApiKey) {
     try {
-      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, BRAND_LOGO_URL);
-
       const resend = new Resend(resendApiKey);
       const { data, error } = await resend.emails.send({
         from: fromEmail,
         to: [recipient],
         replyTo: params.email,
         subject,
+        text: emailText,
         html: emailHtml,
       });
 
@@ -507,8 +557,6 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      const emailHtml = buildAdminNotificationHtml(params, dateFormatted, BRAND_LOGO_URL);
-
       const port = Number(cleanEnv(process.env.SMTP_PORT)) || 465;
       const secureEnv = cleanEnv(process.env.SMTP_SECURE);
       const isSecure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
@@ -522,7 +570,12 @@ export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Pr
         to: recipient,
         replyTo: params.email,
         subject,
+        text: emailText,
         html: emailHtml,
+        headers: {
+          'X-Mailer': 'HeyPrince-MailEngine/1.0',
+          'X-Priority': '3',
+        },
       });
 
       console.info(`[Email:SMTP] Admin notification sent (ID: ${info.messageId})`);
@@ -578,19 +631,21 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
 
   const subject = `Inquiry Received: We'll be in touch within 2 to 4 hours | Prince`;
 
+  const emailHtml = buildCustomerRevertHtml(params, BRAND_LOGO_URL);
+  const emailText = buildCustomerRevertText(params);
+
   // 1. Try Resend if configured
   const resendApiKey = cleanEnv(process.env.RESEND_API_KEY);
   if (resendApiKey) {
     try {
-      const emailHtml = buildCustomerRevertHtml(params, BRAND_LOGO_URL);
-
       const resend = new Resend(resendApiKey);
       const fromEmail = cleanEnv(process.env.RESEND_FROM_EMAIL) || 'Prince • HeyPrince <onboarding@resend.dev>';
       const { data, error } = await resend.emails.send({
         from: fromEmail,
         to: [params.email],
-        replyTo: cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || 'it@heyprince.in',
+        replyTo: cleanEnv(process.env.LEAD_REPLY_TO) || 'contact@heyprince.in',
         subject,
+        text: emailText,
         html: emailHtml,
       });
 
@@ -610,22 +665,32 @@ export async function sendCustomerConfirmationEmail(params: SendLeadEmailParams)
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      const emailHtml = buildCustomerRevertHtml(params, BRAND_LOGO_URL);
-
       const port = Number(cleanEnv(process.env.SMTP_PORT)) || 465;
       const secureEnv = cleanEnv(process.env.SMTP_SECURE);
       const isSecure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
 
       const transporter = getSmtpTransporter(smtpHost, port, isSecure, smtpUser, smtpPass);
 
-      const senderFrom = cleanEnv(process.env.SMTP_FROM) || `"Prince • HeyPrince" <${smtpUser}>`;
+      const senderFrom =
+        cleanEnv(process.env.SMTP_FROM_CUSTOMER) ||
+        cleanEnv(process.env.SMTP_FROM) ||
+        `"Prince • HeyPrince" <${smtpUser}>`;
+
+      const replyTo =
+        cleanEnv(process.env.LEAD_REPLY_TO) ||
+        'contact@heyprince.in';
 
       const info = await transporter.sendMail({
         from: senderFrom,
         to: params.email,
-        replyTo: cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || smtpUser,
+        replyTo,
         subject,
+        text: emailText,
         html: emailHtml,
+        headers: {
+          'X-Mailer': 'HeyPrince-MailEngine/1.0',
+          'X-Priority': '3',
+        },
       });
 
       console.info(`[Email:SMTP] Customer revert email sent to ${params.email} (ID: ${info.messageId})`);
