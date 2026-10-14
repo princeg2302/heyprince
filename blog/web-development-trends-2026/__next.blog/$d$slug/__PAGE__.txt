@@ -1,0 +1,35 @@
+1:"$Sreact.fragment"
+3:I[80570,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"SingleBlogPage"]
+4:I[97367,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"OutletBoundary"]
+5:"$Sreact.suspense"
+9:I[97367,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"ViewportBoundary"]
+a:I[97367,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"MetadataBoundary"]
+2:T4f6,{"@context":"https://schema.org","@graph":[{"@type":"BlogPosting","@id":"https://heyprince.in/blog/web-development-trends-2026/#article","headline":"Top Web Development Trends Every Business Should Follow in 2026","description":"Explore top web development trends in 2026: physics-based interfaces, context-aware AI copilots, smooth View Transitions, and zero-trust frontend security.","image":["https://heyprince.in/assets/blog/photo4.webp"],"datePublished":"February 12, 2026","dateModified":"February 12, 2026","author":{"@type":"Person","name":"Prince","url":"https://heyprince.in/","jobTitle":"Senior Full Stack Engineer & IT Consultant"},"publisher":{"@type":"Person","name":"Prince","logo":{"@type":"ImageObject","url":"https://heyprince.in/assets/heyprince-logo.svg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://heyprince.in/blog/web-development-trends-2026/"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://heyprince.in/"},{"@type":"ListItem","position":2,"name":"Insights","item":"https://heyprince.in/#articles"},{"@type":"ListItem","position":3,"name":"Top Web Development Trends Every Business Should Follow in 2026","item":"https://heyprince.in/blog/web-development-trends-2026/"}]}]}8:X
+19:X
+19:C
+0:{"buildId":"pT_KTNGXMug1dwAU7ho47","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"page-view-wrapper","children":[["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$2"}}],["$","$L3",null,{"slug":"web-development-trends-2026"}]]}],null,["$","$L4",null,{"children":["$","$5",null,{"name":"Next.MetadataOutlet","children":"$@6"}]}]]}],"isPartial":"$@7","staleTime":"$8","varyParams":null},{"rsc":["$","$1","h",{"children":[null,["$","$L9",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}],["$","meta","2",{"name":"theme-color","content":"#0b0b0f"}],["$","meta","3",{"name":"color-scheme","content":"dark"}]]}],["$","div",null,{"hidden":true,"children":["$","$La",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Top Web Development Trends Every Business Should Follow in 2026 | Prince — Tech Partner | HeyPrince"}],["$","meta","1",{"name":"description","content":"Explore top web development trends in 2026: physics-based interfaces, context-aware AI copilots, smooth View Transitions, and zero-trust frontend security."}],["$","link","2",{"rel":"author","href":"https://heyprince.in"}],["$","meta","3",{"name":"author","content":"Prince"}],["$","meta","4",{"name":"keywords","content":"Web Development Trends 2026, Physics UI, AI Integration, View Transitions, Frontend Architecture, Zero Trust Security, Web Development, IT Engineering, Prince, Software Architecture, Full Stack Consultant"}],["$","meta","5",{"name":"creator","content":"Prince"}],["$","meta","6",{"name":"publisher","content":"HeyPrince"}],["$","meta","7",{"name":"robots","content":"index, follow"}],["$","meta","8",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","link","9",{"rel":"canonical","href":"https://heyprince.in/blog/web-development-trends-2026/"}],["$","meta","10",{"property":"og:title","content":"Top Web Development Trends Every Business Should Follow in 2026 | Prince — Tech Partner"}],["$","meta","11",{"property":"og:description","content":"Explore top web development trends in 2026: physics-based interfaces, context-aware AI copilots, smooth View Transitions, and zero-trust frontend security."}],["$","meta","12",{"property":"og:url","content":"https://heyprince.in/blog/web-development-trends-2026/"}],["$","meta","13",{"property":"og:image","content":"https://heyprince.in/assets/blog/photo4.webp"}],"$Lb","$Lc","$Ld","$Le","$Lf","$L10","$L11","$L12","$L13","$L14","$L15"]}]}]}],null]}],"isPartial":"$@16","staleTime":"$8","varyParams":null},{"rsc":"$L17","isPartial":"$@18","staleTime":"$8","varyParams":"$19"},{"rsc":"$L1a","isPartial":"$@1b","staleTime":"$8","varyParams":"$19"}],"isUpgradeableISRFallback":false,"a":"$@1c","rootVaryParams":null,"needsRuntimeRequest":"$@1d"}
+1e:I[27201,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"IconMark"]
+1f:I[39756,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"default"]
+20:I[37457,["/_next/static/chunks/29b18bh39iffw.js","/_next/static/chunks/11w3_gglcjeh8.js"],"default"]
+6:null
+b:["$","meta","14",{"property":"og:image:alt","content":"Top Web Development Trends Every Business Should Follow in 2026"}]
+c:["$","meta","15",{"property":"og:type","content":"article"}]
+d:["$","meta","16",{"property":"article:published_time","content":"February 12, 2026"}]
+e:["$","meta","17",{"property":"article:author","content":"Prince"}]
+f:["$","meta","18",{"name":"twitter:card","content":"summary_large_image"}]
+10:["$","meta","19",{"name":"twitter:title","content":"Top Web Development Trends Every Business Should Follow in 2026 | Prince — Tech Partner"}]
+11:["$","meta","20",{"name":"twitter:description","content":"Explore top web development trends in 2026: physics-based interfaces, context-aware AI copilots, smooth View Transitions, and zero-trust frontend security."}]
+12:["$","meta","21",{"name":"twitter:image","content":"https://heyprince.in/assets/blog/photo4.webp"}]
+13:["$","link","22",{"rel":"icon","href":"/favicon.svg"}]
+14:["$","link","23",{"rel":"apple-touch-icon","href":"/favicon.svg"}]
+15:["$","$L1e","24",{}]
+17:["$","$1","c",{"children":[null,["$","$L1f",null,{"parallelRouterKey":"children","template":["$","$L20",null,{}]}]]}]
+1a:["$","$1","c",{"children":[null,["$","$L1f",null,{"parallelRouterKey":"children","template":["$","$L20",null,{}]}]]}]
+1d:true
+8:300
+8:C
+1c:0
+16:"$undefined"
+18:"$undefined"
+1b:"$undefined"
+7:"$undefined"
