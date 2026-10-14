@@ -15,7 +15,8 @@ import {
 } from '../lib/daily-news/db';
 import { fetchFeed } from '../lib/daily-news/rss-collector';
 import { retryLinkedInPublishForRun } from '../lib/daily-news/orchestrator';
-import { createPost, getPostById } from '../lib/admin-db';
+import { generateDailyBlogImages } from '../lib/daily-news/image-generator';
+import { createPost, getPostById, deleteMediaRecord } from '../lib/admin-db';
 import { getPostBySlug } from '../lib/cms';
 import { query } from '../lib/outreach/db';
 
@@ -181,7 +182,37 @@ async function runTestSuite() {
   }
 
   // --------------------------------------------------------------------------
-  // Test 5: Idempotency & Safe LinkedIn Retry
+  // Test 5: Visual Asset Generation & Media Vault Cataloging
+  // --------------------------------------------------------------------------
+  let testMediaIds: number[] = [];
+  try {
+    const blogImages = await generateDailyBlogImages(
+      'Cloud Architecture Microservices 2026',
+      'Software Architecture',
+      [
+        { heading: 'Microservice Resilience', paragraphs: ['Scalable patterns.'] },
+        { heading: 'Production Telemetry', paragraphs: ['Sub-second latency metrics.'] },
+      ]
+    );
+
+    assert.ok(blogImages.coverImage, 'Cover image must be generated');
+    assert.ok(blogImages.coverImage.url && blogImages.coverImage.url.startsWith('http'), 'Cover image must have valid URL');
+    assert.ok(blogImages.coverImage.alt, 'Cover image must have descriptive alt text');
+    assert.ok(blogImages.sectionImages.length === 2, 'Must generate exactly 2 content section images');
+    assert.ok(blogImages.sectionImages[0].url && blogImages.sectionImages[0].url.startsWith('http'), 'Section image 1 must have valid URL');
+    assert.ok(blogImages.sectionImages[1].url && blogImages.sectionImages[1].url.startsWith('http'), 'Section image 2 must have valid URL');
+
+    if (blogImages.coverImage.mediaId) testMediaIds.push(blogImages.coverImage.mediaId);
+    if (blogImages.sectionImages[0].mediaId) testMediaIds.push(blogImages.sectionImages[0].mediaId);
+    if (blogImages.sectionImages[1].mediaId) testMediaIds.push(blogImages.sectionImages[1].mediaId);
+
+    pass('Visual Assets & Media Vault: Generated 1 cover + 2 section images and cataloged in Media Vault');
+  } catch (err) {
+    fail('Visual Assets & Media Vault: Generated 1 cover + 2 section images and cataloged in Media Vault', err);
+  }
+
+  // --------------------------------------------------------------------------
+  // Test 6: Idempotency & Safe LinkedIn Retry
   // --------------------------------------------------------------------------
   try {
     // Test duplicate prevention logic on retry
@@ -238,6 +269,14 @@ async function runTestSuite() {
   if (testCreatedPostId) {
     try {
       await query(`DELETE FROM posts WHERE id = $1;`, [testCreatedPostId]);
+    } catch {
+      // Ignored
+    }
+  }
+
+  for (const mid of testMediaIds) {
+    try {
+      await deleteMediaRecord(mid);
     } catch {
       // Ignored
     }

@@ -1478,6 +1478,40 @@ export default function NewsAutomationClient() {
               </button>
             </div>
 
+            {/* Cover Image Preview */}
+            {(previewData as any).coverImage && (
+              <div
+                style={{
+                  marginBottom: '18px',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  maxHeight: '240px',
+                  position: 'relative',
+                }}
+              >
+                <img
+                  src={(previewData as any).coverImage}
+                  alt={previewData.title}
+                  style={{ width: '100%', height: '240px', objectFit: 'cover', display: 'block' }}
+                />
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    left: '8px',
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.72rem',
+                    color: '#ffffff',
+                  }}
+                >
+                  Feature Cover Image (Saved in Media Vault)
+                </span>
+              </div>
+            )}
+
             {/* Excerpt */}
             <div
               style={{
@@ -1501,11 +1535,24 @@ export default function NewsAutomationClient() {
                   <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--hpa-primary)', margin: '0 0 8px 0' }}>
                     {sec.heading}
                   </h4>
-                  {sec.paragraphs.map((p, pIdx) => (
-                    <p key={pIdx} style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, margin: '0 0 8px 0' }}>
-                      {p}
-                    </p>
-                  ))}
+                  {sec.paragraphs.map((p, pIdx) => {
+                    const imgMatch = p.trim().match(/^!\[([^\]]*)\]\(([^)"\s]+)(?:\s+"([^"]*)")?\)$/);
+                    if (imgMatch) {
+                      return (
+                        <div key={pIdx} style={{ margin: '12px 0', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                          <img src={imgMatch[2]} alt={imgMatch[1]} style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }} />
+                          <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.6)', padding: '6px 10px', background: 'rgba(0,0,0,0.3)' }}>
+                            ✦ {imgMatch[3] || imgMatch[1]} (Saved in Media Vault)
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <p key={pIdx} style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, margin: '0 0 8px 0' }}>
+                        {p}
+                      </p>
+                    );
+                  })}
                   {sec.bulletPoints && sec.bulletPoints.length > 0 && (
                     <ul style={{ margin: '8px 0', paddingLeft: '20px', fontSize: '0.84rem', color: 'rgba(255,255,255,0.85)' }}>
                       {sec.bulletPoints.map((b, bIdx) => (

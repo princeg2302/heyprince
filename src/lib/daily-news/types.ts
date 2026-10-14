@@ -77,6 +77,8 @@ export interface GeneratedContentPayload {
   seoDescription: string;
   linkedinPost: string;
   rationale: string;
+  coverImage?: string;
+  sectionImages?: any[];
 }
 
 export type RunStatus =

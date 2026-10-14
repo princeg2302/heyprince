@@ -360,11 +360,41 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                   <h2 className="blog-section-heading">{section.heading}</h2>
 
                   {section.paragraphs &&
-                    section.paragraphs.map((p, pIdx) => (
-                      <p className="blog-paragraph" key={pIdx}>
-                        {renderParagraphWithLinks(p)}
-                      </p>
-                    ))}
+                    section.paragraphs.map((p, pIdx) => {
+                      const trimmed = p.trim();
+                      const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)"\s]+)(?:\s+"([^"]*)")?\)$/);
+                      if (imgMatch) {
+                        const altText = imgMatch[1];
+                        const srcUrl = imgMatch[2];
+                        const captionText = imgMatch[3] || altText;
+                        return (
+                          <figure className="blog-content-image-wrap" key={pIdx}>
+                            <img
+                              src={srcUrl}
+                              alt={altText || article.title}
+                              className="blog-content-image"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                            {captionText && (
+                              <figcaption className="blog-content-image-caption">
+                                <span>✦</span> {captionText}
+                              </figcaption>
+                            )}
+                          </figure>
+                        );
+                      }
+
+                      return (
+                        <p className="blog-paragraph" key={pIdx}>
+                          {renderParagraphWithLinks(p)}
+                        </p>
+                      );
+                    })}
 
                   {/* Bullet Highlights */}
                   {section.bulletPoints && section.bulletPoints.length > 0 && (

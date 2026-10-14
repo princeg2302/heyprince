@@ -14,6 +14,7 @@ import {
 } from './db';
 import { collectDailyNews } from './rss-collector';
 import { generateDailyPost } from './content-generator';
+import { generateDailyBlogImages } from './image-generator';
 import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
 
@@ -138,6 +139,54 @@ export async function executeDailyNewsAutomation(params?: {
       linkedinCommentary: generated.linkedinPost,
     });
 
+    // 5.5 Stage 2.5: Generate 3 Visual Assets (1 Cover + 2 Section Illustrations) & Catalog in Media Vault
+    let coverImageUrl = '/assets/blog/photo1.webp';
+    let generatedSectionImages: any[] = [];
+    try {
+      const blogImages = await generateDailyBlogImages(
+        generated.title,
+        generated.categoryName,
+        generated.sections
+      );
+      if (blogImages?.coverImage?.url) {
+        coverImageUrl = blogImages.coverImage.url;
+      }
+      generatedSectionImages = blogImages?.sectionImages || [];
+    } catch (imgErr) {
+      console.warn('[orchestrator] Blog image generation warning:', imgErr);
+    }
+
+    // Format section paragraphs to include section illustrations
+    const previewSections = generated.sections.map((s, idx) => {
+      const paragraphs = [...s.paragraphs];
+
+      // Attach Section Image 1 to Section 1 (idx 0)
+      if (idx === 0 && generatedSectionImages[0]?.url) {
+        paragraphs.push(
+          `![${generatedSectionImages[0].alt}](${generatedSectionImages[0].url} "${generatedSectionImages[0].caption}")`
+        );
+      }
+      // Attach Section Image 2 to Section 2 (idx 1)
+      else if (idx === 1 && generatedSectionImages[1]?.url) {
+        paragraphs.push(
+          `![${generatedSectionImages[1].alt}](${generatedSectionImages[1].url} "${generatedSectionImages[1].caption}")`
+        );
+      }
+
+      return {
+        ...s,
+        paragraphs,
+      };
+    });
+
+    const dbSections = previewSections.map((s) => ({
+      heading: s.heading,
+      quote: s.quote,
+      pro_tip: s.proTip,
+      paragraphs: s.paragraphs.map((p) => ({ text: p })),
+      bullet_points: s.bulletPoints ? s.bulletPoints.map((b) => ({ point: b })) : undefined,
+    }));
+
     // If preview mode, return without persisting to public posts table or LinkedIn
     if (triggerType === 'preview') {
       await updateDailyRun(run.id, {
@@ -157,7 +206,12 @@ export async function executeDailyNewsAutomation(params?: {
         sourcesChecked: collection.sourcesChecked,
         itemsDiscovered: collection.itemsDiscovered,
         duplicatesSkipped: collection.duplicatesSkipped,
-        generatedContent: generated,
+        generatedContent: {
+          ...generated,
+          coverImage: coverImageUrl,
+          sectionImages: generatedSectionImages,
+          sections: previewSections,
+        },
       };
     }
 
@@ -173,17 +227,12 @@ export async function executeDailyNewsAutomation(params?: {
       category_name: generated.categoryName,
       status: postStatus,
       published_at: isWebsitePublished ? new Date().toISOString() : null,
+      cover_image: coverImageUrl,
       seo_title: generated.seoTitle,
       seo_description: generated.seoDescription,
       canonical: `https://heyprince.in/insights/${generated.slug}/`,
       tags: generated.tags.map((t) => ({ tag: t })),
-      sections: generated.sections.map((s) => ({
-        heading: s.heading,
-        quote: s.quote,
-        pro_tip: s.proTip,
-        paragraphs: s.paragraphs.map((p) => ({ text: p })),
-        bullet_points: s.bulletPoints ? s.bulletPoints.map((b) => ({ point: b })) : undefined,
-      })),
+      sections: dbSections,
     });
 
     if (!postCreateResult.success || !postCreateResult.post) {
