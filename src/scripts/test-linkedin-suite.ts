@@ -46,10 +46,13 @@ async function runTestSuite() {
       config.redirectUri,
       process.env.LINKEDIN_REDIRECT_URI || 'https://heyprince.in/api/linkedin/callback'
     );
-    assert.strictEqual(config.scope, 'w_member_social');
-    pass('Configuration: Validates redirect URI and w_member_social scope defaults');
+    assert.strictEqual(
+      config.scope,
+      process.env.LINKEDIN_SCOPE || 'openid profile email w_member_social'
+    );
+    pass('Configuration: Validates redirect URI and OpenID + w_member_social scope defaults');
   } catch (err) {
-    fail('Configuration: Validates redirect URI and w_member_social scope defaults', err);
+    fail('Configuration: Validates redirect URI and OpenID + w_member_social scope defaults', err);
   }
 
   // Test 2: OAuth 2.0 State Security (HMAC Signing & Verification)
@@ -91,7 +94,10 @@ async function runTestSuite() {
       parsed.searchParams.get('redirect_uri'),
       process.env.LINKEDIN_REDIRECT_URI || 'https://heyprince.in/api/linkedin/callback'
     );
-    assert.strictEqual(parsed.searchParams.get('scope'), 'w_member_social');
+    assert.strictEqual(
+      parsed.searchParams.get('scope'),
+      process.env.LINKEDIN_SCOPE || 'openid profile email w_member_social'
+    );
     assert.strictEqual(parsed.searchParams.get('state'), testState);
 
     if (origEnv !== undefined) {

@@ -18,7 +18,8 @@ export function getLinkedInConfig(): LinkedInConfig {
   const redirectUri =
     process.env.LINKEDIN_REDIRECT_URI?.trim() ||
     'https://heyprince.in/api/linkedin/callback';
-  const scope = process.env.LINKEDIN_SCOPE?.trim() || 'w_member_social';
+  const scope =
+    process.env.LINKEDIN_SCOPE?.trim() || 'openid profile email w_member_social';
   const personUrnOverride = process.env.LINKEDIN_PERSON_URN?.trim() || undefined;
 
   const isConfigured = Boolean(clientId && clientSecret && redirectUri);
