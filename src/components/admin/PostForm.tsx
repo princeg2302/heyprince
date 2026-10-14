@@ -15,6 +15,7 @@ import {
   Sparkles,
   HelpCircle,
   ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { PostRecord } from '@/lib/admin-db';
 import { useToast } from '@/components/admin/Toast';
@@ -265,7 +266,7 @@ export function PostForm({
             Cancel
           </Link>
           <button type="submit" disabled={loading} className="hpa-btn hpa-btn-primary">
-            <Save size={16} />
+            {loading ? <Loader2 size={16} className="hpa-spin" /> : <Save size={16} />}
             <span>{loading ? 'Saving to Database...' : isEdit ? 'Save Changes' : 'Publish Article'}</span>
           </button>
         </div>

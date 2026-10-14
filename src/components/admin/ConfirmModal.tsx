@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -77,7 +77,14 @@ export function ConfirmModal({
             disabled={isLoading}
             className="hpa-btn hpa-btn-danger"
           >
-            {isLoading ? 'Processing...' : confirmLabel}
+            {isLoading ? (
+              <>
+                <Loader2 size={14} className="hpa-spin" style={{ marginRight: '6px' }} />
+                <span>Processing...</span>
+              </>
+            ) : (
+              <span>{confirmLabel}</span>
+            )}
           </button>
         </div>
       </div>

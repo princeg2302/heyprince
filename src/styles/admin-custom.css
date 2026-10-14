@@ -985,3 +985,91 @@ code, pre, kbd, samp, .hpa-code {
     display: inline-flex;
   }
 }
+
+/* ==============================================================================
+   LOADING SPINNER & SHIMMER SYSTEM
+   ============================================================================== */
+
+@keyframes hpaSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hpa-spin {
+  animation: hpaSpin 0.85s linear infinite !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.spin {
+  animation: spin 0.85s linear infinite !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes hpaPulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.25), inset 0 0 15px rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(139, 92, 246, 0.55), inset 0 0 25px rgba(139, 92, 246, 0.25);
+    border-color: rgba(139, 92, 246, 0.9);
+  }
+}
+
+.hpa-loading-glow {
+  animation: hpaPulseGlow 2.2s infinite ease-in-out !important;
+}
+
+@keyframes hpaShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.hpa-shimmer-bar {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.3) 0%, rgba(139, 92, 246, 0.8) 50%, rgba(56, 189, 248, 0.9) 75%, rgba(37, 99, 235, 0.3) 100%);
+  background-size: 200% 100%;
+  animation: hpaShimmer 1.5s infinite linear;
+}
+
+/* Button loading state feedback */
+button:disabled,
+.hpa-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.72;
+  filter: saturate(0.85);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Pipeline Progress Banner */
+.hpa-pipeline-banner {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+

@@ -145,7 +145,7 @@ export function UserForm({ initialData, isEdit = false }: UserFormProps) {
             Cancel
           </Link>
           <button type="submit" disabled={loading} className="hpa-btn hpa-btn-primary">
-            <Save size={16} />
+            {loading ? <Loader2 size={16} className="hpa-spin" /> : <Save size={16} />}
             <span>{loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create User'}</span>
           </button>
         </div>

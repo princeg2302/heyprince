@@ -10,6 +10,7 @@ import {
   Inbox,
   X,
   Save,
+  Loader2,
 } from 'lucide-react';
 import { CategoryRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -316,7 +317,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                   Cancel
                 </button>
                 <button type="submit" disabled={modalLoading} className="hpa-btn hpa-btn-primary">
-                  <Save size={15} />
+                  {modalLoading ? <Loader2 size={15} className="hpa-spin" /> : <Save size={15} />}
                   <span>{modalLoading ? 'Saving...' : editingCategory ? 'Update' : 'Create'}</span>
                 </button>
               </div>

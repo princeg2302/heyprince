@@ -74,6 +74,9 @@ export default function NewsAutomationClient() {
   const [previewData, setPreviewData] = useState<GeneratedContentPayload | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [retryingId, setRetryingId] = useState<number | null>(null);
+  const [togglingKey, setTogglingKey] = useState<string | null>(null);
+  const [togglingSourceId, setTogglingSourceId] = useState<number | null>(null);
+  const [deletingSourceId, setDeletingSourceId] = useState<number | null>(null);
 
   // New source form modal
   const [newSourceOpen, setNewSourceOpen] = useState(false);
@@ -116,6 +119,7 @@ export default function NewsAutomationClient() {
   // Quick toggle helper
   const handleToggle = async (key: keyof DailyNewsSettings, val: any) => {
     if (!settings) return;
+    setTogglingKey(String(key));
     const newSettings = { ...settings, [key]: val };
     setSettings(newSettings);
     try {
@@ -134,6 +138,8 @@ export default function NewsAutomationClient() {
     } catch {
       showToast('Network error updating setting', 'error');
       fetchStatus();
+    } finally {
+      setTogglingKey(null);
     }
   };
 
@@ -274,6 +280,7 @@ export default function NewsAutomationClient() {
 
   // Toggle Source active
   const handleToggleSource = async (id: number, currentActive: boolean) => {
+    setTogglingSourceId(id);
     try {
       const res = await fetch('/api/admin/news-automation/sources', {
         method: 'PATCH',
@@ -286,12 +293,15 @@ export default function NewsAutomationClient() {
       }
     } catch {
       showToast('Failed to update source state', 'error');
+    } finally {
+      setTogglingSourceId(null);
     }
   };
 
   // Delete Source
   const handleDeleteSource = async (id: number, name: string) => {
     if (!confirm(`Delete RSS source "${name}"?`)) return;
+    setDeletingSourceId(id);
     try {
       const res = await fetch(`/api/admin/news-automation/sources?id=${id}`, {
         method: 'DELETE',
@@ -302,6 +312,8 @@ export default function NewsAutomationClient() {
       }
     } catch {
       showToast('Failed to delete source', 'error');
+    } finally {
+      setDeletingSourceId(null);
     }
   };
 
@@ -383,7 +395,7 @@ export default function NewsAutomationClient() {
             title="Refresh status"
           >
             <RefreshCw size={14} className={loading ? 'hpa-spin' : ''} />
-            <span>Refresh</span>
+            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
 
           <button
@@ -409,6 +421,67 @@ export default function NewsAutomationClient() {
           </button>
         </div>
       </div>
+
+      {/* Live Pipeline Execution In-Progress Banner */}
+      {(runningNow || previewing) && (
+        <div className="hpa-pipeline-banner hpa-loading-glow">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 0 15px rgba(37, 99, 235, 0.4)',
+                }}
+              >
+                <Loader2 size={22} className="hpa-spin" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    {runningNow ? 'Autonomous Daily News Pipeline Active' : 'Synthesizing Live Preview Draft'}
+                  </h3>
+                  <span
+                    className="hpa-pill hpa-pill-published"
+                    style={{ fontSize: '0.7rem', padding: '2px 8px', letterSpacing: '0.5px' }}
+                  >
+                    Processing Live
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.75)', margin: '3px 0 0 0' }}>
+                  {runningNow
+                    ? 'Scanning 6 configured RSS feeds → Filtering & deduplicating → Synthesizing via Google Gemini → Creating website post & LinkedIn share'
+                    : 'Fetching recent RSS stories and evaluating content via Google Gemini (Dry-Run mode)...'}
+                </p>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="hp-pulse-dot" style={{ display: 'inline-block' }} />
+              <span>Please do not close this window</span>
+            </div>
+          </div>
+
+          {/* Shimmer progress bar */}
+          <div
+            style={{
+              width: '100%',
+              height: '4px',
+              borderRadius: '2px',
+              overflow: 'hidden',
+              background: 'rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <div className="hpa-shimmer-bar" style={{ width: '100%', height: '100%' }} />
+          </div>
+        </div>
+      )}
 
       {/* Analytics KPI Ribbon */}
       <div
@@ -519,9 +592,17 @@ export default function NewsAutomationClient() {
               </div>
               <button
                 onClick={() => handleToggle('isEnabled', !settings?.isEnabled)}
+                disabled={togglingKey !== null}
                 className={`hpa-btn hpa-btn-sm ${settings?.isEnabled ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
               >
-                {settings?.isEnabled ? 'Enabled' : 'Paused'}
+                {togglingKey === 'isEnabled' ? (
+                  <>
+                    <Loader2 size={12} className="hpa-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>{settings?.isEnabled ? 'Enabled' : 'Paused'}</span>
+                )}
               </button>
             </div>
 
@@ -545,9 +626,17 @@ export default function NewsAutomationClient() {
               </div>
               <button
                 onClick={() => handleToggle('autoGenerate', !settings?.autoGenerate)}
+                disabled={togglingKey !== null}
                 className={`hpa-btn hpa-btn-sm ${settings?.autoGenerate ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
               >
-                {settings?.autoGenerate ? 'ON' : 'OFF'}
+                {togglingKey === 'autoGenerate' ? (
+                  <>
+                    <Loader2 size={12} className="hpa-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>{settings?.autoGenerate ? 'ON' : 'OFF'}</span>
+                )}
               </button>
             </div>
 
@@ -571,9 +660,17 @@ export default function NewsAutomationClient() {
               </div>
               <button
                 onClick={() => handleToggle('autoPublishWebsite', !settings?.autoPublishWebsite)}
+                disabled={togglingKey !== null}
                 className={`hpa-btn hpa-btn-sm ${settings?.autoPublishWebsite ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
               >
-                {settings?.autoPublishWebsite ? 'Live' : 'Draft Mode'}
+                {togglingKey === 'autoPublishWebsite' ? (
+                  <>
+                    <Loader2 size={12} className="hpa-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>{settings?.autoPublishWebsite ? 'Live' : 'Draft Mode'}</span>
+                )}
               </button>
             </div>
 
@@ -597,9 +694,17 @@ export default function NewsAutomationClient() {
               </div>
               <button
                 onClick={() => handleToggle('autoPublishLinkedIn', !settings?.autoPublishLinkedIn)}
+                disabled={togglingKey !== null}
                 className={`hpa-btn hpa-btn-sm ${settings?.autoPublishLinkedIn ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
               >
-                {settings?.autoPublishLinkedIn ? 'Active' : 'Disabled'}
+                {togglingKey === 'autoPublishLinkedIn' ? (
+                  <>
+                    <Loader2 size={12} className="hpa-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>{settings?.autoPublishLinkedIn ? 'Active' : 'Disabled'}</span>
+                )}
               </button>
             </div>
           </div>
@@ -807,9 +912,9 @@ export default function NewsAutomationClient() {
                 Every run is tracked with separate stages for discovery, content generation, website post, and LinkedIn share.
               </p>
             </div>
-            <button onClick={fetchStatus} className="hpa-btn hpa-btn-secondary hpa-btn-sm">
-              <RefreshCw size={12} />
-              <span>Refresh Log</span>
+            <button onClick={fetchStatus} disabled={loading} className="hpa-btn hpa-btn-secondary hpa-btn-sm">
+              <RefreshCw size={12} className={loading ? 'hpa-spin' : ''} />
+              <span>{loading ? 'Refreshing...' : 'Refresh Log'}</span>
             </button>
           </div>
 
@@ -937,7 +1042,7 @@ export default function NewsAutomationClient() {
                               ) : (
                                 <Share2 size={11} />
                               )}
-                              <span>Publish IN</span>
+                              <span>{retryingId === r.id ? 'Publishing...' : 'Publish IN'}</span>
                             </button>
                           )}
                           {r.errorDetails && (
@@ -1067,20 +1172,33 @@ export default function NewsAutomationClient() {
                     <td>
                       <button
                         onClick={() => handleToggleSource(src.id, src.isActive)}
+                        disabled={togglingSourceId === src.id}
                         className={`hpa-btn hpa-btn-sm ${src.isActive ? 'hpa-btn-secondary' : ''}`}
                         style={{ padding: '2px 8px', fontSize: '0.72rem' }}
                       >
-                        {src.isActive ? 'Active' : 'Disabled'}
+                        {togglingSourceId === src.id ? (
+                          <>
+                            <Loader2 size={11} className="hpa-spin" />
+                            <span>Updating...</span>
+                          </>
+                        ) : (
+                          <span>{src.isActive ? 'Active' : 'Disabled'}</span>
+                        )}
                       </button>
                     </td>
                     <td>
                       <button
                         onClick={() => handleDeleteSource(src.id, src.name)}
+                        disabled={deletingSourceId === src.id}
                         className="hpa-btn hpa-btn-danger hpa-btn-sm"
                         style={{ padding: '3px 6px' }}
                         title="Delete source"
                       >
-                        <Trash2 size={12} />
+                        {deletingSourceId === src.id ? (
+                          <Loader2 size={12} className="hpa-spin" />
+                        ) : (
+                          <Trash2 size={12} />
+                        )}
                       </button>
                     </td>
                   </tr>

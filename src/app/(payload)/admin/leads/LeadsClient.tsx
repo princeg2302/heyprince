@@ -17,6 +17,7 @@ import {
   AlertCircle,
   FileText,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { LeadRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -205,7 +206,7 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
             className="hpa-btn hpa-btn-secondary hpa-btn-sm"
             style={{ gap: '6px' }}
           >
-            <RefreshCw size={13} style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
+            <RefreshCw size={13} className={isRefreshing ? 'hpa-spin' : ''} />
             <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
@@ -527,6 +528,7 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
                     </option>
                   ))}
                 </select>
+                {updatingStatus && <Loader2 size={13} className="hpa-spin" style={{ color: 'var(--hpa-primary)' }} />}
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>

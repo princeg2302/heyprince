@@ -14,6 +14,7 @@ import {
   Search,
   CheckCircle2,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { ServiceRecord } from '@/lib/admin-db';
 import { useToast } from '@/components/admin/Toast';
@@ -214,7 +215,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
             Cancel
           </Link>
           <button type="submit" disabled={loading} className="hpa-btn hpa-btn-primary">
-            <Save size={16} />
+            {loading ? <Loader2 size={16} className="hpa-spin" /> : <Save size={16} />}
             <span>{loading ? 'Saving to Database...' : isEdit ? 'Save Changes' : 'Create Service'}</span>
           </button>
         </div>

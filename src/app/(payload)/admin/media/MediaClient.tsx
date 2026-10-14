@@ -13,6 +13,7 @@ import {
   Inbox,
   X,
   FileText,
+  Loader2,
 } from 'lucide-react';
 import { MediaRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -347,7 +348,7 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                   Cancel
                 </button>
                 <button type="submit" disabled={uploadLoading} className="hpa-btn hpa-btn-primary">
-                  <Upload size={15} />
+                  {uploadLoading ? <Loader2 size={15} className="hpa-spin" /> : <Upload size={15} />}
                   <span>{uploadLoading ? 'Uploading...' : 'Save Asset'}</span>
                 </button>
               </div>

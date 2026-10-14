@@ -43,6 +43,7 @@ export function LinkedInSettingsCard() {
 
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [editingUrn, setEditingUrn] = useState(false);
   const [customUrn, setCustomUrn] = useState('');
   const [savingUrn, setSavingUrn] = useState(false);
@@ -250,19 +251,20 @@ export function LinkedInSettingsCard() {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <a
                   href="/api/admin/linkedin/connect"
+                  onClick={() => setConnecting(true)}
                   className="hpa-btn hpa-btn-secondary hpa-btn-sm"
                   title="Refresh authorization code"
                 >
-                  <RefreshCw size={13} />
-                  <span>Reconnect</span>
+                  {connecting ? <Loader2 size={13} className="hpa-spin" /> : <RefreshCw size={13} />}
+                  <span>{connecting ? 'Redirecting...' : 'Reconnect'}</span>
                 </a>
                 <button
                   onClick={handleDisconnect}
                   disabled={disconnecting}
                   className="hpa-btn hpa-btn-danger hpa-btn-sm"
                 >
-                  <LogOut size={13} />
-                  <span>Disconnect</span>
+                  {disconnecting ? <Loader2 size={13} className="hpa-spin" /> : <LogOut size={13} />}
+                  <span>{disconnecting ? 'Disconnecting...' : 'Disconnect'}</span>
                 </button>
               </div>
             </div>
@@ -290,6 +292,7 @@ export function LinkedInSettingsCard() {
 
               <a
                 href="/api/admin/linkedin/connect"
+                onClick={() => setConnecting(true)}
                 className="hpa-btn hpa-btn-primary"
                 style={{
                   background: '#0a66c2',
@@ -297,8 +300,8 @@ export function LinkedInSettingsCard() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                <Share2 size={15} />
-                <span>Connect LinkedIn Profile</span>
+                {connecting ? <Loader2 size={15} className="hpa-spin" /> : <Share2 size={15} />}
+                <span>{connecting ? 'Connecting...' : 'Connect LinkedIn Profile'}</span>
               </a>
             </div>
           )}
@@ -358,7 +361,7 @@ export function LinkedInSettingsCard() {
                       className="hpa-btn hpa-btn-primary hpa-btn-sm"
                       style={{ padding: '4px 10px' }}
                     >
-                      <Save size={12} />
+                      {savingUrn ? <Loader2 size={12} className="hpa-spin" /> : <Save size={12} />}
                       <span>{savingUrn ? 'Saving...' : 'Save'}</span>
                     </button>
                     {editingUrn && (

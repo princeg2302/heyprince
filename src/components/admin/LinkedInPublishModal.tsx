@@ -351,7 +351,14 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
                     className="hpa-btn hpa-btn-primary hpa-btn-sm"
                     style={{ whiteSpace: 'nowrap' }}
                   >
-                    {isSavingUrn ? 'Saving...' : 'Link URN'}
+                    {isSavingUrn ? (
+                      <>
+                        <Loader2 size={12} className="hpa-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Link URN</span>
+                    )}
                   </button>
                 </div>
                 <p style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', margin: 0 }}>

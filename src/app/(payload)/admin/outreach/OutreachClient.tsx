@@ -25,6 +25,7 @@ import {
   UserCheck,
   Phone,
   MessageSquare,
+  Loader2,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import {
@@ -951,8 +952,8 @@ export default function OutreachClient({
                     gap: '8px',
                   }}
                 >
-                  <Send size={15} />
-                  {isProcessingQueue ? 'Processing...' : 'Dispatch Queue Batch'}
+                  {isProcessingQueue ? <Loader2 size={15} className="hpa-spin" /> : <Send size={15} />}
+                  <span>{isProcessingQueue ? 'Processing...' : 'Dispatch Queue Batch'}</span>
                 </button>
               </div>
             </div>
@@ -1052,8 +1053,8 @@ export default function OutreachClient({
                   gap: '8px',
                 }}
               >
-                <Globe size={16} />
-                {isDiscovering ? 'Scanning & Deduplicating...' : 'Launch Discovery Scan'}
+                {isDiscovering ? <Loader2 size={16} className="hpa-spin" /> : <Globe size={16} />}
+                <span>{isDiscovering ? 'Scanning & Deduplicating...' : 'Launch Discovery Scan'}</span>
               </button>
             </div>
           </form>
@@ -1533,9 +1534,14 @@ export default function OutreachClient({
                     fontSize: '12px',
                     fontWeight: 600,
                     cursor: isAuditing ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
                   }}
                 >
-                  {isAuditing ? 'Auditing & Crawling Pages...' : 'Deep Audit & Crawl Pages'}
+                  {isAuditing && <Loader2 size={13} className="hpa-spin" />}
+                  <span>{isAuditing ? 'Auditing & Crawling Pages...' : 'Deep Audit & Crawl Pages'}</span>
                 </button>
                 <button
                   disabled={isGeneratingAi}
@@ -1556,8 +1562,8 @@ export default function OutreachClient({
                     gap: '4px',
                   }}
                 >
-                  <Sparkles size={14} />
-                  {isGeneratingAi ? 'Analyzing...' : 'Generate AI Draft'}
+                  {isGeneratingAi ? <Loader2 size={14} className="hpa-spin" /> : <Sparkles size={14} />}
+                  <span>{isGeneratingAi ? 'Analyzing...' : 'Generate AI Draft'}</span>
                 </button>
               </div>
 

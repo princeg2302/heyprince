@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, HelpCircle, Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -277,7 +277,10 @@ export default function LoginForm() {
           style={{ width: '100%', padding: '12px', marginTop: '6px' }}
         >
           {loading ? (
-            <span>Verifying Credentials...</span>
+            <>
+              <Loader2 size={16} className="hpa-spin" />
+              <span>Verifying Credentials...</span>
+            </>
           ) : (
             <>
               <span>Sign In to Dashboard</span>
