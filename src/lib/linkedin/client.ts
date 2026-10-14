@@ -437,6 +437,15 @@ export async function publishArticleToLinkedIn(params: {
     };
   }
 
+  // Ensure Person URN is valid and not a placeholder
+  if (!connection.person_urn || connection.person_urn.includes('UNKNOWN')) {
+    return {
+      success: false,
+      error:
+        'LinkedIn Person URN is missing or UNKNOWN. Please enter your Member ID in the Settings / Modal, or enable "Sign In with LinkedIn using OpenID Connect" in your Developer Portal and reconnect.',
+    };
+  }
+
   // 2. Fetch article details from database
   const postRows = await query(
     `SELECT id, title, slug, excerpt, seo_description, status FROM posts WHERE id = $1 LIMIT 1;`,
@@ -457,6 +466,9 @@ export async function publishArticleToLinkedIn(params: {
   const commentaryText =
     params.customCommentary?.trim() ||
     `${post.title}\n\n${post.excerpt || post.seo_description || ''}\n\nRead the full engineering insight on HeyPrince:\n${articleUrl}`.trim();
+
+  // Active LinkedIn API Version (202601 / 202510)
+  const activeVersion = process.env.LINKEDIN_API_VERSION || '202601';
 
   // Attempt 1: Modern versioned Posts API (`POST https://api.linkedin.com/rest/posts`)
   try {
@@ -485,7 +497,7 @@ export async function publishArticleToLinkedIn(params: {
       headers: {
         Authorization: `Bearer ${connection.access_token}`,
         'Content-Type': 'application/json',
-        'LinkedIn-Version': '202401',
+        'LinkedIn-Version': activeVersion,
         'X-Restli-Protocol-Version': '2.0.0',
       },
       body: JSON.stringify(postPayload),
@@ -688,3 +700,4 @@ export async function publishArticleToLinkedIn(params: {
     };
   }
 }
+

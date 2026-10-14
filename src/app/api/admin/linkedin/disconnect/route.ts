@@ -13,3 +13,4 @@ export async function POST(request: NextRequest) {
   await disconnectLinkedInConnection();
   return NextResponse.json({ success: true, message: 'LinkedIn account disconnected.' });
 }
+

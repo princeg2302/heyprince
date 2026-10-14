@@ -334,38 +334,46 @@ export function LinkedInSettingsCard() {
                 )}
               </div>
 
-              {editingUrn ? (
-                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                  <input
-                    type="text"
-                    value={customUrn}
-                    onChange={(e) => setCustomUrn(e.target.value)}
-                    placeholder="urn:li:person:abcdef..."
-                    style={{
-                      flex: 1,
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--hpa-border)',
-                      borderRadius: '4px',
-                      padding: '4px 8px',
-                      color: '#ffffff',
-                      fontSize: '0.8rem',
-                    }}
-                  />
-                  <button
-                    onClick={handleSaveUrn}
-                    disabled={savingUrn}
-                    className="hpa-btn hpa-btn-primary hpa-btn-sm"
-                    style={{ padding: '4px 8px' }}
-                  >
-                    <Save size={12} />
-                  </button>
-                  <button
-                    onClick={() => setEditingUrn(false)}
-                    className="hpa-btn hpa-btn-secondary hpa-btn-sm"
-                    style={{ padding: '4px 8px' }}
-                  >
-                    Cancel
-                  </button>
+              {editingUrn || data?.connection?.needsPersonUrn || data?.connection?.personUrn?.includes('UNKNOWN') ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      value={customUrn}
+                      onChange={(e) => setCustomUrn(e.target.value)}
+                      placeholder="e.g. urn:li:person:abc123XYZ or member ID"
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--hpa-border)',
+                        borderRadius: '4px',
+                        padding: '6px 10px',
+                        color: '#ffffff',
+                        fontSize: '0.82rem',
+                      }}
+                    />
+                    <button
+                      onClick={handleSaveUrn}
+                      disabled={savingUrn || !customUrn.trim()}
+                      className="hpa-btn hpa-btn-primary hpa-btn-sm"
+                      style={{ padding: '4px 10px' }}
+                    >
+                      <Save size={12} />
+                      <span>{savingUrn ? 'Saving...' : 'Save'}</span>
+                    </button>
+                    {editingUrn && (
+                      <button
+                        onClick={() => setEditingUrn(false)}
+                        className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                        style={{ padding: '4px 8px' }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: '#f59e0b', lineHeight: 1.4 }}>
+                    ⚠️ Your LinkedIn token only has <code style={{ color: '#ffffff' }}>w_member_social</code> write permission. Enter your Person URN above or enable <strong>"Sign In with LinkedIn using OpenID Connect"</strong> in Developer Portal &rarr; Products and click Reconnect.
+                  </div>
                 </div>
               ) : (
                 <code style={{ fontSize: '0.82rem', color: data?.connection?.personUrn ? 'var(--hpa-primary)' : 'var(--hpa-text-dim)' }}>
@@ -515,3 +523,4 @@ export function LinkedInSettingsCard() {
     </div>
   );
 }
+

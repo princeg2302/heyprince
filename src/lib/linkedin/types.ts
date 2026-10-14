@@ -56,3 +56,4 @@ export interface PublishArticleResult {
   error?: string;
   details?: any;
 }
+

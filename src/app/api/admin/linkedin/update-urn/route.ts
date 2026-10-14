@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const rawUrn = body.personUrn?.trim();
+  let rawUrn = body.personUrn?.trim();
   if (!rawUrn) {
     return NextResponse.json(
       { success: false, error: 'personUrn is required.' },
@@ -28,13 +28,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const cleanUrn = rawUrn.startsWith('urn:li:person:')
-    ? rawUrn
-    : `urn:li:person:${rawUrn}`;
+  // Normalize URN format
+  if (rawUrn.startsWith('urn:li:member:')) {
+    rawUrn = rawUrn.replace('urn:li:member:', 'urn:li:person:');
+  } else if (!rawUrn.startsWith('urn:li:person:')) {
+    rawUrn = `urn:li:person:${rawUrn}`;
+  }
+
+  const cleanUrn = rawUrn;
+  const memberId = cleanUrn.replace('urn:li:person:', '');
 
   await query(
     `UPDATE linkedin_connections SET person_urn = $1, member_id = $2, updated_at = NOW() WHERE id = $3;`,
-    [cleanUrn, cleanUrn.replace('urn:li:person:', ''), connection.id]
+    [cleanUrn, memberId, connection.id]
   );
 
   return NextResponse.json({
@@ -43,3 +49,4 @@ export async function POST(request: NextRequest) {
     personUrn: cleanUrn,
   });
 }
+

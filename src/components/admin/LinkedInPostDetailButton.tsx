@@ -32,3 +32,4 @@ export function LinkedInPostDetailButton({ post }: LinkedInPostDetailButtonProps
     </>
   );
 }
+

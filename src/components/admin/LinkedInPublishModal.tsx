@@ -30,12 +30,37 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
   const [personUrn, setPersonUrn] = useState<string | null>(null);
   const [commentary, setCommentary] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [urnInput, setUrnInput] = useState('');
+  const [isSavingUrn, setIsSavingUrn] = useState(false);
   const [publishResult, setPublishResult] = useState<{
     success: boolean;
     postUrn?: string;
     postUrl?: string;
     error?: string;
   } | null>(null);
+
+  const handleSaveUrn = async () => {
+    if (!urnInput.trim()) return;
+    setIsSavingUrn(true);
+    try {
+      const res = await fetch('/api/admin/linkedin/update-urn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personUrn: urnInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPersonUrn(data.personUrn);
+        showToast('LinkedIn Person URN linked successfully!', 'success');
+      } else {
+        showToast(data.error || 'Failed to update Person URN.', 'error');
+      }
+    } catch {
+      showToast('Network error while saving URN.', 'error');
+    } finally {
+      setIsSavingUrn(false);
+    }
+  };
 
   // Check LinkedIn connection status whenever modal opens
   useEffect(() => {
@@ -262,23 +287,78 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '10px 14px',
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
+                background: !personUrn || personUrn.includes('UNKNOWN') ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                border: !personUrn || personUrn.includes('UNKNOWN') ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.25)',
                 borderRadius: '8px',
                 marginBottom: '18px',
                 fontSize: '0.84rem',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
-                <CheckCircle2 size={16} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: !personUrn || personUrn.includes('UNKNOWN') ? '#f59e0b' : '#10b981' }}>
+                {!personUrn || personUrn.includes('UNKNOWN') ? (
+                  <AlertCircle size={16} />
+                ) : (
+                  <CheckCircle2 size={16} />
+                )}
                 <span>
                   Connected to: <strong>{profileName}</strong>
                 </span>
               </div>
               <span style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)' }}>
-                {personUrn && personUrn !== 'urn:li:person:UNKNOWN' ? personUrn : 'Personal Profile'}
+                {personUrn && !personUrn.includes('UNKNOWN') ? personUrn : 'Action Needed'}
               </span>
             </div>
+
+            {/* Prompt to link Person URN if UNKNOWN */}
+            {(!personUrn || personUrn.includes('UNKNOWN')) && (
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '8px',
+                  background: 'rgba(245, 158, 11, 0.08)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  marginBottom: '18px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', marginBottom: '8px' }}>
+                  <AlertCircle size={17} />
+                  <strong style={{ fontSize: '0.92rem' }}>LinkedIn Person Author URN Required</strong>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.85)', margin: '0 0 10px 0', lineHeight: 1.45 }}>
+                  Because your app was authorized with the <code style={{ color: 'var(--hpa-primary)' }}>w_member_social</code> publishing permission only (without OpenID profile read access), please enter your LinkedIn Person URN or Member ID to publish articles:
+                </p>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="e.g. urn:li:person:abc123XYZ or member ID"
+                    value={urnInput}
+                    onChange={(e) => setUrnInput(e.target.value)}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--hpa-border)',
+                      borderRadius: '6px',
+                      padding: '8px 12px',
+                      color: '#ffffff',
+                      fontSize: '0.84rem',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveUrn}
+                    disabled={isSavingUrn || !urnInput.trim()}
+                    className="hpa-btn hpa-btn-primary hpa-btn-sm"
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {isSavingUrn ? 'Saving...' : 'Link URN'}
+                  </button>
+                </div>
+                <p style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
+                  💡 <em>Automated option: In your <a href="https://developer.linkedin.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--hpa-primary)', textDecoration: 'underline' }}>LinkedIn Developer Portal</a> under <strong>Products</strong>, enable <strong>"Sign In with LinkedIn using OpenID Connect"</strong> (instant 1-click), then click Reconnect.</em>
+                </p>
+              </div>
+            )}
 
             {/* Success state */}
             {publishResult?.success ? (
@@ -417,11 +497,13 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
                   </button>
                   <button
                     onClick={handlePublish}
-                    disabled={isPublishing || !commentary.trim()}
+                    disabled={isPublishing || !commentary.trim() || !personUrn || personUrn.includes('UNKNOWN')}
+                    title={!personUrn || personUrn.includes('UNKNOWN') ? 'Please link your Person URN above to enable publishing' : undefined}
                     className="hpa-btn hpa-btn-primary"
                     style={{
-                      background: '#0a66c2',
-                      borderColor: '#0a66c2',
+                      background: !personUrn || personUrn.includes('UNKNOWN') ? '#4b5563' : '#0a66c2',
+                      borderColor: !personUrn || personUrn.includes('UNKNOWN') ? '#4b5563' : '#0a66c2',
+                      cursor: !personUrn || personUrn.includes('UNKNOWN') ? 'not-allowed' : 'pointer',
                     }}
                   >
                     {isPublishing ? (
@@ -445,3 +527,4 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
     </div>
   );
 }
+
