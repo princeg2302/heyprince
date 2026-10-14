@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FaArrowLeft,
@@ -86,6 +86,19 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const [turnstileToken, setTurnstileToken] = useState('');
   const [formLoadedAt] = useState(() => Date.now());
 
+  const handleTurnstileSuccess = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setErrorMessage(null);
+  }, []);
+
+  const handleTurnstileError = useCallback(() => {
+    setTurnstileToken('');
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken('');
+  }, []);
+
   // CRITICAL: Ensure instant scroll to top on mount before paint
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
@@ -103,6 +116,13 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // If production site and Turnstile token has not been generated
+    if (!turnstileToken && process.env.NODE_ENV === 'production') {
+      setErrorMessage('Please complete the security check above before sending.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -446,16 +466,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                   <div className="d-flex justify-content-center">
                     <Turnstile
                       theme="dark"
-                      onSuccess={(token) => {
-                        setTurnstileToken(token);
-                        setErrorMessage(null);
-                      }}
-                      onError={() => {
-                        setTurnstileToken('');
-                      }}
-                      onExpire={() => {
-                        setTurnstileToken('');
-                      }}
+                      onSuccess={handleTurnstileSuccess}
+                      onError={handleTurnstileError}
+                      onExpire={handleTurnstileExpire}
                     />
                   </div>
 

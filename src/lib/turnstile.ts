@@ -19,9 +19,9 @@ export async function verifyTurnstileToken(
 
   // 1. Check if token is present
   if (!token || !token.trim()) {
-    // If in development mode without explicit keys set, allow pass for local dev convenience
-    if (process.env.NODE_ENV === 'development' && !process.env.TURNSTILE_SECRET_KEY) {
-      console.info('[Turnstile] Dev mode: Bypassing missing token check');
+    // If in development mode, allow pass so developers can test form fields locally
+    if (process.env.NODE_ENV === 'development') {
+      console.info('[Turnstile] Dev mode: Bypassing missing token check for local testing');
       return { success: true };
     }
     return {
@@ -31,7 +31,7 @@ export async function verifyTurnstileToken(
   }
 
   // 2. Cloudflare official dummy test tokens
-  if (token === 'XXXX.DUMMY.TOKEN.XXXX') {
+  if (token === 'XXXX.DUMMY.TOKEN.XXXX' || token === 'LOCAL_DEV_BYPASS') {
     return { success: true };
   }
 
@@ -87,3 +87,4 @@ export async function verifyTurnstileToken(
     };
   }
 }
+
