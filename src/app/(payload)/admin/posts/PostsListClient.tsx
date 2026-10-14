@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Inbox,
   Share2,
+  Sparkles,
 } from 'lucide-react';
 import { PostRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -99,10 +100,20 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
             Manage your technical engineering insights, tutorials, and career publications.
           </p>
         </div>
-        <Link href="/admin/posts/new" className="hpa-btn hpa-btn-primary">
-          <Plus size={16} />
-          <span>New Article</span>
-        </Link>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Link
+            href="/admin/news-automation/"
+            className="hpa-btn hpa-btn-secondary"
+            title="Manage Daily AI News Automation"
+          >
+            <Sparkles size={15} style={{ color: '#a855f7' }} />
+            <span>Daily AI News</span>
+          </Link>
+          <Link href="/admin/posts/new" className="hpa-btn hpa-btn-primary">
+            <Plus size={16} />
+            <span>New Article</span>
+          </Link>
+        </div>
       </div>
 
       {/* Main Table Card */}

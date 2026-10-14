@@ -21,6 +21,7 @@ import {
   Search,
   Plus,
   Globe,
+  Sparkles,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -47,6 +48,7 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
     { label: 'Dashboard', href: '/admin/', icon: LayoutDashboard },
     { label: 'Lead Intelligence', href: '/admin/outreach/', icon: Globe },
     { label: 'Posts & Insights', href: '/admin/posts/', icon: FileText },
+    { label: 'Daily AI News', href: '/admin/news-automation/', icon: Sparkles },
     { label: 'Services', href: '/admin/services/', icon: Briefcase },
     { label: 'Admin Users', href: '/admin/users/', icon: Users },
     { label: 'Categories', href: '/admin/categories/', icon: FolderOpen },
