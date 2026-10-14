@@ -20,7 +20,7 @@ export function getAIProviderConfig(): AIProviderConfig {
   if (geminiKey) {
     return {
       provider: 'gemini',
-      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gemini-2.5-flash',
+      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gemini-3.8-flash',
       apiKey: geminiKey,
     };
   }
@@ -43,7 +43,7 @@ export function getAIProviderConfig(): AIProviderConfig {
 
   return {
     provider: 'gemini',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.8-flash',
     apiKey: undefined,
   };
 }
@@ -66,49 +66,77 @@ export async function callAIModel(
     );
   }
 
-  const modelName = preferredModel || config.model;
+  let modelName = preferredModel || config.model;
+  if (modelName === 'gemini-2.5-flash') {
+    modelName = 'gemini-3.8-flash';
+  }
 
   // 1. Google Gemini Provider
   if (config.provider === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${config.apiKey}`;
+    const candidateModels = Array.from(
+      new Set([
+        modelName,
+        'gemini-3.8-flash',
+        'gemini-3.5-flash',
+        'gemini-flash-latest',
+        'gemini-3-flash-preview',
+      ])
+    );
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.3,
-          maxOutputTokens: 2500,
-        },
-      }),
-      signal: AbortSignal.timeout(35000),
-    });
+    let lastError: Error | null = null;
+    for (const activeModel of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${config.apiKey}`;
 
-    if (!res.ok) {
-      const errBody = await res.text();
-      throw new Error(`Google Gemini API error (HTTP ${res.status}): ${errBody}`);
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+              },
+            ],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              temperature: 0.3,
+              maxOutputTokens: 2500,
+            },
+          }),
+          signal: AbortSignal.timeout(35000),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.text();
+          if (res.status === 503 || res.status === 429 || res.status === 404) {
+            console.warn(`[Gemini] Model ${activeModel} returned HTTP ${res.status}, falling back to next available model...`);
+            lastError = new Error(`Google Gemini API error (HTTP ${res.status}): ${errBody}`);
+            continue;
+          }
+          throw new Error(`Google Gemini API error (HTTP ${res.status}): ${errBody}`);
+        }
+
+        const data = await res.json();
+        const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!candidateText) {
+          throw new Error('Gemini API returned an empty response candidate.');
+        }
+
+        return {
+          text: candidateText,
+          provider: 'gemini',
+          model: activeModel,
+          promptTokens: data.usageMetadata?.promptTokenCount,
+          completionTokens: data.usageMetadata?.candidatesTokenCount,
+        };
+      } catch (callErr: any) {
+        lastError = callErr;
+        console.warn(`[Gemini] Attempt with ${activeModel} failed: ${callErr?.message || callErr}`);
+      }
     }
 
-    const data = await res.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) {
-      throw new Error('Gemini API returned an empty response candidate.');
-    }
-
-    return {
-      text: candidateText,
-      provider: 'gemini',
-      model: modelName,
-      promptTokens: data.usageMetadata?.promptTokenCount,
-      completionTokens: data.usageMetadata?.candidatesTokenCount,
-    };
+    throw lastError || new Error('All Gemini candidate models failed to generate content.');
   }
 
   // 2. OpenAI Provider
