@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getCurrentAdmin } from '@/lib/admin-db';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { LinkedInSettingsCard } from '@/components/admin/LinkedInSettingsCard';
 
 export const metadata = {
   title: 'Settings — HeyPrince Admin',
@@ -158,6 +159,9 @@ export default async function SettingsPage() {
             <ExternalLink size={14} />
           </a>
         </div>
+
+        {/* LinkedIn Integration */}
+        <LinkedInSettingsCard />
 
         {/* Runtime Engine */}
         <div className="hpa-card" style={{ padding: '24px', gridColumn: 'span 2', marginBottom: 0 }}>

@@ -9,7 +9,9 @@
     "start": "next start",
     "seed": "npx tsx src/scripts/seed.ts",
     "migrate:outreach": "npx tsx src/scripts/migrate-outreach.ts",
-    "test:outreach": "npx tsx src/scripts/test-outreach-suite.ts"
+    "migrate:linkedin": "npx tsx src/scripts/migrate-linkedin.ts",
+    "test:outreach": "npx tsx src/scripts/test-outreach-suite.ts",
+    "test:linkedin": "npx tsx src/scripts/test-linkedin-suite.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.90.2",

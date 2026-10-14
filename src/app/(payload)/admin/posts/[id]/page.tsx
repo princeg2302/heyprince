@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getCurrentAdmin, getPostById } from '@/lib/admin-db';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { LinkedInPostDetailButton } from '@/components/admin/LinkedInPostDetailButton';
 
 export const metadata = {
   title: 'View Article — HeyPrince Admin',
@@ -80,6 +81,7 @@ export default async function ViewPostPage({
             <span>View on Live Site</span>
             <ExternalLink size={14} />
           </a>
+          <LinkedInPostDetailButton post={post} />
           <Link href={`/admin/posts/${post.id}/edit`} className="hpa-btn hpa-btn-primary">
             <Edit2 size={15} />
             <span>Edit Article</span>

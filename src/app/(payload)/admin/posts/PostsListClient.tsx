@@ -17,10 +17,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Inbox,
+  Share2,
 } from 'lucide-react';
 import { PostRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
+import { LinkedInPublishModal } from '@/components/admin/LinkedInPublishModal';
 
 interface PostsListClientProps {
   initialPosts: PostRecord[];
@@ -36,6 +38,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [publishingPost, setPublishingPost] = useState<PostRecord | null>(null);
   const [page, setPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -266,6 +269,14 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             <ExternalLink size={14} />
                           </a>
                           <button
+                            onClick={() => setPublishingPost(post)}
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
+                            title="Publish to LinkedIn Profile"
+                            style={{ color: '#0a66c2' }}
+                          >
+                            <Share2 size={14} />
+                          </button>
+                          <button
                             onClick={() => setDeletingId(post.id)}
                             className="hpa-btn hpa-btn-danger hpa-btn-icon"
                             title="Delete Article"
@@ -331,6 +342,13 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
         isLoading={deleteLoading}
+      />
+
+      {/* LinkedIn Publish Modal */}
+      <LinkedInPublishModal
+        post={publishingPost}
+        isOpen={publishingPost !== null}
+        onClose={() => setPublishingPost(null)}
       />
     </div>
   );
