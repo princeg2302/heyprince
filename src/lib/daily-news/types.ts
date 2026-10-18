@@ -10,6 +10,19 @@ export interface DailyNewsSettings {
   lookbackHours: number;
   aiProvider: string;
   aiModel: string;
+  seasonalMode?: 'auto' | 'manual' | 'disabled';
+  seasonalManualTheme?: string;
+  weatherCity?: string;
+  weatherLatitude?: number;
+  weatherLongitude?: number;
+  isSeasonalEnabled?: boolean;
+  contentMix?: {
+    tech_news: number;
+    deep_analysis: number;
+    office_humour_meme: number;
+    event_roundup: number;
+  };
+  currentContentType?: string;
   updatedAt: string;
 }
 
@@ -19,6 +32,10 @@ export interface DailyNewsSource {
   url: string;
   feedType: 'rss' | 'atom' | 'api';
   category: string;
+  region?: string;
+  language?: string;
+  topic?: string;
+  priority?: number;
   isActive: boolean;
   lastFetchedAt?: string | null;
   lastStatus: 'ok' | 'error' | 'pending';

@@ -26,6 +26,13 @@ import {
   Loader2,
   X,
   Radio,
+  Smile,
+  CloudSun,
+  Globe,
+  Calendar,
+  Filter,
+  MapPin,
+  Thermometer,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import {
@@ -38,7 +45,7 @@ import {
 export default function NewsAutomationClient() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'runs' | 'sources' | 'settings'>('runs');
+  const [activeTab, setActiveTab] = useState<'runs' | 'sources' | 'editorial' | 'seasonal' | 'settings'>('runs');
 
   // State
   const [settings, setSettings] = useState<DailyNewsSettings | null>(null);
@@ -70,6 +77,7 @@ export default function NewsAutomationClient() {
 
   // Action states
   const [runningNow, setRunningNow] = useState(false);
+  const [runningMeme, setRunningMeme] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [previewData, setPreviewData] = useState<GeneratedContentPayload | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -78,16 +86,29 @@ export default function NewsAutomationClient() {
   const [togglingSourceId, setTogglingSourceId] = useState<number | null>(null);
   const [deletingSourceId, setDeletingSourceId] = useState<number | null>(null);
   const [runConfirmOpen, setRunConfirmOpen] = useState(false);
+  const [selectedContentType, setSelectedContentType] = useState<'tech_news' | 'office_humour_meme' | 'auto'>('tech_news');
   const [sourceToDelete, setSourceToDelete] = useState<{ id: number; name: string } | null>(null);
+
+  // Global RSS Filters
+  const [regionFilter, setRegionFilter] = useState<string>('all');
+  const [topicFilter, setTopicFilter] = useState<string>('all');
 
   // New source form modal
   const [newSourceOpen, setNewSourceOpen] = useState(false);
   const [sourceName, setSourceName] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceCategory, setSourceCategory] = useState('Artificial Intelligence');
+  const [newSourceRegion, setNewSourceRegion] = useState('Global');
+  const [newSourceLanguage, setNewSourceLanguage] = useState('en');
+  const [newSourceTopic, setNewSourceTopic] = useState('Artificial Intelligence');
+  const [newSourcePriority, setNewSourcePriority] = useState(1);
   const [testingFeed, setTestingFeed] = useState(false);
   const [testFeedResult, setTestFeedResult] = useState<string | null>(null);
   const [savingSource, setSavingSource] = useState(false);
+
+  // Weather testing state
+  const [testingWeather, setTestingWeather] = useState(false);
+  const [liveWeatherPreview, setLiveWeatherPreview] = useState<any>(null);
 
   // Saving settings
   const [savingSettings, setSavingSettings] = useState(false);
@@ -155,11 +176,17 @@ export default function NewsAutomationClient() {
     setRunConfirmOpen(false);
     setRunningNow(true);
     try {
-      const res = await fetch('/api/admin/news-automation/run', { method: 'POST' });
+      const res = await fetch('/api/admin/news-automation/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: selectedContentType === 'auto' ? undefined : selectedContentType,
+        }),
+      });
       const data = await res.json();
       if (data.success) {
         showToast(
-          `Daily News pipeline finished: ${data.status} (Website: ${data.websiteStatus}, LinkedIn: ${data.linkedinStatus})`,
+          `Pipeline finished: ${data.status} (Website: ${data.websiteStatus}, LinkedIn: ${data.linkedinStatus})`,
           data.status === 'success' ? 'success' : 'info'
         );
         fetchStatus();
@@ -171,6 +198,47 @@ export default function NewsAutomationClient() {
       showToast('Network error while running automation', 'error');
     } finally {
       setRunningNow(false);
+    }
+  };
+
+  // Trigger quick meme generation
+  const handleRunMemeNow = async () => {
+    setRunningMeme(true);
+    try {
+      const res = await fetch('/api/admin/news-automation/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentType: 'office_humour_meme' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(
+          `Indian Office Humour Meme published! Website: ${data.websiteStatus}, LinkedIn: ${data.linkedinStatus}`,
+          'success'
+        );
+        fetchStatus();
+      } else {
+        showToast(`Meme generation error: ${data.error || 'Failed'}`, 'error');
+      }
+    } catch {
+      showToast('Network error during meme generation', 'error');
+    } finally {
+      setRunningMeme(false);
+    }
+  };
+
+  // Test live weather from Open-Meteo
+  const handleTestWeather = async () => {
+    setTestingWeather(true);
+    try {
+      const res = await fetch('/api/seasonal/current/');
+      const data = await res.json();
+      setLiveWeatherPreview(data);
+      showToast('Live weather data fetched successfully from Open-Meteo.', 'success');
+    } catch {
+      showToast('Could not fetch live weather test.', 'error');
+    } finally {
+      setTestingWeather(false);
     }
   };
 
@@ -265,6 +333,10 @@ export default function NewsAutomationClient() {
           name: sourceName.trim(),
           url: sourceUrl.trim(),
           category: sourceCategory,
+          region: newSourceRegion,
+          language: newSourceLanguage,
+          topic: newSourceTopic,
+          priority: newSourcePriority,
         }),
       });
       const data = await res.json();
@@ -498,6 +570,144 @@ export default function NewsAutomationClient() {
           </div>
         </div>
       )}
+
+      {/* Executive Health & Diagnostics Section (Phase 1 & Phase 2 Requirements) */}
+      {recentRuns.length > 0 && (() => {
+        const lastRun = recentRuns[0];
+        const lastRunDate = lastRun.startedAt || lastRun.createdAt;
+        const lastRunIST = lastRunDate
+          ? new Date(lastRunDate).toLocaleString('en-IN', {
+              timeZone: 'Asia/Kolkata',
+              dateStyle: 'medium',
+              timeStyle: 'medium',
+            }) + ' IST'
+          : 'None';
+
+        const isHealthy = lastRun.status === 'success';
+        const hasWarning = lastRun.status === 'partial_success';
+        const isFailed = lastRun.status === 'failed';
+
+        return (
+          <div
+            className="hpa-card"
+            style={{
+              padding: '20px',
+              marginBottom: '20px',
+              border: isFailed
+                ? '1px solid rgba(244, 63, 94, 0.35)'
+                : hasWarning
+                ? '1px solid rgba(245, 158, 11, 0.35)'
+                : '1px solid rgba(34, 197, 94, 0.25)',
+              background: isFailed
+                ? 'linear-gradient(180deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 17, 23, 0.8) 100%)'
+                : hasWarning
+                ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 17, 23, 0.8) 100%)'
+                : 'linear-gradient(180deg, rgba(34, 197, 94, 0.06) 0%, rgba(15, 17, 23, 0.8) 100%)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px', borderBottom: '1px solid var(--hpa-border)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Shield size={18} style={{ color: isFailed ? '#fb7185' : hasWarning ? '#f59e0b' : '#22c55e' }} />
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                  Automation Pipeline Health &amp; Diagnostics
+                </h2>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className={`hpa-pill ${isFailed ? 'hpa-pill-danger' : hasWarning ? 'hpa-pill-draft' : 'hpa-pill-published'}`} style={{ fontSize: '0.74rem' }}>
+                  {isFailed ? 'Attention Required' : hasWarning ? 'Partial Success' : 'System Operational'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', fontSize: '0.82rem' }}>
+              <div>
+                <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem', textTransform: 'uppercase' }}>Last Execution (IST)</span>
+                <div style={{ fontWeight: 700, color: '#ffffff', marginTop: '2px' }}>{lastRunIST}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', marginTop: '2px' }}>
+                  Trigger: <code>{lastRun.triggerType}</code> • Status: <strong style={{ color: isFailed ? '#fb7185' : hasWarning ? '#f59e0b' : '#22c55e' }}>{lastRun.status}</strong>
+                </div>
+              </div>
+
+              <div>
+                <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem', textTransform: 'uppercase' }}>Next Scheduled Execution (IST)</span>
+                <div style={{ fontWeight: 700, color: '#38bdf8', marginTop: '2px' }}>Everyday at 9:00 AM IST</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', marginTop: '2px' }}>
+                  Vercel UTC Cron: <code>30 3 * * *</code> (Asia/Kolkata)
+                </div>
+              </div>
+
+              <div>
+                <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem', textTransform: 'uppercase' }}>Last Website Publication</span>
+                <div style={{ marginTop: '2px' }}>
+                  {lastRun.articleSlug ? (
+                    <a
+                      href={`https://heyprince.in/insights/${lastRun.articleSlug}/`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#38bdf8', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span>{lastRun.articleTitle?.slice(0, 32)}...</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  ) : (
+                    <span style={{ color: 'var(--hpa-text-dim)' }}>Draft Saved in CMS</span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', marginTop: '2px' }}>
+                  Status: <code>{lastRun.websiteStatus}</code>
+                </div>
+              </div>
+
+              <div>
+                <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem', textTransform: 'uppercase' }}>Last LinkedIn Result</span>
+                <div style={{ marginTop: '2px' }}>
+                  {lastRun.linkedinShareUrl ? (
+                    <a
+                      href={lastRun.linkedinShareUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#0a66c2', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span>View LinkedIn Post</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  ) : (
+                    <span style={{ color: 'var(--hpa-text-dim)' }}>
+                      {lastRun.linkedinStatus === 'needs_reconnect' ? '⚠️ Reconnection Needed' : lastRun.linkedinStatus}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', marginTop: '2px' }}>
+                  Status: <code>{lastRun.linkedinStatus}</code>
+                </div>
+              </div>
+            </div>
+
+            {/* Error Diagnostics Banner if failed */}
+            {lastRun.errorDetails && (
+              <div
+                style={{
+                  marginTop: '14px',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  background: 'rgba(244, 63, 94, 0.1)',
+                  border: '1px solid rgba(244, 63, 94, 0.3)',
+                  fontSize: '0.78rem',
+                  color: '#fecdd3',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#fb7185', marginBottom: '2px' }}>
+                  <AlertCircle size={13} />
+                  <span>Diagnostic Blocker (Stage: {lastRun.errorDetails.stage || 'Pipeline'}):</span>
+                </div>
+                <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#ffffff' }}>
+                  {lastRun.errorDetails.message}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Analytics KPI Ribbon */}
       <div
@@ -853,6 +1063,7 @@ export default function NewsAutomationClient() {
           borderBottom: '1px solid var(--hpa-border)',
           marginBottom: '20px',
           gap: '4px',
+          overflowX: 'auto',
         }}
       >
         <button
@@ -863,16 +1074,17 @@ export default function NewsAutomationClient() {
             borderBottom: activeTab === 'runs' ? '2px solid var(--hpa-primary)' : '2px solid transparent',
             color: activeTab === 'runs' ? '#ffffff' : 'var(--hpa-text-dim)',
             padding: '10px 16px',
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
+            whiteSpace: 'nowrap',
           }}
         >
           <Layers size={15} />
-          <span>Execution History & Runs ({recentRuns.length})</span>
+          <span>Execution History &amp; Runs ({recentRuns.length})</span>
         </button>
 
         <button
@@ -883,16 +1095,59 @@ export default function NewsAutomationClient() {
             borderBottom: activeTab === 'sources' ? '2px solid var(--hpa-primary)' : '2px solid transparent',
             color: activeTab === 'sources' ? '#ffffff' : 'var(--hpa-text-dim)',
             padding: '10px 16px',
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
+            whiteSpace: 'nowrap',
           }}
         >
-          <Radio size={15} />
-          <span>Trusted RSS Sources ({sources.length})</span>
+          <Globe size={15} />
+          <span>Worldwide RSS Feeds ({sources.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('editorial')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'editorial' ? '2px solid var(--hpa-primary)' : '2px solid transparent',
+            color: activeTab === 'editorial' ? '#ffffff' : 'var(--hpa-text-dim)',
+            padding: '10px 16px',
+            fontSize: '0.88rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Calendar size={15} />
+          <span>Editorial Mix &amp; Desi Memes</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('seasonal')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: activeTab === 'seasonal' ? '2px solid var(--hpa-primary)' : '2px solid transparent',
+            color: activeTab === 'seasonal' ? '#ffffff' : 'var(--hpa-text-dim)',
+            padding: '10px 16px',
+            fontSize: '0.88rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <CloudSun size={15} />
+          <span>Seasonal Weather</span>
         </button>
 
         <button
@@ -903,16 +1158,17 @@ export default function NewsAutomationClient() {
             borderBottom: activeTab === 'settings' ? '2px solid var(--hpa-primary)' : '2px solid transparent',
             color: activeTab === 'settings' ? '#ffffff' : 'var(--hpa-text-dim)',
             padding: '10px 16px',
-            fontSize: '0.9rem',
+            fontSize: '0.88rem',
             fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
+            whiteSpace: 'nowrap',
           }}
         >
           <Settings size={15} />
-          <span>Topics & AI Models</span>
+          <span>Topics &amp; AI Models</span>
         </button>
       </div>
 
@@ -1088,148 +1344,578 @@ export default function NewsAutomationClient() {
         </div>
       )}
 
-      {/* TAB 2: TRUSTED RSS SOURCES */}
-      {activeTab === 'sources' && (
-        <div className="hpa-card" style={{ padding: '20px' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '16px',
-              flexWrap: 'wrap',
-              gap: '10px',
-            }}
-          >
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                Configured RSS & News Feeds
-              </h3>
-              <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
-                Every source is checked daily within the configured lookback window. You can add, toggle, or test feeds.
-              </p>
+      {/* TAB 2: WORLDWIDE RSS SOURCES */}
+      {activeTab === 'sources' && (() => {
+        const filteredSources = sources.filter((src) => {
+          if (regionFilter !== 'all' && src.region !== regionFilter) return false;
+          if (topicFilter !== 'all' && src.topic !== topicFilter) return false;
+          return true;
+        });
+
+        const getRegionFlag = (reg?: string) => {
+          switch (reg) {
+            case 'India':
+              return '🇮🇳 India';
+            case 'USA':
+              return '🇺🇸 USA';
+            case 'UK':
+              return '🇬🇧 UK';
+            case 'Australia':
+              return '🇦🇺 Australia';
+            case 'Germany & Europe':
+              return '🇩🇪 Europe';
+            case 'Worldwide':
+            case 'Global':
+            default:
+              return '🌐 Global';
+          }
+        };
+
+        return (
+          <div className="hpa-card" style={{ padding: '20px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
+                flexWrap: 'wrap',
+                gap: '10px',
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                  Worldwide RSS &amp; Verified Primary Feeds ({filteredSources.length} of {sources.length})
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
+                  Active coverage across India, USA, UK, Australia, Germany &amp; Europe, DeepMind, OpenAI, and Elon Musk enterprises.
+                </p>
+              </div>
+              <button onClick={() => setNewSourceOpen(true)} className="hpa-btn hpa-btn-primary hpa-btn-sm">
+                <Plus size={13} />
+                <span>Add New RSS Feed</span>
+              </button>
             </div>
-            <button onClick={() => setNewSourceOpen(true)} className="hpa-btn hpa-btn-primary hpa-btn-sm">
-              <Plus size={13} />
-              <span>Add New RSS Feed</span>
-            </button>
+
+            {/* Region Filter Bar */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                marginBottom: '16px',
+                alignItems: 'center',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid var(--hpa-border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--hpa-text-dim)', marginRight: '4px' }}>
+                <Filter size={13} />
+                <span>Filter Region:</span>
+              </div>
+              {['all', 'India', 'USA', 'UK', 'Australia', 'Germany & Europe', 'Worldwide'].map((reg) => (
+                <button
+                  key={reg}
+                  type="button"
+                  onClick={() => setRegionFilter(reg)}
+                  className={`hpa-btn hpa-btn-sm ${regionFilter === reg ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
+                  style={{ fontSize: '0.74rem', padding: '3px 10px' }}
+                >
+                  {reg === 'all' ? 'All Regions' : getRegionFlag(reg)}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table className="hpa-table" style={{ width: '100%', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr>
+                    <th>Feed Name</th>
+                    <th>Region &amp; Language</th>
+                    <th>Category</th>
+                    <th>Feed URL</th>
+                    <th>Status</th>
+                    <th>Last Fetched</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSources.map((src) => (
+                    <tr key={src.id}>
+                      <td>
+                        <div style={{ fontWeight: 600, color: '#ffffff' }}>{src.name}</div>
+                        {src.topic && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>{src.topic}</div>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="hpa-pill" style={{ fontSize: '0.72rem' }}>
+                            {getRegionFlag(src.region)}
+                          </span>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--hpa-text-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
+                            {src.language || 'EN'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="hpa-pill" style={{ fontSize: '0.72rem' }}>
+                          {src.category}
+                        </span>
+                      </td>
+                      <td>
+                        <a
+                          href={src.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            color: 'var(--hpa-primary)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            maxWidth: '220px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <span>{src.url}</span>
+                          <ExternalLink size={10} />
+                        </a>
+                      </td>
+                      <td>
+                        {src.lastStatus === 'ok' ? (
+                          <span className="hpa-pill hpa-pill-published" style={{ fontSize: '0.7rem' }}>
+                            Healthy
+                          </span>
+                        ) : src.lastStatus === 'error' ? (
+                          <span
+                            className="hpa-pill hpa-pill-danger"
+                            style={{ fontSize: '0.7rem' }}
+                            title={src.errorMessage || 'Feed error'}
+                          >
+                            Error
+                          </span>
+                        ) : (
+                          <span className="hpa-pill" style={{ fontSize: '0.7rem' }}>
+                            Pending
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.75rem' }}>
+                          {src.lastFetchedAt
+                            ? new Date(src.lastFetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : 'Never'}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleToggleSource(src.id, src.isActive)}
+                          disabled={togglingSourceId === src.id}
+                          className={`hpa-btn hpa-btn-sm ${src.isActive ? 'hpa-btn-secondary' : ''}`}
+                          style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                        >
+                          {togglingSourceId === src.id ? (
+                            <>
+                              <Loader2 size={11} className="hpa-spin" />
+                              <span>Updating...</span>
+                            </>
+                          ) : (
+                            <span>{src.isActive ? 'Active' : 'Disabled'}</span>
+                          )}
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleOpenDeleteSource(src.id, src.name)}
+                          disabled={deletingSourceId === src.id}
+                          className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                          style={{ padding: '3px 6px' }}
+                          title="Delete source"
+                        >
+                          {deletingSourceId === src.id ? (
+                            <Loader2 size={12} className="hpa-spin" />
+                          ) : (
+                            <Trash2 size={12} />
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB 3: EDITORIAL MIX & DESI OFFICE HUMOUR MEMES */}
+      {activeTab === 'editorial' && settings && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Weekly Content Mix Strategy Card */}
+          <div className="hpa-card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <Calendar size={18} style={{ color: 'var(--hpa-primary)' }} />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                Weekly Editorial Mix &amp; Content Strategy
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '18px', lineHeight: 1.5 }}>
+              Maintain audience engagement by distributing daily posts across serious technical breakdowns, deep architectural reviews, relatable Indian office memes, and industry events.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '22px' }}>
+              <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.25)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#93c5fd' }}>Daily Tech News &amp; AI</span>
+                  <span className="hpa-pill hpa-pill-published" style={{ fontSize: '0.7rem' }}>50% (3-4/wk)</span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
+                  Mon, Wed, Fri: High-impact AI announcements, model releases, and web development tooling.
+                </p>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#c084fc' }}>Deep Architecture</span>
+                  <span className="hpa-pill" style={{ fontSize: '0.7rem' }}>20% (1/wk)</span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
+                  Tuesday: Microservices, database scaling, frontend performance, and production post-mortems.
+                </p>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fcd34d' }}>Desi Office Memes</span>
+                  <span className="hpa-pill hpa-pill-draft" style={{ fontSize: '0.7rem' }}>20% (1-2/wk)</span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
+                  Thursday: Relatable Indian IT workplace humour (Friday prod deploy, Bangalore traffic, chai breaks).
+                </p>
+              </div>
+
+              <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#6ee7b7' }}>Events &amp; Launches</span>
+                  <span className="hpa-pill" style={{ fontSize: '0.7rem' }}>10% (Weekend)</span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
+                  Sat/Sun: Tech conferences, product launches, developer tools showcases, and hackathons.
+                </p>
+              </div>
+            </div>
+
+            {/* Content Type Selector for Next Run */}
+            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--hpa-border)' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
+                Content Generation Mode for Scheduled 9 AM Runs:
+              </label>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'tech_news', label: 'Tech News & AI (Default)', desc: 'Fact-checked industry news' },
+                  { id: 'office_humour_meme', label: 'Desi Office Humour Meme', desc: 'Custom SVG card + Indian IT humor' },
+                  { id: 'auto', label: 'Auto (Follow Weekly Mix)', desc: 'Rotates based on day of week' },
+                ].map((item) => (
+                  <label
+                    key={item.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      background: (settings.currentContentType || 'tech_news') === item.id ? 'rgba(37, 99, 235, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                      border: (settings.currentContentType || 'tech_news') === item.id ? '1px solid #3b82f6' : '1px solid var(--hpa-border)',
+                      cursor: 'pointer',
+                      flex: 1,
+                      minWidth: '200px',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="contentType"
+                      value={item.id}
+                      checked={(settings.currentContentType || 'tech_news') === item.id}
+                      onChange={() => handleToggle('currentContentType' as any, item.id)}
+                      style={{ marginTop: '3px' }}
+                    />
+                    <div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#ffffff' }}>{item.label}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)' }}>{item.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table className="hpa-table" style={{ width: '100%', fontSize: '0.82rem' }}>
-              <thead>
-                <tr>
-                  <th>Feed Name</th>
-                  <th>Category</th>
-                  <th>Feed URL</th>
-                  <th>Status</th>
-                  <th>Last Fetched</th>
-                  <th>Active</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sources.map((src) => (
-                  <tr key={src.id}>
-                    <td>
-                      <div style={{ fontWeight: 600, color: '#ffffff' }}>{src.name}</div>
-                    </td>
-                    <td>
-                      <span className="hpa-pill" style={{ fontSize: '0.72rem' }}>
-                        {src.category}
-                      </span>
-                    </td>
-                    <td>
-                      <a
-                        href={src.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          color: 'var(--hpa-primary)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          maxWidth: '260px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        <span>{src.url}</span>
-                        <ExternalLink size={10} />
-                      </a>
-                    </td>
-                    <td>
-                      {src.lastStatus === 'ok' ? (
-                        <span className="hpa-pill hpa-pill-published" style={{ fontSize: '0.7rem' }}>
-                          Healthy
-                        </span>
-                      ) : src.lastStatus === 'error' ? (
-                        <span
-                          className="hpa-pill hpa-pill-danger"
-                          style={{ fontSize: '0.7rem' }}
-                          title={src.errorMessage || 'Feed error'}
-                        >
-                          Error
-                        </span>
-                      ) : (
-                        <span className="hpa-pill" style={{ fontSize: '0.7rem' }}>
-                          Pending
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.75rem' }}>
-                        {src.lastFetchedAt
-                          ? new Date(src.lastFetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          : 'Never'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleToggleSource(src.id, src.isActive)}
-                        disabled={togglingSourceId === src.id}
-                        className={`hpa-btn hpa-btn-sm ${src.isActive ? 'hpa-btn-secondary' : ''}`}
-                        style={{ padding: '2px 8px', fontSize: '0.72rem' }}
-                      >
-                        {togglingSourceId === src.id ? (
-                          <>
-                            <Loader2 size={11} className="hpa-spin" />
-                            <span>Updating...</span>
-                          </>
-                        ) : (
-                          <span>{src.isActive ? 'Active' : 'Disabled'}</span>
-                        )}
-                      </button>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleOpenDeleteSource(src.id, src.name)}
-                        disabled={deletingSourceId === src.id}
-                        className="hpa-btn hpa-btn-danger hpa-btn-sm"
-                        style={{ padding: '3px 6px' }}
-                        title="Delete source"
-                      >
-                        {deletingSourceId === src.id ? (
-                          <Loader2 size={12} className="hpa-spin" />
-                        ) : (
-                          <Trash2 size={12} />
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Instant Desi Meme Generator Card */}
+          <div
+            className="hpa-card"
+            style={{
+              padding: '24px',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 17, 23, 0.8) 100%)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)',
+                  }}
+                >
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    Instant Desi Office Humour Meme Publisher
+                  </h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)', margin: '3px 0 0' }}>
+                    Generate an original graphic card + relatable breakdown + LinkedIn share in 1 click
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRunMemeNow}
+                disabled={runningMeme || runningNow}
+                className="hpa-btn hpa-btn-primary"
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
+                  borderColor: 'transparent',
+                  padding: '10px 18px',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 18px rgba(245, 158, 11, 0.4)',
+                }}
+              >
+                {runningMeme ? <Loader2 size={14} className="hpa-spin" /> : <Play size={14} />}
+                <span>{runningMeme ? 'Rendering & Publishing...' : 'Generate & Publish Meme Now'}</span>
+              </button>
+            </div>
+
+            <div style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.85)', lineHeight: 1.6 }}>
+              <p style={{ margin: '0 0 10px 0' }}>
+                <strong>What this does:</strong>
+              </p>
+              <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--hpa-text-dim)', fontSize: '0.8rem' }}>
+                <li style={{ marginBottom: '4px' }}>
+                  Selects an authentic Indian tech workplace trope: <em>Chai-sutta break standups, Friday 5 PM prod releases, Bangalore Silk Board traffic vs WFH, client requirement pivots, or Jira sprint story estimates</em>.
+                </li>
+                <li style={{ marginBottom: '4px' }}>
+                  Renders a crisp 1200x675 SVG graphic meme card with punchy typography and modern gradient palette.
+                </li>
+                <li style={{ marginBottom: '4px' }}>
+                  Uploads the SVG to Supabase Storage (<code>media/memes/</code>) and catalogs it in your Media Vault.
+                </li>
+                <li style={{ marginBottom: '4px' }}>
+                  Inserts a full post into your Posts CMS at <code>/insights/[slug]/</code> with a relatable humanized essay on corporate tech life.
+                </li>
+                <li>
+                  Shares a witty, engaging post to your personal LinkedIn feed with relevant hashtags (<code>#IndianTech #DeveloperLife #TechHumour</code>).
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: CONFIGURATION & AI MODELS */}
+      {/* TAB 4: SEASONAL WEATHER ENGINE */}
+      {activeTab === 'seasonal' && settings && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="hpa-card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CloudSun size={18} style={{ color: '#38bdf8' }} />
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                    Seasonal &amp; Weather Engine
+                  </h3>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: '2px 0 0' }}>
+                    Non-intrusive floating weather capsule powered by Open-Meteo (No API key needed, cached 30 min)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleTestWeather}
+                disabled={testingWeather}
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+              >
+                {testingWeather ? <Loader2 size={12} className="hpa-spin" /> : <Thermometer size={12} />}
+                <span>{testingWeather ? 'Fetching Open-Meteo...' : 'Test Live Weather Now'}</span>
+              </button>
+            </div>
+
+            {/* Live Weather Test Display */}
+            {liveWeatherPreview && (
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'rgba(56, 189, 248, 0.08)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ fontSize: '2rem' }}>{liveWeatherPreview.icon || '☀️'}</div>
+                    <div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
+                        {liveWeatherPreview.city}: {liveWeatherPreview.temperature}°C
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#93c5fd' }}>
+                        {liveWeatherPreview.description} • Season: <strong>{liveWeatherPreview.season}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>
+                    Cached for 30 minutes • Source: Open-Meteo WMO
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Seasonal Settings Form */}
+            <form onSubmit={handleSaveAllSettings}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px', marginBottom: '20px' }}>
+                {/* Seasonal Enabled Toggle */}
+                <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--hpa-border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '0.86rem', fontWeight: 600, color: '#ffffff' }}>Enable on Website</span>
+                      <p style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
+                        Shows floating bottom-right capsule
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, isSeasonalEnabled: !settings.isSeasonalEnabled })}
+                      className={`hpa-btn hpa-btn-sm ${settings.isSeasonalEnabled ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
+                    >
+                      {settings.isSeasonalEnabled ? 'Enabled' : 'Disabled'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Seasonal Mode */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
+                    Detection Mode
+                  </label>
+                  <select
+                    value={settings.seasonalMode || 'auto'}
+                    onChange={(e) => setSettings({ ...settings, seasonalMode: e.target.value as any })}
+                    className="hpa-input"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="auto">Auto: Live Weather (Open-Meteo) + Season</option>
+                    <option value="manual">Manual: Fixed Seasonal / Festive Theme</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                </div>
+
+                {/* Manual Theme Selector (if mode is manual) */}
+                {settings.seasonalMode === 'manual' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
+                      Manual Seasonal Theme
+                    </label>
+                    <select
+                      value={settings.seasonalManualTheme || 'autumn'}
+                      onChange={(e) => setSettings({ ...settings, seasonalManualTheme: e.target.value as any })}
+                      className="hpa-input"
+                      style={{ width: '100%' }}
+                    >
+                      <option value="spring">🌸 Spring (Blossoms &amp; Fresh Energy)</option>
+                      <option value="summer">☀️ Summer (Vibrant Sun &amp; Warm Gold)</option>
+                      <option value="monsoon">🌧️ Monsoon (Rain &amp; Cool Breeze)</option>
+                      <option value="autumn">🍂 Autumn (Golden Amber Leaves)</option>
+                      <option value="diwali">🪔 Diwali (Festive Diya Glow)</option>
+                      <option value="winter">❄️ Winter (Frost &amp; Soft Chill)</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Weather City */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
+                    Weather City
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.weatherCity || 'Bengaluru, India'}
+                    onChange={(e) => setSettings({ ...settings, weatherCity: e.target.value })}
+                    className="hpa-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                {/* Latitude & Longitude */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
+                    Coordinates (Latitude, Longitude)
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      placeholder="Lat"
+                      value={settings.weatherLatitude ?? 12.9716}
+                      onChange={(e) => setSettings({ ...settings, weatherLatitude: parseFloat(e.target.value) || 0 })}
+                      className="hpa-input"
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      type="number"
+                      step="0.0001"
+                      placeholder="Lon"
+                      value={settings.weatherLongitude ?? 77.5946}
+                      onChange={(e) => setSettings({ ...settings, weatherLongitude: parseFloat(e.target.value) || 0 })}
+                      className="hpa-input"
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', marginTop: '4px' }}>
+                    Default: 12.9716, 77.5946 (Bengaluru) or 28.6139, 77.2090 (Delhi)
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="hpa-btn hpa-btn-primary"
+              >
+                {savingSettings ? <Loader2 size={14} className="hpa-spin" /> : <Check size={14} />}
+                <span>{savingSettings ? 'Saving...' : 'Save Seasonal Settings'}</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: CONFIGURATION & AI MODELS */}
       {activeTab === 'settings' && settings && (
         <form onSubmit={handleSaveAllSettings} className="hpa-card" style={{ padding: '24px' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>
-            Automation Pipeline Settings & Topics
+            Automation Pipeline Settings &amp; Topics
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px', marginBottom: '20px' }}>
@@ -1244,9 +1930,9 @@ export default function NewsAutomationClient() {
                 className="hpa-input"
                 style={{ width: '100%' }}
               >
-                <option value="gemini-2.5-flash">Google Gemini 2.5 Flash (Recommended - Ultra-fast & factual)</option>
-                <option value="gemini-1.5-flash">Google Gemini 1.5 Flash</option>
-                <option value="gemini-1.5-pro">Google Gemini 1.5 Pro</option>
+                <option value="gemini-3.8-flash">Google Gemini 3.8 Flash (Active &amp; Recommended — Verified 200 OK)</option>
+                <option value="gemini-3.1-pro-preview">Google Gemini 3.1 Pro Preview (Deep Reasoning)</option>
+                <option value="gemini-2.5-flash">Google Gemini 2.5 Flash (Deprecated by Google)</option>
                 <option value="gpt-4o-mini">OpenAI GPT-4o Mini</option>
                 <option value="gpt-4o">OpenAI GPT-4o</option>
               </select>
@@ -1406,6 +2092,43 @@ export default function NewsAutomationClient() {
                     {testFeedResult}
                   </div>
                 )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '4px' }}>
+                    Region
+                  </label>
+                  <select
+                    value={newSourceRegion}
+                    onChange={(e) => setNewSourceRegion(e.target.value)}
+                    className="hpa-input"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="Global">🌐 Global / Worldwide</option>
+                    <option value="India">🇮🇳 India</option>
+                    <option value="USA">🇺🇸 USA</option>
+                    <option value="UK">🇬🇧 UK</option>
+                    <option value="Australia">🇦🇺 Australia</option>
+                    <option value="Germany & Europe">🇩🇪 Germany &amp; Europe</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '4px' }}>
+                    Language
+                  </label>
+                  <select
+                    value={newSourceLanguage}
+                    onChange={(e) => setNewSourceLanguage(e.target.value)}
+                    className="hpa-input"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="en">English (en)</option>
+                    <option value="de">German (de)</option>
+                    <option value="hi">Hindi (hi)</option>
+                  </select>
+                </div>
               </div>
 
               <div style={{ marginBottom: '20px' }}>
@@ -1805,6 +2528,30 @@ export default function NewsAutomationClient() {
                     Publishes live to <code>/insights/[slug]</code> and {settings?.autoPublishLinkedIn ? 'shares synchronized commentary to personal LinkedIn.' : 'skips LinkedIn (auto-publish toggle is off).'}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Content Type Selector */}
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
+                Select Content Type to Generate:
+              </label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'tech_news', label: 'Tech News & AI (Default)' },
+                  { id: 'office_humour_meme', label: 'Desi Office Humour Meme' },
+                  { id: 'auto', label: 'Auto (Follow Weekly Mix)' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSelectedContentType(item.id as any)}
+                    className={`hpa-btn hpa-btn-sm ${selectedContentType === item.id ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
+                    style={{ fontSize: '0.76rem', padding: '6px 12px' }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             </div>
 

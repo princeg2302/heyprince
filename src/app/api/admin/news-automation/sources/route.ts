@@ -72,6 +72,10 @@ export async function POST(request: NextRequest) {
       name: body.name,
       url: body.url,
       category: body.category,
+      region: body.region,
+      language: body.language,
+      topic: body.topic,
+      priority: body.priority,
       feedType: body.feedType,
     });
 

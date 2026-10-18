@@ -23,6 +23,8 @@ async function handleCronTrigger(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const customHeader = request.headers.get('x-cron-secret');
 
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+
   if (cronSecret) {
     const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
     const providedSecret = bearerSecret || customHeader;
@@ -37,17 +39,19 @@ async function handleCronTrigger(request: NextRequest) {
         { status: 401 }
       );
     }
-  } else if (process.env.NODE_ENV === 'production') {
-    // In production, CRON_SECRET is required to prevent unauthenticated public triggers
-    console.error('[Cron Daily News] CRON_SECRET environment variable is missing in production.');
+  } else if (!isVercelCron && process.env.NODE_ENV === 'production') {
+    // In production, block unauthorized public web visitors
+    console.warn('[Cron Daily News] Blocked unauthenticated public request.');
     return NextResponse.json(
       {
         success: false,
         error:
-          'CRON_SECRET is not configured on the server. Please set CRON_SECRET in your Vercel project environment variables.',
+          'Unauthorized: CRON_SECRET is not configured and request did not originate from Vercel Cron scheduler.',
       },
-      { status: 500 }
+      { status: 401 }
     );
+  } else if (isVercelCron && !cronSecret) {
+    console.info('[Cron Daily News] Triggered by Vercel Cron header. Recommendation: configure CRON_SECRET in Vercel for added security.');
   }
 
   // 2. Prevent execution on Vercel Preview deployments if configured

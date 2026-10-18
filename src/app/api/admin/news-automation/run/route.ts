@@ -12,9 +12,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const body = await request.json().catch(() => ({}));
+    const contentType = body?.contentType as 'tech_news' | 'office_humour_meme' | undefined;
+
     const result = await executeDailyNewsAutomation({
       triggerType: 'manual_run',
       forceRunToday: true,
+      contentType,
     });
 
     return NextResponse.json(result);

@@ -9,6 +9,7 @@ import 'mouse-follower/dist/mouse-follower.min.css';
 import 'lenis/dist/lenis.css';
 
 import { Header, Footer, ClientProviders } from '@/components';
+import { SeasonalElement } from '@/components/SeasonalElement';
 
 export const viewport: Viewport = {
   themeColor: '#0b0b0f',
@@ -302,6 +303,7 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
+            <SeasonalElement />
           </ClientProviders>
         </div>
       </body>

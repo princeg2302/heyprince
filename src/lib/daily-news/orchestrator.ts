@@ -15,12 +15,14 @@ import {
 import { collectDailyNews } from './rss-collector';
 import { generateDailyPost } from './content-generator';
 import { generateDailyBlogImages } from './image-generator';
+import { generateOfficeHumourMeme } from './meme-generator';
 import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
 
 export async function executeDailyNewsAutomation(params?: {
   triggerType?: 'scheduled' | 'manual_run' | 'preview';
   forceRunToday?: boolean;
+  contentType?: 'tech_news' | 'office_humour_meme';
 }): Promise<OrchestrationResult> {
   const triggerType = params?.triggerType || 'scheduled';
   const todayStr = new Date().toISOString().split('T')[0];
@@ -86,6 +88,209 @@ export async function executeDailyNewsAutomation(params?: {
   }
 
   try {
+    const activeContentType =
+      params?.contentType ||
+      settings.currentContentType ||
+      (new Date().getDay() === 5 || new Date().getDay() === 6 ? 'office_humour_meme' : 'tech_news');
+
+    // Branch A: Original Indian Office-Humour Meme
+    if (activeContentType === 'office_humour_meme') {
+      const meme = await generateOfficeHumourMeme();
+
+      await updateDailyRun(run.id, {
+        articleTitle: meme.title,
+        articleSlug: meme.slug,
+        articleExcerpt: meme.excerpt,
+        articleContent: {
+          title: meme.title,
+          slug: meme.slug,
+          excerpt: meme.excerpt,
+          readMins: meme.readMins,
+          categoryName: meme.categoryName,
+          tags: meme.tags,
+          sections: meme.sections,
+          sourcesUsed: [],
+          seoTitle: meme.seoTitle,
+          seoDescription: meme.seoDescription,
+          linkedinPost: meme.linkedinPost,
+          rationale: 'Original Indian workplace humour concept with custom SVG card',
+          coverImage: meme.imageUrl,
+        },
+        linkedinCommentary: meme.linkedinPost,
+      });
+
+      const previewSections = meme.sections.map((s, idx) => {
+        const paragraphs = [...s.paragraphs];
+        if (idx === 0 && meme.imageUrl) {
+          paragraphs.unshift(`![${meme.title}](${meme.imageUrl} "${meme.title}")`);
+        }
+        return {
+          ...s,
+          paragraphs,
+        };
+      });
+
+      const dbSections = previewSections.map((s) => ({
+        heading: s.heading,
+        quote: s.quote,
+        pro_tip: s.proTip,
+        paragraphs: s.paragraphs.map((p) => ({ text: p })),
+        bullet_points: s.bulletPoints ? s.bulletPoints.map((b) => ({ point: b })) : undefined,
+      }));
+
+      if (triggerType === 'preview') {
+        await updateDailyRun(run.id, {
+          status: 'success',
+          websiteStatus: 'draft_saved',
+          linkedinStatus: 'skipped',
+          completedAt: new Date().toISOString(),
+        });
+
+        return {
+          success: true,
+          runId: run.id,
+          runDate: todayStr,
+          status: 'success',
+          websiteStatus: 'draft_saved',
+          linkedinStatus: 'skipped',
+          sourcesChecked: 0,
+          itemsDiscovered: 0,
+          duplicatesSkipped: 0,
+          generatedContent: {
+            title: meme.title,
+            slug: meme.slug,
+            excerpt: meme.excerpt,
+            readMins: meme.readMins,
+            categoryName: meme.categoryName,
+            tags: meme.tags,
+            sections: previewSections,
+            sourcesUsed: [],
+            seoTitle: meme.seoTitle,
+            seoDescription: meme.seoDescription,
+            linkedinPost: meme.linkedinPost,
+            rationale: 'Original Indian workplace humour concept with custom SVG card',
+            coverImage: meme.imageUrl,
+          },
+        };
+      }
+
+      // Persist to CMS
+      const isWebsitePublished = settings.autoPublishWebsite;
+      const postStatus = isWebsitePublished ? 'published' : 'draft';
+
+      const postCreateResult = await createPost({
+        title: meme.title,
+        slug: meme.slug,
+        excerpt: meme.excerpt,
+        read_mins: meme.readMins,
+        category_name: meme.categoryName,
+        status: postStatus,
+        published_at: isWebsitePublished ? new Date().toISOString() : null,
+        cover_image: meme.imageUrl,
+        seo_title: meme.seoTitle,
+        seo_description: meme.seoDescription,
+        canonical: `https://heyprince.in/insights/${meme.slug}/`,
+        tags: meme.tags.map((t) => ({ tag: t })),
+        sections: dbSections,
+      });
+
+      if (!postCreateResult.success || !postCreateResult.post) {
+        throw new Error(`Failed to create meme post in CMS: ${postCreateResult.error || 'Unknown error'}`);
+      }
+
+      const createdPost = postCreateResult.post;
+      const postUrl = `https://heyprince.in/insights/${createdPost.slug}/`;
+
+      const websiteStatus: WebsiteStatus = isWebsitePublished ? 'published' : 'draft_saved';
+
+      await updateDailyRun(run.id, {
+        postId: createdPost.id,
+        websiteStatus,
+      });
+
+      // Stage 4: Publish to LinkedIn
+      let linkedinStatus: LinkedInStatus = 'skipped';
+      let linkedinPostUrn: string | null = null;
+      let linkedinShareUrl: string | null = null;
+      let linkedinError: string | null = null;
+
+      if (settings.autoPublishLinkedIn) {
+        if (postStatus !== 'published') {
+          linkedinStatus = 'pending';
+        } else {
+          try {
+            const liRes = await publishArticleToLinkedIn({
+              postId: createdPost.id,
+              customCommentary: meme.linkedinPost,
+            });
+
+            if (liRes.success) {
+              linkedinStatus = 'published';
+              linkedinPostUrn = liRes.postUrn || null;
+              linkedinShareUrl = liRes.postUrl || null;
+            } else {
+              linkedinStatus = liRes.error?.includes('connect') ? 'needs_reconnect' : 'failed';
+              linkedinError = liRes.error || 'LinkedIn API returned failure';
+            }
+          } catch (liErr: any) {
+            linkedinStatus = 'failed';
+            linkedinError = liErr?.message || 'LinkedIn publish exception';
+          }
+        }
+      }
+
+      let finalRunStatus: RunStatus = 'success';
+      if (linkedinError) {
+        finalRunStatus = 'partial_success';
+      }
+
+      await updateDailyRun(run.id, {
+        status: finalRunStatus,
+        websiteStatus,
+        linkedinStatus,
+        linkedinPostUrn,
+        linkedinShareUrl,
+        errorDetails: linkedinError
+          ? { stage: 'linkedin', message: linkedinError, timestamp: new Date().toISOString() }
+          : null,
+        completedAt: new Date().toISOString(),
+      });
+
+      return {
+        success: true,
+        runId: run.id,
+        runDate: todayStr,
+        status: finalRunStatus,
+        websiteStatus,
+        linkedinStatus,
+        postId: createdPost.id,
+        postSlug: createdPost.slug,
+        postUrl,
+        linkedinPostUrn,
+        linkedinShareUrl,
+        sourcesChecked: 0,
+        itemsDiscovered: 0,
+        duplicatesSkipped: 0,
+        generatedContent: {
+          title: meme.title,
+          slug: meme.slug,
+          excerpt: meme.excerpt,
+          readMins: meme.readMins,
+          categoryName: meme.categoryName,
+          tags: meme.tags,
+          sections: previewSections,
+          sourcesUsed: [],
+          seoTitle: meme.seoTitle,
+          seoDescription: meme.seoDescription,
+          linkedinPost: meme.linkedinPost,
+          rationale: 'Original Indian workplace humour concept with custom SVG card',
+          coverImage: meme.imageUrl,
+        },
+        warnings: linkedinError ? [`LinkedIn publishing notice: ${linkedinError}`] : undefined,
+      };
+    }
+
+    // Branch B: Daily Technology News & AI Analysis
     // 4. Stage 1: Collect & Deduplicate News from RSS Feeds
     const collection = await collectDailyNews(settings.lookbackHours);
 

@@ -38,7 +38,20 @@ export async function getDailyNewsSettings(): Promise<DailyNewsSettings> {
       ],
       lookbackHours: 24,
       aiProvider: 'gemini',
-      aiModel: 'gemini-2.5-flash',
+      aiModel: 'gemini-3.8-flash',
+      seasonalMode: 'auto',
+      seasonalManualTheme: 'autumn',
+      weatherCity: 'Delhi, India',
+      weatherLatitude: 28.6139,
+      weatherLongitude: 77.2090,
+      isSeasonalEnabled: true,
+      contentMix: {
+        tech_news: 4,
+        deep_analysis: 1,
+        office_humour_meme: 2,
+        event_roundup: 0,
+      },
+      currentContentType: 'tech_news',
       updatedAt: new Date().toISOString(),
     };
   }
@@ -55,7 +68,20 @@ export async function getDailyNewsSettings(): Promise<DailyNewsSettings> {
     topics: Array.isArray(r.topics) ? r.topics : [],
     lookbackHours: r.lookback_hours || 24,
     aiProvider: r.ai_provider || 'gemini',
-    aiModel: r.ai_model || 'gemini-2.5-flash',
+    aiModel: r.ai_model || 'gemini-3.8-flash',
+    seasonalMode: r.seasonal_mode || 'auto',
+    seasonalManualTheme: r.seasonal_manual_theme || 'autumn',
+    weatherCity: r.weather_city || 'Delhi, India',
+    weatherLatitude: r.weather_latitude ? Number(r.weather_latitude) : 28.6139,
+    weatherLongitude: r.weather_longitude ? Number(r.weather_longitude) : 77.2090,
+    isSeasonalEnabled: r.is_seasonal_enabled !== undefined ? Boolean(r.is_seasonal_enabled) : true,
+    contentMix: r.content_mix || {
+      tech_news: 4,
+      deep_analysis: 1,
+      office_humour_meme: 2,
+      event_roundup: 0,
+    },
+    currentContentType: r.current_content_type || 'tech_news',
     updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
   };
 }
@@ -77,6 +103,15 @@ export async function updateDailyNewsSettings(
   const lookbackHours = updates.lookbackHours || current.lookbackHours;
   const aiProvider = updates.aiProvider || current.aiProvider;
   const aiModel = updates.aiModel || current.aiModel;
+  const seasonalMode = updates.seasonalMode || current.seasonalMode || 'auto';
+  const seasonalManualTheme = updates.seasonalManualTheme || current.seasonalManualTheme || 'autumn';
+  const weatherCity = updates.weatherCity || current.weatherCity || 'Delhi, India';
+  const weatherLatitude = updates.weatherLatitude !== undefined ? updates.weatherLatitude : current.weatherLatitude;
+  const weatherLongitude = updates.weatherLongitude !== undefined ? updates.weatherLongitude : current.weatherLongitude;
+  const isSeasonalEnabled =
+    updates.isSeasonalEnabled !== undefined ? updates.isSeasonalEnabled : current.isSeasonalEnabled;
+  const contentMix = updates.contentMix || current.contentMix;
+  const currentContentType = updates.currentContentType || current.currentContentType || 'tech_news';
 
   await query(
     `
@@ -92,8 +127,16 @@ export async function updateDailyNewsSettings(
       lookback_hours = $8,
       ai_provider = $9,
       ai_model = $10,
+      seasonal_mode = $11,
+      seasonal_manual_theme = $12,
+      weather_city = $13,
+      weather_latitude = $14,
+      weather_longitude = $15,
+      is_seasonal_enabled = $16,
+      content_mix = $17,
+      current_content_type = $18,
       updated_at = NOW()
-    WHERE id = $11;
+    WHERE id = $19;
     `,
     [
       isEnabled,
@@ -106,6 +149,14 @@ export async function updateDailyNewsSettings(
       lookbackHours,
       aiProvider,
       aiModel,
+      seasonalMode,
+      seasonalManualTheme,
+      weatherCity,
+      weatherLatitude,
+      weatherLongitude,
+      isSeasonalEnabled,
+      JSON.stringify(contentMix),
+      currentContentType,
       current.id,
     ]
   );
@@ -119,8 +170,8 @@ export async function updateDailyNewsSettings(
 
 export async function getDailyNewsSources(onlyActive = false): Promise<DailyNewsSource[]> {
   const text = onlyActive
-    ? `SELECT * FROM daily_news_sources WHERE is_active = true ORDER BY name ASC;`
-    : `SELECT * FROM daily_news_sources ORDER BY is_active DESC, name ASC;`;
+    ? `SELECT * FROM daily_news_sources WHERE is_active = true ORDER BY priority ASC, name ASC;`
+    : `SELECT * FROM daily_news_sources ORDER BY is_active DESC, priority ASC, name ASC;`;
 
   const rows = await query(text);
   return rows.map((r) => ({
@@ -129,6 +180,10 @@ export async function getDailyNewsSources(onlyActive = false): Promise<DailyNews
     url: r.url,
     feedType: r.feed_type,
     category: r.category,
+    region: r.region || 'Global',
+    language: r.language || 'en',
+    topic: r.topic || 'Artificial Intelligence',
+    priority: r.priority || 1,
     isActive: Boolean(r.is_active),
     lastFetchedAt: r.last_fetched_at ? new Date(r.last_fetched_at).toISOString() : null,
     lastStatus: r.last_status || 'pending',
@@ -142,15 +197,28 @@ export async function addDailyNewsSource(data: {
   name: string;
   url: string;
   category?: string;
+  region?: string;
+  language?: string;
+  topic?: string;
+  priority?: number;
   feedType?: 'rss' | 'atom' | 'api';
 }): Promise<DailyNewsSource> {
   const rows = await query(
     `
-    INSERT INTO daily_news_sources (name, url, category, feed_type, is_active)
-    VALUES ($1, $2, $3, $4, true)
+    INSERT INTO daily_news_sources (name, url, category, region, language, topic, priority, feed_type, is_active)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
     RETURNING *;
     `,
-    [data.name.trim(), data.url.trim(), data.category || 'Tech & AI', data.feedType || 'rss']
+    [
+      data.name.trim(),
+      data.url.trim(),
+      data.category || 'Technology & AI',
+      data.region || 'Global',
+      data.language || 'en',
+      data.topic || 'Artificial Intelligence',
+      data.priority || 1,
+      data.feedType || 'rss',
+    ]
   );
 
   const r = rows[0];
@@ -160,6 +228,10 @@ export async function addDailyNewsSource(data: {
     url: r.url,
     feedType: r.feed_type,
     category: r.category,
+    region: r.region || 'Global',
+    language: r.language || 'en',
+    topic: r.topic || 'Artificial Intelligence',
+    priority: r.priority || 1,
     isActive: Boolean(r.is_active),
     lastFetchedAt: null,
     lastStatus: 'pending',
@@ -188,6 +260,22 @@ export async function updateDailyNewsSource(
   if (updates.category !== undefined) {
     fields.push(`category = $${pIdx++}`);
     params.push(updates.category);
+  }
+  if (updates.region !== undefined) {
+    fields.push(`region = $${pIdx++}`);
+    params.push(updates.region);
+  }
+  if (updates.language !== undefined) {
+    fields.push(`language = $${pIdx++}`);
+    params.push(updates.language);
+  }
+  if (updates.topic !== undefined) {
+    fields.push(`topic = $${pIdx++}`);
+    params.push(updates.topic);
+  }
+  if (updates.priority !== undefined) {
+    fields.push(`priority = $${pIdx++}`);
+    params.push(updates.priority);
   }
   if (updates.isActive !== undefined) {
     fields.push(`is_active = $${pIdx++}`);
@@ -356,7 +444,26 @@ export async function getDailyRunByDate(dateStr: string): Promise<DailyNewsRunRe
     [dateStr]
   );
   if (!rows || rows.length === 0) return null;
-  return mapRunRow(rows[0]);
+  const run = mapRunRow(rows[0]);
+
+  // If a previous execution remained stuck in 'running' for over 15 minutes, auto-expire it
+  if (run.status === 'running' && run.startedAt) {
+    const startedMs = new Date(run.startedAt).getTime();
+    if (Date.now() - startedMs > 15 * 60 * 1000) {
+      await updateDailyRun(run.id, {
+        status: 'failed',
+        errorDetails: {
+          stage: 'timeout',
+          message: 'Process execution timed out after 15 minutes. Automatically expired to release execution lock.',
+          timestamp: new Date().toISOString(),
+        },
+        completedAt: new Date().toISOString(),
+      });
+      run.status = 'failed';
+    }
+  }
+
+  return run;
 }
 
 export async function getRecentDailyRuns(limit = 15): Promise<DailyNewsRunRecord[]> {
