@@ -8169,3 +8169,1070 @@ body {
     max-width: calc(100vw - 146px);
   }
 }
+
+/* ==========================================================================
+   RETRO GAMING ZONE & 8-BIT ARCADE VAULT (/gaming-zone)
+   ========================================================================== */
+.gaming-zone-page {
+  position: relative;
+  min-height: 100vh;
+  background: #090a0f;
+  color: #f0f0f5;
+  padding-top: 130px;
+  padding-bottom: 100px;
+  overflow-x: hidden;
+}
+
+.gaming-ambient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background: radial-gradient(circle at 50% 15%, rgba(212, 0, 39, 0.12) 0%, rgba(0, 242, 254, 0.05) 45%, transparent 75%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gaming-zone-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 2;
+}
+
+.gaming-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.gaming-back-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateX(-3px);
+}
+
+.gaming-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 16, 25, 0.85);
+  border: 1px solid rgba(255, 45, 85, 0.35);
+  backdrop-filter: blur(10px);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.gaming-hero-wrap {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 48px;
+}
+
+.gaming-main-title {
+  font-size: clamp(34px, 5.5vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.gaming-main-title .text-red {
+  color: #ff2d55 !important;
+  text-shadow: 0 0 25px rgba(255, 45, 85, 0.6);
+}
+
+.gaming-hero-desc {
+  max-width: 760px;
+  margin: 0 auto 24px;
+  font-size: clamp(14px, 1.4vw, 16.5px);
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.65;
+}
+
+.gaming-sound-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.gaming-sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.gaming-sound-toggle.active {
+  color: #00ff88;
+  border-color: rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.08);
+}
+
+.gaming-sound-toggle:hover {
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   GAME SELECTION CARDS DECK
+   ========================================================================== */
+.gaming-selector-deck {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.gaming-deck-card {
+  background: linear-gradient(155deg, rgba(24, 27, 40, 0.95) 0%, rgba(15, 17, 26, 0.98) 55%, rgba(9, 10, 16, 1) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  padding: 24px 22px 20px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.gaming-deck-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+}
+
+.gaming-deck-card.is-selected {
+  border-color: rgba(255, 45, 85, 0.85);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 45, 85, 0.3);
+  transform: translateY(-4px);
+}
+
+.gaming-deck-card.card-sudoku.is-selected {
+  border-color: rgba(0, 242, 254, 0.85);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 242, 254, 0.25);
+}
+
+.gaming-deck-card.card-contra.is-selected {
+  border-color: rgba(255, 120, 45, 0.85);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 120, 45, 0.25);
+}
+
+.deck-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.deck-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.tag-mario {
+  color: #ff3b5c;
+  background: rgba(255, 59, 92, 0.12);
+  border: 1px solid rgba(255, 59, 92, 0.3);
+}
+
+.tag-sudoku {
+  color: #00f2fe;
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+}
+
+.tag-contra {
+  color: #ffaa00;
+  background: rgba(255, 170, 0, 0.12);
+  border: 1px solid rgba(255, 170, 0, 0.3);
+}
+
+.deck-active-pill {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: #ff2d55;
+  color: #ffffff;
+  padding: 2.5px 7px;
+  border-radius: 999px;
+}
+
+.deck-card-body {
+  margin-bottom: 20px;
+}
+
+.deck-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 14px;
+}
+
+.badge-mario {
+  background: linear-gradient(135deg, rgba(255, 45, 85, 0.25) 0%, rgba(212, 0, 39, 0.1) 100%);
+  border: 1px solid rgba(255, 45, 85, 0.4);
+  font-size: 24px;
+}
+
+.badge-sudoku {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.25) 0%, rgba(4, 150, 255, 0.1) 100%);
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  color: #00f2fe;
+}
+
+.badge-contra {
+  background: linear-gradient(135deg, rgba(255, 170, 0, 0.25) 0%, rgba(255, 90, 0, 0.1) 100%);
+  border: 1px solid rgba(255, 170, 0, 0.4);
+  color: #ffaa00;
+}
+
+.deck-game-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.deck-game-desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.deck-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.deck-mode-indicator {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deck-arrow-btn {
+  font-size: 16px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.gaming-deck-card:hover .deck-arrow-btn {
+  transform: translateX(4px);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   STAGE ENCLOSURE & RETRO CABINET
+   ========================================================================== */
+.gaming-stage-enclosure {
+  background: #0d0f17;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.stage-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 22px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stage-retro-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.stage-retro-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.stage-retro-dots .dot.red { background: #ff5f56; }
+.stage-retro-dots .dot.yellow { background: #ffbd2e; }
+.stage-retro-dots .dot.green { background: #27c93f; }
+
+.stage-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage-system-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: rgba(255, 45, 85, 0.15);
+  border: 1px solid rgba(255, 45, 85, 0.35);
+  color: #ff3b5c;
+  padding: 2.5px 8px;
+  border-radius: 4px;
+}
+
+.stage-system-badge.badge-sudoku {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: rgba(0, 242, 254, 0.35);
+  color: #00f2fe;
+}
+
+.stage-system-badge.badge-contra {
+  background: rgba(255, 170, 0, 0.15);
+  border-color: rgba(255, 170, 0, 0.35);
+  color: #ffaa00;
+}
+
+.stage-title-text {
+  font-family: monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.status-indicator-live {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.status-indicator-live.status-cyan {
+  color: #00f2fe;
+  background: rgba(0, 242, 254, 0.1);
+  border-color: rgba(0, 242, 254, 0.3);
+}
+
+.status-indicator-live.status-orange {
+  color: #ffaa00;
+  background: rgba(255, 170, 0, 0.1);
+  border-color: rgba(255, 170, 0, 0.3);
+}
+
+/* ==========================================================================
+   MARIO SHOWCASE STAGE
+   ========================================================================== */
+.mario-showcase-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 28px;
+  padding: 32px 28px;
+}
+
+.mario-marquee-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.mario-badge-flag {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: #d40027;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.mario-marquee-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.mario-icon-large {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.mario-heading {
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.mario-subheading {
+  font-size: 13.5px;
+  color: #ff3b5c;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.mario-editorial-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 26px;
+}
+
+.mario-action-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.mario-official-btn {
+  background: #d40027 !important;
+  border-color: #d40027 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 25px rgba(212, 0, 39, 0.5);
+  font-size: 15px !important;
+  height: 48px !important;
+  padding: 0 24px !important;
+  width: fit-content;
+}
+
+.mario-official-btn:hover {
+  background: #ff1a40 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(255, 26, 64, 0.65);
+}
+
+.mario-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease;
+  width: fit-content;
+}
+
+.mario-secondary-link:hover {
+  color: #00f2fe;
+}
+
+.legal-compliance-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.legal-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #00ff88;
+  margin-bottom: 8px;
+}
+
+.legal-icon {
+  font-size: 14px;
+}
+
+.legal-card-header h4 {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin: 0;
+  color: #ffffff;
+}
+
+.legal-card-body {
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0;
+}
+
+/* Right Column Manual & Secrets */
+.mario-reference-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 22px;
+}
+
+.reference-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.reference-title.secrets-title {
+  margin-top: 24px;
+  color: #ffbd2e;
+}
+
+.nes-controller-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nes-ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 7px 12px;
+  border-radius: 8px;
+}
+
+.nes-key {
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 11px;
+  background: rgba(212, 0, 39, 0.25);
+  border: 1px solid rgba(212, 0, 39, 0.5);
+  color: #ff3b5c;
+  padding: 2px 7px;
+  border-radius: 4px;
+  min-width: 85px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nes-action {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mario-secrets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.secret-item {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.secret-badge {
+  font-family: monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  background: rgba(255, 189, 46, 0.15);
+  border: 1px solid rgba(255, 189, 46, 0.4);
+  color: #ffbd2e;
+  padding: 2px 6px;
+  border-radius: 4px;
+  height: fit-content;
+  flex-shrink: 0;
+}
+
+.secret-text {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.secret-text strong {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   SUDOKU EMBED WRAPPER
+   ========================================================================== */
+.sudoku-embed-wrapper {
+  padding: 24px;
+}
+
+/* ==========================================================================
+   CONTRA STAGE VIEW
+   ========================================================================== */
+.contra-showcase-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 28px;
+  padding: 32px 28px;
+}
+
+.contra-hero-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.contra-badge-flag {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: #ff5a00;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.contra-header-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.contra-fire-icon {
+  font-size: 38px;
+  color: #ff5a00;
+}
+
+.contra-heading {
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.contra-subheading {
+  font-size: 13.5px;
+  color: #ffaa00;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.contra-editorial-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 24px;
+}
+
+.contra-action-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.contra-official-btn {
+  background: #ff5a00 !important;
+  border-color: #ff5a00 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 25px rgba(255, 90, 0, 0.5);
+  font-size: 15px !important;
+  height: 48px !important;
+  padding: 0 24px !important;
+  width: fit-content;
+}
+
+.contra-official-btn:hover {
+  background: #ff7825 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(255, 120, 37, 0.65);
+}
+
+.contra-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease;
+  width: fit-content;
+}
+
+.contra-secondary-link:hover {
+  color: #ffaa00;
+}
+
+.contra-arsenal-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.arsenal-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arsenal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.weapon-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.weapon-letter {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.letter-s { background: #d40027; color: #fff; }
+.letter-l { background: #00f2fe; color: #000; }
+.letter-m { background: #00ff88; color: #000; }
+.letter-b { background: #b537f2; color: #fff; }
+
+.weapon-info {
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.weapon-info strong {
+  color: #ffffff;
+}
+
+/* Contra Konami Module */
+.contra-konami-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.konami-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.konami-icon {
+  font-size: 26px;
+  color: #ffaa00;
+}
+
+.konami-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #ffffff;
+  margin: 0 0 2px;
+}
+
+.konami-card-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.konami-sequence-display {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+.sequence-key {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.sequence-key.matched {
+  background: #00ff88;
+  border-color: #00ff88;
+  color: #000000;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+}
+
+.sequence-key.current {
+  border-color: #ffaa00;
+  color: #ffaa00;
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+  animation: pulseCurrentKey 1s infinite alternate;
+}
+
+@keyframes pulseCurrentKey {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+.konami-clickable-pad {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 18px 14px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.pad-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pad-dpad-middle {
+  display: flex;
+  gap: 4px;
+}
+
+.pad-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #1c202d;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pad-btn:hover {
+  background: #2a3044;
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: scale(1.05);
+}
+
+.pad-btn:active {
+  transform: scale(0.95);
+  background: #ff5a00;
+  color: #ffffff;
+}
+
+.pad-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.pad-actions .pad-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #d40027;
+  border-color: #ff3355;
+  box-shadow: 0 4px 12px rgba(212, 0, 39, 0.4);
+}
+
+.pad-actions .pad-btn:hover {
+  background: #ff1a40;
+}
+
+.konami-unlocked-banner {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 100, 0.05) 100%);
+  border: 1.5px solid #00ff88;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.25);
+  animation: bannerFadeIn 0.3s ease;
+}
+
+@keyframes bannerFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.unlocked-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #00ff88;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.trophy-icon {
+  font-size: 18px;
+  color: #ffbd2e;
+}
+
+.unlocked-desc {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.reset-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reset-code-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.konami-progress-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+}
+
+.konami-progress-hint strong {
+  color: #ffaa00;
+}
+
+/* ==========================================================================
+   GAMING ZONE RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+@media (max-width: 991px) {
+  .gaming-selector-deck {
+    grid-template-columns: 1fr;
+  }
+
+  .mario-showcase-grid,
+  .contra-showcase-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 24px 18px;
+  }
+}
+
+@media (max-width: 767px) {
+  .gaming-zone-page {
+    padding-top: 110px;
+    padding-bottom: 70px;
+  }
+
+  .gaming-deck-card {
+    padding: 20px 18px;
+  }
+
+  .arsenal-grid {
+    grid-template-columns: 1fr;
+  }
+}
