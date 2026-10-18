@@ -8,6 +8,7 @@ import {
 import {
   getDailyNewsSettings,
   getDailyRunByDate,
+  getDailyRunById,
   createDailyRun,
   updateDailyRun,
   markNewsItemsUsed,
@@ -631,5 +632,115 @@ export async function retryLinkedInPublishForRun(runId: number): Promise<{
       error: err?.message || 'LinkedIn publish exception during retry',
     };
   }
+}
+
+export async function publishDraftRun(runId: number): Promise<{
+  success: boolean;
+  postId?: number;
+  postSlug?: string;
+  postUrl?: string;
+  linkedinStatus?: LinkedInStatus;
+  linkedinShareUrl?: string;
+  error?: string;
+}> {
+  const run = await getDailyRunById(runId);
+  if (!run) {
+    return { success: false, error: `Run #${runId} not found.` };
+  }
+
+  if (run.postId) {
+    return {
+      success: true,
+      postId: run.postId,
+      postSlug: run.articleSlug,
+      postUrl: `https://heyprince.in/insights/${run.articleSlug}/`,
+      linkedinStatus: run.linkedinStatus,
+      linkedinShareUrl: run.linkedinShareUrl || undefined,
+    };
+  }
+
+  const content = run.articleContent;
+  if (!content || !content.title || !content.slug) {
+    return { success: false, error: 'Run does not have valid generated article content to publish.' };
+  }
+
+  const settings = await getDailyNewsSettings();
+
+  const previewSections = content.sections || [];
+  const dbSections = previewSections.map((s) => ({
+    heading: s.heading,
+    quote: s.quote,
+    pro_tip: s.proTip,
+    paragraphs: s.paragraphs.map((p) => ({ text: p })),
+    bullet_points: s.bulletPoints ? s.bulletPoints.map((b) => ({ point: b })) : undefined,
+  }));
+
+  const postCreateResult = await createPost({
+    title: content.title,
+    slug: content.slug,
+    excerpt: content.excerpt,
+    read_mins: content.readMins || '5 min',
+    category_name: content.categoryName || 'Artificial Intelligence',
+    status: 'published',
+    published_at: new Date().toISOString(),
+    cover_image: (content as any).coverImage || '/assets/blog/photo1.webp',
+    seo_title: content.seoTitle || content.title,
+    seo_description: content.seoDescription || content.excerpt,
+    canonical: `https://heyprince.in/insights/${content.slug}/`,
+    tags: (content.tags || []).map((t: string) => ({ tag: t })),
+    sections: dbSections,
+  });
+
+  if (!postCreateResult.success || !postCreateResult.post) {
+    return { success: false, error: postCreateResult.error || 'Failed to create post record in CMS' };
+  }
+
+  const createdPost = postCreateResult.post;
+  const postUrl = `https://heyprince.in/insights/${createdPost.slug}/`;
+
+  let linkedinStatus: LinkedInStatus = 'skipped';
+  let linkedinPostUrn: string | null = null;
+  let linkedinShareUrl: string | null = null;
+  let linkedinError: string | null = null;
+
+  if (settings.autoPublishLinkedIn) {
+    try {
+      const liRes = await publishArticleToLinkedIn({
+        postId: createdPost.id,
+        customCommentary: content.linkedinPost || run.linkedinCommentary,
+      });
+
+      if (liRes.success) {
+        linkedinStatus = 'published';
+        linkedinPostUrn = liRes.postUrn || null;
+        linkedinShareUrl = liRes.postUrl || null;
+      } else {
+        linkedinStatus = liRes.error?.includes('connect') ? 'needs_reconnect' : 'failed';
+        linkedinError = liRes.error || 'LinkedIn API returned failure';
+      }
+    } catch (liErr: any) {
+      linkedinStatus = 'failed';
+      linkedinError = liErr?.message || 'LinkedIn publish exception';
+    }
+  }
+
+  await updateDailyRun(run.id, {
+    postId: createdPost.id,
+    websiteStatus: 'published',
+    status: 'success',
+    linkedinStatus,
+    linkedinPostUrn,
+    linkedinShareUrl,
+  });
+
+  return {
+    success: true,
+    postId: createdPost.id,
+    postSlug: createdPost.slug,
+    postUrl,
+    linkedinStatus,
+    linkedinShareUrl: linkedinShareUrl || undefined,
+    error: linkedinError || undefined,
+  };
 }
 

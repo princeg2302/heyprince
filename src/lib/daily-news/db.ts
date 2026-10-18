@@ -466,6 +466,12 @@ export async function getDailyRunByDate(dateStr: string): Promise<DailyNewsRunRe
   return run;
 }
 
+export async function getDailyRunById(id: number): Promise<DailyNewsRunRecord | null> {
+  const rows = await query(`SELECT * FROM daily_news_runs WHERE id = $1 LIMIT 1;`, [id]);
+  if (!rows || rows.length === 0) return null;
+  return mapRunRow(rows[0]);
+}
+
 export async function getRecentDailyRuns(limit = 15): Promise<DailyNewsRunRecord[]> {
   const rows = await query(
     `SELECT * FROM daily_news_runs ORDER BY id DESC LIMIT $1;`,

@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Play,
   Eye,
+  Edit2,
   Settings,
   Share2,
   CheckCircle2,
@@ -82,6 +83,7 @@ export default function NewsAutomationClient() {
   const [previewData, setPreviewData] = useState<GeneratedContentPayload | null>(null);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [retryingId, setRetryingId] = useState<number | null>(null);
+  const [publishingDraftId, setPublishingDraftId] = useState<number | null>(null);
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
   const [togglingSourceId, setTogglingSourceId] = useState<number | null>(null);
   const [deletingSourceId, setDeletingSourceId] = useState<number | null>(null);
@@ -284,6 +286,29 @@ export default function NewsAutomationClient() {
       showToast('Network error during LinkedIn retry', 'error');
     } finally {
       setRetryingId(null);
+    }
+  };
+
+  // Publish draft or preview run to live CMS and LinkedIn
+  const handlePublishDraft = async (runId: number) => {
+    setPublishingDraftId(runId);
+    try {
+      const res = await fetch('/api/admin/news-automation/publish-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ runId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Article published to CMS and personal LinkedIn successfully!', 'success');
+        fetchStatus();
+      } else {
+        showToast(data.error || 'Failed to publish draft run', 'error');
+      }
+    } catch {
+      showToast('Network error publishing draft', 'error');
+    } finally {
+      setPublishingDraftId(null);
     }
   };
 
@@ -1241,25 +1266,72 @@ export default function NewsAutomationClient() {
                         <td>
                           {r.articleTitle ? (
                             <div>
-                              <div style={{ fontWeight: 600, color: '#ffffff', maxWidth: '280px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <div style={{ fontWeight: 600, color: '#ffffff', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {r.articleTitle}
                               </div>
-                              {r.articleSlug && (
-                                <Link
-                                  href={`/insights/${r.articleSlug}/`}
-                                  target="_blank"
-                                  style={{
-                                    fontSize: '0.72rem',
-                                    color: 'var(--hpa-primary)',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                  }}
-                                >
-                                  <span>View Article</span>
-                                  <ExternalLink size={10} />
-                                </Link>
-                              )}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                                {r.articleContent && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPreviewData(r.articleContent as any);
+                                      setPreviewModalOpen(true);
+                                    }}
+                                    style={{
+                                      background: 'rgba(56, 189, 248, 0.1)',
+                                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                                      color: '#38bdf8',
+                                      padding: '2px 8px',
+                                      borderRadius: '4px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                    }}
+                                    title="View full generated article draft and LinkedIn post"
+                                  >
+                                    <Eye size={11} />
+                                    <span>Read Draft</span>
+                                  </button>
+                                )}
+                                {r.postId && (
+                                  <Link
+                                    href={`/admin/posts/${r.postId}/edit`}
+                                    style={{
+                                      fontSize: '0.72rem',
+                                      color: '#a855f7',
+                                      fontWeight: 600,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      textDecoration: 'none',
+                                    }}
+                                    title="Edit this post in the CMS editor"
+                                  >
+                                    <Edit2 size={11} />
+                                    <span>Edit in CMS</span>
+                                  </Link>
+                                )}
+                                {r.articleSlug && r.websiteStatus === 'published' && (
+                                  <Link
+                                    href={`/insights/${r.articleSlug}/`}
+                                    target="_blank"
+                                    style={{
+                                      fontSize: '0.72rem',
+                                      color: 'var(--hpa-primary)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      textDecoration: 'none',
+                                    }}
+                                  >
+                                    <span>View Live</span>
+                                    <ExternalLink size={10} />
+                                  </Link>
+                                )}
+                              </div>
                             </div>
                           ) : (
                             <span style={{ color: 'var(--hpa-text-dim)' }}>None</span>
@@ -1300,23 +1372,56 @@ export default function NewsAutomationClient() {
                           )}
                         </td>
                         <td>
-                          {/* Retry button if LinkedIn failed and post exists */}
-                          {r.postId && r.linkedinStatus !== 'published' && (
-                            <button
-                              onClick={() => handleRetryLinkedIn(r.id)}
-                              disabled={retryingId === r.id}
-                              className="hpa-btn hpa-btn-secondary hpa-btn-sm"
-                              title="Publish this article to LinkedIn now"
-                              style={{ padding: '3px 8px', fontSize: '0.74rem' }}
-                            >
-                              {retryingId === r.id ? (
-                                <Loader2 size={11} className="hpa-spin" />
-                              ) : (
-                                <Share2 size={11} />
-                              )}
-                              <span>{retryingId === r.id ? 'Publishing...' : 'Publish IN'}</span>
-                            </button>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            {/* Publish Draft to CMS & LinkedIn button if run has content but no post_id yet */}
+                            {!r.postId && r.articleContent && (
+                              <button
+                                onClick={() => handlePublishDraft(r.id)}
+                                disabled={publishingDraftId === r.id}
+                                className="hpa-btn hpa-btn-primary hpa-btn-sm"
+                                title="Publish this draft to website CMS &amp; LinkedIn"
+                                style={{ padding: '3px 8px', fontSize: '0.74rem' }}
+                              >
+                                {publishingDraftId === r.id ? (
+                                  <Loader2 size={11} className="hpa-spin" />
+                                ) : (
+                                  <Sparkles size={11} />
+                                )}
+                                <span>{publishingDraftId === r.id ? 'Publishing...' : 'Publish to CMS'}</span>
+                              </button>
+                            )}
+
+                            {/* Edit in CMS link if post already exists */}
+                            {r.postId && (
+                              <Link
+                                href={`/admin/posts/${r.postId}/edit`}
+                                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                                title="Edit this post in the CMS editor"
+                                style={{ padding: '3px 8px', fontSize: '0.74rem' }}
+                              >
+                                <Edit2 size={11} />
+                                <span>Edit</span>
+                              </Link>
+                            )}
+
+                            {/* Retry button if LinkedIn failed and post exists */}
+                            {r.postId && r.linkedinStatus !== 'published' && (
+                              <button
+                                onClick={() => handleRetryLinkedIn(r.id)}
+                                disabled={retryingId === r.id}
+                                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                                title="Publish this article to LinkedIn now"
+                                style={{ padding: '3px 8px', fontSize: '0.74rem' }}
+                              >
+                                {retryingId === r.id ? (
+                                  <Loader2 size={11} className="hpa-spin" />
+                                ) : (
+                                  <Share2 size={11} />
+                                )}
+                                <span>{retryingId === r.id ? 'Sharing...' : 'Share IN'}</span>
+                              </button>
+                            )}
+                          </div>
                           {r.errorDetails && (
                             <div
                               style={{
