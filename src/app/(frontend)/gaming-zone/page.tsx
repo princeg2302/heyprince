@@ -3,37 +3,38 @@ import React from 'react';
 import { GamingZoneView } from '@/components';
 
 export const metadata: Metadata = {
-  title: 'Retro Gaming Zone & 8-Bit Arcade Vault — Super Mario Bros, Sudoku & Contra',
+  title: 'Play Retro Games Online — Neon Snake, Brick Breaker, Sudoku & 2048 | HeyPrince Gaming Zone',
   description:
-    'Experience the 1985 classic Super Mario Bros, solve the in-browser Cyber Sudoku Matrix, and trigger the 30-Lives Contra Code. Built with legal integrity and official platform links.',
+    'Play classic retro arcade games directly in your browser: Neon Snake (60fps), Cyber Brick Breaker, Sudoku Matrix, and 2048. Plus NES 1985 Super Mario Bros & Contra archives.',
   keywords: [
     'Gaming Zone',
-    'Super Mario Bros 1985',
-    'Play Classic Mario',
-    'Retro Gaming',
+    'Play Retro Games Online',
+    'Play Snake Game',
+    'Retro Neon Snake',
+    'Brick Breaker Online',
+    'Cyber Breakout',
     'Cyber Sudoku Matrix',
-    'Sudoku In-Browser',
+    '2048 Game Online',
+    'Super Mario Bros 1985',
     'Contra 1987',
-    'Konami Code',
     'HeyPrince Gaming Zone',
-    '8-Bit Vault',
-    'NES Classics',
+    'Free Web Games',
   ],
   alternates: {
     canonical: 'https://heyprince.in/gaming-zone/',
   },
   openGraph: {
-    title: 'Retro Gaming Zone & 8-Bit Vault | HeyPrince',
+    title: 'Play Retro Games Online | HeyPrince Gaming Zone',
     description:
-      'Original 1985 Super Mario Bros, playable Cyber Sudoku, and classic Contra with the Konami Code. 100% legal, official platform verified.',
+      'Directly playable in-browser arcade games: Neon Snake, Brick Breaker, Sudoku Matrix, and 2048. High scores, sound synth, touch controls.',
     url: 'https://heyprince.in/gaming-zone/',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Retro Gaming Zone & 8-Bit Vault | HeyPrince',
+    title: 'Play Retro Games Online | HeyPrince Gaming Zone',
     description:
-      'Original 1985 Super Mario Bros, playable Cyber Sudoku, and classic Contra with the Konami Code. 100% legal, official platform verified.',
+      'Directly playable in-browser arcade games: Neon Snake, Brick Breaker, Sudoku Matrix, and 2048. High scores, sound synth, touch controls.',
   },
 };
 
@@ -41,20 +42,22 @@ export default function GamingZonePage() {
   const schemaData = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'HeyPrince Retro Gaming Zone & 8-Bit Arcade Vault',
+    name: 'HeyPrince Retro Gaming Zone & Arcade Vault',
     description:
-      'Curated retro gaming hub and interactive web engineering puzzles featuring Super Mario Bros (1985), Cyber Sudoku Matrix, and Contra (1987).',
+      'Playable in-browser retro arcade games and numerical puzzles: Retro Neon Snake, Cyber Brick Breaker, Cyber Sudoku Matrix, and Cyber 2048.',
     url: 'https://heyprince.in/gaming-zone/',
     hasPart: [
       {
-        '@type': 'VideoGame',
-        name: 'Super Mario Bros.',
-        gamePlatform: 'Nintendo Entertainment System (NES)',
-        author: {
-          '@type': 'Organization',
-          name: 'Nintendo',
-        },
-        datePublished: '1985-09-13',
+        '@type': 'SoftwareApplication',
+        name: 'Retro Neon Snake',
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'All web browsers',
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: 'Cyber Brick Breaker',
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'All web browsers',
       },
       {
         '@type': 'SoftwareApplication',
@@ -63,14 +66,10 @@ export default function GamingZonePage() {
         operatingSystem: 'All web browsers',
       },
       {
-        '@type': 'VideoGame',
-        name: 'Contra',
-        gamePlatform: 'NES / Arcade',
-        author: {
-          '@type': 'Organization',
-          name: 'Konami',
-        },
-        datePublished: '1987-02-20',
+        '@type': 'SoftwareApplication',
+        name: 'Cyber 2048 Matrix',
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'All web browsers',
       },
     ],
   };
@@ -85,3 +84,4 @@ export default function GamingZonePage() {
     </>
   );
 }
+
