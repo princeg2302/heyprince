@@ -246,19 +246,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                                 Cyber Arcade 🎮
                               </a>
                             </li>
-                            <li className="menu-item">
-                              <a
-                                href="/movie-zone"
-                                className="nav-link"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setMenuOpen(false);
-                                  router.push('/movie-zone');
-                                }}
-                              >
-                                Movie Zone 🎬
-                              </a>
-                            </li>
+
                             <li className="menu-item">
                               <a
                                 href="/gaming-zone"
