@@ -77,6 +77,8 @@ export default function NewsAutomationClient() {
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
   const [togglingSourceId, setTogglingSourceId] = useState<number | null>(null);
   const [deletingSourceId, setDeletingSourceId] = useState<number | null>(null);
+  const [runConfirmOpen, setRunConfirmOpen] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState<{ id: number; name: string } | null>(null);
 
   // New source form modal
   const [newSourceOpen, setNewSourceOpen] = useState(false);
@@ -143,9 +145,14 @@ export default function NewsAutomationClient() {
     }
   };
 
-  // Trigger manual execution
-  const handleRunNow = async () => {
-    if (!confirm('Run the full daily news collection, AI generation, and publishing pipeline now?')) return;
+  // Open manual execution confirmation modal
+  const handleOpenRunConfirm = () => {
+    setRunConfirmOpen(true);
+  };
+
+  // Trigger manual execution after modal confirmation
+  const handleConfirmRunNow = async () => {
+    setRunConfirmOpen(false);
     setRunningNow(true);
     try {
       const res = await fetch('/api/admin/news-automation/run', { method: 'POST' });
@@ -298,17 +305,26 @@ export default function NewsAutomationClient() {
     }
   };
 
-  // Delete Source
-  const handleDeleteSource = async (id: number, name: string) => {
-    if (!confirm(`Delete RSS source "${name}"?`)) return;
+  // Open delete source confirmation modal
+  const handleOpenDeleteSource = (id: number, name: string) => {
+    setSourceToDelete({ id, name });
+  };
+
+  // Delete Source after modal confirmation
+  const handleConfirmDeleteSource = async () => {
+    if (!sourceToDelete) return;
+    const { id, name } = sourceToDelete;
     setDeletingSourceId(id);
     try {
       const res = await fetch(`/api/admin/news-automation/sources?id=${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
-        showToast('Source deleted.', 'success');
+        showToast(`RSS source "${name}" deleted.`, 'success');
+        setSourceToDelete(null);
         fetchStatus();
+      } else {
+        showToast('Failed to delete source', 'error');
       }
     } catch {
       showToast('Failed to delete source', 'error');
@@ -408,7 +424,7 @@ export default function NewsAutomationClient() {
           </button>
 
           <button
-            onClick={handleRunNow}
+            onClick={handleOpenRunConfirm}
             disabled={runningNow || previewing}
             className="hpa-btn hpa-btn-primary"
             style={{
@@ -1188,7 +1204,7 @@ export default function NewsAutomationClient() {
                     </td>
                     <td>
                       <button
-                        onClick={() => handleDeleteSource(src.id, src.name)}
+                        onClick={() => handleOpenDeleteSource(src.id, src.name)}
                         disabled={deletingSourceId === src.id}
                         className="hpa-btn hpa-btn-danger hpa-btn-sm"
                         style={{ padding: '3px 6px' }}
@@ -1603,6 +1619,324 @@ export default function NewsAutomationClient() {
                 className="hpa-btn hpa-btn-secondary"
               >
                 Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: RUN PIPELINE CONFIRMATION */}
+      {runConfirmOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.78)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1050,
+            padding: '20px',
+          }}
+          onClick={() => !runningNow && setRunConfirmOpen(false)}
+        >
+          <div
+            className="hpa-card"
+            style={{
+              width: '100%',
+              maxWidth: '560px',
+              padding: '28px',
+              position: 'relative',
+              borderRadius: '18px',
+              background: 'linear-gradient(180deg, #161926 0%, #0d0f17 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 25px 70px -10px rgba(0, 0, 0, 0.85), 0 0 45px rgba(59, 130, 246, 0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    boxShadow: '0 8px 24px rgba(99, 102, 241, 0.35)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.22rem', fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.3px' }}>
+                    Execute Daily AI News Pipeline
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)', margin: '3px 0 0' }}>
+                    Autonomous tech discovery, synthesis, and publishing
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRunConfirmOpen(false)}
+                disabled={runningNow}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: 'var(--hpa-text-dim)',
+                  cursor: 'pointer',
+                  borderRadius: '8px',
+                  padding: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Description */}
+            <p style={{ fontSize: '0.86rem', color: 'rgba(255, 255, 255, 0.85)', lineHeight: 1.55, marginBottom: '16px' }}>
+              You are about to trigger the full automated intelligence cycle. The pipeline will autonomously execute the following production stages:
+            </p>
+
+            {/* Stage breakdown cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div style={{ color: '#38bdf8', marginTop: '2px', flexShrink: 0 }}>
+                  <Radio size={15} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>
+                    1. RSS News Ingestion &amp; Deduplication
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', marginTop: '2px', lineHeight: 1.4 }}>
+                    Gathers stories from {stats.activeSourcesCount} active feeds (TechCrunch, Ars Technica, The Verge, etc.) with URL deduplication.
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div style={{ color: '#a855f7', marginTop: '2px', flexShrink: 0 }}>
+                  <Sparkles size={15} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>
+                    2. Grounded AI Humanized Post Generation
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', marginTop: '2px', lineHeight: 1.4 }}>
+                    Synthesizes the #1 tech development into an original ~500-word engineering breakdown ({settings?.aiModel || 'Gemini 3.8 Flash'}).
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div style={{ color: '#f59e0b', marginTop: '2px', flexShrink: 0 }}>
+                  <Layers size={15} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>
+                    3. Visual Assets &amp; Media Vault Cataloging
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', marginTop: '2px', lineHeight: 1.4 }}>
+                    Creates 1 cover image + 2 architectural diagrams, saving them into Supabase Storage and your Media Vault.
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                <div style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
+                  <Share2 size={15} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>
+                    4. Website &amp; LinkedIn Publishing
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', marginTop: '2px', lineHeight: 1.4 }}>
+                    Publishes live to <code>/insights/[slug]</code> and {settings?.autoPublishLinkedIn ? 'shares synchronized commentary to personal LinkedIn.' : 'skips LinkedIn (auto-publish toggle is off).'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timing Banner */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 12px',
+                borderRadius: '8px',
+                background: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                fontSize: '0.76rem',
+                color: '#93c5fd',
+                marginBottom: '20px',
+              }}
+            >
+              <Clock size={14} style={{ flexShrink: 0 }} />
+              <span>Takes approximately <strong>15–25 seconds</strong> to finish AI generation, visual rendering, and publishing.</span>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setRunConfirmOpen(false)}
+                className="hpa-btn hpa-btn-secondary"
+                style={{ padding: '8px 16px', fontSize: '0.84rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRunNow}
+                className="hpa-btn hpa-btn-primary"
+                style={{
+                  padding: '8px 20px',
+                  fontSize: '0.84rem',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                  borderColor: 'transparent',
+                  boxShadow: '0 4px 18px rgba(99, 102, 241, 0.45)',
+                }}
+              >
+                <Play size={14} />
+                <span>Start Pipeline Execution</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DELETE RSS SOURCE CONFIRMATION */}
+      {sourceToDelete && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.78)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1050,
+            padding: '20px',
+          }}
+          onClick={() => !deletingSourceId && setSourceToDelete(null)}
+        >
+          <div
+            className="hpa-card"
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              padding: '24px',
+              position: 'relative',
+              borderRadius: '16px',
+              background: 'linear-gradient(180deg, #181418 0%, #0f0d11 100%)',
+              border: '1px solid rgba(244, 63, 94, 0.25)',
+              boxShadow: '0 25px 70px -10px rgba(0, 0, 0, 0.85), 0 0 40px rgba(244, 63, 94, 0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'rgba(244, 63, 94, 0.15)',
+                  color: '#fb7185',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Delete RSS News Source?
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: '3px 0 0' }}>
+                  Permanent source removal
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.85)', lineHeight: 1.55, marginBottom: '20px' }}>
+              Are you sure you want to remove <strong>&quot;{sourceToDelete.name}&quot;</strong> from your trusted RSS feed list? Discovered articles already archived in your database will not be affected.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSourceToDelete(null)}
+                disabled={deletingSourceId !== null}
+                className="hpa-btn hpa-btn-secondary"
+                style={{ padding: '8px 16px', fontSize: '0.84rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSource}
+                disabled={deletingSourceId !== null}
+                className="hpa-btn hpa-btn-danger"
+                style={{ padding: '8px 18px', fontSize: '0.84rem' }}
+              >
+                {deletingSourceId !== null ? <Loader2 size={13} className="hpa-spin" /> : <Trash2 size={13} />}
+                <span>Delete Source</span>
               </button>
             </div>
           </div>
