@@ -1302,8 +1302,8 @@ img.aspect-square {
    ========================================================================== */
 .cards-indicator {
   position: absolute;
-  top: 300px;
-  right: 20px;
+  top: 65px;
+  right: 24px;
   bottom: auto;
   display: inline-flex;
   align-items: center;
@@ -2087,8 +2087,8 @@ ul#menu-main {
   }
 
   .cards-indicator {
-    right: 15px;
-    top: 270px;
+    right: 20px;
+    top: 65px;
     bottom: auto;
     width: auto !important;
     max-width: none !important;
@@ -3248,7 +3248,7 @@ body {
     width: auto !important;
     max-width: none !important;
     white-space: nowrap !important;
-    top: 200px;
+    top: 50px;
     bottom: auto;
     right: 15px;
   }
