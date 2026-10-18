@@ -21,3 +21,4 @@ export { InlineSvg } from './InlineSvg';
 export { ClientProviders } from './providers/ClientProviders';
 export { Turnstile } from './Turnstile';
 export { GamingZoneView } from './GamingZoneView';
+export { MovieZoneView, MovieDetailsView } from './movie-zone';

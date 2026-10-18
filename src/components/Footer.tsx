@@ -224,6 +224,14 @@ export const Footer: React.FC<FooterProps> = ({
                   <span>All Rights Reserved</span>
                 </p>
                 <div className="foot-legal-links">
+                  <Link href="/movie-zone" className="foot-legal-link">
+                    Movie Zone
+                  </Link>
+                  <span className="foot-sep">&bull;</span>
+                  <Link href="/gaming-zone" className="foot-legal-link">
+                    Gaming Zone
+                  </Link>
+                  <span className="foot-sep">&bull;</span>
                   <Link
                     href="/privacy-policy/"
                     className="foot-legal-link"

@@ -8360,14 +8360,9 @@ body {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.3);
 }
 
-.gaming-deck-card.card-classics.is-selected {
+.gaming-deck-card.card-platformer.is-selected {
   border-color: rgba(255, 45, 85, 0.85);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 45, 85, 0.3);
-}
-
-.gaming-deck-card.card-contra.is-selected {
-  border-color: rgba(255, 120, 45, 0.85);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 120, 45, 0.25);
 }
 
 .deck-card-top {
@@ -8386,7 +8381,7 @@ body {
   border-radius: 6px;
 }
 
-.tag-mario {
+.tag-platformer {
   color: #ff3b5c;
   background: rgba(255, 59, 92, 0.12);
   border: 1px solid rgba(255, 59, 92, 0.3);
@@ -8396,12 +8391,6 @@ body {
   color: #00f2fe;
   background: rgba(0, 242, 254, 0.12);
   border: 1px solid rgba(0, 242, 254, 0.3);
-}
-
-.tag-contra {
-  color: #ffaa00;
-  background: rgba(255, 170, 0, 0.12);
-  border: 1px solid rgba(255, 170, 0, 0.3);
 }
 
 .tag-snake {
@@ -8448,22 +8437,17 @@ body {
   margin-bottom: 14px;
 }
 
-.badge-mario {
+.badge-platformer {
   background: linear-gradient(135deg, rgba(255, 45, 85, 0.25) 0%, rgba(212, 0, 39, 0.1) 100%);
   border: 1px solid rgba(255, 45, 85, 0.4);
-  font-size: 24px;
+  font-size: 22px;
+  color: #ff3b5c;
 }
 
 .badge-sudoku {
   background: linear-gradient(135deg, rgba(0, 242, 254, 0.25) 0%, rgba(4, 150, 255, 0.1) 100%);
   border: 1px solid rgba(0, 242, 254, 0.4);
   color: #00f2fe;
-}
-
-.badge-contra {
-  background: linear-gradient(135deg, rgba(255, 170, 0, 0.25) 0%, rgba(255, 90, 0, 0.1) 100%);
-  border: 1px solid rgba(255, 170, 0, 0.4);
-  color: #ffaa00;
 }
 
 .badge-snake {
@@ -8612,98 +8596,28 @@ body {
   color: #00f2fe;
 }
 
-.stage-system-badge.badge-contra {
-  background: rgba(255, 170, 0, 0.15);
-  border-color: rgba(255, 170, 0, 0.35);
-  color: #ffaa00;
-}
-
-.stage-system-badge.badge-snake {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.35);
-  color: #22c55e;
-}
-
-.stage-system-badge.badge-brick {
-  background: rgba(6, 182, 212, 0.15);
-  border-color: rgba(6, 182, 212, 0.35);
-  color: #06b6d4;
-}
-
-.stage-system-badge.badge-2048 {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.35);
-  color: #f59e0b;
-}
-
-.stage-title-text {
-  font-family: monospace;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.5px;
-}
-
-.status-indicator-live {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: #00ff88;
-  background: rgba(0, 255, 136, 0.1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
-  padding: 3px 10px;
-  border-radius: 999px;
-}
-
-.status-indicator-live.status-green {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.3);
-}
-
-.status-indicator-live.status-cyan {
-  color: #00f2fe;
-  background: rgba(0, 242, 254, 0.1);
-  border-color: rgba(0, 242, 254, 0.3);
-}
-
-.status-indicator-live.status-amber {
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
-}
-
-.status-indicator-live.status-orange {
-  color: #ffaa00;
-  background: rgba(255, 170, 0, 0.1);
-  border-color: rgba(255, 170, 0, 0.3);
-}
-
-.text-green {
-  color: #22c55e !important;
-}
-
-.text-amber {
-  color: #f59e0b !important;
+.stage-system-badge.badge-platformer {
+  background: rgba(255, 45, 85, 0.15);
+  border-color: rgba(255, 45, 85, 0.35);
+  color: #ff3b5c;
 }
 
 /* ==========================================================================
-   MARIO SHOWCASE STAGE
+   PIXEL ADVENTURE SHOWCASE STAGE
    ========================================================================== */
-.mario-showcase-grid {
+.platformer-showcase-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 28px;
   padding: 32px 28px;
 }
 
-.mario-marquee-card {
+.platformer-marquee-card {
   display: flex;
   flex-direction: column;
 }
 
-.mario-badge-flag {
+.platformer-badge-flag {
   display: inline-block;
   align-self: flex-start;
   font-size: 10px;
@@ -8717,26 +8631,26 @@ body {
   margin-bottom: 14px;
 }
 
-.mario-marquee-header {
+.platformer-marquee-header {
   display: flex;
   align-items: center;
   gap: 16px;
   margin-bottom: 18px;
 }
 
-.mario-icon-large {
-  font-size: 42px;
+.platformer-icon-large {
+  font-size: 38px;
   line-height: 1;
 }
 
-.mario-heading {
+.platformer-heading {
   font-size: clamp(26px, 3.2vw, 36px);
   font-weight: 900;
   color: #ffffff;
   margin: 0 0 4px;
 }
 
-.mario-subheading {
+.platformer-subheading {
   font-size: 13.5px;
   color: #ff3b5c;
   font-weight: 700;
@@ -8744,91 +8658,15 @@ body {
   margin: 0;
 }
 
-.mario-editorial-text {
+.platformer-editorial-text {
   font-size: 14px;
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.78);
   margin-bottom: 26px;
 }
 
-.mario-action-cluster {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.mario-official-btn {
-  background: #d40027 !important;
-  border-color: #d40027 !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 25px rgba(212, 0, 39, 0.5);
-  font-size: 15px !important;
-  height: 48px !important;
-  padding: 0 24px !important;
-  width: fit-content;
-}
-
-.mario-official-btn:hover {
-  background: #ff1a40 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(255, 26, 64, 0.65);
-}
-
-.mario-secondary-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  transition: color 0.2s ease;
-  width: fit-content;
-}
-
-.mario-secondary-link:hover {
-  color: #00f2fe;
-}
-
-.legal-compliance-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 16px 18px;
-}
-
-.legal-card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #00ff88;
-  margin-bottom: 8px;
-}
-
-.legal-icon {
-  font-size: 14px;
-}
-
-.legal-card-header h4 {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  margin: 0;
-  color: #ffffff;
-}
-
-.legal-card-body {
-  font-size: 12px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.62);
-  margin: 0;
-}
-
 /* Right Column Manual & Secrets */
-.mario-reference-card {
+.platformer-reference-card {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
@@ -8845,11 +8683,6 @@ body {
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-}
-
-.reference-title.secrets-title {
-  margin-top: 24px;
-  color: #ffbd2e;
 }
 
 .nes-controller-grid {
@@ -8887,7 +8720,7 @@ body {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.mario-secrets-list {
+.platformer-secrets-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -8933,396 +8766,6 @@ body {
 }
 
 /* ==========================================================================
-   CONTRA STAGE VIEW
-   ========================================================================== */
-.contra-showcase-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 28px;
-  padding: 32px 28px;
-}
-
-.contra-hero-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.contra-badge-flag {
-  display: inline-block;
-  align-self: flex-start;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  background: #ff5a00;
-  color: #ffffff;
-  padding: 3px 10px;
-  border-radius: 6px;
-  margin-bottom: 14px;
-}
-
-.contra-header-group {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.contra-fire-icon {
-  font-size: 38px;
-  color: #ff5a00;
-}
-
-.contra-heading {
-  font-size: clamp(26px, 3.2vw, 36px);
-  font-weight: 900;
-  color: #ffffff;
-  margin: 0 0 4px;
-}
-
-.contra-subheading {
-  font-size: 13.5px;
-  color: #ffaa00;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin: 0;
-}
-
-.contra-editorial-text {
-  font-size: 14px;
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.78);
-  margin-bottom: 24px;
-}
-
-.contra-action-cluster {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 26px;
-}
-
-.contra-official-btn {
-  background: #ff5a00 !important;
-  border-color: #ff5a00 !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 25px rgba(255, 90, 0, 0.5);
-  font-size: 15px !important;
-  height: 48px !important;
-  padding: 0 24px !important;
-  width: fit-content;
-}
-
-.contra-official-btn:hover {
-  background: #ff7825 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(255, 120, 37, 0.65);
-}
-
-.contra-secondary-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  transition: color 0.2s ease;
-  width: fit-content;
-}
-
-.contra-secondary-link:hover {
-  color: #ffaa00;
-}
-
-.contra-arsenal-box {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 16px 18px;
-}
-
-.arsenal-title {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  margin: 0 0 12px;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.arsenal-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.weapon-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 8px 10px;
-  border-radius: 8px;
-}
-
-.weapon-letter {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: monospace;
-  font-weight: 900;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.letter-s { background: #d40027; color: #fff; }
-.letter-l { background: #00f2fe; color: #000; }
-.letter-m { background: #00ff88; color: #000; }
-.letter-b { background: #b537f2; color: #fff; }
-
-.weapon-info {
-  font-size: 11px;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.weapon-info strong {
-  color: #ffffff;
-}
-
-/* Contra Konami Module */
-.contra-konami-card {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-}
-
-.konami-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.konami-icon {
-  font-size: 26px;
-  color: #ffaa00;
-}
-
-.konami-card-title {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: #ffffff;
-  margin: 0 0 2px;
-}
-
-.konami-card-sub {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0;
-}
-
-.konami-sequence-display {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px;
-  border-radius: 12px;
-  margin-bottom: 22px;
-}
-
-.sequence-key {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: monospace;
-  font-weight: 800;
-  font-size: 13px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.5);
-  transition: all 0.2s ease;
-}
-
-.sequence-key.matched {
-  background: #00ff88;
-  border-color: #00ff88;
-  color: #000000;
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
-}
-
-.sequence-key.current {
-  border-color: #ffaa00;
-  color: #ffaa00;
-  box-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
-  animation: pulseCurrentKey 1s infinite alternate;
-}
-
-@keyframes pulseCurrentKey {
-  from { transform: scale(1); }
-  to { transform: scale(1.08); }
-}
-
-.konami-clickable-pad {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  gap: 16px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 18px 14px;
-  border-radius: 14px;
-  margin-bottom: 20px;
-}
-
-.pad-dpad {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.pad-dpad-middle {
-  display: flex;
-  gap: 4px;
-}
-
-.pad-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: #1c202d;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  user-select: none;
-}
-
-.pad-btn:hover {
-  background: #2a3044;
-  border-color: rgba(255, 255, 255, 0.35);
-  transform: scale(1.05);
-}
-
-.pad-btn:active {
-  transform: scale(0.95);
-  background: #ff5a00;
-  color: #ffffff;
-}
-
-.pad-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.pad-actions .pad-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #d40027;
-  border-color: #ff3355;
-  box-shadow: 0 4px 12px rgba(212, 0, 39, 0.4);
-}
-
-.pad-actions .pad-btn:hover {
-  background: #ff1a40;
-}
-
-.konami-unlocked-banner {
-  background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 100, 0.05) 100%);
-  border: 1.5px solid #00ff88;
-  border-radius: 12px;
-  padding: 16px;
-  text-align: center;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.25);
-  animation: bannerFadeIn 0.3s ease;
-}
-
-@keyframes bannerFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.unlocked-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 900;
-  color: #00ff88;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-}
-
-.trophy-icon {
-  font-size: 18px;
-  color: #ffbd2e;
-}
-
-.unlocked-desc {
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.reset-code-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.reset-code-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.konami-progress-hint {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
-  text-align: center;
-}
-
-.konami-progress-hint strong {
-  color: #ffaa00;
-}
-
-/* ==========================================================================
    GAMING ZONE RESPONSIVE BREAKPOINTS
    ========================================================================== */
 @media (max-width: 991px) {
@@ -9330,8 +8773,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .mario-showcase-grid,
-  .contra-showcase-grid {
+  .platformer-showcase-grid {
     grid-template-columns: 1fr;
     gap: 24px;
     padding: 24px 18px;
@@ -9347,23 +8789,6 @@ body {
   .gaming-deck-card {
     padding: 20px 18px;
   }
-
-  .arsenal-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ==========================================================================
-   DIRECTLY PLAYABLE ARCADE GAMES: SNAKE, BRICK BREAKER, 2048 & HUD STYLES
-   ========================================================================== */
-.classics-subtab-bar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 18px 24px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .classics-subtab-btn {
@@ -10063,7 +9488,7 @@ body {
 }
 
 /* ==========================================================================
-   ORIGINAL 8-BIT PIXEL PLATFORMER (MARIO TAB REPLACEMENT)
+   ORIGINAL 8-BIT PIXEL PLATFORMER
    ========================================================================== */
 .platformer-game-container {
   width: 100%;
@@ -10169,4 +9594,1179 @@ body {
 .platformer-info-grid {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 28px 24px 24px;
+}
+
+/* ==========================================================================
+   HEYPRINCE MOVIE ZONE STYLING (TMDB & JUSTWATCH POWERED)
+   ========================================================================== */
+.movie-zone-page {
+  position: relative;
+  min-height: 100vh;
+  padding-top: 130px;
+  padding-bottom: 90px;
+  background-color: #08090d;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+.movie-ambient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background: radial-gradient(circle at 50% 10%, rgba(212, 0, 39, 0.15) 0%, rgba(13, 16, 25, 0.4) 50%, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.movie-zone-breadcrumb {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.movie-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.3px;
+}
+
+.movie-hero-wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 820px;
+  margin: 0 auto 36px;
+}
+
+.movie-main-title {
+  font-size: clamp(34px, 4.5vw, 54px);
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+
+.movie-hero-desc {
+  font-size: clamp(15px, 1.8vw, 17px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+  margin-bottom: 28px;
+}
+
+/* Movie Search Box */
+.movie-search-box-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.movie-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 580px;
+  background: rgba(20, 24, 35, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 6px 20px 6px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.25s ease;
+}
+
+.movie-search-box:focus-within {
+  border-color: #d40027;
+  box-shadow: 0 10px 35px rgba(212, 0, 39, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.movie-search-box .search-icon {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.movie-search-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 15px;
+  outline: none;
+}
+
+.movie-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.search-clear-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.search-clear-btn:hover {
+  color: #ffffff;
+}
+
+/* Category Tabs Bar */
+.movie-category-tabs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.movie-cat-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.movie-cat-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.movie-cat-tab.active {
+  background: #d40027;
+  border-color: #d40027;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(212, 0, 39, 0.45);
+}
+
+.movie-cat-tab.watchlist-tab.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.45);
+}
+
+/* South Indian Sub-Language Row */
+.south-lang-pill-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.south-lang-pill-row .filter-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 4px;
+}
+
+.south-lang-pill {
+  background: rgba(20, 24, 35, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.south-lang-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.south-lang-pill.active {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #000000;
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Genre Filter Pills Row */
+.movie-genre-filter-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 34px;
+}
+
+.genre-filter-pill {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.genre-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.genre-filter-pill.active {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #ffffff;
+  color: #000000;
+  font-weight: 800;
+}
+
+/* Search Status Banner */
+.search-status-banner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(212, 0, 39, 0.12);
+  border: 1px solid rgba(212, 0, 39, 0.3);
+  padding: 10px 18px;
+  border-radius: 10px;
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+
+.banner-clear-link {
+  background: transparent;
+  border: none;
+  color: #ff3b5c;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Movies Grid Layout */
+.movies-deck-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.movies-grid-loading {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.movie-skeleton-card {
+  height: 380px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  animation: movieSkeletonPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes movieSkeletonPulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
+
+/* Individual Movie Card */
+.movie-card {
+  background: rgba(18, 22, 32, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.movie-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(212, 0, 39, 0.5);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(212, 0, 39, 0.2);
+}
+
+.movie-poster-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: #0f121a;
+  overflow: hidden;
+}
+
+.poster-link-block {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.movie-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.movie-card:hover .movie-poster-img {
+  transform: scale(1.05);
+}
+
+.movie-poster-overlay-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.movie-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 189, 46, 0.4);
+  color: #ffbd2e;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.movie-rating-badge .star-icon {
+  font-size: 11px;
+}
+
+.movie-lang-badge {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+
+.movie-watchlist-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 3;
+}
+
+.movie-watchlist-btn:hover {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.movie-watchlist-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.movie-quick-trailer-btn {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(212, 0, 39, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 59, 92, 0.4);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+  z-index: 3;
+}
+
+.movie-card:hover .movie-quick-trailer-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.movie-quick-trailer-btn:hover {
+  background: #ff1a40;
+}
+
+.movie-card-info {
+  padding: 14px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.movie-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 6px;
+}
+
+.movie-year {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.movie-genres-pill {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movie-title {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.movie-title a {
+  color: #ffffff;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.movie-title a:hover {
+  color: #ff3b5c;
+}
+
+/* Empty State */
+.movies-empty-state {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(18, 22, 32, 0.5);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  margin-bottom: 40px;
+}
+
+.movies-empty-state .empty-icon {
+  margin-bottom: 16px;
+}
+
+.movies-empty-state h3 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.movies-empty-state p {
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 440px;
+  margin: 0 auto;
+  font-size: 14px;
+}
+
+/* Attribution Card */
+.movie-attribution-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(18, 22, 32, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-top: 24px;
+}
+
+.attribution-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tmdb-pill-badge {
+  display: inline-block;
+  background: #01b4e4;
+  color: #0d253f;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.justwatch-pill-badge {
+  display: inline-block;
+  background: #ffd100;
+  color: #000000;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.attribution-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* Trailer Modal Overlay */
+.trailer-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.trailer-modal-dialog {
+  width: 100%;
+  max-width: 860px;
+  background: #0f121a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+}
+
+.trailer-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trailer-modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+}
+
+.trailer-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trailer-close-btn:hover {
+  background: #d40027;
+  color: #ffffff;
+  border-color: #d40027;
+}
+
+.trailer-modal-body {
+  position: relative;
+  width: 100%;
+  background: #000000;
+}
+
+.trailer-video-responsive {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 ratio */
+  height: 0;
+}
+
+.trailer-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.trailer-empty-state {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   MOVIE DETAILS PAGE STYLING (/movie-zone/[movieId])
+   ========================================================================== */
+.movie-details-page {
+  position: relative;
+  min-height: 100vh;
+  background-color: #0a0c12;
+  color: #ffffff;
+  overflow-x: hidden;
+  padding-bottom: 90px;
+}
+
+.movie-backdrop-hero {
+  position: relative;
+  background-size: cover;
+  background-position: center 20%;
+  background-repeat: no-repeat;
+  padding-top: 130px;
+  padding-bottom: 60px;
+}
+
+.movie-details-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.movie-hero-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.movie-hero-poster-card {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(212, 0, 39, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.movie-hero-poster-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.movie-hero-info-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-cert-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 3px 9px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.movie-details-title {
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+
+.movie-original-title {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+
+.movie-details-tagline {
+  font-size: 16px;
+  font-style: italic;
+  color: #ff5b78;
+  margin-bottom: 18px;
+}
+
+.movie-details-meta-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.rating-item {
+  color: #ffbd2e;
+  font-weight: 700;
+}
+
+.rating-val {
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.vote-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.movie-details-genres-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.details-genre-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.movie-details-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.details-watchlist-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.details-watchlist-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.details-watchlist-btn.active {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.movie-synopsis-wrap {
+  margin-bottom: 20px;
+}
+
+.section-sub-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 8px;
+}
+
+.movie-synopsis-text {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+.movie-director-row {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.movie-director-row .director-name {
+  color: #ffffff;
+  margin-left: 6px;
+}
+
+/* Movie Details Body Container */
+.movie-body-container {
+  padding-top: 40px;
+}
+
+.movie-section {
+  margin-bottom: 48px;
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.section-pill-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #d40027;
+  margin-bottom: 4px;
+}
+
+.movie-section-title {
+  font-size: clamp(22px, 2.5vw, 28px);
+  font-weight: 900;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.region-selector-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.region-tab-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.region-tab-btn.active {
+  background: #d40027;
+  color: #ffffff;
+}
+
+/* Where to Watch Card */
+.where-to-watch-card {
+  background: rgba(18, 22, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 26px;
+}
+
+.providers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.provider-category-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.provider-cat-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+}
+
+.cat-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #ffffff;
+}
+
+.badge-stream {
+  background: #22c55e;
+}
+
+.badge-rent {
+  background: #3b82f6;
+}
+
+.provider-logos-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.provider-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+
+.provider-logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.provider-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.provider-unavailable-box {
+  padding: 24px 18px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 14px;
+}
+
+.providers-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 16px;
+}
+
+.providers-legal-note {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.justwatch-external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffd100;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Trailer Video Embed */
+.trailer-embed-container {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  padding-bottom: 56.25%;
+  height: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #000000;
+}
+
+.trailer-page-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Top Cast Grid */
+.cast-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 18px;
+}
+
+.cast-card {
+  background: rgba(18, 22, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.cast-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.cast-photo-wrap {
+  width: 100%;
+  aspect-ratio: 2 / 2.6;
+  background: #0f121a;
+  overflow: hidden;
+}
+
+.cast-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cast-info {
+  padding: 10px 12px;
+}
+
+.cast-actor-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  margin: 0 0 2px;
+  color: #ffffff;
+}
+
+.cast-character-name {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .movie-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .movie-hero-poster-col {
+    max-width: 240px;
+    margin: 0 auto;
+  }
+
+  .movie-hero-info-col {
+    text-align: center;
+  }
+
+  .movie-cert-badge {
+    align-self: center;
+  }
+
+  .movie-details-meta-bar,
+  .movie-details-genres-row,
+  .movie-details-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 575px) {
+  .movies-deck-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .movie-card-info {
+    padding: 10px 12px;
+  }
+
+  .movie-title {
+    font-size: 13.5px;
+  }
 }
