@@ -20,13 +20,13 @@ import {
 const CANVAS_WIDTH = 640;
 const CANVAS_HEIGHT = 360;
 const TILE_SIZE = 24;
-const GRAVITY = 0.52;
+const GRAVITY = 0.44;
 const MAX_FALL_SPEED = 9.5;
-const ACCEL = 0.45;
+const ACCEL = 0.48;
 const FRICTION = 0.82;
-const MAX_RUN_SPEED = 3.8;
-const JUMP_FORCE = -9.2;
-const MIN_JUMP_FORCE = -4.5;
+const MAX_RUN_SPEED = 4.0;
+const JUMP_FORCE = -11.0;
+const MIN_JUMP_FORCE = -7.0;
 
 interface Block {
   id: number;
@@ -117,6 +117,8 @@ export const PixelPlatformerGame: React.FC = () => {
     facing: 'right' as 'left' | 'right',
     invulnerable: 0,
     walkFrame: 0,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0,
   });
 
   const cameraXRef = useRef(0);
@@ -284,7 +286,7 @@ export const PixelPlatformerGame: React.FC = () => {
 
       addPipe(340, 2);
       addPipe(540, 3);
-      addPipe(780, 4);
+      addPipe(780, 3);
       addPipe(1120, 2);
 
       // Elevated brick staircase
@@ -528,6 +530,8 @@ export const PixelPlatformerGame: React.FC = () => {
       facing: 'right',
       invulnerable: 40,
       walkFrame: 0,
+      coyoteTimer: 0,
+      jumpBufferTimer: 0,
     };
     cameraXRef.current = 0;
   };
@@ -595,11 +599,26 @@ export const PixelPlatformerGame: React.FC = () => {
         if (Math.abs(player.vx) < 0.1) player.vx = 0;
       }
 
-      // 2. Jump Handling
-      if (keys.jump && player.grounded) {
-        player.vy = JUMP_FORCE;
-        player.grounded = false;
+      // 2. Jump Handling with Coyote Time & Jump Buffering
+      if (player.grounded) {
+        player.coyoteTimer = 6;
+      } else if (player.coyoteTimer > 0) {
+        player.coyoteTimer--;
+      }
+
+      if (keys.jump) {
+        player.jumpBufferTimer = 6;
         keys.jump = false;
+      } else if (player.jumpBufferTimer > 0) {
+        player.jumpBufferTimer--;
+      }
+
+      if (player.jumpBufferTimer > 0 && (player.grounded || player.coyoteTimer > 0)) {
+        const speedBoost = Math.abs(player.vx) > 2.5 ? -0.8 : 0;
+        player.vy = JUMP_FORCE + speedBoost;
+        player.grounded = false;
+        player.coyoteTimer = 0;
+        player.jumpBufferTimer = 0;
         playSfx('jump');
       }
 
@@ -608,21 +627,22 @@ export const PixelPlatformerGame: React.FC = () => {
         player.vy = MIN_JUMP_FORCE;
       }
 
-      // Gravity
-      player.vy = Math.min(player.vy + GRAVITY, MAX_FALL_SPEED);
+      // Dynamic Gravity: lighter while holding jump upwards
+      const currentGravity = keys.jumpHeld && player.vy < 0 ? GRAVITY * 0.88 : GRAVITY;
+      player.vy = Math.min(player.vy + currentGravity, MAX_FALL_SPEED);
 
       // Invulnerability tick
       if (player.invulnerable > 0) player.invulnerable--;
 
-      // 3. Collision Detection (AABB)
+      // 3. Collision Detection (AABB with 2px margins)
       // Horizontal move & test
       player.x += player.vx;
       blocks.forEach((b) => {
         if (
           player.x < b.x + TILE_SIZE &&
           player.x + player.width > b.x &&
-          player.y < b.y + TILE_SIZE &&
-          player.y + player.height > b.y
+          player.y + 3 < b.y + TILE_SIZE &&
+          player.y + player.height - 3 > b.y
         ) {
           if (player.vx > 0) {
             player.x = b.x - player.width;
@@ -639,19 +659,20 @@ export const PixelPlatformerGame: React.FC = () => {
       player.grounded = false;
 
       blocks.forEach((b) => {
+        // Horizontal skin margin of 2px ensures vertical checks never falsely collide with side walls/pipes!
         if (
-          player.x < b.x + TILE_SIZE &&
-          player.x + player.width > b.x &&
+          player.x + 2 < b.x + TILE_SIZE &&
+          player.x + player.width - 2 > b.x &&
           player.y < b.y + TILE_SIZE &&
           player.y + player.height > b.y
         ) {
           if (player.vy > 0) {
-            // Landing on top of block
+            // Landing on top of block / pipe
             player.y = b.y - player.height;
             player.vy = 0;
             player.grounded = true;
           } else if (player.vy < 0) {
-            // Hitting block from underneath
+            // Hitting ceiling / block from underneath
             player.y = b.y + TILE_SIZE;
             player.vy = 0;
 
@@ -1356,21 +1377,25 @@ export const PixelPlatformerGame: React.FC = () => {
           <button
             type="button"
             className="mobile-pad-btn action-jump-btn"
-            onTouchStart={() => {
+            onTouchStart={(e) => {
+              e.preventDefault();
               keysRef.current.jump = true;
               keysRef.current.jumpHeld = true;
             }}
-            onTouchEnd={() => {
-              keysRef.current.jump = false;
-              keysRef.current.jumpHeld = false;
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              setTimeout(() => {
+                keysRef.current.jumpHeld = false;
+              }, 120);
             }}
             onMouseDown={() => {
               keysRef.current.jump = true;
               keysRef.current.jumpHeld = true;
             }}
             onMouseUp={() => {
-              keysRef.current.jump = false;
-              keysRef.current.jumpHeld = false;
+              setTimeout(() => {
+                keysRef.current.jumpHeld = false;
+              }, 120);
             }}
             aria-label="Jump"
           >
