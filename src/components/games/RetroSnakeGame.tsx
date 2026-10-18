@@ -52,7 +52,9 @@ export const RetroSnakeGame: React.FC = () => {
     (freq: number, duration: number, type: OscillatorType = 'square') => {
       if (!soundEnabled) return;
       try {
-        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         if (!AudioCtx) return;
         if (!audioCtxRef.current) audioCtxRef.current = new AudioCtx();
         const ctx = audioCtxRef.current;
@@ -104,7 +106,7 @@ export const RetroSnakeGame: React.FC = () => {
     ctx.fillRect(0, 0, width, height);
 
     // Cyber grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.strokeStyle = 'rgba(34, 197, 94, 0.05)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= GRID_SIZE; i++) {
       ctx.beginPath();
@@ -118,138 +120,180 @@ export const RetroSnakeGame: React.FC = () => {
       ctx.stroke();
     }
 
-    // Food
+    // Draw Food
     const food = foodRef.current;
     ctx.save();
     if (food.isGolden) {
-      ctx.fillStyle = '#ffbd2e';
-      ctx.shadowColor = '#ffbd2e';
-      ctx.shadowBlur = 15;
+      ctx.fillStyle = '#fbbf24';
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 14;
     } else {
-      ctx.fillStyle = '#ff2d55';
-      ctx.shadowColor = '#ff2d55';
-      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ef4444';
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 10;
     }
-    const foodPad = cellSize * 0.18;
+    const foodPadding = cellSize * 0.15;
     ctx.beginPath();
     ctx.roundRect(
-      food.x * cellSize + foodPad,
-      food.y * cellSize + foodPad,
-      cellSize - foodPad * 2,
-      cellSize - foodPad * 2,
-      food.isGolden ? 6 : 4
+      food.x * cellSize + foodPadding,
+      food.y * cellSize + foodPadding,
+      cellSize - foodPadding * 2,
+      cellSize - foodPadding * 2,
+      6
     );
     ctx.fill();
     ctx.restore();
 
-    // Snake
+    // Draw Snake
     const snake = snakeRef.current;
-    snake.forEach((seg, idx) => {
+    snake.forEach((seg, index) => {
       ctx.save();
-      const isHead = idx === 0;
+      const isHead = index === 0;
       if (isHead) {
-        ctx.fillStyle = '#00ff88';
-        ctx.shadowColor = '#00ff88';
+        ctx.fillStyle = '#00f0ff';
+        ctx.shadowColor = '#00f0ff';
         ctx.shadowBlur = 12;
       } else {
-        const alpha = Math.max(0.35, 1 - idx / snake.length);
-        ctx.fillStyle = `rgba(0, 242, 254, ${alpha})`;
+        const ratio = 1 - index / snake.length;
+        ctx.fillStyle = `rgba(34, 197, 94, ${0.4 + ratio * 0.6})`;
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 6;
       }
-      const pad = 1.5;
+
+      const segPadding = isHead ? 1 : 2;
       ctx.beginPath();
       ctx.roundRect(
-        seg.x * cellSize + pad,
-        seg.y * cellSize + pad,
-        cellSize - pad * 2,
-        cellSize - pad * 2,
-        isHead ? 5 : 3
+        seg.x * cellSize + segPadding,
+        seg.y * cellSize + segPadding,
+        cellSize - segPadding * 2,
+        cellSize - segPadding * 2,
+        isHead ? 6 : 4
       );
       ctx.fill();
 
-      // Eye details on head
+      // Eyes on head
       if (isHead) {
-        ctx.fillStyle = '#000000';
-        const eyeSize = cellSize * 0.16;
-        const offset = cellSize * 0.3;
+        ctx.fillStyle = '#ffffff';
+        const eyeSize = 2.5;
+        const headX = seg.x * cellSize;
+        const headY = seg.y * cellSize;
+        const dir = dirRef.current;
+
+        let eye1 = { x: headX + 6, y: headY + 6 };
+        let eye2 = { x: headX + cellSize - 8, y: headY + 6 };
+
+        if (dir.x === 1) {
+          eye1 = { x: headX + cellSize - 6, y: headY + 5 };
+          eye2 = { x: headX + cellSize - 6, y: headY + cellSize - 7 };
+        } else if (dir.x === -1) {
+          eye1 = { x: headX + 5, y: headY + 5 };
+          eye2 = { x: headX + 5, y: headY + cellSize - 7 };
+        } else if (dir.y === 1) {
+          eye1 = { x: headX + 6, y: headY + cellSize - 6 };
+          eye2 = { x: headX + cellSize - 8, y: headY + cellSize - 6 };
+        }
+
         ctx.beginPath();
-        ctx.arc(seg.x * cellSize + offset, seg.y * cellSize + offset, eyeSize, 0, Math.PI * 2);
-        ctx.arc(seg.x * cellSize + cellSize - offset, seg.y * cellSize + offset, eyeSize, 0, Math.PI * 2);
+        ctx.arc(eye1.x, eye1.y, eyeSize, 0, Math.PI * 2);
+        ctx.arc(eye2.x, eye2.y, eyeSize, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
     });
   }, []);
 
-  // Main step
+  // Update Game Physics Step
   const tick = useCallback(() => {
     dirRef.current = nextDirRef.current;
-    const curDir = dirRef.current;
-    const snake = [...snakeRef.current];
-    const head = { x: snake[0].x + curDir.x, y: snake[0].y + curDir.y };
+    const currentSnake = [...snakeRef.current];
+    const head = currentSnake[0];
+    const dir = dirRef.current;
 
-    // Wall collision (wrap around or die)
-    if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+    const newHead = {
+      x: head.x + dir.x,
+      y: head.y + dir.y,
+    };
+
+    // Wall collision check
+    if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
       setIsGameOver(true);
       setIsPlaying(false);
-      playBeep(160, 0.35, 'sawtooth');
+      playBeep(140, 0.35, 'sawtooth');
       return;
     }
 
-    // Self collision
-    if (snake.some((seg) => seg.x === head.x && seg.y === head.y)) {
+    // Self collision check
+    if (currentSnake.some((seg) => seg.x === newHead.x && seg.y === newHead.y)) {
       setIsGameOver(true);
       setIsPlaying(false);
-      playBeep(160, 0.35, 'sawtooth');
+      playBeep(140, 0.35, 'sawtooth');
       return;
     }
 
-    snake.unshift(head);
+    currentSnake.unshift(newHead);
 
-    // Check food eaten
+    // Food check
     const food = foodRef.current;
-    if (head.x === food.x && head.y === food.y) {
-      const addedPoints = food.isGolden ? 50 : 10;
+    if (newHead.x === food.x && newHead.y === food.y) {
+      const pts = food.isGolden ? 50 : 10;
       setScore((prev) => {
-        const nextScore = prev + addedPoints;
-        if (nextScore > highScore) {
-          setHighScore(nextScore);
+        const next = prev + pts;
+        if (next > highScore) {
+          setHighScore(next);
           try {
-            localStorage.setItem('hp_snake_highscore', String(nextScore));
+            localStorage.setItem('hp_snake_highscore', next.toString());
           } catch {}
         }
-        return nextScore;
+        return next;
       });
-      playBeep(food.isGolden ? 680 : 520, 0.1, 'triangle');
-      spawnFood(snake);
+
+      if (food.isGolden) {
+        playBeep(880, 0.15, 'triangle');
+      } else {
+        playBeep(587.33, 0.08, 'square');
+      }
+
+      spawnFood(currentSnake);
     } else {
-      snake.pop();
+      currentSnake.pop();
     }
 
-    snakeRef.current = snake;
+    snakeRef.current = currentSnake;
     drawGame();
   }, [drawGame, highScore, playBeep, spawnFood]);
 
-  // Game loop trigger
-  useEffect(() => {
-    if (!isPlaying || isPaused || isGameOver) {
-      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-      return;
+  // Difficulty speed mapping (ms per tick)
+  const getSpeed = useCallback(() => {
+    switch (difficulty) {
+      case 'easy':
+        return 135;
+      case 'hard':
+        return 65;
+      case 'normal':
+      default:
+        return 95;
     }
+  }, [difficulty]);
 
-    const intervalSpeed = difficulty === 'hard' ? 70 : difficulty === 'normal' ? 95 : 130;
-    gameLoopRef.current = setInterval(tick, intervalSpeed);
+  // Main Loop Manager
+  useEffect(() => {
+    if (isPlaying && !isPaused && !isGameOver) {
+      gameLoopRef.current = setInterval(tick, getSpeed());
+    } else {
+      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+    }
 
     return () => {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
     };
-  }, [isPlaying, isPaused, isGameOver, difficulty, tick]);
+  }, [isPlaying, isPaused, isGameOver, tick, getSpeed]);
 
-  // Redraw on load
+  // Initial draw
   useEffect(() => {
     drawGame();
   }, [drawGame]);
 
-  // Start new game
+  // Start / Restart game
   const startGame = () => {
     const initialSnake = [
       { x: 10, y: 10 },
@@ -259,36 +303,38 @@ export const RetroSnakeGame: React.FC = () => {
     snakeRef.current = initialSnake;
     dirRef.current = { x: 0, y: -1 };
     nextDirRef.current = { x: 0, y: -1 };
+    spawnFood(initialSnake);
     setScore(0);
     setIsGameOver(false);
     setIsPaused(false);
-    spawnFood(initialSnake);
     setIsPlaying(true);
-    playBeep(440, 0.15, 'sine');
+    playBeep(440, 0.1, 'triangle');
   };
 
-  // Change direction safely
-  const changeDirection = useCallback((newDir: { x: number; y: number }) => {
-    const cur = dirRef.current;
-    // Disallow reverse
-    if (cur.x + newDir.x === 0 && cur.y + newDir.y === 0) return;
-    nextDirRef.current = newDir;
-  }, []);
+  // Change direction with reverse guard
+  const changeDirection = useCallback(
+    (newDir: { x: number; y: number }) => {
+      const currentDir = dirRef.current;
+      if (currentDir.x + newDir.x === 0 && currentDir.y + newDir.y === 0) return;
+      nextDirRef.current = newDir;
+      playBeep(330, 0.04, 'sine');
+    },
+    [playBeep]
+  );
 
-  // Keyboard controls
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isPlaying) {
-        if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          startGame();
-        }
-        return;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault();
       }
 
       if (e.key === ' ' || e.key === 'p' || e.key === 'P') {
-        e.preventDefault();
-        setIsPaused((p) => !p);
+        if (!isPlaying) {
+          startGame();
+        } else {
+          setIsPaused((p) => !p);
+        }
         return;
       }
 
@@ -296,25 +342,21 @@ export const RetroSnakeGame: React.FC = () => {
         case 'ArrowUp':
         case 'w':
         case 'W':
-          e.preventDefault();
           changeDirection({ x: 0, y: -1 });
           break;
         case 'ArrowDown':
         case 's':
         case 'S':
-          e.preventDefault();
           changeDirection({ x: 0, y: 1 });
           break;
         case 'ArrowLeft':
         case 'a':
         case 'A':
-          e.preventDefault();
           changeDirection({ x: -1, y: 0 });
           break;
         case 'ArrowRight':
         case 'd':
         case 'D':
-          e.preventDefault();
           changeDirection({ x: 1, y: 0 });
           break;
       }
@@ -327,144 +369,199 @@ export const RetroSnakeGame: React.FC = () => {
   return (
     <div className="retro-snake-container">
       {/* HUD Header */}
-      <div className="snake-hud-bar">
-        <div className="snake-stat-pill">
-          <span className="stat-label">SCORE</span>
-          <span className="stat-value">{score}</span>
-        </div>
-        <div className="snake-stat-pill high-score">
-          <FaTrophy className="trophy-icn" />
-          <span className="stat-label">BEST</span>
-          <span className="stat-value">{highScore}</span>
+      <div className="game-hud-bar">
+        <div className="hud-metric">
+          <span className="metric-label">SCORE</span>
+          <span className="metric-val score-neon">{score}</span>
         </div>
 
-        <div className="snake-difficulty-tabs">
-          {(['easy', 'normal', 'hard'] as const).map((lvl) => (
-            <button
-              key={lvl}
-              type="button"
-              className={`diff-btn ${difficulty === lvl ? 'active' : ''}`}
-              onClick={() => {
-                if (!isPlaying) setDifficulty(lvl);
-              }}
-              disabled={isPlaying}
-            >
-              {lvl.toUpperCase()}
-            </button>
-          ))}
+        <div className="hud-metric">
+          <span className="metric-label">SPEED TIER</span>
+          <div className="hud-difficulty-selector">
+            {(['easy', 'normal', 'hard'] as const).map((lvl) => (
+              <button
+                key={lvl}
+                type="button"
+                className={`diff-btn ${difficulty === lvl ? 'active' : ''}`}
+                onClick={() => {
+                  if (!isPlaying) setDifficulty(lvl);
+                }}
+                disabled={isPlaying}
+              >
+                {lvl.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <button
-          type="button"
-          className="snake-audio-btn"
-          onClick={() => setSoundEnabled(!soundEnabled)}
-          title={soundEnabled ? 'Mute sound' : 'Enable sound'}
-        >
-          {soundEnabled ? <FaVolumeHigh /> : <FaVolumeXmark />}
-        </button>
+        <div className="hud-metric">
+          <span className="metric-label">HIGH SCORE</span>
+          <span className="metric-val trophy-neon">
+            <FaTrophy /> {highScore}
+          </span>
+        </div>
+
+        <div className="hud-actions">
+          <button
+            type="button"
+            className="hud-btn-sound"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? 'Mute sound' : 'Enable sound'}
+          >
+            {soundEnabled ? <FaVolumeHigh /> : <FaVolumeXmark />}
+          </button>
+        </div>
       </div>
 
       {/* Canvas Viewport Enclosure */}
-      <div className="snake-viewport-wrap">
+      <div className="game-canvas-wrap snake-canvas-wrap">
         <canvas
           ref={canvasRef}
-          width={400}
-          height={400}
-          className="snake-canvas"
+          width={480}
+          height={480}
+          className="retro-game-canvas"
+          onClick={() => {
+            if (!isPlaying) startGame();
+          }}
         />
 
-        {/* Overlay when game over or not started */}
-        {!isPlaying && (
-          <div className="snake-overlay">
-            {isGameOver ? (
-              <div className="snake-overlay-card">
-                <span className="gameover-tag">SYSTEM COLLISION</span>
-                <h3 className="gameover-title">Game Over!</h3>
-                <p className="gameover-score">Final Score: <strong>{score}</strong></p>
-                <button type="button" className="btn-arcade-action" onClick={startGame}>
-                  <FaRotateRight /> Try Again
-                </button>
-              </div>
-            ) : (
-              <div className="snake-overlay-card">
-                <span className="ready-tag">8-BIT CYBER PROTOCOL</span>
-                <h3 className="ready-title">Retro Neon Snake</h3>
-                <p className="ready-desc">Use arrow keys or WASD to navigate. Collect neon cores &amp; golden bonus modules!</p>
-                <button type="button" className="btn-arcade-action" onClick={startGame}>
-                  <FaPlay /> Start Game
-                </button>
-              </div>
-            )}
+        {/* Start Game Overlay */}
+        {!isPlaying && !isGameOver && (
+          <div className="game-start-overlay">
+            <div className="overlay-badge">8-BIT ARCADE ENGINE</div>
+            <h3 className="overlay-title">Retro Neon Snake</h3>
+            <p className="overlay-instructions">
+              Glide the glowing cyber snake, gobble neon nodes &amp; bonus golden cores (+50 pts). Avoid perimeter walls and self collision!
+            </p>
+            <div className="instructions-tags">
+              <span>⌨️ Arrow Keys or WASD</span>
+              <span>⚡ Space to Pause / Resume</span>
+              <span>📱 Virtual D-Pad on Mobile</span>
+            </div>
+            <button
+              type="button"
+              className="game-action-btn start-btn snake-start-btn"
+              onClick={startGame}
+            >
+              <FaPlay /> START GAME
+            </button>
+          </div>
+        )}
+
+        {/* Game Over Overlay */}
+        {isGameOver && (
+          <div className="game-gameover-overlay">
+            <div className="gameover-title">SYSTEM COLLISION</div>
+            <p className="gameover-desc">
+              Perimeter or body breach detected. Final Score: <strong>{score}</strong>
+            </p>
+            <button
+              type="button"
+              className="game-action-btn restart-btn snake-restart-btn"
+              onClick={startGame}
+            >
+              <FaRotateRight /> PLAY AGAIN
+            </button>
           </div>
         )}
 
         {/* Pause Overlay */}
         {isPlaying && isPaused && (
-          <div className="snake-overlay">
-            <div className="snake-overlay-card">
-              <span className="ready-tag">GAME PAUSED</span>
-              <button
-                type="button"
-                className="btn-arcade-action"
-                onClick={() => setIsPaused(false)}
-              >
-                <FaPlay /> Resume
-              </button>
-            </div>
+          <div className="game-paused-overlay">
+            <div className="paused-title">GAME PAUSED</div>
+            <button
+              type="button"
+              className="game-action-btn resume-btn"
+              onClick={() => setIsPaused(false)}
+            >
+              <FaPlay /> RESUME
+            </button>
           </div>
         )}
       </div>
 
-      {/* On-Screen Mobile & Touch Virtual Directional Pad */}
-      <div className="snake-virtual-controls">
-        <button
-          type="button"
-          className="v-pad-btn v-up"
-          onClick={() => changeDirection({ x: 0, y: -1 })}
-          aria-label="Up"
-        >
-          <FaArrowUp />
-        </button>
-        <div className="v-pad-middle">
-          <button
-            type="button"
-            className="v-pad-btn v-left"
-            onClick={() => changeDirection({ x: -1, y: 0 })}
-            aria-label="Left"
-          >
-            <FaArrowLeft />
-          </button>
+      {/* Controls Tray Bar */}
+      <div className="game-controls-tray">
+        <div className="tray-left">
           {isPlaying && (
             <button
               type="button"
-              className="v-pad-btn v-pause"
-              onClick={() => setIsPaused((p) => !p)}
-              aria-label="Pause"
+              className="tray-btn"
+              onClick={() => setIsPaused(!isPaused)}
             >
               {isPaused ? <FaPlay /> : <FaPause />}
+              <span>{isPaused ? 'Resume' : 'Pause'}</span>
             </button>
           )}
+          <button type="button" className="tray-btn" onClick={startGame}>
+            <FaRotateRight />
+            <span>Restart</span>
+          </button>
+        </div>
+
+        <div className="controls-hints">
+          <span>⌨️ Arrow Keys / WASD</span>
+          <span>⚡ Space to Pause</span>
+        </div>
+      </div>
+
+      {/* Mobile Virtual 3x3 Symmetrical Directional Pad */}
+      <div className="snake-mobile-controls">
+        <div className="snake-dpad">
+          <span className="snake-pad-spacer" />
           <button
             type="button"
-            className="v-pad-btn v-right"
+            className="snake-pad-btn btn-up"
+            onClick={() => changeDirection({ x: 0, y: -1 })}
+            aria-label="Move Up"
+          >
+            <FaArrowUp />
+          </button>
+          <span className="snake-pad-spacer" />
+
+          <button
+            type="button"
+            className="snake-pad-btn btn-left"
+            onClick={() => changeDirection({ x: -1, y: 0 })}
+            aria-label="Move Left"
+          >
+            <FaArrowLeft />
+          </button>
+          <button
+            type="button"
+            className="snake-pad-btn btn-center"
+            onClick={() => {
+              if (!isPlaying) startGame();
+              else setIsPaused((p) => !p);
+            }}
+            aria-label={isPlaying ? (isPaused ? 'Resume' : 'Pause') : 'Start'}
+            title={isPlaying ? (isPaused ? 'Resume' : 'Pause') : 'Start Game'}
+          >
+            {isPlaying ? (isPaused ? <FaPlay /> : <FaPause />) : <FaPlay />}
+          </button>
+          <button
+            type="button"
+            className="snake-pad-btn btn-right"
             onClick={() => changeDirection({ x: 1, y: 0 })}
-            aria-label="Right"
+            aria-label="Move Right"
           >
             <FaArrowRight />
           </button>
+
+          <span className="snake-pad-spacer" />
+          <button
+            type="button"
+            className="snake-pad-btn btn-down"
+            onClick={() => changeDirection({ x: 0, y: 1 })}
+            aria-label="Move Down"
+          >
+            <FaArrowDown />
+          </button>
+          <span className="snake-pad-spacer" />
         </div>
-        <button
-          type="button"
-          className="v-pad-btn v-down"
-          onClick={() => changeDirection({ x: 0, y: 1 })}
-          aria-label="Down"
-        >
-          <FaArrowDown />
-        </button>
       </div>
     </div>
   );
 };
 
 export default RetroSnakeGame;
-
