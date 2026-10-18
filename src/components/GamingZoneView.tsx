@@ -21,7 +21,7 @@ import {
   FaBorderAll,
 } from 'react-icons/fa6';
 import { SudokuGame } from './SudokuGame';
-import { RetroSnakeGame, BrickBreakerGame, Cyber2048Game } from './games';
+import { RetroSnakeGame, BrickBreakerGame, Cyber2048Game, PixelPlatformerGame } from './games';
 
 type GameKey = 'snake' | 'brick' | 'sudoku' | '2048' | 'classics';
 
@@ -328,7 +328,7 @@ export const GamingZoneView: React.FC = () => {
             </div>
           </div>
 
-          {/* CARD 5: 8-BIT CLASSICS VAULT */}
+          {/* CARD 5: 8-BIT PIXEL PLATFORMER */}
           <div
             className={`gaming-deck-card card-classics ${selectedGame === 'classics' ? 'is-selected' : ''}`}
             onClick={() => {
@@ -345,21 +345,21 @@ export const GamingZoneView: React.FC = () => {
             }}
           >
             <div className="deck-card-top">
-              <span className="deck-tag tag-mario">RETRO VAULT &amp; CODES</span>
+              <span className="deck-tag tag-mario">PLAY LIVE IN BROWSER</span>
               {selectedGame === 'classics' && <span className="deck-active-pill">ACTIVE</span>}
             </div>
             <div className="deck-card-body">
               <div className="deck-icon-badge badge-mario">
-                <FaGamepad />
+                <span className="game-badge-emoji">🍄</span>
               </div>
-              <h3 className="deck-game-title">8-Bit Classics Vault</h3>
+              <h3 className="deck-game-title">8-Bit Pixel Platformer</h3>
               <p className="deck-game-desc">
-                Original 1985 Super Mario Bros. &amp; Contra archives, verified official platforms, and 30-Lives code.
+                Nostalgic 2D side-scrolling platformer with running, jumping, mystery blocks, coins, powerup mushrooms &amp; enemies.
               </p>
             </div>
             <div className="deck-card-footer">
               <span className="deck-mode-indicator">
-                <FaStar className="star-icon text-red" /> Lore &amp; Konami Code
+                <FaCircleCheck className="check-icon text-red" /> 100% Playable Now
               </span>
               <span className="deck-arrow-btn">→</span>
             </div>
@@ -497,7 +497,7 @@ export const GamingZoneView: React.FC = () => {
                 className={`classics-subtab-btn ${classicSubTab === 'mario' ? 'active' : ''}`}
                 onClick={() => setClassicSubTab('mario')}
               >
-                🍄 Super Mario Bros. (1985)
+                🍄 8-Bit Pixel Platformer (Play Live)
               </button>
               <button
                 type="button"
@@ -508,118 +508,81 @@ export const GamingZoneView: React.FC = () => {
               </button>
             </div>
 
-            {/* Sub-view: Super Mario Bros (1985) */}
+            {/* Sub-view: 8-Bit Pixel Platformer (100% Playable Live in Browser) */}
             {classicSubTab === 'mario' && (
-              <div className="mario-showcase-grid">
-                <div className="mario-marquee-card">
-                  <div className="mario-badge-flag">ORIGINAL 1985 CLASSIC</div>
-                  <div className="mario-marquee-header">
-                    <span className="mario-icon-large">🍄</span>
-                    <div className="mario-title-group">
-                      <h2 className="mario-heading">Super Mario Bros.</h2>
-                      <p className="mario-subheading">Nintendo Entertainment System (1985)</p>
-                    </div>
-                  </div>
-
-                  <p className="mario-editorial-text">
-                    On September 13, 1985, Nintendo released <em>Super Mario Bros.</em>, directed by Shigeru Miyamoto
-                    and Takashi Tezuka with musical direction by Koji Kondo. It rescued the North American video game
-                    industry from the 1983 crash and established the foundational grammar of side-scrolling platformers:
-                    momentum physics, power-up progression, hidden warp pipes, and emergent level design.
-                  </p>
-
-                  <div className="mario-action-cluster">
-                    <a
-                      href="https://www.nintendo.com/us/store/products/nintendo-entertainment-system-nintendo-switch-online-switch/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="portal-btn mario-official-btn"
-                    >
-                      <span className="mr-right">Play on Nintendo Switch Online</span>
-                      <span className="arrow">
-                        <FaArrowUpRightFromSquare size={13} />
-                      </span>
-                    </a>
-
-                    <a
-                      href="https://mario.nintendo.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mario-secondary-link"
-                    >
-                      <span>Visit Official Super Mario Portal (Nintendo)</span>
-                      <FaArrowUpRightFromSquare size={12} />
-                    </a>
-                  </div>
-
-                  <div className="legal-compliance-card">
-                    <div className="legal-card-header">
-                      <FaShieldHalved className="legal-icon" />
-                      <h4>Official IP &amp; DMCA Compliance Notice</h4>
-                    </div>
-                    <p className="legal-card-body">
-                      The original <em>Super Mario Bros. (1985)</em> ROM, compiled assembly code, sound effects, sprite
-                      sheets, and musical scores are the strictly protected intellectual property of{' '}
-                      <strong>Nintendo Co., Ltd.</strong> Nintendo does not offer an authorized public web embedding API
-                      or open web license. In accordance with strict legal standards and respect for original creators,
-                      HeyPrince.in does not bundle or mirror unauthorized third-party emulator ROMs. We direct you
-                      exclusively to Nintendo&apos;s verified official platforms.
-                    </p>
-                  </div>
+              <div className="platformer-stage-wrapper">
+                {/* 100% IN-BROWSER PLAYABLE ORIGINAL 8-BIT PLATFORMER */}
+                <div className="game-stage-content platformer-game-content">
+                  <PixelPlatformerGame />
                 </div>
 
-                <div className="mario-reference-card">
-                  <h3 className="reference-title">
-                    <FaGamepad /> NES Controller Operations Guide
-                  </h3>
-                  <div className="nes-controller-grid">
-                    <div className="nes-ctrl-row">
-                      <span className="nes-key">D-PAD ◄ ►</span>
-                      <span className="nes-action">Move Mario left &amp; right across the Mushroom Kingdom</span>
+                {/* Retro Lore & Controller Guide */}
+                <div className="mario-showcase-grid platformer-info-grid">
+                  <div className="mario-marquee-card">
+                    <div className="mario-badge-flag">RETRO GAMING HERITAGE</div>
+                    <div className="mario-marquee-header">
+                      <span className="mario-icon-large">🍄</span>
+                      <div className="mario-title-group">
+                        <h2 className="mario-heading">Classic 8-Bit Platformer</h2>
+                        <p className="mario-subheading">Inspired by 1985 NES Physics &amp; Mechanics</p>
+                      </div>
                     </div>
-                    <div className="nes-ctrl-row">
-                      <span className="nes-key">D-PAD ▼</span>
-                      <span className="nes-action">Crouch / Duck (Super &amp; Fire Mario) or enter downward Pipes</span>
-                    </div>
-                    <div className="nes-ctrl-row">
-                      <span className="nes-key">A BUTTON</span>
-                      <span className="nes-action">Jump (hold longer for maximum height) / Swim in water stages</span>
-                    </div>
-                    <div className="nes-ctrl-row">
-                      <span className="nes-key">B BUTTON</span>
-                      <span className="nes-action">Sprint / Dash (hold while walking) or launch Fireballs</span>
-                    </div>
-                    <div className="nes-ctrl-row">
-                      <span className="nes-key">START</span>
-                      <span className="nes-action">Pause / Resume gameplay action</span>
+
+                    <p className="mario-editorial-text">
+                      Experience the foundational mechanics that defined side-scrolling platformers:
+                      momentum physics, jumping gravity, mystery blocks with powerup mushrooms and bouncing coins,
+                      patrolling enemies, underground caverns, and the iconic finish flagpole. Built entirely in-browser
+                      with 100% original pixel art, chiptune sound synthesis, and zero external redirects!
+                    </p>
+
+                    <div className="mario-secrets-list">
+                      <div className="secret-item">
+                        <span className="secret-badge">WORLD 1-1</span>
+                        <div className="secret-text">
+                          <strong>Sunny Meadow:</strong> Green hills, warp pipes, mystery blocks, and Goomba-style walking minions.
+                        </div>
+                      </div>
+
+                      <div className="secret-item">
+                        <span className="secret-badge">WORLD 1-2</span>
+                        <div className="secret-text">
+                          <strong>Subterranean Caverns:</strong> Dark blue cavern bricks, stalactite ceilings, cavern beetles, and coin vaults.
+                        </div>
+                      </div>
+
+                      <div className="secret-item">
+                        <span className="secret-badge">WORLD 1-3</span>
+                        <div className="secret-text">
+                          <strong>Fortress Citadel:</strong> Red volcanic battlements, lava chasms, floating platforms, and the end-game Castle Flagpole.
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <h3 className="reference-title secrets-title">
-                    <FaStar /> Legendary 1985 Secrets &amp; Warp Zones
-                  </h3>
-                  <div className="mario-secrets-list">
-                    <div className="secret-item">
-                      <span className="secret-badge">WORLD 1-2</span>
-                      <div className="secret-text">
-                        <strong>Warp Zone to Worlds 2, 3, &amp; 4:</strong> At the very end of World 1-2, jump onto the
-                        elevator platform and run along the top ceiling past the exit pipe.
+                  <div className="mario-reference-card">
+                    <h3 className="reference-title">
+                      <FaGamepad /> Controller &amp; Gameplay Guide
+                    </h3>
+                    <div className="nes-controller-grid">
+                      <div className="nes-ctrl-row">
+                        <span className="nes-key">A / D or ◄ ►</span>
+                        <span className="nes-action">Run left &amp; right across the kingdom</span>
                       </div>
-                    </div>
-
-                    <div className="secret-item">
-                      <span className="secret-badge">WORLD 4-2</span>
-                      <div className="secret-text">
-                        <strong>Warp Zone to Worlds 6, 7, &amp; 8:</strong> Climb the hidden beanstalk vine at the start
-                        of World 4-2 to skip straight to Bowser&apos;s final worlds.
+                      <div className="nes-ctrl-row">
+                        <span className="nes-key">SPACE or ▲ / W</span>
+                        <span className="nes-action">Jump (hold longer for maximum leap height)</span>
                       </div>
-                    </div>
-
-                    <div className="secret-item">
-                      <span className="secret-badge">WORLD 3-1</span>
-                      <div className="secret-text">
-                        <strong>Infinite 1-UP Shell Trick:</strong> Trap a Koopa Troopa shell on the staircase at the
-                        end of World 3-1 and continuously stomp it for unlimited extra lives.
+                      <div className="nes-ctrl-row">
+                        <span className="nes-key">STOMP ENEMY</span>
+                        <span className="nes-action">Jump onto enemy heads to defeat them (+200 pts)</span>
+                      </div>
+                      <div className="nes-ctrl-row">
+                        <span className="nes-key">? BLOCKS</span>
+                        <span className="nes-action">Hit from below to collect coins or Super Mushroom</span>
+                      </div>
+                      <div className="nes-ctrl-row">
+                        <span className="nes-key">ESC or P</span>
+                        <span className="nes-action">Pause / Resume gameplay action</span>
                       </div>
                     </div>
                   </div>

@@ -3,19 +3,20 @@ import React from 'react';
 import { GamingZoneView } from '@/components';
 
 export const metadata: Metadata = {
-  title: 'Play Retro Games Online — Neon Snake, Brick Breaker, Sudoku & 2048 | HeyPrince Gaming Zone',
+  title: 'Play Retro Games Online — 8-Bit Platformer, Snake, Brick Breaker, Sudoku & 2048 | HeyPrince Gaming Zone',
   description:
-    'Play classic retro arcade games directly in your browser: Neon Snake (60fps), Cyber Brick Breaker, Sudoku Matrix, and 2048. Plus NES 1985 Super Mario Bros & Contra archives.',
+    'Play classic retro arcade games directly in your browser: 8-Bit Pixel Platformer (running, jumping, powerups, flagpole), Neon Snake (60fps), Cyber Brick Breaker, Sudoku, and 2048.',
   keywords: [
     'Gaming Zone',
     'Play Retro Games Online',
+    '8-Bit Platformer Online',
+    'Classic Side Scroller',
     'Play Snake Game',
     'Retro Neon Snake',
     'Brick Breaker Online',
     'Cyber Breakout',
     'Cyber Sudoku Matrix',
     '2048 Game Online',
-    'Super Mario Bros 1985',
     'Contra 1987',
     'HeyPrince Gaming Zone',
     'Free Web Games',
@@ -47,6 +48,12 @@ export default function GamingZonePage() {
       'Playable in-browser retro arcade games and numerical puzzles: Retro Neon Snake, Cyber Brick Breaker, Cyber Sudoku Matrix, and Cyber 2048.',
     url: 'https://heyprince.in/gaming-zone/',
     hasPart: [
+      {
+        '@type': 'SoftwareApplication',
+        name: '8-Bit Pixel Platformer',
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'All web browsers',
+      },
       {
         '@type': 'SoftwareApplication',
         name: 'Retro Neon Snake',
