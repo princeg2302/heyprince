@@ -74,10 +74,12 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="footer-row justify-content-end row">
             <div className="col-md-8">
               <div className="cards-indicator d-none d-md-inline-flex align-items-center gap-2">
+                <span className="cards-indicator-dot" />
                 <span>Hover cards to explore</span>
                 <svg
-                  width="15"
-                  height="15"
+                  className="cards-indicator-arrow"
+                  width="14"
+                  height="14"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -129,6 +131,7 @@ export const Footer: React.FC<FooterProps> = ({
                       }}
                       title={`Explore ${service.title} Details`}
                     >
+                      <div className="card-ambient-glow" />
                       <div className="card-heading">
                         {service.isFeatured && (
                           <span className="card-featured-pill">
@@ -139,6 +142,8 @@ export const Footer: React.FC<FooterProps> = ({
                         <h3 className="card-title">{service.title}</h3>
                         <div className="card-meta">
                           <p className="card-author">Prince</p>
+                          <span className="card-meta-dot">•</span>
+                          <span className="card-meta-type">Service</span>
                         </div>
                       </div>
                       <Link
@@ -149,21 +154,24 @@ export const Footer: React.FC<FooterProps> = ({
                           handleServiceClick(service.slug, e);
                         }}
                       >
-                        Explore Service
-                        <svg
-                          className="card-btn-icn"
-                          width="40"
-                          height="40"
-                          viewBox="0 0 40 40"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <circle cx="20" cy="20" r="20" fill="white"></circle>
-                          <path
-                            d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                            fill="#000"
-                          ></path>
-                        </svg>
+                        <span className="card-btn-text">Explore Service</span>
+                        <span className="card-btn-arrow-wrap">
+                          <svg
+                            className="card-btn-icn"
+                            width="36"
+                            height="36"
+                            viewBox="0 0 40 40"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <circle cx="20" cy="20" r="20" className="card-circle-bg" fill="white"></circle>
+                            <path
+                              d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
+                              className="card-arrow-path"
+                              fill="#000"
+                            ></path>
+                          </svg>
+                        </span>
                       </Link>
                     </div>
                   );

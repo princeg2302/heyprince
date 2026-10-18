@@ -73,29 +73,10 @@ export const SeasonalElement: React.FC = () => {
 
   return (
     <div
-      className="seasonal-floating-capsule"
+      className={`seasonal-floating-capsule ${isHovered ? 'is-hovered' : ''}`}
       style={{
-        position: 'fixed',
-        bottom: '22px',
-        left: '24px',
-        zIndex: 998,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '6px 14px 6px 12px',
-        borderRadius: '999px',
-        background: 'rgba(15, 17, 23, 0.88)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
         border: `1px solid ${accentColor}40`,
         boxShadow: `0 8px 30px rgba(0, 0, 0, 0.45), 0 0 15px ${glowColor}`,
-        fontSize: '0.74rem',
-        fontWeight: 600,
-        color: '#ffffff',
-        cursor: 'default',
-        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        transform: isHovered ? 'translateY(-2px)' : 'none',
-        pointerEvents: 'auto',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -103,23 +84,11 @@ export const SeasonalElement: React.FC = () => {
       role="status"
       aria-live="polite"
     >
-      <span
-        style={{
-          display: 'inline-block',
-          fontSize: '0.85rem',
-          lineHeight: 1,
-        }}
-      >
+      <span className="seasonal-pill-icon">
         {data.weather?.conditionIcon || data.season?.emoji || '✨'}
       </span>
 
-      <span
-        style={{
-          color: '#f8fafc',
-          letterSpacing: '0.01em',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      <span className="seasonal-pill-text">
         {data.displayPillText}
       </span>
 

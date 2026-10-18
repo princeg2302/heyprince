@@ -892,7 +892,9 @@ Opening inquiry form...`,
               </div>
 
               <form className="cli-input-form" onSubmit={handleTerminalSubmit}>
-                <span className="cli-prompt-symbol">prince@heyprince:~$</span>
+                <span className="cli-prompt-symbol">
+                  <span className="d-none d-sm-inline">prince@heyprince:</span>~$
+                </span>
                 <input
                   type="text"
                   className="cli-input-field"
