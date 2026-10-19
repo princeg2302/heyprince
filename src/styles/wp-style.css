@@ -692,6 +692,7 @@ button.portal-btn:hover {
 .banner-main {
   min-height: 100vh;
   position: relative;
+  overflow: hidden;
 }
 
 /*****Homepage Banner*****/

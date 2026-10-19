@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { PhysicsPills } from './PhysicsPills';
+import { CyberHero3D } from './CyberHero3D';
 
 export const HeroBanner: React.FC = () => {
   return (
     <section className="banner-main" id="home" aria-label="Hero Introduction">
+      <CyberHero3D />
       <PhysicsPills />
-      <div className="container">
-        <h1 className="banner-title" aria-label="Prince — Your Senior IT Consultant & Full Stack Tech Partner">
+      <div className="container" style={{ position: 'relative', zIndex: 2, pointerEvents: 'none' }}>
+        <h1 className="banner-title" aria-label="Prince — Your Senior IT Consultant & Full Stack Tech Partner" style={{ pointerEvents: 'auto' }}>
           PRINCE
           <span>PRINCE</span>
           <span>PRINCE</span>
