@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { FaClock, FaArrowRight } from 'react-icons/fa6';
 import { articlesList } from '../data/siteContent';
 
 export interface ArticlesSectionProps {
@@ -30,14 +31,13 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
       if (sectionRef.current) {
         gsap.fromTo(
           '.article-card',
-          { y: 30, opacity: 0 },
+          { y: 24, opacity: 0 },
           {
             y: 0,
             opacity: 1,
             stagger: 0.08,
-            duration: 0.6,
+            duration: 0.5,
             ease: 'power2.out',
-            clearProps: 'transform,opacity',
             scrollTrigger: {
               trigger: sectionRef.current,
               start: 'top 85%',
@@ -95,36 +95,49 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
             </span>
           </Link>
         </div>
-      </div>
-      <div className="article-cards-sliding">
-        <div className="row w-100 m-0 row-gap-sm-3">
-          {articlesList.map((article) => (
-            <div className="col-xl-3 col-sm-6" key={article.slug}>
-              <div className="card article-card">
+
+        <div className="article-cards-sliding">
+          <div className="article-cards-grid">
+            {articlesList.map((article) => (
+              <article className="article-card" key={article.slug}>
                 <Link
                   className="article-link"
                   href={`/insights/${article.slug}/`}
                   onClick={(e) => handleArticleClick(article.slug, e)}
+                  aria-label={`Read article: ${article.title}`}
                 >
-                  <img
-                    className="card-img card-img-bottom"
-                    src={article.image}
-                    alt={`${article.title} - IT & Web Engineering Insight by Prince`}
-                    loading="lazy"
-                    decoding="async"
-                    width="1024"
-                    height="590"
-                  />
+                  <div className="article-img-wrap">
+                    <img
+                      className="card-img"
+                      src={article.image}
+                      alt={`${article.title} - IT & Web Engineering Insight by Prince`}
+                      loading="lazy"
+                      decoding="async"
+                      width="600"
+                      height="375"
+                    />
+                    {article.category && (
+                      <span className="article-category-badge">{article.category}</span>
+                    )}
+                  </div>
                   <div className="card-body">
-                    <p className="read-mins">{article.readMins} read</p>
+                    <div className="article-meta-row">
+                      <span className="read-mins">
+                        <FaClock size={11} aria-hidden="true" />
+                        {article.readMins} read
+                      </span>
+                      {article.date && <span className="article-date">{article.date}</span>}
+                    </div>
                     <h3 className="card-title">{article.title}</h3>
                     <p className="card-content">{article.description}</p>
-                    <span className="read-more-link">Read Full Story &rarr;</span>
+                    <span className="read-more-link">
+                      Read Full Story <FaArrowRight size={12} className="arrow-icon" aria-hidden="true" />
+                    </span>
                   </div>
                 </Link>
-              </div>
-            </div>
-          ))}
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
