@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     const result = await publishArticleToLinkedIn({
       postId,
       customCommentary,
+      imageUrl: body.imageUrl,
     });
 
     if (!result.success) {

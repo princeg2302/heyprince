@@ -120,16 +120,8 @@ export async function executeDailyNewsAutomation(params?: {
         linkedinCommentary: meme.linkedinPost,
       });
 
-      const previewSections = meme.sections.map((s, idx) => {
-        const paragraphs = [...s.paragraphs];
-        if (idx === 0 && meme.imageUrl) {
-          paragraphs.unshift(`![${meme.title}](${meme.imageUrl} "${meme.title}")`);
-        }
-        return {
-          ...s,
-          paragraphs,
-        };
-      });
+      // Meme card image is already set as cover_image; keep section paragraphs clean to prevent duplicate display
+      const previewSections = meme.sections;
 
       const dbSections = previewSections.map((s) => ({
         heading: s.heading,
@@ -223,6 +215,7 @@ export async function executeDailyNewsAutomation(params?: {
             const liRes = await publishArticleToLinkedIn({
               postId: createdPost.id,
               customCommentary: meme.linkedinPost,
+              imageUrl: meme.imageUrl,
             });
 
             if (liRes.success) {
@@ -476,6 +469,7 @@ export async function executeDailyNewsAutomation(params?: {
           const liRes = await publishArticleToLinkedIn({
             postId: createdPost.id,
             customCommentary: generated.linkedinPost,
+            imageUrl: coverImageUrl,
           });
 
           if (liRes.success) {

@@ -441,6 +441,16 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                         const altText = imgMatch[1];
                         const srcUrl = imgMatch[2];
                         const captionText = imgMatch[3] || altText;
+
+                        // Defensive deduplication: if this image matches the top featured cover image, skip it
+                        if (
+                          article.image &&
+                          (srcUrl.trim().toLowerCase() === article.image.trim().toLowerCase() ||
+                            srcUrl.split('?')[0] === article.image.split('?')[0])
+                        ) {
+                          return null;
+                        }
+
                         return (
                           <figure className="blog-content-image-wrap" key={pIdx}>
                             <img

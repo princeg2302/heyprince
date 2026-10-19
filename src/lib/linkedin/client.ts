@@ -422,12 +422,119 @@ export async function refreshAccessToken(refreshToken: string): Promise<LinkedIn
 }
 
 // ============================================================================
-// 8. Publish Article to Personal Profile (Supported LinkedIn API)
+// 8. Upload Image to LinkedIn (REST Images API)
+// ============================================================================
+
+export async function uploadImageToLinkedIn(params: {
+  accessToken: string;
+  personUrn: string;
+  imageUrl: string;
+  apiVersion?: string;
+}): Promise<string | null> {
+  try {
+    const { accessToken, personUrn, imageUrl } = params;
+    const apiVersion = params.apiVersion || process.env.LINKEDIN_API_VERSION || '202601';
+
+    if (!imageUrl || !imageUrl.trim()) {
+      return null;
+    }
+
+    const fullUrl = imageUrl.startsWith('http')
+      ? imageUrl
+      : `https://heyprince.in${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+
+    const imgFetch = await fetch(fullUrl, { signal: AbortSignal.timeout(15000) });
+    if (!imgFetch.ok) {
+      console.warn('[LinkedIn Image Upload] Could not fetch image from URL:', fullUrl, imgFetch.status);
+      return null;
+    }
+
+    const rawBuffer = Buffer.from(await imgFetch.arrayBuffer());
+    if (rawBuffer.length === 0) return null;
+
+    let uploadBuffer = rawBuffer;
+    let contentType = 'image/png';
+
+    // Convert SVG or WebP to high-resolution PNG for LinkedIn API compatibility
+    const isSvg = imageUrl.toLowerCase().includes('.svg') || rawBuffer.slice(0, 100).toString().includes('<svg');
+    const isWebp = imageUrl.toLowerCase().includes('.webp');
+
+    if (isSvg || isWebp) {
+      try {
+        const sharpModule = await import('sharp');
+        const sharp = sharpModule.default || sharpModule;
+        uploadBuffer = await sharp(rawBuffer).png({ quality: 95 }).toBuffer();
+        contentType = 'image/png';
+      } catch (sharpErr) {
+        console.warn('[LinkedIn Image Upload] Sharp conversion notice:', sharpErr);
+      }
+    } else if (imageUrl.toLowerCase().includes('.jpg') || imageUrl.toLowerCase().includes('.jpeg')) {
+      contentType = 'image/jpeg';
+    }
+
+    // Step 1: Initialize image upload
+    const initResponse = await fetch('https://api.linkedin.com/rest/images?action=initializeUpload', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'LinkedIn-Version': apiVersion,
+        'X-Restli-Protocol-Version': '2.0.0',
+      },
+      body: JSON.stringify({
+        initializeUploadRequest: {
+          owner: personUrn,
+        },
+      }),
+    });
+
+    if (!initResponse.ok) {
+      const errText = await initResponse.text();
+      console.warn('[LinkedIn Image Upload] initializeUpload rejected:', initResponse.status, errText);
+      return null;
+    }
+
+    const initData = await initResponse.json();
+    const uploadUrl = initData?.value?.uploadUrl;
+    const imageUrn = initData?.value?.image;
+
+    if (!uploadUrl || !imageUrn) {
+      console.warn('[LinkedIn Image Upload] Malformed initializeUpload response:', initData);
+      return null;
+    }
+
+    // Step 2: Upload binary buffer to uploadUrl
+    const putResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': contentType,
+      },
+      body: uploadBuffer,
+    });
+
+    if (!putResponse.ok) {
+      const putErrText = await putResponse.text();
+      console.warn('[LinkedIn Image Upload] Binary upload failed:', putResponse.status, putErrText);
+      return null;
+    }
+
+    console.info(`[LinkedIn Image Upload] Image successfully registered with LinkedIn: ${imageUrn}`);
+    return imageUrn;
+  } catch (err) {
+    console.warn('[LinkedIn Image Upload] Exception during image upload to LinkedIn:', err);
+    return null;
+  }
+}
+
+// ============================================================================
+// 9. Publish Article to Personal Profile (Supported LinkedIn API)
 // ============================================================================
 
 export async function publishArticleToLinkedIn(params: {
   postId: number;
   customCommentary?: string;
+  imageUrl?: string;
 }): Promise<PublishArticleResult> {
   // 1. Get active connection
   const connection = await getActiveLinkedInConnection();
@@ -447,9 +554,9 @@ export async function publishArticleToLinkedIn(params: {
     };
   }
 
-  // 2. Fetch article details from database
+  // 2. Fetch article details from database (including cover_image)
   const postRows = await query(
-    `SELECT id, title, slug, excerpt, seo_description, status FROM posts WHERE id = $1 LIMIT 1;`,
+    `SELECT id, title, slug, excerpt, seo_description, status, cover_image FROM posts WHERE id = $1 LIMIT 1;`,
     [params.postId]
   );
 
@@ -462,6 +569,7 @@ export async function publishArticleToLinkedIn(params: {
 
   const post = postRows[0];
   const articleUrl = `https://heyprince.in/insights/${post.slug}/`;
+  const postImageUrl = params.imageUrl || post.cover_image;
 
   // Build clean commentary
   const commentaryText =
@@ -471,9 +579,24 @@ export async function publishArticleToLinkedIn(params: {
   // Active LinkedIn API Version (202601 / 202510)
   const activeVersion = process.env.LINKEDIN_API_VERSION || '202601';
 
+  // 3. Proactively upload image to LinkedIn so the post has a real visual image attachment
+  let imageUrn: string | null = null;
+  if (postImageUrl) {
+    try {
+      imageUrn = await uploadImageToLinkedIn({
+        accessToken: connection.access_token,
+        personUrn: connection.person_urn,
+        imageUrl: postImageUrl,
+        apiVersion: activeVersion,
+      });
+    } catch (imgErr) {
+      console.warn('[LinkedIn] Image upload exception, continuing with article fallback:', imgErr);
+    }
+  }
+
   // Attempt 1: Modern versioned Posts API (`POST https://api.linkedin.com/rest/posts`)
   try {
-    const postPayload = {
+    const postPayload: any = {
       author: connection.person_urn,
       commentary: commentaryText,
       visibility: 'PUBLIC',
@@ -482,18 +605,29 @@ export async function publishArticleToLinkedIn(params: {
         targetEntities: [],
         thirdPartyDistributionChannels: [],
       },
-      content: {
+      lifecycleState: 'PUBLISHED',
+      isReshareDisabledByAuthor: false,
+    };
+
+    if (imageUrn) {
+      // First attempt with image media (native image post with full picture in feed)
+      postPayload.content = {
+        media: {
+          title: post.title,
+          id: imageUrn,
+        },
+      };
+    } else {
+      postPayload.content = {
         article: {
           source: articleUrl,
           title: post.title,
           description: post.excerpt || post.seo_description || 'Engineering insight by Prince',
         },
-      },
-      lifecycleState: 'PUBLISHED',
-      isReshareDisabledByAuthor: false,
-    };
+      };
+    }
 
-    const restResponse = await fetch('https://api.linkedin.com/rest/posts', {
+    let restResponse = await fetch('https://api.linkedin.com/rest/posts', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${connection.access_token}`,
@@ -503,6 +637,37 @@ export async function publishArticleToLinkedIn(params: {
       },
       body: JSON.stringify(postPayload),
     });
+
+    // If media post failed with 400 but we have imageUrn, retry as article with thumbnail: imageUrn
+    if (!restResponse.ok && imageUrn) {
+      console.warn(`[LinkedIn rest/posts] Media payload returned status ${restResponse.status}, trying article thumbnail payload...`);
+      const articleThumbnailPayload = {
+        ...postPayload,
+        content: {
+          article: {
+            source: articleUrl,
+            thumbnail: imageUrn,
+            title: post.title,
+            description: post.excerpt || post.seo_description || 'Engineering insight by Prince',
+          },
+        },
+      };
+
+      const retryRes = await fetch('https://api.linkedin.com/rest/posts', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${connection.access_token}`,
+          'Content-Type': 'application/json',
+          'LinkedIn-Version': activeVersion,
+          'X-Restli-Protocol-Version': '2.0.0',
+        },
+        body: JSON.stringify(articleThumbnailPayload),
+      });
+
+      if (retryRes.status === 201) {
+        restResponse = retryRes;
+      }
+    }
 
     if (restResponse.status === 201) {
       const restliId = restResponse.headers.get('x-restli-id') || restResponse.headers.get('x-linkedin-id') || '';
@@ -529,7 +694,7 @@ export async function publishArticleToLinkedIn(params: {
           connection.person_urn,
           commentaryText,
           articleUrl,
-          JSON.stringify({ status: 201, postUrn, endpoint: 'rest/posts' }),
+          JSON.stringify({ status: 201, postUrn, endpoint: 'rest/posts', hasImage: Boolean(imageUrn) }),
         ]
       );
 
@@ -561,7 +726,7 @@ export async function publishArticleToLinkedIn(params: {
 
     // Attempt 2: Fallback to /v2/ugcPosts
     console.info('[LinkedIn] Attempting fallback to /v2/ugcPosts endpoint...');
-    const ugcPayload = {
+    const ugcPayload: any = {
       author: connection.person_urn,
       lifecycleState: 'PUBLISHED',
       specificContent: {
@@ -569,19 +734,33 @@ export async function publishArticleToLinkedIn(params: {
           shareCommentary: {
             text: commentaryText,
           },
-          shareMediaCategory: 'ARTICLE',
-          media: [
-            {
-              status: 'READY',
-              originalUrl: articleUrl,
-              title: {
-                text: post.title,
-              },
-              description: {
-                text: post.excerpt || post.seo_description || 'Engineering insight',
-              },
-            },
-          ],
+          shareMediaCategory: imageUrn ? 'IMAGE' : 'ARTICLE',
+          media: imageUrn
+            ? [
+                {
+                  status: 'READY',
+                  media: imageUrn,
+                  title: {
+                    text: post.title,
+                  },
+                  description: {
+                    text: post.excerpt || post.seo_description || 'Engineering insight',
+                  },
+                },
+              ]
+            : [
+                {
+                  status: 'READY',
+                  originalUrl: articleUrl,
+                  thumbnails: postImageUrl ? [{ url: postImageUrl }] : undefined,
+                  title: {
+                    text: post.title,
+                  },
+                  description: {
+                    text: post.excerpt || post.seo_description || 'Engineering insight',
+                  },
+                },
+              ],
         },
       },
       visibility: {
