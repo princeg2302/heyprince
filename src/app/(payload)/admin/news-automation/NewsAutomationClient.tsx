@@ -28,12 +28,10 @@ import {
   X,
   Radio,
   Smile,
-  CloudSun,
   Globe,
   Calendar,
   Filter,
   MapPin,
-  Thermometer,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import {
@@ -46,7 +44,7 @@ import {
 export default function NewsAutomationClient() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'runs' | 'sources' | 'editorial' | 'seasonal' | 'settings'>('runs');
+  const [activeTab, setActiveTab] = useState<'runs' | 'sources' | 'editorial' | 'settings'>('runs');
 
   // State
   const [settings, setSettings] = useState<DailyNewsSettings | null>(null);
@@ -107,10 +105,6 @@ export default function NewsAutomationClient() {
   const [testingFeed, setTestingFeed] = useState(false);
   const [testFeedResult, setTestFeedResult] = useState<string | null>(null);
   const [savingSource, setSavingSource] = useState(false);
-
-  // Weather testing state
-  const [testingWeather, setTestingWeather] = useState(false);
-  const [liveWeatherPreview, setLiveWeatherPreview] = useState<any>(null);
 
   // Saving settings
   const [savingSettings, setSavingSettings] = useState(false);
@@ -226,21 +220,6 @@ export default function NewsAutomationClient() {
       showToast('Network error during meme generation', 'error');
     } finally {
       setRunningMeme(false);
-    }
-  };
-
-  // Test live weather from Open-Meteo
-  const handleTestWeather = async () => {
-    setTestingWeather(true);
-    try {
-      const res = await fetch('/api/seasonal/current/');
-      const data = await res.json();
-      setLiveWeatherPreview(data);
-      showToast('Live weather data fetched successfully from Open-Meteo.', 'success');
-    } catch {
-      showToast('Could not fetch live weather test.', 'error');
-    } finally {
-      setTestingWeather(false);
     }
   };
 
@@ -1155,27 +1134,6 @@ export default function NewsAutomationClient() {
         </button>
 
         <button
-          onClick={() => setActiveTab('seasonal')}
-          style={{
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'seasonal' ? '2px solid var(--hpa-primary)' : '2px solid transparent',
-            color: activeTab === 'seasonal' ? '#ffffff' : 'var(--hpa-text-dim)',
-            padding: '10px 16px',
-            fontSize: '0.88rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <CloudSun size={15} />
-          <span>Seasonal Weather</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('settings')}
           style={{
             background: 'none',
@@ -1839,184 +1797,7 @@ export default function NewsAutomationClient() {
         </div>
       )}
 
-      {/* TAB 4: SEASONAL WEATHER ENGINE */}
-      {activeTab === 'seasonal' && settings && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="hpa-card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <CloudSun size={18} style={{ color: '#38bdf8' }} />
-                <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                    Seasonal &amp; Weather Engine
-                  </h3>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: '2px 0 0' }}>
-                    Non-intrusive floating weather capsule powered by Open-Meteo (No API key needed, cached 30 min)
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleTestWeather}
-                disabled={testingWeather}
-                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
-              >
-                {testingWeather ? <Loader2 size={12} className="hpa-spin" /> : <Thermometer size={12} />}
-                <span>{testingWeather ? 'Fetching Open-Meteo...' : 'Test Live Weather Now'}</span>
-              </button>
-            </div>
-
-            {/* Live Weather Test Display */}
-            {liveWeatherPreview && (
-              <div
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  background: 'rgba(56, 189, 248, 0.08)',
-                  border: '1px solid rgba(56, 189, 248, 0.25)',
-                  marginBottom: '20px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ fontSize: '2rem' }}>{liveWeatherPreview.icon || '☀️'}</div>
-                    <div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
-                        {liveWeatherPreview.city}: {liveWeatherPreview.temperature}°C
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#93c5fd' }}>
-                        {liveWeatherPreview.description} • Season: <strong>{liveWeatherPreview.season}</strong>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>
-                    Cached for 30 minutes • Source: Open-Meteo WMO
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Seasonal Settings Form */}
-            <form onSubmit={handleSaveAllSettings}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px', marginBottom: '20px' }}>
-                {/* Seasonal Enabled Toggle */}
-                <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--hpa-border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ fontSize: '0.86rem', fontWeight: 600, color: '#ffffff' }}>Enable on Website</span>
-                      <p style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
-                        Shows floating bottom-right capsule
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSettings({ ...settings, isSeasonalEnabled: !settings.isSeasonalEnabled })}
-                      className={`hpa-btn hpa-btn-sm ${settings.isSeasonalEnabled ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
-                    >
-                      {settings.isSeasonalEnabled ? 'Enabled' : 'Disabled'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Seasonal Mode */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
-                    Detection Mode
-                  </label>
-                  <select
-                    value={settings.seasonalMode || 'auto'}
-                    onChange={(e) => setSettings({ ...settings, seasonalMode: e.target.value as any })}
-                    className="hpa-input"
-                    style={{ width: '100%' }}
-                  >
-                    <option value="auto">Auto: Live Weather (Open-Meteo) + Season</option>
-                    <option value="manual">Manual: Fixed Seasonal / Festive Theme</option>
-                    <option value="disabled">Disabled</option>
-                  </select>
-                </div>
-
-                {/* Manual Theme Selector (if mode is manual) */}
-                {settings.seasonalMode === 'manual' && (
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
-                      Manual Seasonal Theme
-                    </label>
-                    <select
-                      value={settings.seasonalManualTheme || 'autumn'}
-                      onChange={(e) => setSettings({ ...settings, seasonalManualTheme: e.target.value as any })}
-                      className="hpa-input"
-                      style={{ width: '100%' }}
-                    >
-                      <option value="spring">🌸 Spring (Blossoms &amp; Fresh Energy)</option>
-                      <option value="summer">☀️ Summer (Vibrant Sun &amp; Warm Gold)</option>
-                      <option value="monsoon">🌧️ Monsoon (Rain &amp; Cool Breeze)</option>
-                      <option value="autumn">🍂 Autumn (Golden Amber Leaves)</option>
-                      <option value="diwali">🪔 Diwali (Festive Diya Glow)</option>
-                      <option value="winter">❄️ Winter (Frost &amp; Soft Chill)</option>
-                    </select>
-                  </div>
-                )}
-
-                {/* Weather City */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
-                    Weather City
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.weatherCity || 'Bengaluru, India'}
-                    onChange={(e) => setSettings({ ...settings, weatherCity: e.target.value })}
-                    className="hpa-input"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                {/* Latitude & Longitude */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
-                    Coordinates (Latitude, Longitude)
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="number"
-                      step="0.0001"
-                      placeholder="Lat"
-                      value={settings.weatherLatitude ?? 12.9716}
-                      onChange={(e) => setSettings({ ...settings, weatherLatitude: parseFloat(e.target.value) || 0 })}
-                      className="hpa-input"
-                      style={{ flex: 1 }}
-                    />
-                    <input
-                      type="number"
-                      step="0.0001"
-                      placeholder="Lon"
-                      value={settings.weatherLongitude ?? 77.5946}
-                      onChange={(e) => setSettings({ ...settings, weatherLongitude: parseFloat(e.target.value) || 0 })}
-                      className="hpa-input"
-                      style={{ flex: 1 }}
-                    />
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', marginTop: '4px' }}>
-                    Default: 12.9716, 77.5946 (Bengaluru) or 28.6139, 77.2090 (Delhi)
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={savingSettings}
-                className="hpa-btn hpa-btn-primary"
-              >
-                {savingSettings ? <Loader2 size={14} className="hpa-spin" /> : <Check size={14} />}
-                <span>{savingSettings ? 'Saving...' : 'Save Seasonal Settings'}</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 5: CONFIGURATION & AI MODELS */}
+      {/* TAB 4: CONFIGURATION & AI MODELS */}
       {activeTab === 'settings' && settings && (
         <form onSubmit={handleSaveAllSettings} className="hpa-card" style={{ padding: '24px' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>

@@ -8348,63 +8348,6 @@ body {
 }
 
 /* ==========================================================================
-   FLOATING SEASONAL WEATHER CAPSULE (SPACED FROM COOKIE & BACK-TO-TOP BUTTONS)
-   ========================================================================== */
-.seasonal-floating-capsule {
-  position: fixed;
-  bottom: 32px;
-  left: 90px;
-  z-index: 9990;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px 8px 12px;
-  border-radius: 999px;
-  background: rgba(14, 16, 23, 0.92);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: #ffffff;
-  cursor: default;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: auto;
-  max-width: 320px;
-  white-space: nowrap;
-}
-
-.seasonal-floating-capsule.is-hovered {
-  transform: translateY(-2px);
-}
-
-.seasonal-pill-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.88rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.seasonal-pill-text {
-  color: #f8fafc;
-  letter-spacing: 0.01em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 767px) {
-  .seasonal-floating-capsule {
-    bottom: 22px;
-    left: 72px;
-    padding: 6px 12px 6px 10px;
-    font-size: 0.7rem;
-    max-width: calc(100vw - 146px);
-  }
-}
-
-/* ==========================================================================
    RETRO GAMING ZONE & 8-BIT ARCADE VAULT (/gaming-zone)
    ========================================================================== */
 .gaming-zone-page {
