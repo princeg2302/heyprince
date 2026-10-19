@@ -9,6 +9,9 @@ import {
   LetsTalkBanner,
   CapturedMemories,
 } from '@/components';
+import { getPosts } from '@/lib/cms';
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
@@ -19,14 +22,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const latestArticles = await getPosts();
+
   return (
     <div className="home-view-container">
       <HeroBanner />
       <VisionAmbition />
       <JourneyTimeline />
       <CyberArcade />
-      <ArticlesSection />
+      <ArticlesSection articles={latestArticles} />
       <LetsTalkBanner />
       <CapturedMemories />
     </div>

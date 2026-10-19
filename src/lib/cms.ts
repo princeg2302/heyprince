@@ -238,7 +238,7 @@ export async function getServiceBySlug(slug: string): Promise<ServiceData | null
 export async function getPosts(): Promise<Article[]> {
   try {
     // 1. Direct Supabase query for real-time posts
-    const [{ data: dbPosts, error: sbError }, { data: adminUser }] = await Promise.all([
+    const [{ data: dbPosts, error: sbError }, { data: adminUser }, { data: dbCategories }] = await Promise.all([
       supabase
         .from('posts')
         .select('*')
@@ -249,40 +249,49 @@ export async function getPosts(): Promise<Article[]> {
         .select('name, role, avatar_url')
         .limit(1)
         .single(),
+      supabase
+        .from('categories')
+        .select('id, title'),
     ]);
 
+    const catMap = new Map<number, string>();
+    (dbCategories || []).forEach((c: any) => catMap.set(c.id, c.title));
+
     if (!sbError && dbPosts && dbPosts.length > 0) {
-      return dbPosts.map((doc: any) => ({
-        slug: doc.slug,
-        title: doc.title,
-        description: doc.excerpt || doc.seo_description || '',
-        readMins: doc.read_mins || '5 min',
-        image: doc.cover_image || '/assets/blog/photo1.webp',
-        url: `/insights/${doc.slug}/`,
-        date: doc.published_at
-          ? new Date(doc.published_at).toLocaleDateString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric',
-            })
-          : 'Recent',
-        category: doc.category_name || 'Engineering & Strategy',
-        author: {
-          name: adminUser?.name || doc.author_name || 'Prince',
-          role:
-            (adminUser?.role === 'admin'
-              ? 'Senior Full Stack Engineer & IT Consultant'
-              : adminUser?.role) ||
-            doc.author_role ||
-            'Senior Full Stack Engineer & IT Consultant',
-          avatar:
-            adminUser?.avatar_url ||
-            doc.author_avatar ||
-            'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
-        },
-        tags: [],
-        sections: [],
-      }));
+      return dbPosts.map((doc: any) => {
+        const liveCategory = doc.category_id ? catMap.get(doc.category_id) : null;
+        return {
+          slug: doc.slug,
+          title: doc.title,
+          description: doc.excerpt || doc.seo_description || '',
+          readMins: doc.read_mins || '5 min',
+          image: doc.cover_image && doc.cover_image.trim() !== '' ? doc.cover_image : '/assets/blog/photo1.webp',
+          url: `/insights/${doc.slug}/`,
+          date: doc.published_at
+            ? new Date(doc.published_at).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'Recent',
+          category: liveCategory || doc.category_name || 'Engineering & Strategy',
+          author: {
+            name: adminUser?.name || doc.author_name || 'Prince',
+            role:
+              (adminUser?.role === 'admin'
+                ? 'Senior Full Stack Engineer & IT Consultant'
+                : adminUser?.role) ||
+              doc.author_role ||
+              'Senior Full Stack Engineer & IT Consultant',
+            avatar:
+              adminUser?.avatar_url ||
+              doc.author_avatar ||
+              'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
+          },
+          tags: [],
+          sections: [],
+        };
+      });
     }
 
     // 2. Payload query fallback

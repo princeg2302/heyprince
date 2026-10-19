@@ -2,19 +2,32 @@
 
 import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { FaClock, FaArrowRight } from 'react-icons/fa6';
-import { articlesList } from '../data/siteContent';
+import {
+  FaClock,
+  FaArrowRight,
+  FaCalendarDays,
+  FaBolt,
+  FaBookOpen,
+} from 'react-icons/fa6';
+import { Article, articlesList } from '../data/siteContent';
 
 export interface ArticlesSectionProps {
+  articles?: Article[];
   onSelectArticle?: (slug: string) => void;
 }
 
-export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticle }) => {
-  const router = useRouter();
+export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
+  articles,
+  onSelectArticle,
+}) => {
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Use dynamic articles passed from server, fallback to static articlesList
+  const displayArticles = articles && articles.length > 0 ? articles : articlesList;
+  const featuredArticle = displayArticles[0];
+  const companionArticles = displayArticles.slice(1, 4);
 
   useEffect(() => {
     const prefersReducedMotion =
@@ -30,13 +43,13 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
     const ctx = gsap.context(() => {
       if (sectionRef.current) {
         gsap.fromTo(
-          '.article-card',
-          { y: 24, opacity: 0 },
+          ['.article-spotlight-card', '.article-card', '.articles-discovery-bar'],
+          { y: 28, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            stagger: 0.08,
-            duration: 0.5,
+            stagger: 0.1,
+            duration: 0.55,
             ease: 'power2.out',
             scrollTrigger: {
               trigger: sectionRef.current,
@@ -51,7 +64,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
     return () => {
       ctx.revert();
     };
-  }, []);
+  }, [displayArticles]);
 
   const handleArticleClick = (slug: string, e: React.MouseEvent) => {
     if (onSelectArticle) {
@@ -63,7 +76,13 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
   return (
     <section className="section-articles" id="articles" ref={sectionRef}>
       <div className="container">
+        {/* Section Header */}
         <div className="section-heading-group text-center">
+          <div className="articles-eyebrow-pill">
+            <span className="pulse-dot" />
+            <span>ARCHITECTURAL ESSAYS &amp; TECH DISPATCHES // 2026</span>
+          </div>
+
           <h2>
             Read This <br />
             Between{' '}
@@ -76,14 +95,15 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
             </span>
           </h2>
           <p>
-            In-depth engineering breakdowns, web development trends, IT provider selection frameworks, and career insights. Actionable strategies, real production benchmarks, and architectural wisdom for modern teams.
+            In-depth engineering breakdowns, Next-Gen AI developments, IT strategy playbooks, and unfiltered developer culture essays. Actionable blueprints and architectural wisdom for modern engineering teams.
           </p>
+
           <Link
             className="portal-btn mx-auto"
-            href="/insights/freelancing-tips-it-professionals-2026/"
-            onClick={(e) => handleArticleClick('freelancing-tips-it-professionals-2026', e)}
+            href="/insights/"
+            onClick={(e) => handleArticleClick(featuredArticle?.slug || 'freelancing-tips-it-professionals-2026', e)}
           >
-            <span className="mr-right">Stories Worth Scrolling</span>
+            <span className="mr-right">Stories Worth Scrolling ({displayArticles.length})</span>
             <span className="arrow">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="20" cy="20" r="20" fill="white" />
@@ -96,47 +116,155 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
           </Link>
         </div>
 
+        {/* Modern Showcase Container */}
         <div className="article-cards-sliding">
-          <div className="article-cards-grid">
-            {articlesList.map((article) => (
-              <article className="article-card" key={article.slug}>
-                <Link
-                  className="article-link"
-                  href={`/insights/${article.slug}/`}
-                  onClick={(e) => handleArticleClick(article.slug, e)}
-                  aria-label={`Read article: ${article.title}`}
-                >
-                  <div className="article-img-wrap">
-                    <img
-                      className="card-img"
-                      src={article.image}
-                      alt={`${article.title} - IT & Web Engineering Insight by Prince`}
-                      loading="lazy"
-                      decoding="async"
-                      width="600"
-                      height="375"
-                    />
-                    {article.category && (
-                      <span className="article-category-badge">{article.category}</span>
-                    )}
-                  </div>
-                  <div className="card-body">
-                    <div className="article-meta-row">
-                      <span className="read-mins">
-                        <FaClock size={11} aria-hidden="true" />
-                        {article.readMins} read
+          {/* 1. Hero Spotlight Article (The #1 Latest Post) */}
+          {featuredArticle && (
+            <article className="article-spotlight-card">
+              <Link
+                className="spotlight-link"
+                href={`/insights/${featuredArticle.slug}/`}
+                onClick={(e) => handleArticleClick(featuredArticle.slug, e)}
+                aria-label={`Read featured article: ${featuredArticle.title}`}
+              >
+                <div className="spotlight-img-wrap">
+                  <img
+                    className="spotlight-img"
+                    src={featuredArticle.image}
+                    alt={`${featuredArticle.title} - Latest Engineering Insight by Prince`}
+                    loading="eager"
+                    decoding="async"
+                    width="800"
+                    height="500"
+                  />
+                  <span className="spotlight-badge-latest">
+                    <FaBolt size={10} style={{ color: '#ff3355' }} />
+                    <span>Latest Drop // 2026</span>
+                  </span>
+                </div>
+
+                <div className="spotlight-body">
+                  <div className="spotlight-meta-row">
+                    {featuredArticle.category && (
+                      <span className="spotlight-category">
+                        {featuredArticle.category}
                       </span>
-                      {article.date && <span className="article-date">{article.date}</span>}
-                    </div>
-                    <h3 className="card-title">{article.title}</h3>
-                    <p className="card-content">{article.description}</p>
-                    <span className="read-more-link">
-                      Read Full Story <FaArrowRight size={12} className="arrow-icon" aria-hidden="true" />
+                    )}
+                    {featuredArticle.date && (
+                      <span className="spotlight-date">
+                        <FaCalendarDays size={11} aria-hidden="true" style={{ color: '#ff3355' }} />
+                        {featuredArticle.date}
+                      </span>
+                    )}
+                    <span className="spotlight-read">
+                      <FaClock size={11} aria-hidden="true" style={{ color: '#ff3355' }} />
+                      {featuredArticle.readMins} read
                     </span>
                   </div>
-                </Link>
-              </article>
-            ))}
+
+                  <h3 className="spotlight-title">{featuredArticle.title}</h3>
+
+                  <p className="spotlight-excerpt">{featuredArticle.description}</p>
+
+                  <div className="spotlight-footer">
+                    <div className="spotlight-author">
+                      <img
+                        className="spotlight-author-avatar"
+                        src={featuredArticle.author?.avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
+                        alt={featuredArticle.author?.name || 'Prince'}
+                        width="38"
+                        height="38"
+                      />
+                      <div>
+                        <div className="spotlight-author-name">{featuredArticle.author?.name || 'Prince'}</div>
+                        <div className="spotlight-author-role">{featuredArticle.author?.role || 'Senior Full Stack Engineer'}</div>
+                      </div>
+                    </div>
+
+                    <span className="spotlight-cta-btn">
+                      Read Deep Dive <FaArrowRight size={11} aria-hidden="true" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            </article>
+          )}
+
+          {/* 2. Companion 3-Column Modern Grid (Next 3 Latest Articles) */}
+          {companionArticles.length > 0 && (
+            <div className="article-companion-grid">
+              {companionArticles.map((article) => (
+                <article className="article-card modern-companion-card" key={article.slug}>
+                  <Link
+                    className="article-link"
+                    href={`/insights/${article.slug}/`}
+                    onClick={(e) => handleArticleClick(article.slug, e)}
+                    aria-label={`Read article: ${article.title}`}
+                  >
+                    <div className="article-img-wrap">
+                      <img
+                        className="card-img"
+                        src={article.image}
+                        alt={`${article.title} - Engineering Insight by Prince`}
+                        loading="lazy"
+                        decoding="async"
+                        width="600"
+                        height="375"
+                      />
+                      {article.category && (
+                        <span className="article-category-badge">{article.category}</span>
+                      )}
+                    </div>
+
+                    <div className="card-body">
+                      <div className="article-meta-row">
+                        <span className="read-mins">
+                          <FaClock size={11} aria-hidden="true" />
+                          {article.readMins} read
+                        </span>
+                        {article.date && <span className="article-date">{article.date}</span>}
+                      </div>
+
+                      <h3 className="card-title">{article.title}</h3>
+
+                      <p className="card-content">{article.description}</p>
+
+                      <div className="companion-card-footer">
+                        <div className="companion-author">
+                          <img
+                            className="companion-author-avatar"
+                            src={article.author?.avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
+                            alt={article.author?.name || 'Prince'}
+                            width="24"
+                            height="24"
+                          />
+                          <span className="companion-author-name">{article.author?.name || 'Prince'}</span>
+                        </div>
+
+                        <span className="read-more-link">
+                          Read Story <FaArrowRight size={11} className="arrow-icon" aria-hidden="true" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {/* 3. Modern Discovery Bar */}
+          <div className="articles-discovery-bar">
+            <div className="discovery-left">
+              <FaBookOpen className="discovery-icon" aria-hidden="true" />
+              <span>
+                Exploring {displayArticles.length}+ technical breakdowns, AI automations, and IT strategy playbooks.
+              </span>
+            </div>
+
+            <Link href="/insights/" className="discovery-btn">
+              <span>View All Articles &amp; Archive</span>
+              <FaArrowRight size={11} aria-hidden="true" />
+            </Link>
           </div>
         </div>
       </div>
@@ -145,4 +273,3 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({ onSelectArticl
 };
 
 export default ArticlesSection;
-
