@@ -1999,7 +1999,7 @@ ul#menu-main {
 }
 
 .captured-memories {
-  min-height: 100vh;
+  min-height: auto;
 }
 
 /*************Responsive Start***************/
@@ -2646,37 +2646,37 @@ ul#menu-main {
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  padding-top: 40px;
+  padding: 90px 0 100px 0;
 }
 
 .captured-memories-pin-wrap {
   width: 100%;
-  height: 100vh;
-  min-height: 600px;
+  height: auto;
+  min-height: auto;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 15px 0 10px 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
 .captured-memories .container {
   flex-shrink: 0;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   position: relative;
   z-index: 2;
 }
 
 .external {
-  overflow: visible;
+  overflow: hidden;
   width: 100%;
   position: relative;
   flex-grow: 1;
   display: flex;
   align-items: center;
-  padding: 42px 0;
+  padding: 24px 0 32px 0;
   box-sizing: border-box;
 }
 
@@ -3163,13 +3163,13 @@ body {
     position: relative;
     width: 100%;
     background: #000;
-    padding-top: 25px;
+    padding: 60px 0 70px 0;
   }
 
   .captured-memories-pin-wrap {
-    height: 100vh;
-    min-height: 560px;
-    padding: 20px 0;
+    height: auto;
+    min-height: auto;
+    padding: 0;
   }
 
   .captured-memories .section-heading-group h2 {

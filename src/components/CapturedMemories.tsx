@@ -25,25 +25,21 @@ export const CapturedMemories: React.FC = () => {
     if (prefersReducedMotion) return;
 
     const ctx = gsap.context(() => {
-      // Calculate total horizontal travel needed so the last item is neatly revealed without void
+      // Calculate total horizontal travel needed so items glide across smoothly
       const getScrollAmount = () => {
         if (!track) return 0;
-        return -(track.scrollWidth - window.innerWidth);
+        const maxScroll = track.scrollWidth - window.innerWidth;
+        return maxScroll > 0 ? -maxScroll : 0;
       };
 
-      const getScrollDistance = () => {
-        if (!track) return 1200;
-        return Math.max(Math.abs(getScrollAmount()) * 1.05, 1000);
-      };
-
-      // Single unified timeline with ONE ScrollTrigger — zero pinning collision or hitching
+      // Fluid horizontal filmstrip scrub as user naturally scrolls past the section
+      // Zero viewport pinning, zero scroll trap, zero hitching
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
-          pin: pinWrap,
-          start: 'top top',
-          end: () => `+=${getScrollDistance()}`,
-          scrub: true,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
           invalidateOnRefresh: true,
         },
       });
@@ -138,6 +134,8 @@ export const CapturedMemories: React.FC = () => {
                     alt={`Prince outdoor travel and photography memory #${idx + 1}`}
                     loading="lazy"
                     decoding="async"
+                    width="400"
+                    height="300"
                   />
                 </a>
               </div>
