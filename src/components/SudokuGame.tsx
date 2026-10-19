@@ -361,15 +361,6 @@ export const SudokuGame: React.FC = () => {
         return;
       }
 
-      const isSudokuFocused =
-        boardContainerRef.current?.contains(document.activeElement) ||
-        document.activeElement === boardContainerRef.current;
-
-      // Only handle Sudoku controls if board has focus or has a selected cell
-      if (!isSudokuFocused && !selectedCell) {
-        return;
-      }
-
       if (e.key >= '1' && e.key <= '9') {
         e.preventDefault();
         handleInputNumber(parseInt(e.key, 10));
@@ -398,9 +389,8 @@ export const SudokuGame: React.FC = () => {
         return;
       }
 
-      // Arrow navigation — only intercept when Sudoku board container is explicitly focused
+      // Arrow navigation
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        if (!isSudokuFocused) return;
         e.preventDefault();
         setSelectedCell((prev) => {
           if (!prev) return [0, 0];
@@ -416,7 +406,7 @@ export const SudokuGame: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleInputNumber, handleErase, handleUndo, handleRedo, selectedCell]);
+  }, [handleInputNumber, handleErase, handleUndo, handleRedo]);
 
   if (currentBoard.length === 0) {
     return (
