@@ -35,6 +35,8 @@ export const SeasonalElement: React.FC = () => {
   const [data, setData] = useState<SeasonalData | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [isExact, setIsExact] = useState(false);
   const isFetchingRef = useRef(false);
 
   const fetchSeasonal = useCallback(async (coords?: UserGeoCoords) => {
@@ -60,16 +62,6 @@ export const SeasonalElement: React.FC = () => {
 
       if (resData && resData.enabled) {
         setData(resData);
-
-        // Cache location in sessionStorage for instant subsequent navigations
-        if (resData.city && !sessionStorage.getItem('hp_user_geo') && coords?.lat && coords?.lon) {
-          try {
-            sessionStorage.setItem(
-              'hp_user_geo',
-              JSON.stringify({ lat: coords.lat, lon: coords.lon, city: resData.city })
-            );
-          } catch {}
-        }
       }
     } catch (err) {
       console.warn('[SeasonalElement] Fetch error:', err);
@@ -77,6 +69,61 @@ export const SeasonalElement: React.FC = () => {
       isFetchingRef.current = false;
     }
   }, []);
+
+  const requestExactLocation = useCallback((isManualClick: boolean = false) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      if (isManualClick) {
+        alert('Geolocation is not supported by your browser.');
+      }
+      return;
+    }
+
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+
+        let exactCity = '';
+        try {
+          const revRes = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+            { signal: AbortSignal.timeout(3500) }
+          );
+          if (revRes.ok) {
+            const rev = await revRes.json();
+            const place = rev.locality || rev.city || rev.principalSubdivision;
+            if (place) {
+              exactCity = rev.countryName ? `${place}, ${rev.countryName}` : place;
+            }
+          }
+        } catch (revErr) {
+          console.warn('[SeasonalElement] Client reverse geocode fallback:', revErr);
+        }
+
+        const exactLoc: UserGeoCoords = {
+          lat,
+          lon,
+          city: exactCity || undefined,
+        };
+
+        try {
+          localStorage.setItem('hp_exact_location', JSON.stringify(exactLoc));
+          sessionStorage.setItem('hp_user_geo', JSON.stringify(exactLoc));
+        } catch {}
+
+        setIsExact(true);
+        setIsLocating(false);
+        fetchSeasonal(exactLoc);
+      },
+      (err) => {
+        setIsLocating(false);
+        console.log('[SeasonalElement] Geolocation request dismissed or unavailable:', err.message);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }, [fetchSeasonal]);
 
   useEffect(() => {
     // 1. Check if user dismissed capsule in current session
@@ -87,69 +134,26 @@ export const SeasonalElement: React.FC = () => {
       }
     } catch {}
 
-    // 2. Check if we have cached coordinates from earlier in this session
-    let cachedCoords: UserGeoCoords | null = null;
+    // 2. Check for previously saved exact GPS location
+    let savedExactLoc: UserGeoCoords | null = null;
     try {
-      const stored = sessionStorage.getItem('hp_user_geo');
+      const stored = localStorage.getItem('hp_exact_location') || sessionStorage.getItem('hp_user_geo');
       if (stored) {
-        cachedCoords = JSON.parse(stored);
+        savedExactLoc = JSON.parse(stored);
       }
     } catch {}
 
-    if (cachedCoords) {
-      fetchSeasonal(cachedCoords);
+    if (savedExactLoc && typeof savedExactLoc.lat === 'number' && typeof savedExactLoc.lon === 'number') {
+      setIsExact(true);
+      fetchSeasonal(savedExactLoc);
     } else {
-      // Fetch initial data (will use Vercel Geo headers in production)
-      fetchSeasonal().then(() => {
-        // If in localhost / dev environment where Vercel Geo headers don't exist,
-        // do a quick client-side IP lookup so local dev also shows real user location
-        if (
-          typeof window !== 'undefined' &&
-          (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ) {
-          fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) })
-            .then((r) => r.json())
-            .then((geo) => {
-              if (geo.latitude && geo.longitude && geo.city) {
-                const detectedLoc: UserGeoCoords = {
-                  lat: Number(geo.latitude),
-                  lon: Number(geo.longitude),
-                  city: `${geo.city}, ${geo.country_name || 'India'}`,
-                };
-                try {
-                  sessionStorage.setItem('hp_user_geo', JSON.stringify(detectedLoc));
-                } catch {}
-                fetchSeasonal(detectedLoc);
-              }
-            })
-            .catch(() => {});
-        }
-      });
+      // Fetch initial data (from Vercel Geo headers in production or default)
+      fetchSeasonal();
     }
 
-    // 3. If user has already granted high-accuracy browser geolocation permission,
-    // seamlessly upgrade to exact GPS coordinates without prompting
-    if (typeof navigator !== 'undefined' && 'permissions' in navigator && navigator.geolocation) {
-      navigator.permissions
-        .query({ name: 'geolocation' })
-        .then((permissionStatus) => {
-          if (permissionStatus.state === 'granted') {
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                const gpsCoords: UserGeoCoords = {
-                  lat: pos.coords.latitude,
-                  lon: pos.coords.longitude,
-                };
-                fetchSeasonal(gpsCoords);
-              },
-              undefined,
-              { timeout: 8000, maximumAge: 600000 }
-            );
-          }
-        })
-        .catch(() => {});
-    }
-  }, [fetchSeasonal]);
+    // 3. Proactively request device GPS location so exact locality is displayed
+    requestExactLocation(false);
+  }, [fetchSeasonal, requestExactLocation]);
 
   if (!data || !data.enabled || isDismissed) {
     return null;
@@ -161,6 +165,10 @@ export const SeasonalElement: React.FC = () => {
     try {
       sessionStorage.setItem('hp_season_dismissed', '1');
     } catch {}
+  };
+
+  const handleCapsuleClick = () => {
+    requestExactLocation(true);
   };
 
   const accentColor = data.season?.accentColor || '#38bdf8';
@@ -181,21 +189,23 @@ export const SeasonalElement: React.FC = () => {
       style={{
         border: `1px solid ${accentColor}40`,
         boxShadow: `0 8px 30px rgba(0, 0, 0, 0.45), 0 0 15px ${glowColor}`,
+        cursor: 'pointer',
       }}
+      onClick={handleCapsuleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      title={data.tooltipText}
+      title={`${data.tooltipText} • ${isExact ? '📍 Exact location active' : 'Click to detect exact GPS location'}`}
       role="status"
       aria-live="polite"
     >
       {/* Exactly ONE leading icon (weather condition or season emoji) */}
       <span className="seasonal-pill-icon">
-        {primaryIcon}
+        {isLocating ? '📍' : primaryIcon}
       </span>
 
       {/* Clean text with temperature, location, and season label without repeated icon */}
       <span className="seasonal-pill-text">
-        {cleanedPillText}
+        {isLocating ? 'Detecting exact location...' : cleanedPillText}
       </span>
 
       {isHovered && (

@@ -114,6 +114,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 4. Reverse geocode exact coordinates if city is still missing or if precise GPS was passed without a city
+    if (latitude !== undefined && longitude !== undefined && (!city || city === 'Delhi, India')) {
+      try {
+        const revRes = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
+          {
+            headers: { 'User-Agent': 'HeyPrince-Reverse-Geocode/1.0' },
+            signal: AbortSignal.timeout(2500),
+          }
+        );
+        if (revRes.ok) {
+          const rev = await revRes.json();
+          const place = rev.locality || rev.city || rev.principalSubdivision;
+          if (place) {
+            city = rev.countryName ? `${place}, ${rev.countryName}` : place;
+          }
+        }
+      } catch {}
+    }
+
     // 4. Default fallback if location cannot be detected
     const finalCity = city || settings.weatherCity || 'Yamunanagar, India';
     const finalLat = latitude ?? settings.weatherLatitude ?? 30.1;
