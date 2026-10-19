@@ -160,8 +160,8 @@ export async function GET(request: NextRequest) {
       enabled: true,
       mode: 'auto',
       city: 'Yamunanagar, India',
-      displayPillText: 'Yamunanagar • Autumn Harvest',
-      tooltipText: 'Autumn Harvest in Yamunanagar, India',
+      displayPillText: 'Yamunanagar',
+      tooltipText: 'Live Weather in Yamunanagar, India',
       source: 'fallback',
     });
   }

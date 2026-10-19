@@ -19,6 +19,8 @@ interface SeasonalData {
     humidity: number;
     conditionText: string;
     conditionIcon: string;
+    accentColor?: string;
+    glowColor?: string;
   } | null;
   displayPillText: string;
   tooltipText: string;
@@ -171,17 +173,19 @@ export const SeasonalElement: React.FC = () => {
     requestExactLocation(true);
   };
 
-  const accentColor = data.season?.accentColor || '#38bdf8';
-  const glowColor = data.season?.glowColor || 'rgba(56, 189, 248, 0.2)';
-  const primaryIcon = data.weather?.conditionIcon || data.season?.emoji || '✨';
+  const accentColor = data.weather?.accentColor || data.season?.accentColor || '#38bdf8';
+  const glowColor = data.weather?.glowColor || data.season?.glowColor || 'rgba(56, 189, 248, 0.2)';
+  const primaryIcon = data.weather?.conditionIcon || '🌤️';
 
-  // Defensive clean-up: Ensure NO duplicate icon/sun ever appears at the start of the text
+  // Defensive clean-up: Ensure NO duplicate icon/sun or season names ever appear in the text
   let cleanedPillText = data.displayPillText || '';
   if (primaryIcon && cleanedPillText.startsWith(primaryIcon)) {
     cleanedPillText = cleanedPillText.slice(primaryIcon.length).trim();
   }
   // Strip any residual leading emoji character from the text span
   cleanedPillText = cleanedPillText.replace(/^[\u2600-\u26FF\u2700-\u27BF\uD83C-\uDBFF\uDC00-\uDFFF\uFE0F]+\s*/, '').trim();
+  // Strip any residual season label defensively (e.g. "• Autumn Harvest")
+  cleanedPillText = cleanedPillText.replace(/\s*•\s*(?:Autumn|Winter|Spring|Summer|Monsoon)[^•]*$/i, '').trim();
 
   return (
     <div
@@ -198,12 +202,12 @@ export const SeasonalElement: React.FC = () => {
       role="status"
       aria-live="polite"
     >
-      {/* Exactly ONE leading icon (weather condition or season emoji) */}
+      {/* Exactly ONE leading icon (dynamic weather condition: sun, cloudy, rain, cold, fog) */}
       <span className="seasonal-pill-icon">
         {isLocating ? '📍' : primaryIcon}
       </span>
 
-      {/* Clean text with temperature, location, and season label without repeated icon */}
+      {/* Clean text with temperature and location (ZERO season name) */}
       <span className="seasonal-pill-text">
         {isLocating ? 'Detecting exact location...' : cleanedPillText}
       </span>

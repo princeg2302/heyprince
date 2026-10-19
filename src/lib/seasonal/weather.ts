@@ -5,6 +5,8 @@ export interface WeatherData {
   isDay: boolean;
   conditionText: string;
   conditionIcon: string;
+  accentColor?: string;
+  glowColor?: string;
 }
 
 export interface SeasonalTheme {
@@ -73,14 +75,149 @@ const SEASONAL_THEMES: Record<string, SeasonalTheme> = {
 // In-memory server cache with 20-min TTL for each coordinate pair
 const weatherCache = new Map<string, { data: WeatherData; expiresAt: number }>();
 
-function mapWmoCode(code: number): { text: string; icon: string } {
-  if (code === 0) return { text: 'Clear Sky', icon: '☀️' };
-  if (code >= 1 && code <= 3) return { text: 'Partly Cloudy', icon: '⛅' };
-  if (code === 45 || code === 48) return { text: 'Misty / Fog', icon: '🌫️' };
-  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return { text: 'Rain Showers', icon: '🌧️' };
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return { text: 'Light Snow / Frost', icon: '❄️' };
-  if (code >= 95) return { text: 'Thunderstorm', icon: '⛈️' };
-  return { text: 'Fair Weather', icon: '🌤️' };
+function mapWmoCode(
+  code: number,
+  isDay: boolean = true,
+  temp?: number
+): { text: string; icon: string; accentColor: string; glowColor: string } {
+  // Freezing / extreme cold
+  if (typeof temp === 'number' && temp <= 4) {
+    return {
+      text: code >= 71 && code <= 86 ? 'Snowfall' : 'Freezing Cold',
+      icon: '❄️',
+      accentColor: '#38bdf8',
+      glowColor: 'rgba(56, 189, 248, 0.25)',
+    };
+  }
+
+  // 0: Clear sky / Sun
+  if (code === 0) {
+    if (typeof temp === 'number' && temp >= 38) {
+      return {
+        text: 'Hot & Sunny',
+        icon: '☀️',
+        accentColor: '#f59e0b',
+        glowColor: 'rgba(245, 158, 11, 0.25)',
+      };
+    }
+    return isDay
+      ? { text: 'Clear Sky', icon: '☀️', accentColor: '#f59e0b', glowColor: 'rgba(245, 158, 11, 0.25)' }
+      : { text: 'Clear Night', icon: '🌙', accentColor: '#818cf8', glowColor: 'rgba(129, 140, 248, 0.25)' };
+  }
+
+  // 1-2: Partly cloudy
+  if (code === 1 || code === 2) {
+    return isDay
+      ? { text: 'Partly Cloudy', icon: '⛅', accentColor: '#38bdf8', glowColor: 'rgba(56, 189, 248, 0.2)' }
+      : { text: 'Partly Cloudy', icon: '☁️', accentColor: '#94a3b8', glowColor: 'rgba(148, 163, 184, 0.2)' };
+  }
+
+  // 3: Overcast / Cloudy
+  if (code === 3) {
+    return {
+      text: 'Cloudy',
+      icon: '☁️',
+      accentColor: '#94a3b8',
+      glowColor: 'rgba(148, 163, 184, 0.2)',
+    };
+  }
+
+  // 45, 48: Fog / Mist
+  if (code === 45 || code === 48) {
+    return {
+      text: 'Fog / Mist',
+      icon: '🌫️',
+      accentColor: '#cbd5e1',
+      glowColor: 'rgba(203, 213, 225, 0.25)',
+    };
+  }
+
+  // 51, 53, 55: Drizzle
+  if (code >= 51 && code <= 55) {
+    return {
+      text: 'Light Drizzle',
+      icon: '🌦️',
+      accentColor: '#06b6d4',
+      glowColor: 'rgba(6, 182, 212, 0.25)',
+    };
+  }
+
+  // 56, 57, 66, 67: Freezing rain
+  if (code === 56 || code === 57 || code === 66 || code === 67) {
+    return {
+      text: 'Freezing Rain',
+      icon: '🌨️',
+      accentColor: '#38bdf8',
+      glowColor: 'rgba(56, 189, 248, 0.25)',
+    };
+  }
+
+  // 61, 63, 65: Rain
+  if (code >= 61 && code <= 65) {
+    return {
+      text: 'Raining',
+      icon: '🌧️',
+      accentColor: '#0ea5e9',
+      glowColor: 'rgba(14, 165, 233, 0.25)',
+    };
+  }
+
+  // 71, 73, 75, 77: Snow
+  if (code >= 71 && code <= 77) {
+    return {
+      text: 'Snowing',
+      icon: '❄️',
+      accentColor: '#38bdf8',
+      glowColor: 'rgba(56, 189, 248, 0.25)',
+    };
+  }
+
+  // 80, 81, 82: Rain Showers
+  if (code >= 80 && code <= 82) {
+    return {
+      text: 'Rain Showers',
+      icon: '🌧️',
+      accentColor: '#06b6d4',
+      glowColor: 'rgba(6, 182, 212, 0.25)',
+    };
+  }
+
+  // 85, 86: Snow showers
+  if (code === 85 || code === 86) {
+    return {
+      text: 'Snow Showers',
+      icon: '🌨️',
+      accentColor: '#38bdf8',
+      glowColor: 'rgba(56, 189, 248, 0.25)',
+    };
+  }
+
+  // 95, 96, 99: Thunderstorm
+  if (code >= 95) {
+    return {
+      text: 'Thunderstorm',
+      icon: '⛈️',
+      accentColor: '#a855f7',
+      glowColor: 'rgba(168, 85, 247, 0.25)',
+    };
+  }
+
+  // Cold / chill check
+  if (typeof temp === 'number' && temp <= 10) {
+    return {
+      text: 'Cold',
+      icon: '❄️',
+      accentColor: '#38bdf8',
+      glowColor: 'rgba(56, 189, 248, 0.25)',
+    };
+  }
+
+  return {
+    text: 'Fair Weather',
+    icon: isDay ? '🌤️' : '🌙',
+    accentColor: '#38bdf8',
+    glowColor: 'rgba(56, 189, 248, 0.2)',
+  };
 }
 
 export function detectCalendarSeason(monthIndex: number, latitude: number = 28.6): SeasonalTheme {
@@ -125,14 +262,19 @@ export async function fetchLiveWeather(lat: number, lon: number): Promise<Weathe
     const curr = json.current;
     if (!curr) return null;
 
-    const condition = mapWmoCode(curr.weather_code);
+    const tempRounded = Math.round(curr.temperature_2m);
+    const isDay = Boolean(curr.is_day);
+    const condition = mapWmoCode(curr.weather_code, isDay, tempRounded);
+
     const weatherData: WeatherData = {
-      temperature: Math.round(curr.temperature_2m),
+      temperature: tempRounded,
       humidity: Math.round(curr.relative_humidity_2m),
       weatherCode: curr.weather_code,
-      isDay: Boolean(curr.is_day),
+      isDay,
       conditionText: condition.text,
       conditionIcon: condition.icon,
+      accentColor: condition.accentColor,
+      glowColor: condition.glowColor,
     };
 
     // Cache for 20 minutes
@@ -178,7 +320,7 @@ export async function getSeasonalPresentation(config: {
     };
   }
 
-  // Manual mode: directly return admin chosen season
+  // Manual mode: directly return admin chosen season if explicit
   if (mode === 'manual' && config.manualTheme && SEASONAL_THEMES[config.manualTheme]) {
     const manualSeason = SEASONAL_THEMES[config.manualTheme];
     return {
@@ -187,13 +329,13 @@ export async function getSeasonalPresentation(config: {
       city: rawCity,
       season: manualSeason,
       weather: null,
-      displayPillText: manualSeason.label,
-      tooltipText: `${manualSeason.greeting} • Mode: Manual theme`,
+      displayPillText: cityName,
+      tooltipText: `${manualSeason.greeting} in ${rawCity}`,
       source: 'fallback',
     };
   }
 
-  // Auto mode: fetch live weather from Open-Meteo
+  // Auto mode: fetch live dynamic weather from Open-Meteo
   const liveWeather = await fetchLiveWeather(lat, lon);
 
   if (liveWeather) {
@@ -203,9 +345,9 @@ export async function getSeasonalPresentation(config: {
       city: rawCity,
       season: calendarSeason,
       weather: liveWeather,
-      // Pill text displays temperature, city, and season WITHOUT repeating the condition icon
-      displayPillText: `${liveWeather.temperature}°C ${cityName} • ${calendarSeason.label}`,
-      tooltipText: `${liveWeather.conditionText}, ${liveWeather.temperature}°C in ${rawCity} • Current Season: ${calendarSeason.label}`,
+      // Pill text displays ONLY temperature and location (ZERO season name)
+      displayPillText: `${liveWeather.temperature}°C ${cityName}`,
+      tooltipText: `${liveWeather.conditionText}, ${liveWeather.temperature}°C in ${rawCity} • Click to detect GPS location`,
       source: 'live',
     };
   }
@@ -217,8 +359,8 @@ export async function getSeasonalPresentation(config: {
     city: rawCity,
     season: calendarSeason,
     weather: null,
-    displayPillText: `${cityName} • ${calendarSeason.label}`,
-    tooltipText: `${calendarSeason.greeting} in ${rawCity}`,
+    displayPillText: cityName,
+    tooltipText: `Weather in ${rawCity} • Click to detect GPS location`,
     source: 'fallback',
   };
 }
