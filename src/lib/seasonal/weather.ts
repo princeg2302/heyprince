@@ -70,13 +70,8 @@ const SEASONAL_THEMES: Record<string, SeasonalTheme> = {
   },
 };
 
-// In-memory server cache with 30-min TTL
-let cachedWeather: {
-  lat: number;
-  lon: number;
-  data: WeatherData;
-  expiresAt: number;
-} | null = null;
+// In-memory server cache with 20-min TTL for each coordinate pair
+const weatherCache = new Map<string, { data: WeatherData; expiresAt: number }>();
 
 function mapWmoCode(code: number): { text: string; icon: string } {
   if (code === 0) return { text: 'Clear Sky', icon: '☀️' };
@@ -88,19 +83,32 @@ function mapWmoCode(code: number): { text: string; icon: string } {
   return { text: 'Fair Weather', icon: '🌤️' };
 }
 
-export function detectCalendarSeason(monthIndex: number): SeasonalTheme {
+export function detectCalendarSeason(monthIndex: number, latitude: number = 28.6): SeasonalTheme {
+  // If in southern hemisphere (latitude < 0), invert seasons by 6 months
+  const effectiveMonth = latitude < 0 ? (monthIndex + 6) % 12 : monthIndex;
+
   // Month is 0-indexed (0 = Jan, 9 = Oct)
-  if (monthIndex === 9 || monthIndex === 10) return SEASONAL_THEMES.autumn; // Oct-Nov
-  if (monthIndex === 11 || monthIndex === 0 || monthIndex === 1) return SEASONAL_THEMES.winter; // Dec-Feb
-  if (monthIndex === 2 || monthIndex === 3) return SEASONAL_THEMES.spring; // Mar-Apr
-  if (monthIndex === 4 || monthIndex === 5) return SEASONAL_THEMES.summer; // May-Jun
+  if (effectiveMonth === 9 || effectiveMonth === 10) return SEASONAL_THEMES.autumn; // Oct-Nov
+  if (effectiveMonth === 11 || effectiveMonth === 0 || effectiveMonth === 1) return SEASONAL_THEMES.winter; // Dec-Feb
+  if (effectiveMonth === 2 || effectiveMonth === 3) return SEASONAL_THEMES.spring; // Mar-Apr
+  if (effectiveMonth === 4 || effectiveMonth === 5) return SEASONAL_THEMES.summer; // May-Jun
   return SEASONAL_THEMES.monsoon; // Jul-Sep
 }
 
 export async function fetchLiveWeather(lat: number, lon: number): Promise<WeatherData | null> {
+  const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
   const now = Date.now();
-  if (cachedWeather && cachedWeather.lat === lat && cachedWeather.lon === lon && cachedWeather.expiresAt > now) {
-    return cachedWeather.data;
+  const cached = weatherCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
+  // Prune cache if it grows large
+  if (weatherCache.size > 200) {
+    for (const [key, value] of weatherCache.entries()) {
+      if (value.expiresAt <= now) weatherCache.delete(key);
+    }
   }
 
   try {
@@ -127,13 +135,11 @@ export async function fetchLiveWeather(lat: number, lon: number): Promise<Weathe
       conditionIcon: condition.icon,
     };
 
-    // Cache for 30 minutes
-    cachedWeather = {
-      lat,
-      lon,
+    // Cache for 20 minutes
+    weatherCache.set(cacheKey, {
       data: weatherData,
-      expiresAt: now + 30 * 60 * 1000,
-    };
+      expiresAt: now + 20 * 60 * 1000,
+    });
 
     return weatherData;
   } catch (err) {
@@ -153,21 +159,24 @@ export async function getSeasonalPresentation(config: {
   const isEnabled = config.enabled ?? true;
   const mode = config.mode || 'auto';
 
+  const rawCity = config.city || 'Yamunanagar, India';
+  const cityName = rawCity.split(',')[0].trim() || 'Current Location';
+  const lat = config.latitude ?? 30.1;
+  const lon = config.longitude ?? 77.28;
+  const month = new Date().getMonth();
+  const calendarSeason = detectCalendarSeason(month, lat);
+
   if (!isEnabled || mode === 'disabled') {
     return {
       enabled: false,
       mode: 'disabled',
-      city: config.city || 'Delhi, India',
-      season: SEASONAL_THEMES.autumn,
+      city: rawCity,
+      season: calendarSeason,
       displayPillText: '',
       tooltipText: '',
       source: 'fallback',
     };
   }
-
-  const city = config.city || 'Delhi, India';
-  const lat = config.latitude || 28.6139;
-  const lon = config.longitude || 77.2090;
 
   // Manual mode: directly return admin chosen season
   if (mode === 'manual' && config.manualTheme && SEASONAL_THEMES[config.manualTheme]) {
@@ -175,10 +184,10 @@ export async function getSeasonalPresentation(config: {
     return {
       enabled: true,
       mode: 'manual',
-      city,
+      city: rawCity,
       season: manualSeason,
       weather: null,
-      displayPillText: `${manualSeason.emoji} ${manualSeason.label}`,
+      displayPillText: manualSeason.label,
       tooltipText: `${manualSeason.greeting} • Mode: Manual theme`,
       source: 'fallback',
     };
@@ -186,18 +195,17 @@ export async function getSeasonalPresentation(config: {
 
   // Auto mode: fetch live weather from Open-Meteo
   const liveWeather = await fetchLiveWeather(lat, lon);
-  const month = new Date().getMonth();
-  const calendarSeason = detectCalendarSeason(month);
 
   if (liveWeather) {
     return {
       enabled: true,
       mode: 'auto',
-      city,
+      city: rawCity,
       season: calendarSeason,
       weather: liveWeather,
-      displayPillText: `${liveWeather.conditionIcon} ${liveWeather.temperature}°C ${city.split(',')[0]} • ${calendarSeason.emoji} ${calendarSeason.label}`,
-      tooltipText: `${liveWeather.conditionText}, ${liveWeather.temperature}°C • ${calendarSeason.greeting} in ${city}`,
+      // Pill text displays temperature, city, and season WITHOUT repeating the condition icon
+      displayPillText: `${liveWeather.temperature}°C ${cityName} • ${calendarSeason.label}`,
+      tooltipText: `${liveWeather.conditionText}, ${liveWeather.temperature}°C in ${rawCity} • Current Season: ${calendarSeason.label}`,
       source: 'live',
     };
   }
@@ -206,11 +214,11 @@ export async function getSeasonalPresentation(config: {
   return {
     enabled: true,
     mode: 'auto',
-    city,
+    city: rawCity,
     season: calendarSeason,
     weather: null,
-    displayPillText: `${calendarSeason.emoji} ${calendarSeason.label}`,
-    tooltipText: `${calendarSeason.greeting} • ${city}`,
+    displayPillText: `${cityName} • ${calendarSeason.label}`,
+    tooltipText: `${calendarSeason.greeting} in ${rawCity}`,
     source: 'fallback',
   };
 }
