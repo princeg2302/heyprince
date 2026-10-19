@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getPosts } from '@/lib/cms';
 import { FaArrowLeft, FaRocket } from 'react-icons/fa6';
+import { InsightsListingClient } from '@/components/InsightsListingClient';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -117,70 +118,8 @@ export default async function InsightsListingPage() {
             </p>
           </header>
 
-          {/* Articles Grid (Using Exact Site Styling) */}
-          <div className="row g-4 justify-content-center">
-            {posts.map((post) => (
-              <div key={post.slug} className="col-lg-4 col-md-6 col-12 d-flex">
-                <div className="card article-card insight-card w-100 d-flex flex-column" style={{ background: '#0e1017', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden' }}>
-                  <Link
-                    className="insight-card-link d-flex flex-column h-100"
-                    href={`/insights/${post.slug}/`}
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                  >
-                    <div style={{ position: 'relative', width: '100%', height: '220px', overflow: 'hidden', background: '#13151f' }}>
-                      <img
-                        className="card-img"
-                        src={post.image}
-                        alt={`${post.title} - Engineering Insight by Prince`}
-                        loading="lazy"
-                        decoding="async"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </div>
-                    <div className="card-body d-flex flex-column flex-grow-1 p-4">
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <span className="read-mins" style={{ fontSize: '12px', color: '#d40027', fontWeight: 700 }}>
-                          {post.readMins} read
-                        </span>
-                        <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.45)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          {post.category || 'Engineering'}
-                        </span>
-                      </div>
-                      <h2
-                        className="card-title"
-                        style={{
-                          fontSize: '20px',
-                          fontWeight: 700,
-                          lineHeight: 1.35,
-                          color: '#ffffff',
-                          marginBottom: '12px',
-                        }}
-                      >
-                        {post.title}
-                      </h2>
-                      <p
-                        className="card-content"
-                        style={{
-                          fontSize: '14px',
-                          color: 'rgba(255, 255, 255, 0.7)',
-                          lineHeight: 1.6,
-                          marginBottom: '20px',
-                          flex: '1 0 auto',
-                        }}
-                      >
-                        {post.description}
-                      </p>
-                      <div className="mt-auto pt-2">
-                        <span className="read-more-link" style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          Read Full Story &rarr;
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Interactive Articles Grid with Date & Category Filters */}
+          <InsightsListingClient initialPosts={posts} />
 
           {/* Bottom Call to Action */}
           <div className="text-center mt-5 pt-4">

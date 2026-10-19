@@ -1046,13 +1046,28 @@ export async function createCategory(data: {
   description?: string;
 }): Promise<{ success: boolean; category?: CategoryRecord; error?: string }> {
   try {
+    const cleanTitle = data.title.trim();
+    const cleanSlug = data.slug.trim().toLowerCase();
+
+    // Check if category with matching slug or title already exists
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('*')
+      .or(`slug.eq.${cleanSlug},title.ilike.${cleanTitle}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: true, category: existing as CategoryRecord };
+    }
+
     const now = new Date().toISOString();
     const { data: created, error } = await supabase
       .from('categories')
       .insert([
         {
-          title: data.title.trim(),
-          slug: data.slug.trim().toLowerCase(),
+          title: cleanTitle,
+          slug: cleanSlug,
           description: data.description || '',
           created_at: now,
           updated_at: now,

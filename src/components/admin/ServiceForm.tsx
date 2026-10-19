@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ServiceRecord } from '@/lib/admin-db';
 import { useToast } from '@/components/admin/Toast';
+import { CategorySelector } from '@/components/admin/CategorySelector';
 
 interface ServiceFormProps {
   initialData?: ServiceRecord;
@@ -38,6 +39,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
   const [shortTitle, setShortTitle] = useState(initialData?.short_title || '');
   const [tagline, setTagline] = useState(initialData?.tagline || '');
   const [categoryId, setCategoryId] = useState<number | ''>(initialData?.category_id || '');
+  const [categoryName, setCategoryName] = useState<string>(initialData?.category_name || '');
   const [cardTheme, setCardTheme] = useState(initialData?.card_theme || 'black');
   const [isFeatured, setIsFeatured] = useState(Boolean(initialData?.is_featured));
   const [featuredBadge, setFeaturedBadge] = useState(initialData?.featured_badge || '');
@@ -131,6 +133,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
 
     setLoading(true);
     const matchedCategory = categories.find((c) => c.id === Number(categoryId));
+    const finalCategoryName = categoryName || (matchedCategory ? matchedCategory.title : null);
 
     const payload = {
       title: title.trim(),
@@ -138,7 +141,7 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
       short_title: shortTitle.trim() || title.trim(),
       tagline: tagline.trim(),
       category_id: categoryId ? Number(categoryId) : null,
-      category_name: matchedCategory ? matchedCategory.title : null,
+      category_name: finalCategoryName,
       card_theme: cardTheme,
       is_featured: isFeatured,
       featured_badge: featuredBadge.trim() || (isFeatured ? '★ FEATURED' : null),
@@ -294,21 +297,14 @@ export function ServiceForm({ initialData, categories, isEdit = false }: Service
               <span className="hpa-form-help">Live URL: https://heyprince.in/services/{slug || '...'}/</span>
             </div>
 
-            <div className="hpa-form-group">
-              <label className="hpa-form-label">Category</label>
-              <select
-                className="hpa-select"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-              >
-                <option value="">Select Category</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CategorySelector
+              categories={categories}
+              selectedCategoryId={categoryId}
+              onChange={(id, name) => {
+                setCategoryId(id);
+                if (name) setCategoryName(name);
+              }}
+            />
 
             <div className="hpa-form-group" style={{ gridColumn: 'span 2' }}>
               <label className="hpa-form-label">Tagline</label>

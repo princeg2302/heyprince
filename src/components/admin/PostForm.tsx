@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { PostRecord } from '@/lib/admin-db';
 import { useToast } from '@/components/admin/Toast';
+import { CategorySelector } from '@/components/admin/CategorySelector';
 
 interface PostFormProps {
   initialData?: PostRecord;
@@ -47,6 +48,7 @@ export function PostForm({
   const [excerpt, setExcerpt] = useState(initialData?.excerpt || '');
   const [readMins, setReadMins] = useState(initialData?.read_mins || '5 min');
   const [categoryId, setCategoryId] = useState<number | ''>(initialData?.category_id || '');
+  const [categoryName, setCategoryName] = useState<string>(initialData?.category_name || '');
   const [status, setStatus] = useState<'published' | 'draft'>(initialData?.status || 'published');
   const [coverImage, setCoverImage] = useState(initialData?.cover_image || '/assets/blog/photo1.webp');
 
@@ -183,6 +185,7 @@ export function PostForm({
     setLoading(true);
 
     const matchedCategory = categories.find((c) => c.id === Number(categoryId));
+    const finalCategoryName = categoryName || (matchedCategory ? matchedCategory.title : null);
 
     const payload = {
       title: title.trim(),
@@ -190,7 +193,7 @@ export function PostForm({
       excerpt: excerpt.trim(),
       read_mins: readMins.trim() || '5 min',
       category_id: categoryId ? Number(categoryId) : null,
-      category_name: matchedCategory ? matchedCategory.title : null,
+      category_name: finalCategoryName,
       status,
       cover_image: coverImage.trim() || '/assets/blog/photo1.webp',
       author_name: authorName.trim(),
@@ -337,21 +340,14 @@ export function PostForm({
               <span className="hpa-form-help">Live URL: https://heyprince.in/insights/{slug || '...'}/</span>
             </div>
 
-            <div className="hpa-form-group">
-              <label className="hpa-form-label">Category</label>
-              <select
-                className="hpa-form-select"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-              >
-                <option value="">Select Category</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CategorySelector
+              categories={categories}
+              selectedCategoryId={categoryId}
+              onChange={(id, name) => {
+                setCategoryId(id);
+                if (name) setCategoryName(name);
+              }}
+            />
 
             <div className="hpa-form-group">
               <label className="hpa-form-label">Publication Status</label>

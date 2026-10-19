@@ -15,11 +15,22 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    if (!body.title || !body.slug) {
-      return NextResponse.json({ error: 'Title and slug are required.' }, { status: 400 });
+    if (!body.title || !body.title.trim()) {
+      return NextResponse.json({ error: 'Category title is required.' }, { status: 400 });
     }
 
-    const result = await createCategory(body);
+    const title = body.title.trim();
+    const slug = (body.slug || title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const result = await createCategory({
+      title,
+      slug,
+      description: body.description?.trim() || '',
+    });
+
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
