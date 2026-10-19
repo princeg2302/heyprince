@@ -11,22 +11,32 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    const { data: dbServices, error } = await supabase
-      .from('services')
-      .select('*')
-      .eq('published', true)
-      .order('sort_order', { ascending: true });
+    const [{ data: dbServices, error }, { data: dbCategories }] = await Promise.all([
+      supabase
+        .from('services')
+        .select('*')
+        .eq('published', true)
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('categories')
+        .select('id, title, slug'),
+    ]);
+
+    const categoryMap = new Map<number, string>();
+    (dbCategories || []).forEach((c: any) => categoryMap.set(c.id, c.title));
 
     if (!error && dbServices && dbServices.length > 0) {
       const mapped: ServiceData[] = dbServices.map((doc: any) => {
         const staticMatch = servicesList.find((s) => s.slug === doc.slug);
+        const liveCategory = doc.category_id ? categoryMap.get(doc.category_id) : null;
+
         return {
           id: doc.slug,
           slug: doc.slug,
           title: doc.title,
           shortTitle: doc.short_title || doc.title,
           tagline: doc.tagline || staticMatch?.tagline || '',
-          category: doc.category_name || staticMatch?.category || 'Engineering & Consulting',
+          category: liveCategory || doc.category_name || staticMatch?.category || 'Engineering & Consulting',
           cardTheme: (doc.card_theme as any) || (doc.is_featured ? 'featured' : 'black'),
           isFeatured: Boolean(doc.is_featured),
           featuredBadge: doc.featured_badge || (doc.is_featured ? '★ FEATURED // AI AUTOMATIONS' : undefined),

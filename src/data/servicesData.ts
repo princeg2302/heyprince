@@ -43,7 +43,7 @@ export const servicesList: ServiceData[] = [
     title: 'AI Services & Project Automations',
     shortTitle: 'AI & Smart Automations',
     tagline: 'Supercharge your workflows with custom AI agents, LLM pipelines, and automated intelligence.',
-    category: 'Artificial Intelligence & Automation',
+    category: 'AI & Automation',
     cardTheme: 'featured',
     isFeatured: true,
     featuredBadge: '★ FEATURED // NEXT-GEN TECH',

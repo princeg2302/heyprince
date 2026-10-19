@@ -1104,6 +1104,16 @@ export async function updateCategory(
     if (error || !updated) {
       return { success: false, error: error?.message || 'Failed to update category' };
     }
+
+    // Cascade update category_name across all services and posts linked to this category_id
+    if (data.title) {
+      const cleanTitle = data.title.trim();
+      await Promise.allSettled([
+        supabase.from('services').update({ category_name: cleanTitle }).eq('category_id', id),
+        supabase.from('posts').update({ category_name: cleanTitle }).eq('category_id', id),
+      ]);
+    }
+
     return { success: true, category: updated as CategoryRecord };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Error updating category' };
@@ -1114,6 +1124,13 @@ export async function deleteCategory(id: number): Promise<{ success: boolean; er
   try {
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) return { success: false, error: error.message };
+
+    // Nullify category references in linked services and posts
+    await Promise.allSettled([
+      supabase.from('services').update({ category_id: null, category_name: null }).eq('category_id', id),
+      supabase.from('posts').update({ category_id: null, category_name: null }).eq('category_id', id),
+    ]);
+
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message || 'Error deleting category' };

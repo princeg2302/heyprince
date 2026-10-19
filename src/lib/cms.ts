@@ -118,23 +118,33 @@ function mapPayloadPostToArticle(doc: any): Article {
  */
 export async function getServices(): Promise<ServiceData[]> {
   try {
-    // 1. Direct Supabase query for real-time published services
-    const { data: dbServices, error: sbError } = await supabase
-      .from('services')
-      .select('*')
-      .eq('published', true)
-      .order('sort_order', { ascending: true });
+    // 1. Direct Supabase query for real-time published services and categories
+    const [{ data: dbServices, error: sbError }, { data: dbCategories }] = await Promise.all([
+      supabase
+        .from('services')
+        .select('*')
+        .eq('published', true)
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('categories')
+        .select('id, title'),
+    ]);
+
+    const catMap = new Map<number, string>();
+    (dbCategories || []).forEach((c: any) => catMap.set(c.id, c.title));
 
     if (!sbError && dbServices && dbServices.length > 0) {
       return dbServices.map((doc: any) => {
         const staticMatch = servicesList.find((s) => s.slug === doc.slug);
+        const liveCategory = doc.category_id ? catMap.get(doc.category_id) : null;
+
         return {
           id: doc.slug,
           slug: doc.slug,
           title: doc.title,
           shortTitle: doc.short_title || doc.title,
           tagline: doc.tagline || staticMatch?.tagline || '',
-          category: doc.category_name || staticMatch?.category || 'Engineering & Consulting',
+          category: liveCategory || doc.category_name || staticMatch?.category || 'Engineering & Consulting',
           cardTheme: (doc.card_theme as any) || (doc.is_featured ? 'featured' : 'black'),
           isFeatured: Boolean(doc.is_featured),
           featuredBadge: doc.featured_badge || (doc.is_featured ? '★ FEATURED // AI AUTOMATIONS' : undefined),
@@ -172,16 +182,18 @@ export async function getServiceBySlug(slug: string): Promise<ServiceData | null
       .single();
 
     if (!sbError && dbService) {
-      const [overviewRes, deliverablesRes, techRes, processRes, highlightsRes, faqsRes] = await Promise.all([
+      const [overviewRes, deliverablesRes, techRes, processRes, highlightsRes, faqsRes, catRes] = await Promise.all([
         supabase.from('services_overview').select('*').eq('_parent_id', dbService.id).order('_order'),
         supabase.from('services_deliverables').select('*').eq('_parent_id', dbService.id).order('_order'),
         supabase.from('services_tech_stack').select('*').eq('_parent_id', dbService.id).order('_order'),
         supabase.from('services_process').select('*').eq('_parent_id', dbService.id).order('_order'),
         supabase.from('services_highlights').select('*').eq('_parent_id', dbService.id).order('_order'),
         supabase.from('services_faqs').select('*').eq('_parent_id', dbService.id).order('_order'),
+        dbService.category_id ? supabase.from('categories').select('title').eq('id', dbService.category_id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
 
       const staticMatch = servicesList.find((s) => s.slug.toLowerCase() === normalizedSlug);
+      const liveCategory = (catRes as any)?.data?.title || null;
 
       const overview = (overviewRes.data || []).map((o: any) => o.paragraph).filter(Boolean);
       const deliverables = (deliverablesRes.data || []).map((d: any) => ({ title: d.title || '', desc: d.desc || '' }));
@@ -196,7 +208,7 @@ export async function getServiceBySlug(slug: string): Promise<ServiceData | null
         title: dbService.title,
         shortTitle: dbService.short_title || dbService.title,
         tagline: dbService.tagline || staticMatch?.tagline || '',
-        category: dbService.category_name || staticMatch?.category || 'Engineering & Consulting',
+        category: liveCategory || dbService.category_name || staticMatch?.category || 'Engineering & Consulting',
         cardTheme: (dbService.card_theme as any) || (dbService.is_featured ? 'featured' : 'black'),
         isFeatured: Boolean(dbService.is_featured),
         featuredBadge: dbService.featured_badge || (dbService.is_featured ? '★ FEATURED // AI AUTOMATIONS' : undefined),
