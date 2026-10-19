@@ -5531,9 +5531,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px 18px;
+  width: 100%;
+}
+
+@media (max-width: 576px) {
+  .blog-header-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
 }
 
 .btn-back-home {
@@ -5545,11 +5555,13 @@ body {
   color: #fff;
   padding: 8px 18px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
+  min-height: 38px;
+  flex-shrink: 0;
 }
 
 .btn-back-home:hover {
@@ -5559,12 +5571,15 @@ body {
 }
 
 .blog-breadcrumb {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 24px;
+  margin-bottom: 0 !important;
+  line-height: 1.4;
+  max-width: 100%;
 }
 
 .blog-breadcrumb a,
@@ -5574,7 +5589,7 @@ body {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 0 !important;
+  padding: 4px 2px !important;
   margin: 0 !important;
   color: rgba(255, 255, 255, 0.65) !important;
   font-size: 13px !important;
@@ -5593,17 +5608,36 @@ body {
 .blog-breadcrumb button:hover,
 .blog-breadcrumb .breadcrumb-btn:hover,
 .breadcrumb-btn:hover {
-  color: #d40027 !important;
+  color: #ff3355 !important;
 }
 
 .breadcrumb-sep {
   color: rgba(255, 255, 255, 0.35);
   user-select: none;
+  font-size: 12px;
 }
 
 .breadcrumb-current {
   color: #ff3355;
   font-weight: 600;
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .breadcrumb-current {
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .breadcrumb-current {
+    max-width: 160px;
+  }
 }
 
 .blog-hero {
@@ -5694,6 +5728,8 @@ body {
   color: rgba(255, 255, 255, 0.8);
   font-size: 17px;
   line-height: 1.8;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .blog-inline-link {
@@ -5702,11 +5738,26 @@ body {
   text-underline-offset: 3px;
   font-weight: 600;
   transition: all 0.2s ease;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .blog-inline-link:hover {
   color: #ffffff;
   text-decoration-color: #ffffff;
+}
+
+.blog-inline-link .link-ext-arrow {
+  display: inline-block;
+  font-size: 0.85em;
+  margin-left: 2px;
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.blog-bare-url {
+  font-family: inherit;
+  opacity: 0.95;
 }
 
 /* Blog Content Section Illustrations */
@@ -5824,8 +5875,9 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   font-size: 16px;
+  line-height: 1.6;
 }
 
 .point-bullet {
@@ -5837,6 +5889,51 @@ body {
 
 .point-text {
   color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Source citation layout in bullet points */
+.blog-source-citation {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  width: 100%;
+}
+
+.source-citation-text {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+}
+
+.blog-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(212, 0, 39, 0.12);
+  border: 1px solid rgba(212, 0, 39, 0.35);
+  color: #ff4d6d !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.blog-source-badge:hover {
+  background: #d40027;
+  color: #ffffff !important;
+  border-color: #d40027;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 0, 39, 0.35);
 }
 
 .blog-pro-tip {
@@ -6132,36 +6229,70 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px 18px;
+  width: 100%;
+}
+
+@media (max-width: 576px) {
+  .contact-nav-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
 }
 
 .contact-breadcrumbs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.45);
+  line-height: 1.4;
+  max-width: 100%;
 }
 
 .contact-breadcrumbs a {
   color: rgba(255, 255, 255, 0.65);
   text-decoration: none;
   transition: color 0.2s;
+  padding: 4px 2px;
 }
 
 .contact-breadcrumbs a:hover {
-  color: #fff;
+  color: #ff3355;
 }
 
 .crumb-sep {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.35);
+  user-select: none;
+  font-size: 12px;
 }
 
 .crumb-active {
   color: #ff3355;
   font-weight: 600;
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .crumb-active {
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .crumb-active {
+    max-width: 160px;
+  }
 }
 
 /* Contact Hero */

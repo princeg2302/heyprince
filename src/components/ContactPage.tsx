@@ -192,7 +192,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
             <span>Back to Portfolio</span>
           </button>
 
-          <nav className="contact-breadcrumbs" aria-label="Breadcrumb">
+          <nav className="contact-breadcrumbs blog-breadcrumb" aria-label="Breadcrumb">
             <a
               href="/"
               onClick={(e) => {
@@ -202,8 +202,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
             >
               Home
             </a>
-            <span className="crumb-sep">/</span>
-            <span className="crumb-active">Contact</span>
+            <span className="crumb-sep breadcrumb-sep">/</span>
+            <span className="crumb-active breadcrumb-current">Contact</span>
           </nav>
         </div>
 

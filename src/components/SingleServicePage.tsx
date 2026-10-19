@@ -140,22 +140,36 @@ export const SingleServicePage: React.FC<SingleServicePageProps> = ({
       {/* Hero Header Section */}
       <section className="service-hero-section">
         <div className="container">
-          {/* Breadcrumb Navigation */}
-          <nav className="blog-breadcrumb" aria-label="Breadcrumb">
-            <button type="button" onClick={handleHome} className="breadcrumb-btn">
-              Home
-            </button>
-            <span className="breadcrumb-sep">&gt;</span>
+          {/* Navigation & Breadcrumbs */}
+          <div className="blog-header-nav">
             <button
               type="button"
+              className="btn-back-home"
               onClick={handleServices}
-              className="breadcrumb-btn"
+              aria-label="Back to Services"
             >
-              Services
+              <FaArrowLeft />
+              <span>Back to Services</span>
             </button>
-            <span className="breadcrumb-sep">&gt;</span>
-            <span className="breadcrumb-current">{service.shortTitle}</span>
-          </nav>
+
+            <nav className="blog-breadcrumb" aria-label="Breadcrumb">
+              <button type="button" onClick={handleHome} className="breadcrumb-btn">
+                Home
+              </button>
+              <span className="breadcrumb-sep">/</span>
+              <button
+                type="button"
+                onClick={handleServices}
+                className="breadcrumb-btn"
+              >
+                Services
+              </button>
+              <span className="breadcrumb-sep">/</span>
+              <span className="breadcrumb-current" title={service.title}>
+                {service.shortTitle || service.title}
+              </span>
+            </nav>
+          </div>
 
           <div className="service-hero-content text-center">
             {service.isFeatured && (

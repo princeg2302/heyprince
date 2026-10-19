@@ -87,17 +87,29 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
       {/* Hero Header */}
       <header className="privacy-hero-section">
         <div className="container">
-          <nav className="blog-breadcrumb" aria-label="Breadcrumb">
+          <div className="blog-header-nav">
             <button
               type="button"
+              className="btn-back-home"
               onClick={handleHome}
-              className="breadcrumb-btn"
+              aria-label="Back to Home"
             >
-              Home
+              <FaArrowLeft />
+              <span>Back to Home</span>
             </button>
-            <span className="breadcrumb-sep">&gt;</span>
-            <span className="breadcrumb-current">Privacy Policy</span>
-          </nav>
+
+            <nav className="blog-breadcrumb" aria-label="Breadcrumb">
+              <button
+                type="button"
+                onClick={handleHome}
+                className="breadcrumb-btn"
+              >
+                Home
+              </button>
+              <span className="breadcrumb-sep">/</span>
+              <span className="breadcrumb-current">Privacy Policy</span>
+            </nav>
+          </div>
 
           <div className="privacy-hero-content text-center">
             <div className="privacy-badge">

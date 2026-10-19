@@ -107,7 +107,7 @@ Respond ONLY with JSON matching this structure:
     {
       "heading": "Sources & Further Reading",
       "paragraphs": ["string (Attribution note explaining the verified reports reviewed for this analysis)"],
-      "bulletPoints": ["List each primary source with title and URL: e.g. 'TechCrunch: Headline — URL'"]
+      "bulletPoints": ["List each primary source as clean markdown link: e.g. '[TechCrunch: Headline](https://url)'"]
     }
   ],
   "sourcesUsed": [
@@ -188,7 +188,17 @@ Respond ONLY with JSON matching this structure:
       quote: s.quote || undefined,
       proTip: s.proTip || undefined,
       paragraphs: Array.isArray(s.paragraphs) ? s.paragraphs : [s.text || ''],
-      bulletPoints: Array.isArray(s.bulletPoints) ? s.bulletPoints : undefined,
+      bulletPoints: Array.isArray(s.bulletPoints)
+        ? s.bulletPoints.map((bp: string) => {
+            const m = String(bp).match(/^(.*?)\s*(?:—|--|-)\s*(https?:\/\/[^\s]+)$/);
+            if (m) {
+              const label = m[1].trim();
+              const url = m[2].trim();
+              return `[${label}](${url})`;
+            }
+            return String(bp);
+          })
+        : undefined,
     })),
     sourcesUsed: Array.isArray(parsed.sourcesUsed) ? parsed.sourcesUsed : [],
     seoTitle: parsed.seoTitle || `${parsed.title} | HeyPrince`,

@@ -190,40 +190,114 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   const shareUrl = encodeURIComponent(canonicalUrl);
   const shareText = encodeURIComponent(`${article.title} — By Prince`);
 
-  const renderParagraphWithLinks = (text: string) => {
-    const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const renderFormattedText = (text: string) => {
+    if (!text) return null;
+
+    // Pattern 1: Source citation format "Publisher/Title — URL" or "Title -- URL"
+    const sourceMatch = text.match(/^(.*?)\s*(?:—|--)\s*(https?:\/\/[^\s]+)$/);
+    if (sourceMatch) {
+      const title = sourceMatch[1].trim();
+      const rawUrl = sourceMatch[2].trim();
+      let domain = '';
+      try {
+        domain = new URL(rawUrl).hostname.replace('www.', '');
+      } catch {}
+
+      return (
+        <span className="blog-source-citation">
+          <span className="source-citation-text">{title}</span>
+          <a
+            href={rawUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="blog-source-badge"
+            title={`Open source: ${rawUrl}`}
+          >
+            <span>{domain ? `${domain} ↗` : 'Source ↗'}</span>
+          </a>
+        </span>
+      );
+    }
+
+    // Pattern 2: Tokenize markdown links [label](url) and bare URLs
+    const tokenRegex = /(\[([^\]]+)\]\(([^)]+)\)|https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
     const parts: React.ReactNode[] = [];
     let lastIdx = 0;
     let match: RegExpExecArray | null;
 
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = tokenRegex.exec(text)) !== null) {
       if (match.index > lastIdx) {
         parts.push(text.slice(lastIdx, match.index));
       }
-      const label = match[1];
-      const url = match[2];
-      const isContact = url.startsWith('/contact');
-      const matchedArticle = articlesList.find((a) => url.includes(a.slug));
 
-      parts.push(
-        <a
-          key={match.index}
-          href={url}
-          className="blog-inline-link"
-          onClick={(e) => {
-            if (isContact) {
-              e.preventDefault();
-              handleContact();
-            } else if (matchedArticle) {
-              e.preventDefault();
-              handleSelectArticle(matchedArticle.slug);
-            }
-          }}
-        >
-          {label}
-        </a>
-      );
-      lastIdx = regex.lastIndex;
+      if (match[0].startsWith('[')) {
+        // Markdown link
+        const label = match[2];
+        const url = match[3];
+        const isContact = url.startsWith('/contact');
+        const matchedArticle = articlesList.find((a) => url.includes(a.slug));
+        const isExternal = url.startsWith('http://') || url.startsWith('https://');
+
+        if (isExternal) {
+          parts.push(
+            <a
+              key={match.index}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="blog-inline-link blog-external-link"
+              title={url}
+            >
+              <span>{label}</span>
+              <span className="link-ext-arrow" aria-hidden="true"> ↗</span>
+            </a>
+          );
+        } else {
+          parts.push(
+            <a
+              key={match.index}
+              href={url}
+              className="blog-inline-link"
+              onClick={(e) => {
+                if (isContact) {
+                  e.preventDefault();
+                  handleContact();
+                } else if (matchedArticle) {
+                  e.preventDefault();
+                  handleSelectArticle(matchedArticle.slug);
+                }
+              }}
+            >
+              {label}
+            </a>
+          );
+        }
+      } else {
+        // Bare URL
+        const rawUrl = match[0];
+        let display = rawUrl;
+        try {
+          const u = new URL(rawUrl);
+          const domain = u.hostname.replace('www.', '');
+          display = domain + (u.pathname.length > 22 ? u.pathname.slice(0, 22) + '…' : u.pathname);
+        } catch {}
+
+        parts.push(
+          <a
+            key={match.index}
+            href={rawUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="blog-inline-link blog-bare-url"
+            title={rawUrl}
+          >
+            <span>{display}</span>
+            <span className="link-ext-arrow" aria-hidden="true"> ↗</span>
+          </a>
+        );
+      }
+
+      lastIdx = tokenRegex.lastIndex;
     }
 
     if (lastIdx < text.length) {
@@ -276,7 +350,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               Insights
             </a>
             <span className="breadcrumb-sep">/</span>
-            <span className="breadcrumb-current">{article.title.slice(0, 32)}...</span>
+            <span className="breadcrumb-current" title={article.title}>{article.title}</span>
           </nav>
         </div>
 
@@ -391,7 +465,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
                       return (
                         <p className="blog-paragraph" key={pIdx}>
-                          {renderParagraphWithLinks(p)}
+                          {renderFormattedText(p)}
                         </p>
                       );
                     })}
@@ -404,7 +478,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                           <span className="point-bullet">
                             <FaCheck />
                           </span>
-                          <span className="point-text">{pt}</span>
+                          <span className="point-text">{renderFormattedText(pt)}</span>
                         </li>
                       ))}
                     </ul>
@@ -425,7 +499,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                       </div>
                       <div className="tip-content">
                         <strong>PRO TIP: </strong>
-                        {section.proTip}
+                        {renderFormattedText(section.proTip)}
                       </div>
                     </aside>
                   )}

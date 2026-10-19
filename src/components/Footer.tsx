@@ -140,11 +140,6 @@ export const Footer: React.FC<FooterProps> = ({
                         )}
                         <span className="card-category-tag">{service.category}</span>
                         <h3 className="card-title">{service.title}</h3>
-                        <div className="card-meta">
-                          <p className="card-author">Prince</p>
-                          <span className="card-meta-dot">•</span>
-                          <span className="card-meta-type">Service</span>
-                        </div>
                       </div>
                       <Link
                         className="card-btn"
