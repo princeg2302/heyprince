@@ -101,10 +101,13 @@ export async function callAIModel(
             generationConfig: {
               responseMimeType: 'application/json',
               temperature: 0.3,
-              maxOutputTokens: 2500,
+              maxOutputTokens: 8192,
+              thinkingConfig: {
+                thinkingLevel: 'low',
+              },
             },
           }),
-          signal: AbortSignal.timeout(35000),
+          signal: AbortSignal.timeout(45000),
         });
 
         if (!res.ok) {

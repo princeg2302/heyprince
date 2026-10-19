@@ -132,9 +132,24 @@ Respond ONLY with JSON matching this structure:
     // Attempt markdown code block extraction
     const jsonMatch = aiRes.text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[1]);
-    } else {
-      throw new Error(`Failed to parse AI response as JSON: ${err?.message}`);
+      try {
+        parsed = JSON.parse(jsonMatch[1]);
+      } catch {
+        // Fall through
+      }
+    }
+    if (!parsed) {
+      const startIdx = aiRes.text.indexOf('{');
+      const endIdx = aiRes.text.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        try {
+          parsed = JSON.parse(aiRes.text.substring(startIdx, endIdx + 1));
+        } catch {
+          throw new Error(`Failed to parse AI response as JSON: ${err?.message}`);
+        }
+      } else {
+        throw new Error(`Failed to parse AI response as JSON: ${err?.message}`);
+      }
     }
   }
 

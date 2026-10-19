@@ -352,15 +352,36 @@ export async function saveDiscoveredNewsItems(
   let inserted = 0;
   let duplicates = 0;
 
-  for (const item of items) {
-    if (!item.headline || !item.url) continue;
+  const validItems = items.filter((item) => item.headline && item.url);
+  if (validItems.length === 0) return { inserted: 0, duplicates: 0 };
 
-    const urlHash = computeUrlHash(item.url);
-    const pubDate = item.publishedAt ? item.publishedAt.toISOString() : new Date().toISOString();
+  const CHUNK_SIZE = 50;
+  for (let i = 0; i < validItems.length; i += CHUNK_SIZE) {
+    const chunk = validItems.slice(i, i + CHUNK_SIZE);
+    const valuePlaceholders: string[] = [];
+    const params: any[] = [];
+    let pIdx = 1;
+
+    for (const item of chunk) {
+      const urlHash = computeUrlHash(item.url);
+      const pubDate = item.publishedAt ? item.publishedAt.toISOString() : new Date().toISOString();
+
+      valuePlaceholders.push(
+        `($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`
+      );
+      params.push(
+        item.sourceId || null,
+        item.sourceName,
+        item.headline.trim(),
+        item.url.trim(),
+        urlHash,
+        item.summary?.trim() || '',
+        pubDate
+      );
+    }
 
     try {
-      const res = await query(
-        `
+      const sql = `
         INSERT INTO daily_news_items (
           source_id,
           source_name,
@@ -369,28 +390,53 @@ export async function saveDiscoveredNewsItems(
           url_hash,
           summary,
           published_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ) VALUES ${valuePlaceholders.join(', ')}
         ON CONFLICT (url_hash) DO NOTHING
         RETURNING id;
-        `,
-        [
-          item.sourceId || null,
-          item.sourceName,
-          item.headline.trim(),
-          item.url.trim(),
-          urlHash,
-          item.summary?.trim() || '',
-          pubDate,
-        ]
-      );
-
-      if (res && res.length > 0) {
-        inserted++;
-      } else {
-        duplicates++;
-      }
+      `;
+      const res = await query(sql, params);
+      const insertedCount = res ? res.length : 0;
+      inserted += insertedCount;
+      duplicates += chunk.length - insertedCount;
     } catch (err) {
-      duplicates++;
+      console.warn('[db] Batch insert error, falling back to sequential item inserts:', err);
+      for (const item of chunk) {
+        try {
+          const urlHash = computeUrlHash(item.url);
+          const pubDate = item.publishedAt ? item.publishedAt.toISOString() : new Date().toISOString();
+          const singleRes = await query(
+            `
+            INSERT INTO daily_news_items (
+              source_id,
+              source_name,
+              headline,
+              url,
+              url_hash,
+              summary,
+              published_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (url_hash) DO NOTHING
+            RETURNING id;
+            `,
+            [
+              item.sourceId || null,
+              item.sourceName,
+              item.headline.trim(),
+              item.url.trim(),
+              urlHash,
+              item.summary?.trim() || '',
+              pubDate,
+            ]
+          );
+          if (singleRes && singleRes.length > 0) {
+            inserted++;
+          } else {
+            duplicates++;
+          }
+        } catch {
+          duplicates++;
+        }
+      }
     }
   }
 
@@ -440,21 +486,21 @@ export async function markNewsItemsUsed(itemIds: number[], runId: number): Promi
 
 export async function getDailyRunByDate(dateStr: string): Promise<DailyNewsRunRecord | null> {
   const rows = await query(
-    `SELECT * FROM daily_news_runs WHERE run_date = $1 LIMIT 1;`,
+    `SELECT * FROM daily_news_runs WHERE run_date = $1 ORDER BY id DESC LIMIT 1;`,
     [dateStr]
   );
   if (!rows || rows.length === 0) return null;
   const run = mapRunRow(rows[0]);
 
-  // If a previous execution remained stuck in 'running' for over 15 minutes, auto-expire it
+  // If a previous execution remained stuck in 'running' for over 3 minutes (past serverless timeout), auto-expire it
   if (run.status === 'running' && run.startedAt) {
     const startedMs = new Date(run.startedAt).getTime();
-    if (Date.now() - startedMs > 15 * 60 * 1000) {
+    if (Date.now() - startedMs > 3 * 60 * 1000) {
       await updateDailyRun(run.id, {
         status: 'failed',
         errorDetails: {
           stage: 'timeout',
-          message: 'Process execution timed out after 15 minutes. Automatically expired to release execution lock.',
+          message: 'Process execution timed out or was terminated abruptly. Automatically expired to release execution lock.',
           timestamp: new Date().toISOString(),
         },
         completedAt: new Date().toISOString(),

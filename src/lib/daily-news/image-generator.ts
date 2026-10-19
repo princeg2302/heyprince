@@ -102,14 +102,14 @@ async function generateOrFetchImage(prompt: string, fallbackUrl: string): Promis
   const seed = Math.floor(Math.random() * 999999);
   const aiImageUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1200&height=675&model=flux&nologo=true&seed=${seed}`;
 
-  // Attempt 1: Pollinations AI Generation
-  const aiResult = await fetchImageBuffer(aiImageUrl, 14000);
+  // Attempt 1: Pollinations AI Generation (strict 7s budget)
+  const aiResult = await fetchImageBuffer(aiImageUrl, 7000);
   if (aiResult && aiResult.buffer.length > 5000) {
     return { buffer: aiResult.buffer, contentType: aiResult.contentType, usedUrl: aiImageUrl };
   }
 
-  // Attempt 2: High-resolution curated developer photo
-  const fallbackResult = await fetchImageBuffer(fallbackUrl, 8000);
+  // Attempt 2: High-resolution curated developer photo (fast 4s fallback)
+  const fallbackResult = await fetchImageBuffer(fallbackUrl, 4000);
   if (fallbackResult && fallbackResult.buffer.length > 1000) {
     return { buffer: fallbackResult.buffer, contentType: fallbackResult.contentType, usedUrl: fallbackUrl };
   }
