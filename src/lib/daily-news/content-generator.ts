@@ -216,57 +216,55 @@ export async function generateCustomTopicPost(
   preferredModel?: string
 ): Promise<GeneratedContentPayload> {
   if (!customPrompt || !customPrompt.trim()) {
-    throw new Error('Please provide a topic or prompt for article generation.');
+    throw new Error('Please provide your thoughts or a topic for article generation.');
   }
 
   const systemPrompt = `You are a distinguished senior technology strategist, software architect, and IT consultant writing for HeyPrince (https://heyprince.in) — a premier engineering studio founded by Prince.
 Your audience consists of CTOs, software developers, engineering leads, founders, and tech professionals across India and globally.
 
 EDITORIAL PRINCIPLES & VOICE:
-1. Tone: Thoughtful, grounded, authoritative, articulate, and inspiring. Write like an experienced engineering practitioner.
-2. Natural Variation: Avoid generic AI openings ("In today's fast-paced digital world", "Exciting news in tech", "Let's dive in", "Game changer"). Jump straight into the core theme.
-3. Special Handling for Indian Festivals, Holidays & Cultural Occasions:
-   - If the user's prompt mentions an Indian festival or celebration (e.g., Dussehra / Vijayadashami, Ravana, Diwali, Republic Day, Independence Day, etc.):
-   - Warmly acknowledge the cultural history, festive spirit, and background of the occasion.
-   - For Dussehra & Ravana: If the prompt highlights Ravana's scholarship and mastery of the 4 Vedas and 6 Shastras, acknowledge his supreme intellectual depth and achievements respectfully, then connect it to profound modern engineering and leadership parallels — demonstrating why even the greatest technical intellect and architecture fall if pride, hubris, lack of governance, or ethical blindspots take over.
-   - Slaying the 10 Heads metaphor: Connect it to conquering the 10 critical bottlenecks of modern engineering (e.g. monolithic lock-in, zero automated test coverage, security antipatterns, premature optimization, zombie microservices, flaky CI/CD, unmonitored production, tribal knowledge silos, documentation rot, and analysis paralysis).
-   - Provide genuine engineering advice, architectural discipline, and actionable solutions for developers and engineering leaders.
-4. If the prompt is a general or specific technology topic, framework, or industry trend:
-   - Provide an in-depth, hands-on, high-signal engineering breakdown with architectural patterns, trade-offs, and best practices.
-5. Dual Output:
+1. Tone: Thoughtful, grounded, authoritative, articulate, and inspiring. Write like an experienced practitioner sharing genuine, high-signal insights.
+2. Natural Flow: Avoid generic AI openings ("In today's fast-paced digital world", "Exciting news in tech", "Let's dive in", "Game changer"). Jump straight into the core substance.
+3. Thought Expansion & Versatility:
+   - The admin provides their raw thoughts, notes, opinion, or topic instructions.
+   - Your primary responsibility is to understand their core thesis and expand it into a comprehensive, publication-ready article that directly reflects and respects their perspective.
+   - If the thoughts relate to technical architecture, system design, or engineering practices: provide hands-on depth, trade-off analysis, and concrete architectural patterns.
+   - If the thoughts relate to culture, philosophy, or events: weave those themes seamlessly with software engineering realities, technical craftsmanship, and human leadership.
+   - If the thoughts relate to engineering culture, team dynamics, or career growth: offer actionable frameworks, practical lessons, and clear takeaways.
+4. Dual Output:
    - Format A (Website Article): Around 450-700 words. Well-structured sections with headings, concise paragraphs, actionable takeaways, and memorable quotes or pro-tips.
-   - Format B (LinkedIn Post): 140-230 words. Engaging opening hook (with festive warmth or a sharp engineering observation), key insights, engineer's takeaway, {{ARTICLE_URL}} link placeholder, and 4-5 relevant hashtags (e.g. #Dussehra #SoftwareEngineering #TechDebt #SystemDesign #TechLeadership #HeyPrince).
+   - Format B (LinkedIn Post): 140-230 words. Engaging opening hook, key insights, practical engineer's takeaway, {{ARTICLE_URL}} placeholder, and 4-5 relevant hashtags (e.g. #SoftwareEngineering #Architecture #TechLeadership #HeyPrince).
 
 You MUST respond strictly with valid JSON conforming to the schema.`;
 
-  const userPrompt = `TOPIC / INSTRUCTION FROM ADMIN:
+  const userPrompt = `ADMIN THOUGHTS / TOPIC INSTRUCTIONS:
 "${customPrompt.trim()}"
 
 TASK:
-1. Generate an original, captivating, humanized engineering article for the website that addresses this topic in depth (blending cultural celebration with engineering insights if it is a festival/occasion).
+1. Transform and expand the admin's thoughts into an original, engaging, high-value article for the website. Deep-dive into the subject matter with structured sections and clear takeaways.
 2. Generate a separate high-engagement LinkedIn post tailored for tech professionals.
 
 Respond ONLY with JSON matching this structure:
 {
-  "title": "string (Compelling, professional headline without clickbait)",
+  "title": "string (Compelling, professional headline reflecting the topic without clickbait)",
   "slug": "string (kebab-case SEO slug without punctuation)",
   "excerpt": "string (Crisp 2-sentence executive summary)",
   "categoryName": "Software Architecture" | "Engineering Leadership" | "Artificial Intelligence" | "Web Development" | "Tech Culture",
-  "tags": ["3 to 5 relevant technical/cultural tags"],
+  "tags": ["3 to 5 relevant technical or conceptual tags"],
   "sections": [
     {
-      "heading": "string (Section 1: The Occasion & Modern Engineering Reality)",
+      "heading": "string (Section 1: The Core Thesis / Foundation)",
       "paragraphs": ["string (2-3 paragraphs)"],
       "quote": "string or null",
       "proTip": "string or null"
     },
     {
-      "heading": "string (Section 2: Core Engineering Principles & Overcoming Bottlenecks)",
+      "heading": "string (Section 2: Deep Dive, Trade-offs & Practical Realities)",
       "paragraphs": ["string (2-3 paragraphs)"],
       "bulletPoints": ["3 to 5 actionable bullet points"]
     },
     {
-      "heading": "string (Section 3: Practical Takeaways & The Path Forward)",
+      "heading": "string (Section 3: Key Takeaways & The Path Forward)",
       "paragraphs": ["string (1-2 forward-looking paragraphs)"]
     }
   ],
@@ -274,7 +272,7 @@ Respond ONLY with JSON matching this structure:
   "seoTitle": "string (Under 60 chars)",
   "seoDescription": "string (140-160 chars)",
   "linkedinPost": "string (140-230 words, with {{ARTICLE_URL}} placeholder for the article link, and 4-5 hashtags)",
-  "rationale": "string (Brief explanation of the editorial angle)"
+  "rationale": "string (Brief explanation of the editorial angle taken)"
 }`;
 
   const aiRes = await callAIModel(systemPrompt, userPrompt, preferredModel);

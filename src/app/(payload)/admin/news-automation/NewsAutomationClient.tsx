@@ -202,10 +202,10 @@ export default function NewsAutomationClient() {
     }
   };
 
-  // Generate post from custom prompt / festival topic
+  // Generate post from custom prompt / admin thoughts
   const handleGenerateCustomPost = async (asPreview = false) => {
     if (!customTopicPrompt.trim()) {
-      showToast('Please enter a topic or instruction (e.g. "Aaj India me Dussehra hai").', 'info');
+      showToast('Please type your thoughts or a topic first.', 'info');
       return;
     }
 
@@ -1268,10 +1268,10 @@ export default function NewsAutomationClient() {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
-                    Custom Topic / Festival AI Generator
+                    AI Thought &amp; Article Generator
                   </h3>
                   <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: '2px 0 0 0' }}>
-                    Write any topic or prompt in Hindi, English, or Hinglish (e.g. &apos;Aaj India me Dussehra hai, uske baare me post karo&apos;). Gemini will write the article, generate the AI cover image, and publish to website &amp; LinkedIn.
+                    Type your thoughts, raw notes, or an outline on any topic. The AI will transform them into a comprehensive engineering article, generate AI visual assets, and prepare LinkedIn commentary.
                   </p>
                 </div>
               </div>
@@ -1280,20 +1280,20 @@ export default function NewsAutomationClient() {
                 className="hpa-pill hpa-pill-published"
                 style={{ fontSize: '0.72rem', padding: '3px 9px', letterSpacing: '0.4px', textTransform: 'uppercase' }}
               >
-                On-Demand AI
+                On-Demand
               </span>
             </div>
 
             {/* Quick Prompt Suggestion Chips */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
               <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', fontWeight: 600 }}>
-                Quick Ideas:
+                Suggested Topics:
               </span>
               {[
-                { label: '🏹 Dussehra & Tech Debt', prompt: 'Aaj India me Dussehra hai, slaying technical debt aur software engineering excellence ke nazariye se insightful post banao' },
-                { label: '🪔 Diwali & Clean Architecture', prompt: 'Diwali celebration: bringing light to dark legacy codebases, clean architecture, and engineering craftsmanship' },
-                { label: '🇮🇳 Republic Day & Indian Tech', prompt: 'Republic Day: The rise of Indian engineering powerhouses, deep tech startups, and digital public infrastructure' },
-                { label: '🤖 Autonomous AI Agents', prompt: 'The reality of autonomous AI coding agents in 2026: architecture, tool calling, and developer velocity' },
+                { label: '💡 System Architecture', prompt: 'Architecting resilient distributed systems: microservices vs modular monoliths, failure domains, and scalability trade-offs' },
+                { label: '🤖 Autonomous AI Agents', prompt: 'Autonomous AI coding agents in production: multi-agent coordination, tool execution guardrails, and developer velocity' },
+                { label: '🛠️ Conquering Technical Debt', prompt: 'Conquering technical debt: pragmatic refactoring strategies, architectural hygiene, and maintainable software' },
+                { label: '📈 Engineering Leadership', prompt: 'Engineering leadership principles: fostering high-ownership culture, technical rigor, and scaling engineering teams' },
               ].map((chip) => (
                 <button
                   key={chip.label}
@@ -1318,7 +1318,7 @@ export default function NewsAutomationClient() {
               <textarea
                 value={customTopicPrompt}
                 onChange={(e) => setCustomTopicPrompt(e.target.value)}
-                placeholder="e.g. Aaj India me Dussehra hai, uske baare me post karo (ya koi bhi specific festival / tech announcement)..."
+                placeholder="Type your thoughts, raw notes, or an outline on any topic..."
                 rows={2}
                 disabled={generatingCustom || previewingCustom}
                 style={{
@@ -2651,7 +2651,7 @@ export default function NewsAutomationClient() {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: selectedContentType === 'custom_topic' ? '12px' : '0' }}>
                 {[
                   { id: 'tech_news', label: 'Tech News & AI (Default)' },
-                  { id: 'custom_topic', label: 'Custom Topic / Festival Prompt' },
+                  { id: 'custom_topic', label: 'Custom Thoughts & Topic' },
                   { id: 'office_humour_meme', label: 'Desi Office Humour Meme' },
                   { id: 'auto', label: 'Auto (Follow Weekly Mix)' },
                 ].map((item) => (
@@ -2670,12 +2670,12 @@ export default function NewsAutomationClient() {
               {selectedContentType === 'custom_topic' && (
                 <div style={{ marginTop: '10px' }}>
                   <label style={{ display: 'block', fontSize: '0.75rem', color: '#93c5fd', marginBottom: '4px', fontWeight: 600 }}>
-                    Enter Topic or Prompt (Hinglish/English):
+                    Enter your thoughts or topic instructions:
                   </label>
                   <textarea
                     value={modalCustomTopic}
                     onChange={(e) => setModalCustomTopic(e.target.value)}
-                    placeholder="e.g. Aaj India me Dussehra hai, technical debt & software architecture ke nazariye se post banao..."
+                    placeholder="Type your thoughts, raw notes, or key points on any topic..."
                     rows={2}
                     style={{
                       width: '100%',

@@ -296,7 +296,7 @@ export async function executeDailyNewsAutomation(params?: {
     };
 
     if (activeContentType === 'custom_topic' || Boolean(params?.customTopic)) {
-      const topicPrompt = params?.customTopic?.trim() || 'Indian Festivals, Engineering Wisdom, and Technical Architecture';
+      const topicPrompt = params?.customTopic?.trim() || 'Software Architecture, System Design, and Modern Engineering Strategy';
       generated = await generateCustomTopicPost(topicPrompt, settings.aiModel);
 
       await updateDailyRun(run.id, {
