@@ -86,7 +86,11 @@ export default function NewsAutomationClient() {
   const [togglingSourceId, setTogglingSourceId] = useState<number | null>(null);
   const [deletingSourceId, setDeletingSourceId] = useState<number | null>(null);
   const [runConfirmOpen, setRunConfirmOpen] = useState(false);
-  const [selectedContentType, setSelectedContentType] = useState<'tech_news' | 'office_humour_meme' | 'auto'>('tech_news');
+  const [selectedContentType, setSelectedContentType] = useState<'tech_news' | 'office_humour_meme' | 'custom_topic' | 'auto'>('tech_news');
+  const [modalCustomTopic, setModalCustomTopic] = useState('');
+  const [customTopicPrompt, setCustomTopicPrompt] = useState('');
+  const [generatingCustom, setGeneratingCustom] = useState(false);
+  const [previewingCustom, setPreviewingCustom] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<{ id: number; name: string } | null>(null);
 
   // Global RSS Filters
@@ -177,6 +181,7 @@ export default function NewsAutomationClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contentType: selectedContentType === 'auto' ? undefined : selectedContentType,
+          customTopic: selectedContentType === 'custom_topic' ? modalCustomTopic.trim() : undefined,
         }),
       });
       const data = await res.json();
@@ -194,6 +199,68 @@ export default function NewsAutomationClient() {
       showToast('Network error while running automation', 'error');
     } finally {
       setRunningNow(false);
+    }
+  };
+
+  // Generate post from custom prompt / festival topic
+  const handleGenerateCustomPost = async (asPreview = false) => {
+    if (!customTopicPrompt.trim()) {
+      showToast('Please enter a topic or instruction (e.g. "Aaj India me Dussehra hai").', 'info');
+      return;
+    }
+
+    if (asPreview) {
+      setPreviewingCustom(true);
+      try {
+        const res = await fetch('/api/admin/news-automation/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contentType: 'custom_topic',
+            customTopic: customTopicPrompt.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.generatedContent) {
+          setPreviewData(data.generatedContent);
+          setPreviewModalOpen(true);
+          showToast('Custom article preview draft generated!', 'success');
+          fetchStatus();
+        } else {
+          showToast(`Preview failed: ${data.error || 'Unknown error'}`, 'error');
+        }
+      } catch {
+        showToast('Network error while generating preview', 'error');
+      } finally {
+        setPreviewingCustom(false);
+      }
+    } else {
+      setGeneratingCustom(true);
+      try {
+        const res = await fetch('/api/admin/news-automation/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contentType: 'custom_topic',
+            customTopic: customTopicPrompt.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(
+            `Article published! Website: ${data.websiteStatus}, LinkedIn: ${data.linkedinStatus}`,
+            'success'
+          );
+          setCustomTopicPrompt('');
+          fetchStatus();
+        } else {
+          showToast(`Generation failed: ${data.error || 'Unknown error'}`, 'error');
+        }
+      } catch {
+        showToast('Network error while executing custom generation', 'error');
+      } finally {
+        setGeneratingCustom(false);
+      }
     }
   };
 
@@ -1157,7 +1224,153 @@ export default function NewsAutomationClient() {
 
       {/* TAB 1: EXECUTION RUNS HISTORY */}
       {activeTab === 'runs' && (
-        <div className="hpa-card" style={{ padding: '20px' }}>
+        <>
+          {/* Custom Topic / Event Prompt Box */}
+          <div
+            className="hpa-card"
+            style={{
+              padding: '22px',
+              marginBottom: '20px',
+              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(124, 58, 237, 0.09) 100%)',
+              border: '1px solid rgba(99, 102, 241, 0.25)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px -4px rgba(0, 0, 0, 0.35)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                  }}
+                >
+                  <Sparkles size={16} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                    Custom Topic / Festival AI Generator
+                  </h3>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: '2px 0 0 0' }}>
+                    Write any topic or prompt in Hindi, English, or Hinglish (e.g. &apos;Aaj India me Dussehra hai, uske baare me post karo&apos;). Gemini will write the article, generate the AI cover image, and publish to website &amp; LinkedIn.
+                  </p>
+                </div>
+              </div>
+
+              <span
+                className="hpa-pill hpa-pill-published"
+                style={{ fontSize: '0.72rem', padding: '3px 9px', letterSpacing: '0.4px', textTransform: 'uppercase' }}
+              >
+                On-Demand AI
+              </span>
+            </div>
+
+            {/* Quick Prompt Suggestion Chips */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', fontWeight: 600 }}>
+                Quick Ideas:
+              </span>
+              {[
+                { label: '🏹 Dussehra & Tech Debt', prompt: 'Aaj India me Dussehra hai, slaying technical debt aur software engineering excellence ke nazariye se insightful post banao' },
+                { label: '🪔 Diwali & Clean Architecture', prompt: 'Diwali celebration: bringing light to dark legacy codebases, clean architecture, and engineering craftsmanship' },
+                { label: '🇮🇳 Republic Day & Indian Tech', prompt: 'Republic Day: The rise of Indian engineering powerhouses, deep tech startups, and digital public infrastructure' },
+                { label: '🤖 Autonomous AI Agents', prompt: 'The reality of autonomous AI coding agents in 2026: architecture, tool calling, and developer velocity' },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => setCustomTopicPrompt(chip.prompt)}
+                  className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                  style={{
+                    fontSize: '0.73rem',
+                    padding: '3px 9px',
+                    borderRadius: '20px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                  }}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Textarea Input */}
+            <div style={{ marginBottom: '12px' }}>
+              <textarea
+                value={customTopicPrompt}
+                onChange={(e) => setCustomTopicPrompt(e.target.value)}
+                placeholder="e.g. Aaj India me Dussehra hai, uske baare me post karo (ya koi bhi specific festival / tech announcement)..."
+                rows={2}
+                disabled={generatingCustom || previewingCustom}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  background: 'rgba(10, 12, 20, 0.85)',
+                  border: '1px solid rgba(255, 255, 255, 0.14)',
+                  color: '#ffffff',
+                  fontSize: '0.86rem',
+                  lineHeight: '1.45',
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* Action Bar */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+            >
+              <div style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                🚀 Generates structured markdown + AI WebP cover image + personal &amp; company LinkedIn commentary.
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleGenerateCustomPost(true)}
+                  disabled={generatingCustom || previewingCustom || !customTopicPrompt.trim()}
+                  className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                  style={{ padding: '7px 14px', fontSize: '0.8rem' }}
+                >
+                  {previewingCustom ? <Loader2 size={13} className="hpa-spin" /> : <Eye size={13} />}
+                  <span>{previewingCustom ? 'Synthesizing...' : 'Preview Draft'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleGenerateCustomPost(false)}
+                  disabled={generatingCustom || previewingCustom || !customTopicPrompt.trim()}
+                  className="hpa-btn hpa-btn-primary hpa-btn-sm"
+                  style={{
+                    padding: '7px 16px',
+                    fontSize: '0.8rem',
+                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                    borderColor: 'transparent',
+                    boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
+                  }}
+                >
+                  {generatingCustom ? <Loader2 size={13} className="hpa-spin" /> : <Sparkles size={13} />}
+                  <span>{generatingCustom ? 'Generating & Publishing...' : 'Generate & Publish Post'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="hpa-card" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
@@ -1405,6 +1618,7 @@ export default function NewsAutomationClient() {
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* TAB 2: WORLDWIDE RSS SOURCES */}
@@ -2422,9 +2636,10 @@ export default function NewsAutomationClient() {
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
                 Select Content Type to Generate:
               </label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: selectedContentType === 'custom_topic' ? '12px' : '0' }}>
                 {[
                   { id: 'tech_news', label: 'Tech News & AI (Default)' },
+                  { id: 'custom_topic', label: 'Custom Topic / Festival Prompt' },
                   { id: 'office_humour_meme', label: 'Desi Office Humour Meme' },
                   { id: 'auto', label: 'Auto (Follow Weekly Mix)' },
                 ].map((item) => (
@@ -2439,6 +2654,32 @@ export default function NewsAutomationClient() {
                   </button>
                 ))}
               </div>
+
+              {selectedContentType === 'custom_topic' && (
+                <div style={{ marginTop: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: '#93c5fd', marginBottom: '4px', fontWeight: 600 }}>
+                    Enter Topic or Prompt (Hinglish/English):
+                  </label>
+                  <textarea
+                    value={modalCustomTopic}
+                    onChange={(e) => setModalCustomTopic(e.target.value)}
+                    placeholder="e.g. Aaj India me Dussehra hai, technical debt & software architecture ke nazariye se post banao..."
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(0, 0, 0, 0.4)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#ffffff',
+                      fontSize: '0.82rem',
+                      lineHeight: '1.4',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Timing Banner */}

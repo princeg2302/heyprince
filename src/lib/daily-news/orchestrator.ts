@@ -4,6 +4,7 @@ import {
   RunStatus,
   WebsiteStatus,
   LinkedInStatus,
+  GeneratedContentPayload,
 } from './types';
 import {
   getDailyNewsSettings,
@@ -14,7 +15,7 @@ import {
   markNewsItemsUsed,
 } from './db';
 import { collectDailyNews } from './rss-collector';
-import { generateDailyPost } from './content-generator';
+import { generateDailyPost, generateCustomTopicPost } from './content-generator';
 import { generateDailyBlogImages } from './image-generator';
 import { generateOfficeHumourMeme } from './meme-generator';
 import { createPost } from '../admin-db';
@@ -23,7 +24,8 @@ import { publishArticleToLinkedIn } from '../linkedin/client';
 export async function executeDailyNewsAutomation(params?: {
   triggerType?: 'scheduled' | 'manual_run' | 'preview';
   forceRunToday?: boolean;
-  contentType?: 'tech_news' | 'office_humour_meme';
+  contentType?: 'tech_news' | 'office_humour_meme' | 'custom_topic';
+  customTopic?: string;
 }): Promise<OrchestrationResult> {
   const triggerType = params?.triggerType || 'scheduled';
   const todayStr = new Date().toISOString().split('T')[0];
@@ -284,59 +286,91 @@ export async function executeDailyNewsAutomation(params?: {
       };
     }
 
-    // Branch B: Daily Technology News & AI Analysis
-    // 4. Stage 1: Collect & Deduplicate News from RSS Feeds
-    const collection = await collectDailyNews(settings.lookbackHours);
+    // Branch B or C: Daily Technology News OR Custom Topic / Festival Generation
+    let generated: GeneratedContentPayload;
+    let collection = {
+      sourcesChecked: 0,
+      itemsDiscovered: 0,
+      duplicatesSkipped: 0,
+      availableItems: [] as any[],
+    };
 
-    await updateDailyRun(run.id, {
-      sourcesChecked: collection.sourcesChecked,
-      itemsDiscovered: collection.itemsDiscovered,
-      duplicatesSkipped: collection.duplicatesSkipped,
-    });
+    if (activeContentType === 'custom_topic' || Boolean(params?.customTopic)) {
+      const topicPrompt = params?.customTopic?.trim() || 'Indian Festivals, Engineering Wisdom, and Technical Architecture';
+      generated = await generateCustomTopicPost(topicPrompt, settings.aiModel);
 
-    if (collection.availableItems.length === 0) {
-      const emptyErr = 'No verified tech stories found within the configured lookback window.';
       await updateDailyRun(run.id, {
-        status: 'failed',
-        websiteStatus: 'failed',
-        linkedinStatus: 'failed',
-        errorDetails: { stage: 'collection', message: emptyErr, timestamp: new Date().toISOString() },
-        completedAt: new Date().toISOString(),
+        sourcesChecked: 0,
+        itemsDiscovered: 0,
+        duplicatesSkipped: 0,
+        selectedItems: [
+          {
+            headline: `Custom Prompt: ${topicPrompt}`,
+            url: 'https://heyprince.in',
+            sourceName: 'Admin Custom Topic',
+            publishedAt: new Date().toISOString(),
+          },
+        ],
+        articleTitle: generated.title,
+        articleSlug: generated.slug,
+        articleExcerpt: generated.excerpt,
+        articleContent: generated,
+        linkedinCommentary: generated.linkedinPost,
       });
+    } else {
+      // 4. Stage 1: Collect & Deduplicate News from RSS Feeds
+      collection = await collectDailyNews(settings.lookbackHours);
 
-      return {
-        success: false,
-        runId: run.id,
-        runDate: todayStr,
-        status: 'failed',
-        websiteStatus: 'failed',
-        linkedinStatus: 'failed',
+      await updateDailyRun(run.id, {
         sourcesChecked: collection.sourcesChecked,
         itemsDiscovered: collection.itemsDiscovered,
         duplicatesSkipped: collection.duplicatesSkipped,
-        error: emptyErr,
-      };
+      });
+
+      if (collection.availableItems.length === 0) {
+        const emptyErr = 'No verified tech stories found within the configured lookback window.';
+        await updateDailyRun(run.id, {
+          status: 'failed',
+          websiteStatus: 'failed',
+          linkedinStatus: 'failed',
+          errorDetails: { stage: 'collection', message: emptyErr, timestamp: new Date().toISOString() },
+          completedAt: new Date().toISOString(),
+        });
+
+        return {
+          success: false,
+          runId: run.id,
+          runDate: todayStr,
+          status: 'failed',
+          websiteStatus: 'failed',
+          linkedinStatus: 'failed',
+          sourcesChecked: collection.sourcesChecked,
+          itemsDiscovered: collection.itemsDiscovered,
+          duplicatesSkipped: collection.duplicatesSkipped,
+          error: emptyErr,
+        };
+      }
+
+      // 5. Stage 2: AI Generation of Humanized Post
+      generated = await generateDailyPost(collection.availableItems, settings.aiModel);
+
+      // Save selected items for transparency
+      const selectedSummary = collection.availableItems.slice(0, 5).map((i) => ({
+        headline: i.headline,
+        url: i.url,
+        sourceName: i.sourceName,
+        publishedAt: i.publishedAt,
+      }));
+
+      await updateDailyRun(run.id, {
+        selectedItems: selectedSummary,
+        articleTitle: generated.title,
+        articleSlug: generated.slug,
+        articleExcerpt: generated.excerpt,
+        articleContent: generated,
+        linkedinCommentary: generated.linkedinPost,
+      });
     }
-
-    // 5. Stage 2: AI Generation of Humanized Post
-    const generated = await generateDailyPost(collection.availableItems, settings.aiModel);
-
-    // Save selected items for transparency
-    const selectedSummary = collection.availableItems.slice(0, 5).map((i) => ({
-      headline: i.headline,
-      url: i.url,
-      sourceName: i.sourceName,
-      publishedAt: i.publishedAt,
-    }));
-
-    await updateDailyRun(run.id, {
-      selectedItems: selectedSummary,
-      articleTitle: generated.title,
-      articleSlug: generated.slug,
-      articleExcerpt: generated.excerpt,
-      articleContent: generated,
-      linkedinCommentary: generated.linkedinPost,
-    });
 
     // 5.5 Stage 2.5: Generate 3 Visual Assets (1 Cover + 2 Section Illustrations) & Catalog in Media Vault
     let coverImageUrl = '/assets/blog/photo1.webp';
@@ -441,12 +475,16 @@ export async function executeDailyNewsAutomation(params?: {
     const createdPost = postCreateResult.post;
     const postUrl = `https://heyprince.in/insights/${createdPost.slug}/`;
 
-    // Mark used news items in database to prevent reuse
-    const usedIds = collection.availableItems
-      .slice(0, 5)
-      .map((i) => i.id)
-      .filter((id): id is number => typeof id === 'number');
-    await markNewsItemsUsed(usedIds, run.id);
+    // Mark used news items in database to prevent reuse (if from RSS collection)
+    if (collection.availableItems && collection.availableItems.length > 0) {
+      const usedIds = collection.availableItems
+        .slice(0, 5)
+        .map((i) => i.id)
+        .filter((id): id is number => typeof id === 'number');
+      if (usedIds.length > 0) {
+        await markNewsItemsUsed(usedIds, run.id);
+      }
+    }
 
     const websiteStatus: WebsiteStatus = isWebsitePublished ? 'published' : 'draft_saved';
 

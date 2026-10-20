@@ -13,12 +13,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const contentType = body?.contentType as 'tech_news' | 'office_humour_meme' | undefined;
+    const contentType = body?.contentType as 'tech_news' | 'office_humour_meme' | 'custom_topic' | undefined;
+    const customTopic = body?.customTopic as string | undefined;
 
     const result = await executeDailyNewsAutomation({
       triggerType: 'manual_run',
       forceRunToday: true,
       contentType,
+      customTopic,
     });
 
     return NextResponse.json(result);

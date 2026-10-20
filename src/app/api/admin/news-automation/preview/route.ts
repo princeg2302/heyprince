@@ -12,8 +12,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const body = await request.json().catch(() => ({}));
     const result = await executeDailyNewsAutomation({
       triggerType: 'preview',
+      contentType: body?.contentType,
+      customTopic: body?.customTopic,
     });
 
     return NextResponse.json(result);

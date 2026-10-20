@@ -33,6 +33,36 @@ function countWords(sections: GeneratedArticleSection[]): number {
   return count;
 }
 
+function parseAIJsonResponse(rawText: string): any {
+  let parsed: any;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch (err: any) {
+    const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      try {
+        parsed = JSON.parse(jsonMatch[1]);
+      } catch {
+        // Fall through
+      }
+    }
+    if (!parsed) {
+      const startIdx = rawText.indexOf('{');
+      const endIdx = rawText.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        try {
+          parsed = JSON.parse(rawText.substring(startIdx, endIdx + 1));
+        } catch {
+          throw new Error(`Failed to parse AI response as JSON: ${err?.message}`);
+        }
+      } else {
+        throw new Error(`Failed to parse AI response as JSON: ${err?.message}`);
+      }
+    }
+  }
+  return parsed;
+}
+
 export async function generateDailyPost(
   newsItems: NormalizedNewsItem[],
   preferredModel?: string
@@ -124,34 +154,7 @@ Respond ONLY with JSON matching this structure:
 }`;
 
   const aiRes = await callAIModel(systemPrompt, userPrompt, preferredModel);
-
-  let parsed: any;
-  try {
-    parsed = JSON.parse(aiRes.text);
-  } catch (err: any) {
-    // Attempt markdown code block extraction
-    const jsonMatch = aiRes.text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      try {
-        parsed = JSON.parse(jsonMatch[1]);
-      } catch {
-        // Fall through
-      }
-    }
-    if (!parsed) {
-      const startIdx = aiRes.text.indexOf('{');
-      const endIdx = aiRes.text.lastIndexOf('}');
-      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-        try {
-          parsed = JSON.parse(aiRes.text.substring(startIdx, endIdx + 1));
-        } catch {
-          throw new Error(`Failed to parse AI response as JSON: ${err?.message}`);
-        }
-      } else {
-        throw new Error(`Failed to parse AI response as JSON: ${err?.message}`);
-      }
-    }
-  }
+  const parsed = parseAIJsonResponse(aiRes.text);
 
   // Validate required fields
   if (!parsed.title || !parsed.sections || !Array.isArray(parsed.sections)) {
@@ -205,6 +208,120 @@ Respond ONLY with JSON matching this structure:
     seoDescription: parsed.seoDescription || parsed.excerpt || '',
     linkedinPost: linkedinText.trim(),
     rationale: parsed.rationale || 'Top development of the day.',
+  };
+}
+
+export async function generateCustomTopicPost(
+  customPrompt: string,
+  preferredModel?: string
+): Promise<GeneratedContentPayload> {
+  if (!customPrompt || !customPrompt.trim()) {
+    throw new Error('Please provide a topic or prompt for article generation.');
+  }
+
+  const systemPrompt = `You are a distinguished senior technology strategist, software architect, and IT consultant writing for HeyPrince (https://heyprince.in) — a premier engineering studio founded by Prince.
+Your audience consists of CTOs, software developers, engineering leads, founders, and tech professionals across India and globally.
+
+EDITORIAL PRINCIPLES & VOICE:
+1. Tone: Thoughtful, grounded, authoritative, articulate, and inspiring. Write like an experienced engineering practitioner.
+2. Natural Variation: Avoid generic AI openings ("In today's fast-paced digital world", "Exciting news in tech", "Let's dive in", "Game changer"). Jump straight into the core theme.
+3. Special Handling for Indian Festivals, Holidays & Cultural Occasions:
+   - If the user's prompt mentions an Indian festival or celebration (e.g., Dussehra / Vijayadashami, Diwali, Republic Day, Independence Day, etc.):
+   - Warmly acknowledge the festive spirit and occasion.
+   - Brilliantly weave the cultural philosophy or metaphor with software engineering realities, technical leadership, and system design!
+     * Example for Dussehra (Victory of good over evil, slaying Ravana's ten heads): Draw a compelling analogy to slaying the "10 Heads of Technical Debt" (e.g. monolithic lock-in, zero automated test coverage, security antipatterns, premature optimization, zombie microservices, flaky CI/CD, unmonitored production, tribal knowledge silos, documentation rot, and analysis paralysis).
+     * Provide genuine engineering advice, architectural discipline, and actionable solutions for developers and engineering leaders.
+4. If the prompt is a general or specific technology topic, framework, or industry trend:
+   - Provide an in-depth, hands-on, high-signal engineering breakdown with architectural patterns, trade-offs, and best practices.
+5. Dual Output:
+   - Format A (Website Article): Around 450-700 words. Well-structured sections with headings, concise paragraphs, actionable takeaways, and memorable quotes or pro-tips.
+   - Format B (LinkedIn Post): 140-230 words. Engaging opening hook (with festive warmth or a sharp engineering observation), key insights, engineer's takeaway, {{ARTICLE_URL}} link placeholder, and 4-5 relevant hashtags (e.g. #Dussehra #SoftwareEngineering #TechDebt #SystemDesign #TechLeadership #HeyPrince).
+
+You MUST respond strictly with valid JSON conforming to the schema.`;
+
+  const userPrompt = `TOPIC / INSTRUCTION FROM ADMIN:
+"${customPrompt.trim()}"
+
+TASK:
+1. Generate an original, captivating, humanized engineering article for the website that addresses this topic in depth (blending cultural celebration with engineering insights if it is a festival/occasion).
+2. Generate a separate high-engagement LinkedIn post tailored for tech professionals.
+
+Respond ONLY with JSON matching this structure:
+{
+  "title": "string (Compelling, professional headline without clickbait)",
+  "slug": "string (kebab-case SEO slug without punctuation)",
+  "excerpt": "string (Crisp 2-sentence executive summary)",
+  "categoryName": "Software Architecture" | "Engineering Leadership" | "Artificial Intelligence" | "Web Development" | "Tech Culture",
+  "tags": ["3 to 5 relevant technical/cultural tags"],
+  "sections": [
+    {
+      "heading": "string (Section 1: The Occasion & Modern Engineering Reality)",
+      "paragraphs": ["string (2-3 paragraphs)"],
+      "quote": "string or null",
+      "proTip": "string or null"
+    },
+    {
+      "heading": "string (Section 2: Core Engineering Principles & Overcoming Bottlenecks)",
+      "paragraphs": ["string (2-3 paragraphs)"],
+      "bulletPoints": ["3 to 5 actionable bullet points"]
+    },
+    {
+      "heading": "string (Section 3: Practical Takeaways & The Path Forward)",
+      "paragraphs": ["string (1-2 forward-looking paragraphs)"]
+    }
+  ],
+  "sourcesUsed": [],
+  "seoTitle": "string (Under 60 chars)",
+  "seoDescription": "string (140-160 chars)",
+  "linkedinPost": "string (140-230 words, with {{ARTICLE_URL}} placeholder for the article link, and 4-5 hashtags)",
+  "rationale": "string (Brief explanation of the editorial angle)"
+}`;
+
+  const aiRes = await callAIModel(systemPrompt, userPrompt, preferredModel);
+  const parsed = parseAIJsonResponse(aiRes.text);
+
+  // Validate required fields
+  if (!parsed.title || !parsed.sections || !Array.isArray(parsed.sections)) {
+    throw new Error('AI output missing required title or sections array.');
+  }
+
+  // Ensure unique slug
+  const cleanSlug = parsed.slug ? slugify(parsed.slug) : slugify(parsed.title);
+  const dateSuffix = new Date().toISOString().split('T')[0];
+  const uniqueSlug = `${cleanSlug}-${dateSuffix}`;
+
+  // Calculate read time
+  const wordCount = countWords(parsed.sections);
+  const readMins = `${Math.max(3, Math.ceil(wordCount / 180))} min`;
+
+  // Format canonical article URL into LinkedIn post
+  const articleUrl = `https://heyprince.in/insights/${uniqueSlug}/`;
+  let linkedinText = parsed.linkedinPost || '';
+  if (linkedinText.includes('{{ARTICLE_URL}}')) {
+    linkedinText = linkedinText.replace(/{{ARTICLE_URL}}/g, articleUrl);
+  } else if (!linkedinText.includes('heyprince.in')) {
+    linkedinText = `${linkedinText.trim()}\n\nRead the full engineering breakdown on HeyPrince:\n${articleUrl}`;
+  }
+
+  return {
+    title: parsed.title.trim(),
+    slug: uniqueSlug,
+    excerpt: parsed.excerpt?.trim() || `${parsed.title}. Read the full analysis on HeyPrince.`,
+    readMins,
+    categoryName: parsed.categoryName || 'Software Architecture',
+    tags: Array.isArray(parsed.tags) ? parsed.tags : ['Engineering', 'Software Architecture', 'Tech Insights'],
+    sections: parsed.sections.map((s: any) => ({
+      heading: s.heading || 'Analysis',
+      quote: s.quote || undefined,
+      proTip: s.proTip || undefined,
+      paragraphs: Array.isArray(s.paragraphs) ? s.paragraphs : [s.text || ''],
+      bulletPoints: Array.isArray(s.bulletPoints) ? s.bulletPoints.map((bp: any) => String(bp)) : undefined,
+    })),
+    sourcesUsed: [],
+    seoTitle: parsed.seoTitle || `${parsed.title} | HeyPrince`,
+    seoDescription: parsed.seoDescription || parsed.excerpt || '',
+    linkedinPost: linkedinText.trim(),
+    rationale: parsed.rationale || `Custom prompt: ${customPrompt.slice(0, 80)}`,
   };
 }
 
