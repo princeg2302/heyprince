@@ -162,15 +162,30 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
 
       const result = await response.json().catch(() => ({}));
 
-      if (response.ok && result.success) {
+            if (response.ok && result.success) {
         setIsSubmitted(true);
       } else {
-        // Reset turnstile so user gets a fresh token for immediate retry
-        turnstileRef.current?.reset();
-        setTurnstileToken('');
+        const isSecurityError =
+          result.errors?.captcha ||
+          result.message?.toLowerCase().includes('security') ||
+          result.message?.toLowerCase().includes('captcha');
+
+        // Only reset turnstile if it was a security/captcha error; keep token for simple field errors
+        if (isSecurityError) {
+          turnstileRef.current?.reset();
+          setTurnstileToken('');
+        }
+
+        const fieldErrors = result.errors
+          ? Object.entries(result.errors)
+              .map(([, msgs]) => (msgs as string[]).join(', '))
+              .filter(Boolean)
+              .join(' • ')
+          : '';
+
         const errorDetail =
+          fieldErrors ||
           result.message ||
-          (result.errors && Object.values(result.errors).flat().join(', ')) ||
           'Submission failed. Please check the entered information and try again.';
         setErrorMessage(errorDetail);
       }
@@ -342,7 +357,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                     <input
                       id="hp_lead_guard"
                       type="text"
-                      name="honeypot"
+                      name="hp_nobot_guard"
                       value={honeypot}
                       onChange={(e) => setHoneypot(e.target.value)}
                       tabIndex={-1}

@@ -4,18 +4,18 @@ import { dispatchLeadEmails } from './email';
 import { verifyTurnstileToken } from './turnstile';
 
 export const LeadSubmissionSchema = z.object({
-  name: z.string().trim().min(2, 'Name must contain at least 2 characters').max(100),
+  name: z.string().trim().min(1, 'Please enter your name').max(100),
   email: z.string().trim().email('Please provide a valid email address'),
-  phone: z.string().trim().max(30).optional().or(z.literal('')),
+  phone: z.string().trim().max(50).optional().or(z.literal('')),
   company: z.string().trim().max(100).optional().or(z.literal('')),
-  service: z.string().trim().min(2, 'Please select a service'),
-  budget: z.string().trim().max(50).optional().or(z.literal('')),
-  timeline: z.string().trim().max(50).optional().or(z.literal('')),
-  message: z.string().trim().min(2, 'Please provide project details').max(5000),
-  // Anti-bot Honeypot field (must remain empty for humans)
-  honeypot: z.string().max(0, 'Spam detected').optional().or(z.literal('')),
+  service: z.string().trim().min(1, 'Please select a service').default('Frontend React / Next.js'),
+  budget: z.string().trim().max(100).optional().or(z.literal('')),
+  timeline: z.string().trim().max(100).optional().or(z.literal('')),
+  message: z.string().trim().min(1, 'Please provide project details').max(5000),
+  // Anti-bot Honeypot field (handled gracefully without failing Zod schema)
+  honeypot: z.string().optional().or(z.literal('')),
   // Submission timestamp for timing-based bot detection
-  formLoadedAt: z.number().optional(),
+  formLoadedAt: z.union([z.number(), z.string()]).optional(),
   // Cloudflare Turnstile token
   turnstileToken: z.string().optional(),
 });
@@ -53,9 +53,13 @@ export async function processLeadSubmission(
   const validation = LeadSubmissionSchema.safeParse(rawInput);
   if (!validation.success) {
     const formattedErrors = validation.error.flatten().fieldErrors;
+    const errorList = Object.values(formattedErrors).flat().filter(Boolean);
+    const summary = errorList.length
+      ? errorList.join(' • ')
+      : 'Validation failed. Please verify the submitted information.';
     return {
       success: false,
-      message: 'Validation failed. Please verify the submitted information.',
+      message: summary,
       errors: formattedErrors,
     };
   }
@@ -72,14 +76,20 @@ export async function processLeadSubmission(
   }
 
   // 3. Anti-Spam Check: Minimum human interaction time (avoid false positives on clock skew)
-  if (data.formLoadedAt) {
-    const elapsed = Date.now() - data.formLoadedAt;
-    if (elapsed >= 0 && elapsed < 800) {
-      console.warn('[Spam Guard] Rapid submission flagged (< 800ms)');
-      return {
-        success: true,
-        message: 'Thank you for your message! We will get back to you shortly.',
-      };
+  if (data.formLoadedAt !== undefined) {
+    const loadedAtNum =
+      typeof data.formLoadedAt === 'string'
+        ? parseInt(data.formLoadedAt, 10)
+        : data.formLoadedAt;
+    if (!isNaN(loadedAtNum)) {
+      const elapsed = Date.now() - loadedAtNum;
+      if (elapsed >= 0 && elapsed < 500) {
+        console.warn('[Spam Guard] Rapid submission flagged (< 500ms)');
+        return {
+          success: true,
+          message: 'Thank you for your message! We will get back to you shortly.',
+        };
+      }
     }
   }
 
@@ -120,7 +130,7 @@ export async function processLeadSubmission(
           email: data.email,
           phone: data.phone || '',
           company: data.company || '',
-          service: data.service,
+          service: data.service || 'Frontend React / Next.js',
           budget: cleanBudget,
           timeline: data.timeline || '',
           message: data.message,
