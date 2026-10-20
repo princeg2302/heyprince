@@ -29,9 +29,17 @@ async function migrate() {
       scope VARCHAR(255) NOT NULL DEFAULT 'w_member_social',
       is_active BOOLEAN NOT NULL DEFAULT true,
       last_published_at TIMESTAMPTZ,
+      organization_urn VARCHAR(255),
+      organization_name VARCHAR(255),
+      post_target VARCHAR(50) NOT NULL DEFAULT 'personal',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    -- Ensure new organization columns exist if table already exists
+    ALTER TABLE linkedin_connections ADD COLUMN IF NOT EXISTS organization_urn VARCHAR(255);
+    ALTER TABLE linkedin_connections ADD COLUMN IF NOT EXISTS organization_name VARCHAR(255);
+    ALTER TABLE linkedin_connections ADD COLUMN IF NOT EXISTS post_target VARCHAR(50) NOT NULL DEFAULT 'personal';
 
     CREATE TABLE IF NOT EXISTS linkedin_post_shares (
       id SERIAL PRIMARY KEY,

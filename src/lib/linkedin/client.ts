@@ -113,18 +113,20 @@ export function verifyOAuthState(state: string): {
 // 3. OAuth 2.0 Authorization URL
 // ============================================================================
 
-export function getLinkedInAuthorizationUrl(state: string): string {
+export function getLinkedInAuthorizationUrl(state: string, customScope?: string): string {
   const config = getLinkedInConfig();
   if (!config.clientId) {
     throw new Error('LINKEDIN_CLIENT_ID is not configured in server environment.');
   }
+
+  const effectiveScope = customScope?.trim() || config.scope;
 
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     state,
-    scope: config.scope,
+    scope: effectiveScope,
   });
 
   return `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
@@ -289,11 +291,24 @@ export async function saveLinkedInConnection(params: {
   expiresInSeconds: number;
   refreshTokenExpiresInSeconds?: number | null;
   scope?: string;
+  organizationUrn?: string | null;
+  organizationName?: string | null;
+  postTarget?: 'personal' | 'organization' | 'both';
 }): Promise<LinkedInConnectionRecord> {
   const expiresAt = new Date(Date.now() + params.expiresInSeconds * 1000).toISOString();
   const refreshExpiresAt = params.refreshTokenExpiresInSeconds
     ? new Date(Date.now() + params.refreshTokenExpiresInSeconds * 1000).toISOString()
     : null;
+
+  // Retrieve existing organization settings to persist across reconnections
+  const prevRows = await query<LinkedInConnectionRecord>(
+    `SELECT organization_urn, organization_name, post_target FROM linkedin_connections WHERE is_active = true ORDER BY id DESC LIMIT 1;`
+  );
+  const prev = prevRows && prevRows.length > 0 ? prevRows[0] : null;
+
+  const targetOrgUrn = params.organizationUrn !== undefined ? params.organizationUrn : prev?.organization_urn || null;
+  const targetOrgName = params.organizationName !== undefined ? params.organizationName : prev?.organization_name || null;
+  const targetPostTarget = params.postTarget !== undefined ? params.postTarget : prev?.post_target || 'personal';
 
   // Deactivate any existing active connection for this user or overall
   await query(
@@ -314,9 +329,12 @@ export async function saveLinkedInConnection(params: {
       refresh_expires_at,
       scope,
       is_active,
+      organization_urn,
+      organization_name,
+      post_target,
       created_at,
       updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, $11, $12, $13, NOW(), NOW())
     RETURNING *;
     `,
     [
@@ -330,6 +348,9 @@ export async function saveLinkedInConnection(params: {
       expiresAt,
       refreshExpiresAt,
       params.scope || 'w_member_social',
+      targetOrgUrn,
+      targetOrgName,
+      targetPostTarget,
     ]
   );
 
@@ -427,12 +448,18 @@ export async function refreshAccessToken(refreshToken: string): Promise<LinkedIn
 
 export async function uploadImageToLinkedIn(params: {
   accessToken: string;
-  personUrn: string;
+  ownerUrn?: string;
+  personUrn?: string;
   imageUrl: string;
   apiVersion?: string;
 }): Promise<string | null> {
   try {
-    const { accessToken, personUrn, imageUrl } = params;
+    const { accessToken, imageUrl } = params;
+    const ownerUrn = params.ownerUrn || params.personUrn;
+    if (!ownerUrn) {
+      console.warn('[LinkedIn Image Upload] Missing ownerUrn or personUrn');
+      return null;
+    }
     const apiVersion = params.apiVersion || process.env.LINKEDIN_API_VERSION || '202601';
 
     if (!imageUrl || !imageUrl.trim()) {
@@ -483,7 +510,7 @@ export async function uploadImageToLinkedIn(params: {
       },
       body: JSON.stringify({
         initializeUploadRequest: {
-          owner: personUrn,
+          owner: ownerUrn,
         },
       }),
     });
@@ -528,76 +555,47 @@ export async function uploadImageToLinkedIn(params: {
 }
 
 // ============================================================================
-// 9. Publish Article to Personal Profile (Supported LinkedIn API)
+// 9. Single Author Post Dispatcher (Supports Person & Organization URNs)
 // ============================================================================
 
-export async function publishArticleToLinkedIn(params: {
-  postId: number;
-  customCommentary?: string;
-  imageUrl?: string;
-}): Promise<PublishArticleResult> {
-  // 1. Get active connection
-  const connection = await getActiveLinkedInConnection();
-  if (!connection) {
-    return {
-      success: false,
-      error: 'No active LinkedIn connection found. Please connect your LinkedIn profile first.',
-    };
-  }
+async function publishSinglePost(params: {
+  connection: LinkedInConnectionRecord;
+  authorUrn: string;
+  target: 'personal' | 'organization';
+  post: { id: number; title: string; slug: string; excerpt?: string; seo_description?: string };
+  commentaryText: string;
+  articleUrl: string;
+  postImageUrl?: string | null;
+  activeVersion: string;
+}): Promise<{
+  success: boolean;
+  postUrn?: string;
+  postUrl?: string;
+  endpointUsed?: 'rest/posts' | 'v2/ugcPosts';
+  error?: string;
+  details?: any;
+}> {
+  const { connection, authorUrn, target, post, commentaryText, articleUrl, postImageUrl, activeVersion } = params;
 
-  // Ensure Person URN is valid and not a placeholder
-  if (!connection.person_urn || connection.person_urn.includes('UNKNOWN')) {
-    return {
-      success: false,
-      error:
-        'LinkedIn Person URN is missing or UNKNOWN. Please enter your Member ID in the Settings / Modal, or enable "Sign In with LinkedIn using OpenID Connect" in your Developer Portal and reconnect.',
-    };
-  }
-
-  // 2. Fetch article details from database (including cover_image)
-  const postRows = await query(
-    `SELECT id, title, slug, excerpt, seo_description, status, cover_image FROM posts WHERE id = $1 LIMIT 1;`,
-    [params.postId]
-  );
-
-  if (!postRows || postRows.length === 0) {
-    return {
-      success: false,
-      error: `Article #${params.postId} not found in database.`,
-    };
-  }
-
-  const post = postRows[0];
-  const articleUrl = `https://heyprince.in/insights/${post.slug}/`;
-  const postImageUrl = params.imageUrl || post.cover_image;
-
-  // Build clean commentary
-  const commentaryText =
-    params.customCommentary?.trim() ||
-    `${post.title}\n\n${post.excerpt || post.seo_description || ''}\n\nRead the full engineering insight on HeyPrince:\n${articleUrl}`.trim();
-
-  // Active LinkedIn API Version (202601 / 202510)
-  const activeVersion = process.env.LINKEDIN_API_VERSION || '202601';
-
-  // 3. Proactively upload image to LinkedIn so the post has a real visual image attachment
+  // 1. Proactively upload image to LinkedIn with this specific authorUrn as the owner
   let imageUrn: string | null = null;
   if (postImageUrl) {
     try {
       imageUrn = await uploadImageToLinkedIn({
         accessToken: connection.access_token,
-        personUrn: connection.person_urn,
+        ownerUrn: authorUrn,
         imageUrl: postImageUrl,
         apiVersion: activeVersion,
       });
     } catch (imgErr) {
-      console.warn('[LinkedIn] Image upload exception, continuing with article fallback:', imgErr);
+      console.warn(`[LinkedIn ${target}] Image upload exception:`, imgErr);
     }
   }
 
-  // Attempt 1: Modern versioned Posts API (`POST https://api.linkedin.com/rest/posts`)
+  // 2. Attempt rest/posts with authorUrn
   try {
     const postPayload: any = {
-      author: connection.person_urn,
+      author: authorUrn,
       commentary: commentaryText,
       visibility: 'PUBLIC',
       distribution: {
@@ -610,7 +608,6 @@ export async function publishArticleToLinkedIn(params: {
     };
 
     if (imageUrn) {
-      // First attempt with image media (native image post with full picture in feed)
       postPayload.content = {
         media: {
           title: post.title,
@@ -638,9 +635,8 @@ export async function publishArticleToLinkedIn(params: {
       body: JSON.stringify(postPayload),
     });
 
-    // If media post failed with 400 but we have imageUrn, retry as article with thumbnail: imageUrn
     if (!restResponse.ok && imageUrn) {
-      console.warn(`[LinkedIn rest/posts] Media payload returned status ${restResponse.status}, trying article thumbnail payload...`);
+      console.warn(`[LinkedIn rest/posts ${target}] Media payload returned status ${restResponse.status}, trying article thumbnail payload...`);
       const articleThumbnailPayload = {
         ...postPayload,
         content: {
@@ -674,7 +670,6 @@ export async function publishArticleToLinkedIn(params: {
       const postUrn = restliId ? (restliId.startsWith('urn:li:') ? restliId : `urn:li:share:${restliId}`) : 'urn:li:post:published';
       const feedUrl = restliId ? `https://www.linkedin.com/feed/update/${encodeURIComponent(postUrn)}/` : 'https://www.linkedin.com/feed/';
 
-      // Save successful share
       await query(
         `
         INSERT INTO linkedin_post_shares (
@@ -691,14 +686,13 @@ export async function publishArticleToLinkedIn(params: {
         [
           post.id,
           postUrn,
-          connection.person_urn,
+          authorUrn,
           commentaryText,
           articleUrl,
-          JSON.stringify({ status: 201, postUrn, endpoint: 'rest/posts', hasImage: Boolean(imageUrn) }),
+          JSON.stringify({ status: 201, postUrn, target, endpoint: 'rest/posts', hasImage: Boolean(imageUrn) }),
         ]
       );
 
-      // Update connection last_published_at
       await query(
         `UPDATE linkedin_connections SET last_published_at = NOW(), updated_at = NOW() WHERE id = $1;`,
         [connection.id]
@@ -712,7 +706,6 @@ export async function publishArticleToLinkedIn(params: {
       };
     }
 
-    // If rest/posts returned non-201, read error response
     let restErrorText = '';
     let restErrorJson: any = null;
     try {
@@ -722,12 +715,15 @@ export async function publishArticleToLinkedIn(params: {
       restErrorText = await restResponse.text();
     }
 
-    console.warn(`[LinkedIn rest/posts] Status ${restResponse.status}:`, restErrorText);
+    console.warn(`[LinkedIn rest/posts ${target}] Status ${restResponse.status}:`, restErrorText);
 
-    // Attempt 2: Fallback to /v2/ugcPosts
-    console.info('[LinkedIn] Attempting fallback to /v2/ugcPosts endpoint...');
+    if (target === 'organization' && restResponse.status === 403) {
+      restErrorText = `${restErrorText} (Check that your LinkedIn Developer App has 'w_organization_social' permission and your profile is an admin of the page)`;
+    }
+
+    // 3. Fallback to /v2/ugcPosts
     const ugcPayload: any = {
-      author: connection.person_urn,
+      author: authorUrn,
       lifecycleState: 'PUBLISHED',
       specificContent: {
         'com.linkedin.ugc.ShareContent': {
@@ -740,12 +736,8 @@ export async function publishArticleToLinkedIn(params: {
                 {
                   status: 'READY',
                   media: imageUrn,
-                  title: {
-                    text: post.title,
-                  },
-                  description: {
-                    text: post.excerpt || post.seo_description || 'Engineering insight',
-                  },
+                  title: { text: post.title },
+                  description: { text: post.excerpt || post.seo_description || 'Engineering insight' },
                 },
               ]
             : [
@@ -753,12 +745,8 @@ export async function publishArticleToLinkedIn(params: {
                   status: 'READY',
                   originalUrl: articleUrl,
                   thumbnails: postImageUrl ? [{ url: postImageUrl }] : undefined,
-                  title: {
-                    text: post.title,
-                  },
-                  description: {
-                    text: post.excerpt || post.seo_description || 'Engineering insight',
-                  },
+                  title: { text: post.title },
+                  description: { text: post.excerpt || post.seo_description || 'Engineering insight' },
                 },
               ],
         },
@@ -800,7 +788,7 @@ export async function publishArticleToLinkedIn(params: {
         [
           post.id,
           ugcPostUrn,
-          connection.person_urn,
+          authorUrn,
           commentaryText,
           articleUrl,
           JSON.stringify(ugcData),
@@ -820,13 +808,11 @@ export async function publishArticleToLinkedIn(params: {
       };
     }
 
-    // Both endpoints failed
     const finalError =
       ugcData.message ||
       restErrorText ||
-      `LinkedIn API rejected post with status ${ugcResponse.status || restResponse.status}`;
+      `LinkedIn API rejected post for ${target} with status ${ugcResponse.status || restResponse.status}`;
 
-    // Record failure in database for auditing
     await query(
       `
       INSERT INTO linkedin_post_shares (
@@ -842,7 +828,7 @@ export async function publishArticleToLinkedIn(params: {
       `,
       [
         post.id,
-        connection.person_urn,
+        authorUrn,
         commentaryText,
         articleUrl,
         JSON.stringify({ restError: restErrorJson, ugcError: ugcData }),
@@ -855,10 +841,8 @@ export async function publishArticleToLinkedIn(params: {
       error: finalError,
       details: { restError: restErrorJson, ugcError: ugcData },
     };
-  } catch (netErr: any) {
-    const errorMsg = netErr?.message || 'Network exception during LinkedIn publishing';
-    console.error('[LinkedIn Publish] Unexpected error:', netErr);
-
+  } catch (err: any) {
+    const errorMsg = err?.message || `Network error during LinkedIn ${target} publishing`;
     await query(
       `
       INSERT INTO linkedin_post_shares (
@@ -871,12 +855,154 @@ export async function publishArticleToLinkedIn(params: {
         created_at
       ) VALUES ($1, $2, 'failed', $3, $4, $5, NOW());
       `,
-      [post.id, connection.person_urn, commentaryText, articleUrl, errorMsg]
+      [post.id, authorUrn, commentaryText, articleUrl, errorMsg]
     );
 
     return {
       success: false,
       error: errorMsg,
+    };
+  }
+}
+
+// ============================================================================
+// 10. Publish Article to LinkedIn (Personal Profile and/or Organization Page)
+// ============================================================================
+
+export async function publishArticleToLinkedIn(params: {
+  postId: number;
+  customCommentary?: string;
+  imageUrl?: string;
+  target?: 'personal' | 'organization' | 'both';
+}): Promise<PublishArticleResult> {
+  // 1. Get active connection
+  const connection = await getActiveLinkedInConnection();
+  if (!connection) {
+    return {
+      success: false,
+      error: 'No active LinkedIn connection found. Please connect your LinkedIn profile first.',
+    };
+  }
+
+  // 2. Fetch article details from database (including cover_image)
+  const postRows = await query(
+    `SELECT id, title, slug, excerpt, seo_description, status, cover_image FROM posts WHERE id = $1 LIMIT 1;`,
+    [params.postId]
+  );
+
+  if (!postRows || postRows.length === 0) {
+    return {
+      success: false,
+      error: `Article #${params.postId} not found in database.`,
+    };
+  }
+
+  const post = postRows[0];
+  const articleUrl = `https://heyprince.in/insights/${post.slug}/`;
+  const postImageUrl = params.imageUrl || post.cover_image;
+
+  // Build clean commentary
+  const commentaryText =
+    params.customCommentary?.trim() ||
+    `${post.title}\n\n${post.excerpt || post.seo_description || ''}\n\nRead the full engineering insight on HeyPrince:\n${articleUrl}`.trim();
+
+  // Active LinkedIn API Version
+  const activeVersion = process.env.LINKEDIN_API_VERSION || '202601';
+
+  // Effective Target
+  const effectiveTarget = params.target || connection.post_target || 'personal';
+
+  const results: {
+    target: 'personal' | 'organization';
+    authorUrn: string;
+    postUrn?: string;
+    postUrl?: string;
+    success: boolean;
+    error?: string;
+  }[] = [];
+
+  const shouldPostPersonal = effectiveTarget === 'personal' || effectiveTarget === 'both';
+  const shouldPostOrg = effectiveTarget === 'organization' || effectiveTarget === 'both';
+
+  // Step A: Publish to Personal Profile
+  if (shouldPostPersonal) {
+    if (connection.person_urn && !connection.person_urn.includes('UNKNOWN')) {
+      const pRes = await publishSinglePost({
+        connection,
+        authorUrn: connection.person_urn,
+        target: 'personal',
+        post,
+        commentaryText,
+        articleUrl,
+        postImageUrl,
+        activeVersion,
+      });
+      results.push({
+        target: 'personal',
+        authorUrn: connection.person_urn,
+        postUrn: pRes.postUrn,
+        postUrl: pRes.postUrl,
+        success: pRes.success,
+        error: pRes.error,
+      });
+    } else {
+      results.push({
+        target: 'personal',
+        authorUrn: connection.person_urn || 'urn:li:person:UNKNOWN',
+        success: false,
+        error: 'Personal Person URN is missing or unknown. Please reconnect or enter URN.',
+      });
+    }
+  }
+
+  // Step B: Publish to Organization Page
+  if (shouldPostOrg) {
+    if (connection.organization_urn && connection.organization_urn.trim()) {
+      const oRes = await publishSinglePost({
+        connection,
+        authorUrn: connection.organization_urn,
+        target: 'organization',
+        post,
+        commentaryText,
+        articleUrl,
+        postImageUrl,
+        activeVersion,
+      });
+      results.push({
+        target: 'organization',
+        authorUrn: connection.organization_urn,
+        postUrn: oRes.postUrn,
+        postUrl: oRes.postUrl,
+        success: oRes.success,
+        error: oRes.error,
+      });
+    } else {
+      results.push({
+        target: 'organization',
+        authorUrn: 'urn:li:organization:NOT_CONFIGURED',
+        success: false,
+        error: 'LinkedIn Organization Page is not configured. Please add your Company Page ID in Settings.',
+      });
+    }
+  }
+
+  const successfulShares = results.filter((r) => r.success);
+  const primaryShare = successfulShares[0];
+
+  if (successfulShares.length > 0) {
+    return {
+      success: true,
+      postUrn: primaryShare.postUrn,
+      postUrl: primaryShare.postUrl,
+      endpointUsed: 'rest/posts',
+      shares: results,
+    };
+  } else {
+    const errorMsgs = results.map((r) => `[${r.target}]: ${r.error}`).join(' | ');
+    return {
+      success: false,
+      error: errorMsgs || 'Failed to publish to any LinkedIn destination.',
+      shares: results,
     };
   }
 }

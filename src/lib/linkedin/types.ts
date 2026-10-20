@@ -31,6 +31,9 @@ export interface LinkedInConnectionRecord {
   scope: string;
   is_active: boolean;
   last_published_at?: string | null;
+  organization_urn?: string | null;
+  organization_name?: string | null;
+  post_target?: 'personal' | 'organization' | 'both';
   created_at: string;
   updated_at: string;
 }
@@ -55,5 +58,13 @@ export interface PublishArticleResult {
   endpointUsed?: 'rest/posts' | 'v2/ugcPosts';
   error?: string;
   details?: any;
+  shares?: {
+    target: 'personal' | 'organization';
+    authorUrn: string;
+    postUrn?: string;
+    postUrl?: string;
+    success: boolean;
+    error?: string;
+  }[];
 }
 

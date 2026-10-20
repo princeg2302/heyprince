@@ -21,32 +21,66 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   let rawUrn = body.personUrn?.trim();
-  if (!rawUrn) {
-    return NextResponse.json(
-      { success: false, error: 'personUrn is required.' },
-      { status: 400 }
-    );
+  let rawOrgUrn = body.organizationUrn !== undefined ? String(body.organizationUrn).trim() : undefined;
+  let orgName = body.organizationName !== undefined ? String(body.organizationName).trim() : undefined;
+  let postTarget = body.postTarget?.trim();
+
+  let cleanPersonUrn = connection.person_urn;
+  let memberId = connection.member_id;
+
+  if (rawUrn) {
+    if (rawUrn.startsWith('urn:li:member:')) {
+      rawUrn = rawUrn.replace('urn:li:member:', 'urn:li:person:');
+    } else if (!rawUrn.startsWith('urn:li:person:')) {
+      rawUrn = `urn:li:person:${rawUrn}`;
+    }
+    cleanPersonUrn = rawUrn;
+    memberId = cleanPersonUrn.replace('urn:li:person:', '');
   }
 
-  // Normalize URN format
-  if (rawUrn.startsWith('urn:li:member:')) {
-    rawUrn = rawUrn.replace('urn:li:member:', 'urn:li:person:');
-  } else if (!rawUrn.startsWith('urn:li:person:')) {
-    rawUrn = `urn:li:person:${rawUrn}`;
+  let cleanOrgUrn = connection.organization_urn;
+  if (rawOrgUrn !== undefined) {
+    if (!rawOrgUrn) {
+      cleanOrgUrn = null;
+    } else if (rawOrgUrn.startsWith('urn:li:organization:')) {
+      cleanOrgUrn = rawOrgUrn;
+    } else {
+      const numericId = rawOrgUrn.replace(/\D/g, '');
+      cleanOrgUrn = `urn:li:organization:${numericId || rawOrgUrn}`;
+    }
   }
 
-  const cleanUrn = rawUrn;
-  const memberId = cleanUrn.replace('urn:li:person:', '');
+  let cleanPostTarget = postTarget || connection.post_target || 'personal';
+  if (!['personal', 'organization', 'both'].includes(cleanPostTarget)) {
+    cleanPostTarget = 'personal';
+  }
 
   await query(
-    `UPDATE linkedin_connections SET person_urn = $1, member_id = $2, updated_at = NOW() WHERE id = $3;`,
-    [cleanUrn, memberId, connection.id]
+    `UPDATE linkedin_connections 
+     SET person_urn = $1, 
+         member_id = $2, 
+         organization_urn = $3, 
+         organization_name = $4, 
+         post_target = $5, 
+         updated_at = NOW() 
+     WHERE id = $6;`,
+    [
+      cleanPersonUrn,
+      memberId,
+      cleanOrgUrn,
+      orgName !== undefined ? orgName : connection.organization_name,
+      cleanPostTarget,
+      connection.id,
+    ]
   );
 
   return NextResponse.json({
     success: true,
-    message: 'LinkedIn Person URN updated successfully.',
-    personUrn: cleanUrn,
+    message: 'LinkedIn destination & author settings updated successfully.',
+    personUrn: cleanPersonUrn,
+    organizationUrn: cleanOrgUrn,
+    organizationName: orgName !== undefined ? orgName : connection.organization_name,
+    postTarget: cleanPostTarget,
   });
 }
 

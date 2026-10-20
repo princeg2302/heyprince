@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
   }
 
   const state = generateOAuthState(admin.id);
-  const authUrl = getLinkedInAuthorizationUrl(state);
+  const scopeParam = request.nextUrl.searchParams.get('scope');
+  const withOrg = request.nextUrl.searchParams.get('with_org') === 'true';
+  const customScope = scopeParam || (withOrg ? 'openid profile email w_member_social w_organization_social' : undefined);
+  const authUrl = getLinkedInAuthorizationUrl(state, customScope);
 
   // Check if client expects JSON or direct redirect
   const format = request.nextUrl.searchParams.get('format');

@@ -11,6 +11,7 @@ import {
   Loader2,
   Send,
   Link as LinkIcon,
+  Building2,
 } from 'lucide-react';
 import { PostRecord } from '@/lib/admin-db';
 import { useToast } from '@/components/admin/Toast';
@@ -28,6 +29,9 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
   const [isConfigured, setIsConfigured] = useState(false);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [personUrn, setPersonUrn] = useState<string | null>(null);
+  const [organizationUrn, setOrganizationUrn] = useState<string | null>(null);
+  const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const [target, setTarget] = useState<'personal' | 'organization' | 'both'>('personal');
   const [commentary, setCommentary] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [urnInput, setUrnInput] = useState('');
@@ -78,6 +82,11 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
         if (data.connection) {
           setProfileName(data.connection.name || 'Authorized Profile');
           setPersonUrn(data.connection.personUrn);
+          setOrganizationUrn(data.connection.organizationUrn || null);
+          setOrganizationName(data.connection.organizationName || null);
+          if (data.connection.postTarget) {
+            setTarget(data.connection.postTarget);
+          }
         }
       })
       .catch(() => {
@@ -112,6 +121,7 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
         body: JSON.stringify({
           postId: post.id,
           commentary: commentary.trim(),
+          target,
         }),
       });
 
@@ -455,6 +465,73 @@ export function LinkedInPublishModal({ post, isOpen, onClose }: LinkedInPublishM
                     <LinkIcon size={12} />
                     <span>{articleUrl}</span>
                   </div>
+                </div>
+
+                {/* Target Destination Selector */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '0.84rem',
+                      fontWeight: 600,
+                      color: '#ffffff',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    Publish Destination
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setTarget('personal')}
+                      className={`hpa-btn hpa-btn-sm ${target === 'personal' ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
+                      style={{
+                        justifyContent: 'center',
+                        background: target === 'personal' ? '#0a66c2' : undefined,
+                        borderColor: target === 'personal' ? '#0a66c2' : undefined,
+                      }}
+                    >
+                      <span>Personal Profile</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTarget('organization')}
+                      disabled={!organizationUrn}
+                      className={`hpa-btn hpa-btn-sm ${target === 'organization' ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
+                      style={{
+                        justifyContent: 'center',
+                        background: target === 'organization' ? '#0a66c2' : undefined,
+                        borderColor: target === 'organization' ? '#0a66c2' : undefined,
+                        opacity: !organizationUrn ? 0.5 : 1,
+                      }}
+                      title={!organizationUrn ? 'Configure Company Page ID in Settings first' : undefined}
+                    >
+                      <Building2 size={13} />
+                      <span>{organizationName || 'Company Page'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTarget('both')}
+                      disabled={!organizationUrn}
+                      className={`hpa-btn hpa-btn-sm ${target === 'both' ? 'hpa-btn-primary' : 'hpa-btn-secondary'}`}
+                      style={{
+                        justifyContent: 'center',
+                        background: target === 'both' ? '#0a66c2' : undefined,
+                        borderColor: target === 'both' ? '#0a66c2' : undefined,
+                        opacity: !organizationUrn ? 0.5 : 1,
+                      }}
+                      title={!organizationUrn ? 'Configure Company Page ID in Settings first' : undefined}
+                    >
+                      <span>Both (Profile + Page)</span>
+                    </button>
+                  </div>
+                  {!organizationUrn && (
+                    <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', marginTop: '6px' }}>
+                      ℹ️ To publish to your Company Page, set your Organization ID in <Link href="/admin/settings" style={{ color: 'var(--hpa-primary)', textDecoration: 'underline' }}>Settings</Link>.
+                    </div>
+                  )}
                 </div>
 
                 {/* Commentary Input */}

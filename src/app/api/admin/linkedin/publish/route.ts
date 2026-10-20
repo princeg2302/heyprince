@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       postId,
       customCommentary,
       imageUrl: body.imageUrl,
+      target: body.target,
     });
 
     if (!result.success) {

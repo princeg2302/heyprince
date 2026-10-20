@@ -15,6 +15,7 @@ import {
   Clock,
   Send,
   Loader2,
+  Building2,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 
@@ -35,6 +36,9 @@ export function LinkedInSettingsCard() {
       avatarUrl?: string;
       expiresAt: string;
       lastPublishedAt?: string;
+      organizationUrn?: string | null;
+      organizationName?: string | null;
+      postTarget?: 'personal' | 'organization' | 'both';
       scope: string;
       needsPersonUrn?: boolean;
     } | null;
@@ -48,6 +52,12 @@ export function LinkedInSettingsCard() {
   const [customUrn, setCustomUrn] = useState('');
   const [savingUrn, setSavingUrn] = useState(false);
 
+  // Company / Organization Page state
+  const [orgUrn, setOrgUrn] = useState('');
+  const [orgName, setOrgName] = useState('');
+  const [postTarget, setPostTarget] = useState<'personal' | 'organization' | 'both'>('personal');
+  const [savingSettings, setSavingSettings] = useState(false);
+
   const fetchStatus = async () => {
     setLoading(true);
     try {
@@ -55,14 +65,47 @@ export function LinkedInSettingsCard() {
       const json = await res.json();
       if (json.success) {
         setData(json);
-        if (json.connection?.personUrn) {
-          setCustomUrn(json.connection.personUrn);
+        if (json.connection) {
+          if (json.connection.personUrn) {
+            setCustomUrn(json.connection.personUrn);
+          }
+          setOrgUrn(json.connection.organizationUrn || '');
+          setOrgName(json.connection.organizationName || '');
+          setPostTarget(json.connection.postTarget || 'personal');
         }
       }
     } catch {
       showToast('Could not fetch LinkedIn status.', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const res = await fetch('/api/admin/linkedin/update-urn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personUrn: customUrn.trim(),
+          organizationUrn: orgUrn.trim(),
+          organizationName: orgName.trim(),
+          postTarget,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast('LinkedIn destination settings saved successfully!', 'success');
+        setEditingUrn(false);
+        fetchStatus();
+      } else {
+        showToast(json.error || 'Failed to update settings.', 'error');
+      }
+    } catch {
+      showToast('Network error while saving settings.', 'error');
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -405,6 +448,203 @@ export function LinkedInSettingsCard() {
                   : 'Pending Authorization'}
               </div>
             </div>
+
+            {/* Publishing Destination Target Selector */}
+            {data?.isConnected && (
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--hpa-border)',
+                  gridColumn: '1 / -1',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Share2 size={16} style={{ color: 'var(--hpa-primary)' }} />
+                    <span style={{ fontWeight: 700, color: '#ffffff' }}>Daily &amp; Manual Publishing Destination</span>
+                  </div>
+                  <span className="hpa-pill hpa-pill-published" style={{ textTransform: 'capitalize' }}>
+                    Active Target: {postTarget === 'both' ? 'Both (Profile + Page)' : postTarget === 'organization' ? 'Company Page Only' : 'Personal Profile Only'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                  {/* Option 1: Personal */}
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 14px',
+                      borderRadius: '6px',
+                      border: `1px solid ${postTarget === 'personal' ? 'var(--hpa-primary)' : 'var(--hpa-border)'}`,
+                      background: postTarget === 'personal' ? 'rgba(212, 0, 39, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="postTarget"
+                      value="personal"
+                      checked={postTarget === 'personal'}
+                      onChange={() => setPostTarget('personal')}
+                      style={{ accentColor: 'var(--hpa-primary)' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#ffffff' }}>Personal Profile Only</div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>Post to {data?.connection?.name || 'Personal Feed'}</div>
+                    </div>
+                  </label>
+
+                  {/* Option 2: Organization */}
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 14px',
+                      borderRadius: '6px',
+                      border: `1px solid ${postTarget === 'organization' ? 'var(--hpa-primary)' : 'var(--hpa-border)'}`,
+                      background: postTarget === 'organization' ? 'rgba(212, 0, 39, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="postTarget"
+                      value="organization"
+                      checked={postTarget === 'organization'}
+                      onChange={() => setPostTarget('organization')}
+                      style={{ accentColor: 'var(--hpa-primary)' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#ffffff' }}>Company Page Only</div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>Post to {orgName || 'Company Page'}</div>
+                    </div>
+                  </label>
+
+                  {/* Option 3: Both */}
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 14px',
+                      borderRadius: '6px',
+                      border: `1px solid ${postTarget === 'both' ? 'var(--hpa-primary)' : 'var(--hpa-border)'}`,
+                      background: postTarget === 'both' ? 'rgba(212, 0, 39, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="postTarget"
+                      value="both"
+                      checked={postTarget === 'both'}
+                      onChange={() => setPostTarget('both')}
+                      style={{ accentColor: 'var(--hpa-primary)' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#ffffff' }}>Both (Profile + Page)</div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>Publish simultaneously to both</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* LinkedIn Company / Organization Page Configuration */}
+            {data?.isConnected && (
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--hpa-border)',
+                  gridColumn: '1 / -1',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Building2 size={16} style={{ color: '#0a66c2' }} />
+                    <span style={{ fontWeight: 700, color: '#ffffff' }}>LinkedIn Company / Organization Page Settings</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <a
+                      href="/api/admin/linkedin/connect?with_org=true"
+                      className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                      title="Request w_organization_social scope from LinkedIn"
+                      style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                    >
+                      <RefreshCw size={12} />
+                      <span>Reconnect with Page Scope</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginBottom: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
+                      Organization ID or Numeric ID
+                    </label>
+                    <input
+                      type="text"
+                      value={orgUrn}
+                      onChange={(e) => setOrgUrn(e.target.value)}
+                      placeholder="e.g. 10482910 or urn:li:organization:10482910"
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--hpa-border)',
+                        borderRadius: '4px',
+                        padding: '8px 12px',
+                        color: '#ffffff',
+                        fontSize: '0.82rem',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--hpa-text-dim)', marginBottom: '6px' }}>
+                      Company Page Name (Display Label)
+                    </label>
+                    <input
+                      type="text"
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      placeholder="e.g. HeyPrince"
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--hpa-border)',
+                        borderRadius: '4px',
+                        padding: '8px 12px',
+                        color: '#ffffff',
+                        fontSize: '0.82rem',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--hpa-text-dim)', maxWidth: '620px', lineHeight: 1.4 }}>
+                    💡 <strong>Where to find Page ID:</strong> Go to your LinkedIn Page Admin URL (e.g. <code>https://www.linkedin.com/company/<strong>12345678</strong>/admin/</code>). The number is your Organization ID.
+                  </div>
+
+                  <button
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    className="hpa-btn hpa-btn-primary hpa-btn-sm"
+                    style={{ padding: '6px 16px' }}
+                  >
+                    {savingSettings ? <Loader2 size={13} className="hpa-spin" /> : <Save size={13} />}
+                    <span>{savingSettings ? 'Saving Settings...' : 'Save LinkedIn Destination Settings'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Registered Callback URL */}
             <div

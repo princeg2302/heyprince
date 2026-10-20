@@ -45,6 +45,9 @@ export async function GET(request: NextRequest) {
           avatarUrl: connection.avatar_url,
           expiresAt: connection.expires_at,
           lastPublishedAt: connection.last_published_at,
+          organizationUrn: connection.organization_urn || null,
+          organizationName: connection.organization_name || null,
+          postTarget: connection.post_target || 'personal',
           scope: connection.scope,
           needsPersonUrn: connection.person_urn === 'urn:li:person:UNKNOWN',
         }
