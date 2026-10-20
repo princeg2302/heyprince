@@ -4,6 +4,7 @@ import {
   hashAnswer,
   hashClientIp,
   hashToken,
+  safeCompare,
   signChallengeToken,
   verifyChallengeToken,
   signProofToken,
@@ -266,10 +267,29 @@ export async function verifyCaptchaChallenge(options: VerifyChallengeOptions): P
     };
   }
 
-  // 7. Compute User Answer Hash
+  // 7. Compute User Answer Hash and Validate Cryptographically
   const submittedAnswerHash = hashAnswer(options.answer);
+  const isAnswerValid = safeCompare(submittedAnswerHash, payload.ans);
 
-  // 8. Atomic Consumption via Stored Procedure
+  if (!isAnswerValid) {
+    // Register failed attempt in DB to track brute-force and decrement attempts
+    const dbResult = await consumeChallengeInDb(
+      options.challengeId,
+      submittedAnswerHash,
+      ipHash,
+      purpose,
+      siteKey
+    );
+
+    return {
+      success: false,
+      error: 'Incorrect answer. Please try again.',
+      code: 'INCORRECT_ANSWER',
+      attemptsLeft: dbResult?.attemptsLeft,
+    };
+  }
+
+  // 8. Atomic Consumption via Stored Procedure in Database
   const dbResult = await consumeChallengeInDb(
     options.challengeId,
     submittedAnswerHash,
@@ -279,19 +299,18 @@ export async function verifyCaptchaChallenge(options: VerifyChallengeOptions): P
   );
 
   if (!dbResult.success) {
-    if (dbResult.reason === 'incorrect_answer') {
-      return {
-        success: false,
-        error: 'Incorrect answer. Please try again.',
-        code: 'INCORRECT_ANSWER',
-        attemptsLeft: dbResult.attemptsLeft,
-      };
-    }
     if (dbResult.reason === 'already_consumed') {
       return {
         success: false,
         error: 'Challenge has already been consumed. Please request a new challenge.',
         code: 'CHALLENGE_ALREADY_USED',
+      };
+    }
+    if (dbResult.reason === 'expired') {
+      return {
+        success: false,
+        error: 'Challenge has expired. Please refresh the security check.',
+        code: 'CHALLENGE_EXPIRED',
       };
     }
     if (dbResult.reason === 'too_many_attempts') {
@@ -301,11 +320,24 @@ export async function verifyCaptchaChallenge(options: VerifyChallengeOptions): P
         code: 'TOO_MANY_ATTEMPTS',
       };
     }
-    return {
-      success: false,
-      error: `Challenge verification failed (${dbResult.reason || 'invalid'}).`,
-      code: 'VERIFICATION_FAILED',
-    };
+    if (dbResult.reason === 'incorrect_answer') {
+      return {
+        success: false,
+        error: 'Incorrect answer. Please try again.',
+        code: 'INCORRECT_ANSWER',
+        attemptsLeft: dbResult.attemptsLeft,
+      };
+    }
+    // If database connection is degraded, but cryptographic HMAC signature & answer hash match 100%:
+    if (dbResult.reason === 'database_error') {
+      console.warn('[Captcha Service] Database query degraded; accepted cryptographically verified answer');
+    } else {
+      return {
+        success: false,
+        error: `Challenge verification failed (${dbResult.reason || 'invalid'}).`,
+        code: 'VERIFICATION_FAILED',
+      };
+    }
   }
 
   // 9. Generate Signed Verification Proof Token (Valid for 5 minutes)

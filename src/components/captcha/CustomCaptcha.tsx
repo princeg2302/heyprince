@@ -129,10 +129,10 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
     }, [fetchChallenge]);
 
     // Handle verification submission
-    const handleVerify = async (e?: React.SyntheticEvent) => {
+    const handleVerify = async (e?: React.SyntheticEvent | any) => {
       if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
       }
       if (!challenge || !userAnswer.trim() || isVerifying || isVerified) return;
 
@@ -374,6 +374,11 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
                   {/* Answer Input */}
                   <input
                     type="text"
+                    name="captcha_answer"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     inputMode="text"
                     placeholder="Answer"
                     aria-label="Your answer to security question"
@@ -386,7 +391,7 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleVerify();
+                        handleVerify(e);
                       }
                     }}
                     disabled={isVerifying}

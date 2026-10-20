@@ -112,11 +112,10 @@ AS $$
 DECLARE
   v_rec RECORD;
 BEGIN
-  -- Lock the row atomically to prevent race condition replay
+  -- Read row without FOR UPDATE lock to maintain compatibility with connection poolers
   SELECT * INTO v_rec
   FROM captcha_challenges
-  WHERE id = p_challenge_id
-  FOR UPDATE;
+  WHERE id = p_challenge_id;
 
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'reason', 'challenge_not_found');
@@ -140,11 +139,16 @@ BEGIN
 
   -- Verify answer hash
   IF v_rec.answer_hash = p_answer_hash THEN
-    -- Mark as consumed atomically
+    -- Mark as consumed atomically only if still unconsumed
     UPDATE captcha_challenges
     SET consumed_at = NOW(),
         attempts = attempts + 1
-    WHERE id = p_challenge_id;
+    WHERE id = p_challenge_id
+      AND consumed_at IS NULL;
+
+    IF NOT FOUND THEN
+      RETURN jsonb_build_object('success', false, 'reason', 'already_consumed');
+    END IF;
 
     RETURN jsonb_build_object(
       'success', true,
@@ -180,11 +184,10 @@ AS $$
 DECLARE
   v_rec RECORD;
 BEGIN
-  -- Lock row atomically to enforce strictly one-time execution
+  -- Read row without FOR UPDATE lock to maintain compatibility with connection poolers
   SELECT * INTO v_rec
   FROM captcha_proofs
-  WHERE proof_token_hash = p_proof_token_hash
-  FOR UPDATE;
+  WHERE proof_token_hash = p_proof_token_hash;
 
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'reason', 'proof_not_found');
@@ -202,10 +205,15 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'reason', 'purpose_or_site_mismatch');
   END IF;
 
-  -- Mark proof consumed atomically
+  -- Mark proof consumed atomically only if still unconsumed
   UPDATE captcha_proofs
   SET consumed_at = NOW()
-  WHERE id = v_rec.id;
+  WHERE id = v_rec.id
+    AND consumed_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'already_consumed');
+  END IF;
 
   RETURN jsonb_build_object(
     'success', true,
@@ -232,12 +240,13 @@ DECLARE
 BEGIN
   SELECT * INTO v_rec
   FROM captcha_rate_limits
-  WHERE key = p_key
-  FOR UPDATE;
+  WHERE key = p_key;
 
   IF NOT FOUND THEN
     INSERT INTO captcha_rate_limits (key, count, reset_at)
-    VALUES (p_key, 1, v_now + (p_window_seconds || ' seconds')::INTERVAL);
+    VALUES (p_key, 1, v_now + (p_window_seconds || ' seconds')::INTERVAL)
+    ON CONFLICT (key) DO UPDATE
+    SET count = captcha_rate_limits.count + 1;
     RETURN TRUE;
   END IF;
 
@@ -260,7 +269,97 @@ BEGIN
 END;
 $$;
 
--- 9. Automatic Cleanup Routine
+-- 9. Helper RPC: Create Challenge (Works over Supabase HTTPS REST)
+CREATE OR REPLACE FUNCTION create_captcha_challenge(
+  p_id UUID,
+  p_site_key VARCHAR,
+  p_purpose VARCHAR,
+  p_challenge_type VARCHAR,
+  p_question VARCHAR,
+  p_answer_hash VARCHAR,
+  p_client_ip_hash VARCHAR,
+  p_difficulty VARCHAR,
+  p_expires_at TIMESTAMPTZ
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO captcha_challenges (
+    id, site_key, purpose, challenge_type, question,
+    answer_hash, client_ip_hash, difficulty, expires_at
+  ) VALUES (
+    p_id, p_site_key, p_purpose, p_challenge_type, p_question,
+    p_answer_hash, p_client_ip_hash, p_difficulty, p_expires_at
+  );
+
+  RETURN jsonb_build_object('success', true, 'id', p_id);
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object('success', false, 'error', SQLERRM);
+END;
+$$;
+
+-- 10. Helper RPC: Create Proof (Works over Supabase HTTPS REST)
+CREATE OR REPLACE FUNCTION create_captcha_proof(
+  p_id UUID,
+  p_proof_token_hash VARCHAR,
+  p_site_key VARCHAR,
+  p_purpose VARCHAR,
+  p_client_ip_hash VARCHAR,
+  p_expires_at TIMESTAMPTZ
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO captcha_proofs (
+    id, proof_token_hash, site_key, purpose, client_ip_hash, expires_at
+  ) VALUES (
+    p_id, p_proof_token_hash, p_site_key, p_purpose, p_client_ip_hash, p_expires_at
+  );
+
+  RETURN jsonb_build_object('success', true, 'id', p_id);
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object('success', false, 'error', SQLERRM);
+END;
+$$;
+
+-- 11. Helper RPC: Get Site Info (Works over Supabase HTTPS REST)
+CREATE OR REPLACE FUNCTION get_captcha_site_info(p_site_key VARCHAR)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rec RECORD;
+BEGIN
+  SELECT * INTO v_rec
+  FROM captcha_sites
+  WHERE site_key = p_site_key AND is_active = TRUE
+  LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'site_key', v_rec.site_key,
+    'name', v_rec.name,
+    'allowed_origins', v_rec.allowed_origins,
+    'is_active', v_rec.is_active,
+    'max_challenges_per_minute', v_rec.max_challenges_per_minute,
+    'challenge_ttl_seconds', v_rec.challenge_ttl_seconds,
+    'proof_ttl_seconds', v_rec.proof_ttl_seconds
+  );
+END;
+$$;
+
+-- 12. Automatic Cleanup Routine
 CREATE OR REPLACE FUNCTION cleanup_expired_captcha_records()
 RETURNS VOID
 LANGUAGE plpgsql

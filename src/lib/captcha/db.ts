@@ -1,6 +1,20 @@
 import pg from 'pg';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let pool: pg.Pool | null = null;
+let supabaseClient: SupabaseClient | null = null;
+
+export function getCaptchaSupabaseClient(): SupabaseClient {
+  if (!supabaseClient) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
+    const key =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
+    supabaseClient = createClient(url, key);
+  }
+  return supabaseClient;
+}
 
 export function getCaptchaDbPool(): pg.Pool {
   if (!pool) {
@@ -57,6 +71,19 @@ export async function getCaptchaSite(siteKey: string): Promise<CaptchaSiteRecord
     return cached.site;
   }
 
+  // 1. Try Supabase HTTPS RPC
+  try {
+    const sb = getCaptchaSupabaseClient();
+    const { data, error } = await sb.rpc('get_captcha_site_info', { p_site_key: siteKey });
+    if (!error && data) {
+      siteCache.set(siteKey, { site: data as CaptchaSiteRecord, expiresAt: Date.now() + 60000 });
+      return data as CaptchaSiteRecord;
+    }
+  } catch (err) {
+    // Ignore and fallback
+  }
+
+  // 2. Direct query fallback
   try {
     const rows = await queryCaptcha<CaptchaSiteRecord>(
       `SELECT * FROM captcha_sites WHERE site_key = $1 AND is_active = TRUE LIMIT 1;`,
@@ -101,6 +128,29 @@ export async function insertChallengeRecord(record: {
   difficulty: string;
   expiresAt: Date;
 }): Promise<boolean> {
+  // 1. Try Supabase HTTPS RPC
+  try {
+    const sb = getCaptchaSupabaseClient();
+    const { data, error } = await sb.rpc('create_captcha_challenge', {
+      p_id: record.id,
+      p_site_key: record.siteKey,
+      p_purpose: record.purpose,
+      p_challenge_type: record.challengeType,
+      p_question: record.question,
+      p_answer_hash: record.answerHash,
+      p_client_ip_hash: record.clientIpHash,
+      p_difficulty: record.difficulty,
+      p_expires_at: record.expiresAt.toISOString(),
+    });
+
+    if (!error && data?.success) {
+      return true;
+    }
+  } catch (err) {
+    // Fall back to direct query
+  }
+
+  // 2. Direct query fallback
   try {
     await queryCaptcha(
       `INSERT INTO captcha_challenges (
@@ -135,6 +185,29 @@ export async function consumeChallengeInDb(
   purpose: string,
   siteKey: string
 ): Promise<{ success: boolean; reason?: string; attemptsLeft?: number }> {
+  // 1. Try Supabase HTTPS RPC
+  try {
+    const sb = getCaptchaSupabaseClient();
+    const { data, error } = await sb.rpc('consume_captcha_challenge', {
+      p_challenge_id: challengeId,
+      p_answer_hash: answerHash,
+      p_client_ip_hash: clientIpHash,
+      p_purpose: purpose,
+      p_site_key: siteKey,
+    });
+
+    if (!error && data && typeof data === 'object') {
+      return {
+        success: Boolean(data.success),
+        reason: data.reason,
+        attemptsLeft: data.attempts_left,
+      };
+    }
+  } catch (err) {
+    console.warn('[Captcha DB] Supabase RPC consumeChallenge error, trying pooler fallback:', err);
+  }
+
+  // 2. Direct query fallback
   try {
     const rows = await queryCaptcha<{ consume_captcha_challenge: any }>(
       `SELECT consume_captcha_challenge($1::UUID, $2, $3, $4, $5);`,
@@ -168,6 +241,26 @@ export async function insertProofRecord(record: {
   clientIpHash: string;
   expiresAt: Date;
 }): Promise<boolean> {
+  // 1. Try Supabase HTTPS RPC
+  try {
+    const sb = getCaptchaSupabaseClient();
+    const { data, error } = await sb.rpc('create_captcha_proof', {
+      p_id: record.id,
+      p_proof_token_hash: record.proofTokenHash,
+      p_site_key: record.siteKey,
+      p_purpose: record.purpose,
+      p_client_ip_hash: record.clientIpHash,
+      p_expires_at: record.expiresAt.toISOString(),
+    });
+
+    if (!error && data?.success) {
+      return true;
+    }
+  } catch (err) {
+    // Fall back to direct query
+  }
+
+  // 2. Direct query fallback
   try {
     await queryCaptcha(
       `INSERT INTO captcha_proofs (
@@ -197,6 +290,26 @@ export async function consumeProofInDb(
   purpose: string,
   siteKey: string
 ): Promise<{ success: boolean; reason?: string }> {
+  // 1. Try Supabase HTTPS RPC
+  try {
+    const sb = getCaptchaSupabaseClient();
+    const { data, error } = await sb.rpc('consume_captcha_proof', {
+      p_proof_token_hash: proofTokenHash,
+      p_purpose: purpose,
+      p_site_key: siteKey,
+    });
+
+    if (!error && data && typeof data === 'object') {
+      return {
+        success: Boolean(data.success),
+        reason: data.reason,
+      };
+    }
+  } catch (err) {
+    console.warn('[Captcha DB] Supabase RPC consumeProof error, trying pooler fallback:', err);
+  }
+
+  // 2. Direct query fallback
   try {
     const rows = await queryCaptcha<{ consume_captcha_proof: any }>(
       `SELECT consume_captcha_proof($1, $2, $3);`,
@@ -226,6 +339,23 @@ export async function checkRateLimit(
   maxRequests: number,
   windowSeconds: number
 ): Promise<boolean> {
+  // 1. Try Supabase HTTPS RPC
+  try {
+    const sb = getCaptchaSupabaseClient();
+    const { data, error } = await sb.rpc('check_captcha_rate_limit', {
+      p_key: key,
+      p_max_requests: maxRequests,
+      p_window_seconds: windowSeconds,
+    });
+
+    if (!error && typeof data === 'boolean') {
+      return data;
+    }
+  } catch (err) {
+    // Fall back to direct query
+  }
+
+  // 2. Direct query fallback
   try {
     const rows = await queryCaptcha<{ check_captcha_rate_limit: boolean }>(
       `SELECT check_captcha_rate_limit($1, $2, $3);`,
@@ -238,4 +368,3 @@ export async function checkRateLimit(
     return true;
   }
 }
-

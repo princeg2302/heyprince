@@ -99,6 +99,13 @@ export async function verifyAndConsumeProof(
         code: 'PROOF_EXPIRED',
       };
     }
+    if (dbResult.reason === 'database_error') {
+      console.warn('[Captcha Verifier] Database query degraded; verified via valid HMAC cryptographic proof');
+      return {
+        success: true,
+        proofId: payload.pid,
+      };
+    }
     return {
       success: false,
       error: `Security proof verification failed (${dbResult.reason || 'unknown'}).`,
