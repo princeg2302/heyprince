@@ -23,7 +23,11 @@ async function handleCronTrigger(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const customHeader = request.headers.get('x-cron-secret');
 
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+  const userAgent = request.headers.get('user-agent') || '';
+  const isVercelCron =
+    request.headers.get('x-vercel-cron') === '1' ||
+    request.headers.has('x-vercel-cron-schedule') ||
+    userAgent.toLowerCase().includes('vercel-cron');
 
   if (cronSecret) {
     const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
