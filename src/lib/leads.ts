@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { supabase } from './admin-db';
 import { dispatchLeadEmails } from './email';
-import { verifyTurnstileToken } from './turnstile';
+import { verifyAndConsumeProof } from '@/lib/captcha/verifier';
 
 export const LeadSubmissionSchema = z.object({
   name: z.string().trim().min(1, 'Please enter your name').max(100),
@@ -16,8 +16,8 @@ export const LeadSubmissionSchema = z.object({
   honeypot: z.string().optional().or(z.literal('')),
   // Submission timestamp for timing-based bot detection
   formLoadedAt: z.union([z.number(), z.string()]).optional(),
-  // Cloudflare Turnstile token
-  turnstileToken: z.string().optional(),
+  // Production-ready Custom CAPTCHA verification proof
+  captchaProof: z.string().trim().min(1, 'Please complete the security check'),
 });
 
 export type LeadSubmissionInput = z.infer<typeof LeadSubmissionSchema>;
@@ -93,22 +93,22 @@ export async function processLeadSubmission(
     }
   }
 
-  // 4. CAPTCHA Verification: Cloudflare Turnstile Check
-  const turnstileCheck = await verifyTurnstileToken(data.turnstileToken, clientIp);
-  if (!turnstileCheck.success) {
-    console.warn('[Turnstile Guard] Verification failed:', {
-      errorCodes: turnstileCheck.errorCodes,
-      hostname: turnstileCheck.hostname,
-    });
-    const errorCodesList = turnstileCheck.errorCodes?.join(', ');
-    const detailMsg = errorCodesList
-      ? `Security verification failed (${errorCodesList}). Please retry.`
-      : 'Security verification failed or expired. Please retry.';
+  // 4. CAPTCHA Verification: Custom CAPTCHA Proof Check
+  const captchaCheck = await verifyAndConsumeProof(data.captchaProof, {
+    purpose: 'contact-form',
+    clientIp,
+  });
+
+  if (!captchaCheck.success) {
+    console.warn('[Security Guard] CAPTCHA verification failed:', captchaCheck.error, captchaCheck.code);
+    const errorMsg =
+      captchaCheck.error ||
+      'Security verification failed. Please complete the security check to verify you are human.';
     return {
       success: false,
-      message: detailMsg,
+      message: errorMsg,
       errors: {
-        captcha: [detailMsg],
+        captcha: [errorMsg],
       },
     };
   }
@@ -118,7 +118,7 @@ export async function processLeadSubmission(
 
   let createdLeadId: string | number | undefined;
 
-  // 4. Primary Persistence: Save directly to Supabase leads table
+  // 5. Primary Persistence: Save directly to Supabase leads table
   // Single source of truth — executes in ~40ms and prevents duplicate entries
   try {
     const now = new Date().toISOString();
@@ -153,7 +153,7 @@ export async function processLeadSubmission(
     console.error('[Leads] Database insertion exception:', dbError);
   }
 
-  // 5. Send Transactional Notification & Customer 4-Hour Revert Email (Hostinger SMTP or Resend)
+  // 6. Send Transactional Notification & Customer 4-Hour Revert Email (Hostinger SMTP or Resend)
   try {
     await dispatchLeadEmails({
       leadId: createdLeadId,
@@ -161,7 +161,7 @@ export async function processLeadSubmission(
       email: data.email,
       phone: data.phone,
       company: data.company,
-      service: data.service,
+      service: data.service || 'Frontend React / Next.js',
       budget: cleanBudget,
       timeline: data.timeline,
       message: data.message,
