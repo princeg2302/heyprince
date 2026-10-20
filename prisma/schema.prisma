@@ -379,7 +379,7 @@ model OutreachSettings {
   requireManualReview         Boolean  @default(true) @map("require_manual_review")
   companyName                 String   @default("HeyPrince") @map("company_name")
   physicalAddress             String   @default("Kolkata, West Bengal, India") @map("physical_address")
-  contactEmail                String   @default("it@heyprince.in") @map("contact_email")
+  contactEmail                String   @default("contact@heyprince.in") @map("contact_email")
   updatedAt                   DateTime @updatedAt @map("updated_at")
 
   @@map("outreach_settings")

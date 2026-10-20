@@ -105,7 +105,7 @@ const jsonLdData = {
       jobTitle: 'Senior Full Stack Engineer & IT Consultant',
       url: 'https://heyprince.in/',
       image: 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
-      email: 'it@heyprince.in',
+      email: 'contact@heyprince.in',
       sameAs: [
         'https://www.linkedin.com/in/mr-goyal/',
         'https://www.instagram.com/heyprince.in/',
@@ -144,7 +144,7 @@ const jsonLdData = {
       '@id': 'https://heyprince.in/#service',
       name: 'Prince IT Consulting & Web Engineering',
       url: 'https://heyprince.in/',
-      email: 'it@heyprince.in',
+      email: 'contact@heyprince.in',
       telephone: '+919120900010',
       priceRange: '$$$$',
       areaServed: ['Global Remote', 'India', 'United States', 'Europe', 'Australia'],

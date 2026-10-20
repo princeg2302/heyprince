@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     hasSmtpPass: Boolean(smtpPass),
     smtpPassLength: smtpPass ? smtpPass.length : 0,
     hasNotificationEmail: Boolean(cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL)),
-    leadNotificationEmail: cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || 'it@heyprince.in',
+    leadNotificationEmail: cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || 'contact@heyprince.in',
     nodeEnv: process.env.NODE_ENV,
     vercelEnv: process.env.VERCEL_ENV || 'local-or-unspecified',
   };

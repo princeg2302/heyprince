@@ -496,7 +496,7 @@ System status: ALL SERVICES OPERATIONAL [OK]`,
           text: `PRINCE — Senior IT Consultant & Full Stack Web Engineer
   Location: Remote / Global (India origin)
   Specialty: Building high-conversion, speed-optimized digital platforms
-  Contact: it@heyprince.in | WhatsApp active`,
+  Contact: contact@heyprince.in | WhatsApp active`,
         });
         break;
 
@@ -523,7 +523,7 @@ System status: ALL SERVICES OPERATIONAL [OK]`,
       case 'contact':
         newLogs.push({
           type: 'output',
-          text: `Direct WhatsApp gateway: https://wa.me/ | Email: it@heyprince.in
+          text: `Direct WhatsApp gateway: https://wa.me/ | Email: contact@heyprince.in
 Opening inquiry form...`,
         });
         window.location.hash = '#contact';

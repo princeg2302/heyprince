@@ -66,7 +66,7 @@ export class OpenStreetMapDiscoveryAdapter implements DiscoveryProvider {
 
         const nomRes = await fetch(nominatimUrl, {
           headers: {
-            'User-Agent': 'HeyPrince-LeadDiscovery/1.0 (it@heyprince.in)',
+            'User-Agent': 'HeyPrince-LeadDiscovery/1.0 (contact@heyprince.in)',
             Accept: 'application/json',
           },
           signal: AbortSignal.timeout(8000),
@@ -179,7 +179,7 @@ export class OpenStreetMapDiscoveryAdapter implements DiscoveryProvider {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'HeyPrince-LeadDiscovery/1.0 (it@heyprince.in)',
+            'User-Agent': 'HeyPrince-LeadDiscovery/1.0 (contact@heyprince.in)',
           },
           body: `data=${encodeURIComponent(overpassQuery)}`,
           signal: AbortSignal.timeout(8000),

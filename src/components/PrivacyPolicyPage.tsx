@@ -155,7 +155,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
                 This Privacy Policy explains how <strong>Prince</strong> (&quot;HeyPrince&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), operating via <strong>heyprince.in</strong>, collects, processes, stores, and protects personal information when you visit our website, use our interactive tools, or engage our senior IT consulting and full-stack software development services.
               </p>
               <p>
-                By accessing or using <strong>heyprince.in</strong>, you acknowledge that you have read and understood the practices described in this policy. If you have questions, you may contact us anytime at <a href="mailto:it@heyprince.in" className="privacy-link">it@heyprince.in</a>.
+                By accessing or using <strong>heyprince.in</strong>, you acknowledge that you have read and understood the practices described in this policy. If you have questions, you may contact us anytime at <a href="mailto:contact@heyprince.in" className="privacy-link">contact@heyprince.in</a>.
               </p>
             </section>
 
@@ -271,7 +271,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
                 <li><strong>Right to Restrict or Object:</strong> Object to specific data processing activities or withdraw previously given consent.</li>
               </ul>
               <p>
-                To exercise any of these rights, contact us at <a href="mailto:it@heyprince.in" className="privacy-link">it@heyprince.in</a>. We respond to all verified requests within 30 days.
+                To exercise any of these rights, contact us at <a href="mailto:contact@heyprince.in" className="privacy-link">contact@heyprince.in</a>. We respond to all verified requests within 30 days.
               </p>
             </section>
 
@@ -284,7 +284,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({
 
               <div className="contact-card-inline">
                 <h4>Prince — HeyPrince IT Consulting</h4>
-                <p>Email: <a href="mailto:it@heyprince.in" className="privacy-link">it@heyprince.in</a></p>
+                <p>Email: <a href="mailto:contact@heyprince.in" className="privacy-link">contact@heyprince.in</a></p>
                 <p>Website: <a href="https://heyprince.in" className="privacy-link">heyprince.in</a></p>
                 <div className="privacy-contact-actions">
                   <button

@@ -142,7 +142,7 @@ export function buildOutreachEmailHtml(params: OutreachEmailTemplateParams): str
                     <div style="font-size: 12px; color: #71717a; line-height: 1.3;">
                       <a href="https://heyprince.in" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600;">heyprince.in</a>
                       <span style="color: #3f3f46; margin: 0 6px;">•</span>
-                      <a href="mailto:it@heyprince.in" style="color: #a1a1aa; text-decoration: none;">it@heyprince.in</a>
+                      <a href="mailto:contact@heyprince.in" style="color: #a1a1aa; text-decoration: none;">contact@heyprince.in</a>
                     </div>
                   </td>
                 </tr>

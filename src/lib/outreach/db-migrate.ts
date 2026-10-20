@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS outreach_settings (
   require_manual_review BOOLEAN NOT NULL DEFAULT TRUE,
   company_name VARCHAR(255) NOT NULL DEFAULT 'HeyPrince',
   physical_address TEXT NOT NULL DEFAULT 'Kolkata, West Bengal, India',
-  contact_email VARCHAR(255) NOT NULL DEFAULT 'it@heyprince.in',
+  contact_email VARCHAR(255) NOT NULL DEFAULT 'contact@heyprince.in',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -310,7 +310,7 @@ INSERT INTO outreach_settings (
 )
 VALUES (
   'default_settings', TRUE, TRUE, 10, 1, 30, 
-  'deterministic', 'openstreetmap', TRUE, 'HeyPrince', 'Kolkata, West Bengal, India', 'it@heyprince.in'
+  'deterministic', 'openstreetmap', TRUE, 'HeyPrince', 'Kolkata, West Bengal, India', 'contact@heyprince.in'
 )
 ON CONFLICT (id) DO NOTHING;
 `;

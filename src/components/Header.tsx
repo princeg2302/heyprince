@@ -303,8 +303,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                       <div className="col-lg-4">
                         <div className="header-get-in-touch">
                           <h2>Get In Touch</h2>
-                          <a href="mailto:it@heyprince.in" className="header-contact-link email-link">
-                            it@heyprince.in
+                          <a href="mailto:contact@heyprince.in" className="header-contact-link email-link">
+                            contact@heyprince.in
                           </a>
                           <a href="tel:+919120900010" className="header-contact-link phone-link">
                             <span className="phone-prefix">+</span>91 9120900010

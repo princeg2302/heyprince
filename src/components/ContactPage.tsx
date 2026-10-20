@@ -108,7 +108,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
 
   const handleCopyEmail = () => {
     if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText('it@heyprince.in');
+      navigator.clipboard.writeText('contact@heyprince.in');
       setCopiedEmail(true);
       setTimeout(() => setCopiedEmail(false), 2000);
     }
@@ -525,8 +525,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
               </div>
 
               <div className="hub-action-row">
-                <a href="mailto:it@heyprince.in" className="hub-direct-link">
-                  it@heyprince.in
+                <a href="mailto:contact@heyprince.in" className="hub-direct-link">
+                  contact@heyprince.in
                 </a>
                 <button
                   type="button"

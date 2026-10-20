@@ -92,7 +92,7 @@ Best regards,
 
 Prince
 Principal Engineer & Founder, HeyPrince
-https://heyprince.in | it@heyprince.in
+https://heyprince.in | contact@heyprince.in
 
 --
 To stop receiving updates, unsubscribe here:

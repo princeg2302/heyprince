@@ -68,8 +68,8 @@ export const Footer: React.FC<FooterProps> = ({
           <h2>
             Caffeine + Code = <span className="text-red">Catch up?</span>
           </h2>
-          <a href="mailto:it@heyprince.in" className="footer-mailto">
-            it@heyprince.in
+          <a href="mailto:contact@heyprince.in" className="footer-mailto">
+            contact@heyprince.in
           </a>
           <div className="footer-row justify-content-end row">
             <div className="col-md-8">

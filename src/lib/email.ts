@@ -40,7 +40,7 @@ function cleanPhoneForWhatsApp(phone?: string): string | null {
 export const BRAND_LOGO_URL = 'https://heyprince.in/assets/heyprince-logo.png';
 
 /**
- * Builds the ultra-premium dark theme notification email sent to it@heyprince.in
+ * Builds the ultra-premium dark theme notification email sent to contact@heyprince.in
  */
 export function buildAdminNotificationHtml(
   params: SendLeadEmailParams,
@@ -438,7 +438,7 @@ export function buildCustomerRevertHtml(
                       Senior Full Stack Engineer &amp; Tech Partner
                     </span>
                     <span style="color: #76768e; font-size: 12px; display: block; margin-top: 4px;">
-                      <a href="https://heyprince.in" style="color: #ff3366; font-weight: 600;">heyprince.in</a> • <a href="mailto:it@heyprince.in" style="color: #76768e;">it@heyprince.in</a>
+                      <a href="https://heyprince.in" style="color: #ff3366; font-weight: 600;">heyprince.in</a> • <a href="mailto:contact@heyprince.in" style="color: #76768e;">contact@heyprince.in</a>
                     </span>
                   </td>
                 </tr>
@@ -500,18 +500,18 @@ Best regards,
 Prince
 Senior Full Stack Engineer & Tech Partner
 HeyPrince • https://heyprince.in
-contact@heyprince.in | it@heyprince.in`;
+contact@heyprince.in`;
 }
 
 /**
- * Sends the internal notification email to it@heyprince.in
+ * Sends the internal notification email to contact@heyprince.in
  */
 export async function sendLeadNotificationEmail(params: SendLeadEmailParams): Promise<{
   success: boolean;
   messageId?: string;
   error?: string;
 }> {
-  const recipient = cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || 'it@heyprince.in';
+  const recipient = cleanEnv(process.env.LEAD_NOTIFICATION_EMAIL) || 'contact@heyprince.in';
   const fromEmail = cleanEnv(process.env.RESEND_FROM_EMAIL) || cleanEnv(process.env.SMTP_FROM) || 'HeyPrince Inquiries <onboarding@resend.dev>';
   const subject = `⚡ New Project Inquiry: [${params.service}] from ${params.name}`;
 

@@ -14,12 +14,12 @@ export async function runSeed() {
   });
 
   if (existingUsers.totalDocs === 0) {
-    console.log('👤 [Seed] Creating initial admin user (it@heyprince.in)...');
+    console.log('👤 [Seed] Creating initial admin user (contact@heyprince.in)...');
     await payload.create({
       collection: 'users',
       data: {
         name: 'Prince',
-        email: 'it@heyprince.in',
+        email: 'contact@heyprince.in',
         password: process.env.PAYLOAD_ADMIN_PASSWORD || 'HeyPrinceAdmin2026!',
         role: 'admin',
       },

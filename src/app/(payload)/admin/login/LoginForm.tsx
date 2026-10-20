@@ -171,7 +171,7 @@ export default function LoginForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. it@heyprince.in"
+              placeholder="e.g. contact@heyprince.in"
               autoComplete="email"
               required
               className="hpa-form-input"
@@ -334,7 +334,7 @@ export default function LoginForm() {
             >
               Default administrator seed account:
               <br />
-              <strong style={{ color: '#ffffff' }}>it@heyprince.in</strong>
+              <strong style={{ color: '#ffffff' }}>contact@heyprince.in</strong>
               <br />
               <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.45)' }}>
                 Configured via PAYLOAD_ADMIN_PASSWORD environment secret.

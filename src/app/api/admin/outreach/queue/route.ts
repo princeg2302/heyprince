@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
         ai_analysis_id: aiAnalysisId || null,
         recipient_email: contact.email,
         recipient_name: contact.name,
-        sender_email: 'it@heyprince.in',
+        sender_email: 'contact@heyprince.in',
         sender_name: 'Prince • HeyPrince',
         subject,
         body_html:

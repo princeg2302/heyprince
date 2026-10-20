@@ -135,7 +135,7 @@ export function updatePageSeo(options: PageSeoOptions): void {
           jobTitle: 'Senior Full Stack Engineer & IT Consultant',
           url: 'https://heyprince.in/',
           image: DEFAULT_IMAGE,
-          email: 'it@heyprince.in',
+          email: 'contact@heyprince.in',
           sameAs: [
             'https://www.linkedin.com/in/mr-goyal/',
             'https://www.instagram.com/heyprince.in/',
@@ -167,7 +167,7 @@ export function updatePageSeo(options: PageSeoOptions): void {
           '@id': 'https://heyprince.in/#service',
           name: 'Prince IT Consulting & Web Engineering',
           url: 'https://heyprince.in/',
-          email: 'it@heyprince.in',
+          email: 'contact@heyprince.in',
           priceRange: '$$$$',
           areaServed: ['Global Remote', 'India', 'United States', 'Europe'],
           founder: {
