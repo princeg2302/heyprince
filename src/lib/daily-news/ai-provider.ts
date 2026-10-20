@@ -20,7 +20,7 @@ export function getAIProviderConfig(): AIProviderConfig {
   if (geminiKey) {
     return {
       provider: 'gemini',
-      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gemini-3.8-flash',
+      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gemini-3.5-flash',
       apiKey: geminiKey,
     };
   }
@@ -43,7 +43,7 @@ export function getAIProviderConfig(): AIProviderConfig {
 
   return {
     provider: 'gemini',
-    model: 'gemini-3.8-flash',
+    model: 'gemini-3.5-flash',
     apiKey: undefined,
   };
 }
@@ -67,8 +67,8 @@ export async function callAIModel(
   }
 
   let modelName = preferredModel || config.model;
-  if (modelName === 'gemini-2.5-flash') {
-    modelName = 'gemini-3.8-flash';
+  if (modelName === 'gemini-2.5-flash' || modelName === 'gemini-3.8-flash' || !modelName) {
+    modelName = 'gemini-3.5-flash';
   }
 
   // 1. Google Gemini Provider
@@ -76,10 +76,11 @@ export async function callAIModel(
     const candidateModels = Array.from(
       new Set([
         modelName,
-        'gemini-3.8-flash',
+        'gemini-3.5-flash-lite',
         'gemini-3.5-flash',
-        'gemini-flash-latest',
         'gemini-3-flash-preview',
+        'gemini-3.6-flash',
+        'gemini-3.7-flash',
       ])
     );
 
@@ -102,12 +103,9 @@ export async function callAIModel(
               responseMimeType: 'application/json',
               temperature: 0.3,
               maxOutputTokens: 8192,
-              thinkingConfig: {
-                thinkingLevel: 'low',
-              },
             },
           }),
-          signal: AbortSignal.timeout(45000),
+          signal: AbortSignal.timeout(9000),
         });
 
         if (!res.ok) {

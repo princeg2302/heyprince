@@ -220,6 +220,11 @@ export default function NewsAutomationClient() {
             customTopic: customTopicPrompt.trim(),
           }),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          showToast(errData?.error || `Server responded with ${res.status}: ${res.statusText}`, 'error');
+          return;
+        }
         const data = await res.json();
         if (data.success && data.generatedContent) {
           setPreviewData(data.generatedContent);
@@ -229,8 +234,9 @@ export default function NewsAutomationClient() {
         } else {
           showToast(`Preview failed: ${data.error || 'Unknown error'}`, 'error');
         }
-      } catch {
-        showToast('Network error while generating preview', 'error');
+      } catch (err: any) {
+        console.error('[CustomPreview] Error:', err);
+        showToast(err?.message ? `Preview failed: ${err.message}` : 'Network error while generating preview', 'error');
       } finally {
         setPreviewingCustom(false);
       }
@@ -245,6 +251,11 @@ export default function NewsAutomationClient() {
             customTopic: customTopicPrompt.trim(),
           }),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          showToast(errData?.error || `Server responded with ${res.status}: ${res.statusText}`, 'error');
+          return;
+        }
         const data = await res.json();
         if (data.success) {
           showToast(
@@ -256,8 +267,9 @@ export default function NewsAutomationClient() {
         } else {
           showToast(`Generation failed: ${data.error || 'Unknown error'}`, 'error');
         }
-      } catch {
-        showToast('Network error while executing custom generation', 'error');
+      } catch (err: any) {
+        console.error('[CustomGeneration] Error:', err);
+        showToast(err?.message ? `Execution failed: ${err.message}` : 'Network error while executing custom generation', 'error');
       } finally {
         setGeneratingCustom(false);
       }
