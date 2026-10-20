@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FaArrowLeft,
@@ -20,7 +20,7 @@ import {
   FaCode,
   FaRocket,
 } from 'react-icons/fa6';
-import { Turnstile } from './Turnstile';
+import { Turnstile, TurnstileHandle } from './Turnstile';
 
 export interface ContactPageProps {
   onNavigateHome?: () => void;
@@ -85,6 +85,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [formLoadedAt] = useState(() => Date.now());
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   const handleTurnstileSuccess = useCallback((token: string) => {
     setTurnstileToken(token);
@@ -117,9 +118,21 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // If production site and Turnstile token has not been generated
-    if (!turnstileToken && process.env.NODE_ENV === 'production') {
-      setErrorMessage('Please complete the security check above before sending.');
+    // Check token from React state, imperative ref, or global window.turnstile
+    let activeToken = turnstileToken;
+    if (!activeToken && turnstileRef.current) {
+      activeToken = turnstileRef.current.getResponse() || '';
+    }
+    if (!activeToken && typeof window !== 'undefined' && window.turnstile) {
+      try {
+        activeToken = window.turnstile.getResponse() || '';
+      } catch {}
+    }
+
+    // If production site and Turnstile token has expired or not generated yet
+    if (!activeToken && process.env.NODE_ENV === 'production') {
+      turnstileRef.current?.reset();
+      setErrorMessage('Security check is refreshing. Please wait a moment and click Send again.');
       return;
     }
 
@@ -143,7 +156,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
           message: formData.message,
           honeypot: honeypot,
           formLoadedAt: formLoadedAt,
-          turnstileToken: turnstileToken,
+          turnstileToken: activeToken,
         }),
       });
 
@@ -152,6 +165,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
       if (response.ok && result.success) {
         setIsSubmitted(true);
       } else {
+        // Reset turnstile so user gets a fresh token for immediate retry
+        turnstileRef.current?.reset();
+        setTurnstileToken('');
         const errorDetail =
           result.message ||
           (result.errors && Object.values(result.errors).flat().join(', ')) ||
@@ -159,6 +175,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
         setErrorMessage(errorDetail);
       }
     } catch {
+      turnstileRef.current?.reset();
+      setTurnstileToken('');
       setErrorMessage('Network connection error while submitting. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -465,6 +483,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                   {/* Cloudflare Turnstile CAPTCHA */}
                   <div className="d-flex justify-content-center">
                     <Turnstile
+                      ref={turnstileRef}
                       theme="dark"
                       onSuccess={handleTurnstileSuccess}
                       onError={handleTurnstileError}

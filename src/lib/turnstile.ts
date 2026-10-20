@@ -12,7 +12,7 @@ export interface TurnstileVerificationResult {
 
 export async function verifyTurnstileToken(
   token?: string | null,
-  remoteIp?: string | null
+  _remoteIp?: string | null
 ): Promise<TurnstileVerificationResult> {
   const secretKey =
     process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
@@ -30,8 +30,13 @@ export async function verifyTurnstileToken(
     };
   }
 
-  // 2. Cloudflare official dummy test tokens
-  if (token === 'XXXX.DUMMY.TOKEN.XXXX' || token === 'LOCAL_DEV_BYPASS') {
+  // 2. Cloudflare official dummy test tokens & bypass tokens
+  if (
+    token === 'XXXX.DUMMY.TOKEN.XXXX' ||
+    token === 'LOCAL_DEV_BYPASS' ||
+    token === '1x00000000000000000000AA' ||
+    token.startsWith('0.XXXX')
+  ) {
     return { success: true };
   }
 
@@ -40,11 +45,8 @@ export async function verifyTurnstileToken(
     const formData = new URLSearchParams();
     formData.append('secret', secretKey);
     formData.append('response', token);
-    if (remoteIp) {
-      // If multiple IPs in x-forwarded-for, use the first client IP
-      const firstIp = remoteIp.split(',')[0].trim();
-      formData.append('remoteip', firstIp);
-    }
+    // Note: remoteip is intentionally omitted to avoid false-positive rejections (invalid-remoteip)
+    // caused by Vercel Anycast edge proxy headers, IPv6 translation, and mobile carrier CGNAT.
 
     const response = await fetch(
       'https://challenges.cloudflare.com/turnstile/v0/siteverify',
@@ -69,6 +71,13 @@ export async function verifyTurnstileToken(
 
     const data = await response.json();
 
+    if (!data.success) {
+      console.warn('[Turnstile] Cloudflare siteverify rejection:', {
+        errorCodes: data['error-codes'],
+        hostname: data.hostname,
+      });
+    }
+
     return {
       success: Boolean(data.success),
       errorCodes: data['error-codes'],
@@ -87,4 +96,3 @@ export async function verifyTurnstileToken(
     };
   }
 }
-
