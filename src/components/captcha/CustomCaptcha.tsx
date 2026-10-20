@@ -129,8 +129,11 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
     }, [fetchChallenge]);
 
     // Handle verification submission
-    const handleVerify = async (e?: React.FormEvent) => {
-      if (e) e.preventDefault();
+    const handleVerify = async (e?: React.SyntheticEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       if (!challenge || !userAnswer.trim() || isVerifying || isVerified) return;
 
       setIsVerifying(true);
@@ -340,7 +343,7 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
                 <span>Loading security challenge...</span>
               </div>
             ) : challenge ? (
-              <form onSubmit={handleVerify} style={{ margin: 0 }}>
+              <div style={{ margin: 0 }}>
                 <div
                   style={{
                     display: 'flex',
@@ -379,6 +382,13 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
                       setUserAnswer(e.target.value);
                       if (errorMessage) setErrorMessage(null);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleVerify();
+                      }
+                    }}
                     disabled={isVerifying}
                     style={{
                       width: '90px',
@@ -395,7 +405,8 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
 
                   {/* Verify Action Button */}
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleVerify(e); }}
                     disabled={!userAnswer.trim() || isVerifying}
                     style={{
                       background: userAnswer.trim()
@@ -425,7 +436,7 @@ export const CustomCaptcha = React.forwardRef<CustomCaptchaHandle, CustomCaptcha
                     )}
                   </button>
                 </div>
-              </form>
+              </div>
             ) : null}
 
             {/* Error Message */}
