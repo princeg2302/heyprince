@@ -14,8 +14,12 @@ export async function verifyTurnstileToken(
   token?: string | null,
   _remoteIp?: string | null
 ): Promise<TurnstileVerificationResult> {
+  const rawSecret = process.env.TURNSTILE_SECRET_KEY?.replace(/^["']|["']$/g, '').trim();
+  // Ensure we use Prince's live production secret key unless a real custom secret key is supplied
   const secretKey =
-    process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+    rawSecret && !rawSecret.startsWith('1x')
+      ? rawSecret
+      : '0x4AAAAAAFUy_SWpekRSM1f6QJf2uwn_3JU';
 
   // 1. Check if token is present
   if (!token || !token.trim()) {

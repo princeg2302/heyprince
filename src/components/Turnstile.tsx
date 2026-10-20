@@ -92,8 +92,11 @@ export const Turnstile = React.forwardRef<TurnstileHandle, TurnstileProps>(
       },
     }));
 
+  const rawSite = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.replace(/^["']|["']$/g, '').trim();
   const siteKey =
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+    rawSite && !rawSite.startsWith('1x')
+      ? rawSite
+      : '0x4AAAAAAFUy_Ur1E_zznWlP';
 
   // Detect when turnstile script is available
   useEffect(() => {
@@ -148,12 +151,6 @@ export const Turnstile = React.forwardRef<TurnstileHandle, TurnstileProps>(
           },
           'expired-callback': () => {
             onExpireRef.current?.();
-            // Automatically reset and request fresh token when expired
-            if (widgetIdRef.current && typeof window !== 'undefined' && window.turnstile) {
-              try {
-                window.turnstile.reset(widgetIdRef.current);
-              } catch {}
-            }
           },
         });
 

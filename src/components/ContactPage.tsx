@@ -505,7 +505,30 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
                         textAlign: 'center',
                       }}
                     >
-                      {errorMessage}
+                      <div>{errorMessage}</div>
+                      {errorMessage.toLowerCase().includes('security') && (
+                        <div style={{ marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              turnstileRef.current?.reset();
+                              setErrorMessage(null);
+                            }}
+                            style={{
+                              background: '#2d2d42',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              color: '#ffffff',
+                              padding: '5px 12px',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              fontWeight: 500,
+                            }}
+                          >
+                            ↻ Reload Security Check
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 

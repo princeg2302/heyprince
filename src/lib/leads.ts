@@ -86,12 +86,19 @@ export async function processLeadSubmission(
   // 4. CAPTCHA Verification: Cloudflare Turnstile Check
   const turnstileCheck = await verifyTurnstileToken(data.turnstileToken, clientIp);
   if (!turnstileCheck.success) {
-    console.warn('[Turnstile Guard] Verification failed:', turnstileCheck.errorCodes);
+    console.warn('[Turnstile Guard] Verification failed:', {
+      errorCodes: turnstileCheck.errorCodes,
+      hostname: turnstileCheck.hostname,
+    });
+    const errorCodesList = turnstileCheck.errorCodes?.join(', ');
+    const detailMsg = errorCodesList
+      ? `Security verification failed (${errorCodesList}). Please retry.`
+      : 'Security verification failed or expired. Please retry.';
     return {
       success: false,
-      message: 'Security verification failed. Please complete the CAPTCHA check to verify you are human.',
+      message: detailMsg,
       errors: {
-        captcha: ['Security verification failed or expired. Please retry.'],
+        captcha: [detailMsg],
       },
     };
   }
