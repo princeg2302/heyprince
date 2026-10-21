@@ -170,6 +170,26 @@ export async function processLeadSubmission(
     console.error('[Leads] Non-fatal email notification failure:', emailError);
   }
 
+  // 7. AI Chief of Staff: Inbound Lead Intelligence & Proposal Drafter (Non-blocking)
+  try {
+    const { processInboundLead } = await import('@/lib/chief-of-staff/agents/inbound-responder');
+    processInboundLead({
+      leadId: createdLeadId,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      company: data.company,
+      service: data.service || 'Frontend React / Next.js',
+      budget: cleanBudget,
+      timeline: data.timeline,
+      message: data.message,
+    }).catch((agentErr) => {
+      console.warn('[Leads] Chief of Staff Inbound Responder async background warning:', agentErr);
+    });
+  } catch (chiefErr) {
+    console.warn('[Leads] Non-fatal Chief of Staff proposal generation init failure:', chiefErr);
+  }
+
   return {
     success: true,
     message: 'Your inquiry has been successfully received! Expect a response within 2 to 4 hours.',
