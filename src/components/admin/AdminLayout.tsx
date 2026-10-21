@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { JarvisAssistant } from '@/components/admin/JarvisAssistant';
 import {
   LayoutDashboard,
   FileText,
@@ -28,6 +29,7 @@ import {
 interface AdminLayoutProps {
   children: React.ReactNode;
   user?: {
+    id?: number | string;
     name?: string;
     email?: string;
     role?: string;
@@ -284,6 +286,9 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
 
         <main className="hpa-content">{children}</main>
       </div>
+
+      {/* Persistent Holographic JARVIS Voice Assistant */}
+      <JarvisAssistant user={user} />
     </div>
   );
 }
