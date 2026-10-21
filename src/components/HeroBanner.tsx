@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { PhysicsPills } from './PhysicsPills';
+import dynamic from 'next/dynamic';
+
+const PhysicsPills = dynamic(() => import('./PhysicsPills').then((mod) => mod.PhysicsPills), {
+  ssr: false,
+});
 
 export const HeroBanner: React.FC = () => {
   return (

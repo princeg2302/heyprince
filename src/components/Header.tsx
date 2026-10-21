@@ -22,32 +22,26 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     : (typeof heyprinceLogo === 'string' ? heyprinceLogo : '/assets/heyprince-logo.svg');
 
   useEffect(() => {
-    const audio = new Audio('/audio/ambient.mp3');
-    audio.loop = true;
-    audio.volume = 0.55;
-    audioRef.current = audio;
-
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    const onEnded = () => setIsPlaying(false);
-
-    audio.addEventListener('play', onPlay);
-    audio.addEventListener('pause', onPause);
-    audio.addEventListener('ended', onEnded);
-
     return () => {
-      audio.removeEventListener('play', onPlay);
-      audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('ended', onEnded);
-      audio.pause();
-      audioRef.current = null;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
   const toggleAudio = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    if (!audioRef.current) {
+      const audio = new Audio('/audio/ambient.mp3');
+      audio.loop = true;
+      audio.volume = 0.55;
+      audio.addEventListener('play', () => setIsPlaying(true));
+      audio.addEventListener('pause', () => setIsPlaying(false));
+      audio.addEventListener('ended', () => setIsPlaying(false));
+      audioRef.current = audio;
+    }
 
+    const audio = audioRef.current;
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
@@ -164,6 +158,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 height="41"
                 loading="eager"
                 decoding="async"
+                fetchPriority="high"
               />
               <p className="site-tagline">Where Ideas Get Dressed to Impress.</p>
             </a>
@@ -185,7 +180,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               className={`modal fade modal-right ${menuOpen ? 'show' : ''}`}
               id="menuModal"
               tabIndex={-1}
-              aria-labelledby="menuModalLabel"
+              aria-label="Main Navigation Menu"
               aria-hidden={!menuOpen}
               style={{ display: menuOpen ? 'block' : 'none' }}
             >

@@ -57,15 +57,18 @@ export const BackToTop: React.FC = () => {
     }
   };
 
-  if (!visible) return null;
-
   return (
     <button
       type="button"
-      className="back-to-top-btn"
+      className={`back-to-top-btn ${visible ? 'visible' : ''}`}
       onClick={scrollToTop}
       aria-label="Back to top of page"
       title="Back to top"
+      style={{
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+        transition: 'opacity 0.3s ease, transform 0.3s ease',
+      }}
     >
       <span className="back-to-top-inner">
         <FaArrowUp size={18} />

@@ -4,7 +4,14 @@ import { withPayload } from '@payloadcms/next/withPayload';
 const nextConfig = {
   trailingSlash: true,
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'muzbzrxwbanzsjvgtexp.supabase.co',
+        pathname: '/**',
+      },
+    ],
   },
   async redirects() {
     return [

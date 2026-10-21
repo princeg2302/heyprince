@@ -1,15 +1,26 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import React from 'react';
 import {
   HeroBanner,
   VisionAmbition,
   JourneyTimeline,
-  CyberArcade,
   ArticlesSection,
   LetsTalkBanner,
-  CapturedMemories,
 } from '@/components';
 import { getPosts } from '@/lib/cms';
+
+const CyberArcade = dynamic(() => import('@/components/CyberArcade'), {
+  loading: () => (
+    <div style={{ minHeight: '320px', background: 'transparent' }} aria-hidden="true" />
+  ),
+});
+
+const CapturedMemories = dynamic(() => import('@/components/CapturedMemories'), {
+  loading: () => (
+    <div style={{ minHeight: '260px', background: 'transparent' }} aria-hidden="true" />
+  ),
+});
 
 export const revalidate = 60;
 
@@ -30,11 +41,10 @@ export default async function HomePage() {
       <HeroBanner />
       <VisionAmbition />
       <JourneyTimeline />
-      <CyberArcade />
       <ArticlesSection articles={latestArticles} />
       <LetsTalkBanner />
+      <CyberArcade />
       <CapturedMemories />
     </div>
   );
 }
-

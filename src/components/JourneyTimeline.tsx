@@ -236,7 +236,7 @@ export const JourneyTimeline: React.FC = () => {
                 className="milestone-nav-btn prev-btn"
                 onClick={handlePrevMilestone}
                 disabled={currentIndex === 0}
-                aria-label="Previous milestone"
+                aria-label="Prev milestone"
               >
                 <svg
                   width="18"

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import React from 'react';
+import { Anton } from 'next/font/google';
 import '@/styles/fonts.css';
 import '@/styles/main.css';
 import '@/styles/grid-lines.css';
@@ -9,6 +10,13 @@ import 'mouse-follower/dist/mouse-follower.min.css';
 import 'lenis/dist/lenis.css';
 
 import { Header, Footer, ClientProviders } from '@/components';
+
+const anton = Anton({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-anton',
+});
 
 export const viewport: Viewport = {
   themeColor: '#0b0b0f',
@@ -223,15 +231,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#" suppressHydrationWarning>
+    <html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#" className={anton.variable} suppressHydrationWarning>
       <head>
         <meta name="google-site-verification" content="DTYZ06bg-WLMAH8U5dWbZvr6XRzTFVv_pOidUPq9UQU" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Anton&display=swap"
-          rel="stylesheet"
-        />
         <link rel="stylesheet" href="/fonts/arboria/arboria.css" />
         <link rel="stylesheet" href="/fonts/futuru/futuru.css" />
         <script
@@ -284,9 +286,9 @@ export default function RootLayout({
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-BT5N589MRH"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             gtag('js', new Date());
             gtag('config', 'G-BT5N589MRH');

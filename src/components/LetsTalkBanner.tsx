@@ -22,7 +22,7 @@ export const LetsTalkBanner: React.FC = () => {
           <Link
             className="portal-btn mx-auto"
             href="/contact/"
-            aria-label="Let's talk about your project - go to contact page"
+            aria-label="Let’s Talk About It"
           >
             <span className="mr-right">Let’s Talk About It</span>
             <span className="arrow">
