@@ -13,6 +13,7 @@ import {
   scanGlobalSector,
   IntelligenceSector,
 } from '@/lib/jarvis/global-brain';
+import { extractCleanSpokenText } from '@/lib/jarvis/cleaner';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
       const fullReport = await runFullGlobalBrainSurveillance();
       return NextResponse.json({
         success: true,
-        reply: fullReport.executiveBriefing,
+        reply: extractCleanSpokenText(fullReport.executiveBriefing),
         actions: [
           {
             type: 'toast',
@@ -308,7 +309,7 @@ RESPOND IN STRICT JSON ONLY:
 
         return NextResponse.json({
           success: true,
-          reply: parsed.reply || `Understood, ${adminName}. Carrying that out now.`,
+          reply: extractCleanSpokenText(parsed.reply) || `Understood, ${adminName}. Carrying that out now.`,
           actions: Array.isArray(parsed.actions) ? parsed.actions : [],
         });
       } catch (aiErr) {
@@ -331,13 +332,19 @@ RESPOND IN STRICT JSON ONLY:
     } else if (lowerQ.includes('audit') || lowerQ.includes('health') || lowerQ.includes('guardian')) {
       fallbackReply = `Initiating Website Guardian health diagnostic now, sir.`;
       fallbackActions.push({ type: 'run_agent', agentId: 'website_guardian' });
+    } else if (lowerQ.includes('blog automation') || lowerQ.includes('content agent') || lowerQ.includes('draft post')) {
+      fallbackReply = `Deploying Content Researcher to draft a new technology article now, ${adminName}.`;
+      fallbackActions.push({ type: 'run_agent', agentId: 'content_researcher' });
+    } else if (lowerQ.includes('lead automation') || lowerQ.includes('lead scout') || lowerQ.includes('scout leads')) {
+      fallbackReply = `Deploying Lead Scout across commercial sectors now, ${adminName}.`;
+      fallbackActions.push({ type: 'run_agent', agentId: 'lead_scout' });
     } else if (lowerQ.includes('seo')) {
       fallbackReply = `Running technical SEO analysis and cluster discovery now, ${adminName}.`;
       fallbackActions.push({ type: 'run_agent', agentId: 'seo_growth' });
     } else if (lowerQ.includes('lead') || lowerQ.includes('prospect')) {
       fallbackReply = `Opening Lead Intelligence and client inquiries.`;
       fallbackActions.push({ type: 'navigate', url: '/admin/leads/' });
-    } else if (lowerQ.includes('post') || lowerQ.includes('article')) {
+    } else if (lowerQ.includes('post') || lowerQ.includes('article') || lowerQ.includes('blog')) {
       fallbackReply = `Opening insight articles and drafts.`;
       fallbackActions.push({ type: 'navigate', url: '/admin/posts/' });
     } else if (lowerQ.includes('chief') || lowerQ.includes('agent')) {
@@ -350,7 +357,7 @@ RESPOND IN STRICT JSON ONLY:
 
     return NextResponse.json({
       success: true,
-      reply: fallbackReply,
+      reply: extractCleanSpokenText(fallbackReply),
       actions: fallbackActions,
     });
   } catch (error: any) {

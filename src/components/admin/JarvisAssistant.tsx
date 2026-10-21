@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { extractCleanSpokenText } from '@/lib/jarvis/cleaner';
 import {
   Mic,
   MicOff,
@@ -196,7 +197,8 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
   // 2. Speech Synthesis (TTS) - British Male Cadence with Echo Protection
   const speak = useCallback(
     (text: string, onDone?: () => void) => {
-      setReplyText(text);
+      const clean = extractCleanSpokenText(text);
+      setReplyText(clean);
 
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
         if (onDone) onDone();
@@ -211,7 +213,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
       try {
         window.speechSynthesis.cancel();
 
-        const utterance = new SpeechSynthesisUtterance(text);
+        const utterance = new SpeechSynthesisUtterance(clean);
         const voices = window.speechSynthesis.getVoices();
 
         const preferredVoice =
@@ -337,9 +339,11 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
       const data = await res.json();
       if (data.success) {
         playChime('success');
-        const spoken =
-          data.report?.executiveBriefing ||
-          `24/7 Global surveillance scan complete across all worldwide sectors, ${adminName}. Strategic intelligence has been committed to permanent memory.`;
+        const rawBriefing = data.report?.executiveBriefing;
+        const spoken = extractCleanSpokenText(
+          rawBriefing ||
+          `24/7 Global surveillance scan complete across all worldwide sectors, ${adminName}. Strategic intelligence has been committed to permanent memory.`
+        );
         speak(spoken);
         fetchGlobalIntelligence();
       } else {
@@ -828,6 +832,50 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         return;
       }
 
+      // --- OPERATIONAL AGENT COMMANDS: BLOG & LEAD AUTOMATION ---
+      if (
+        cmd.includes('blog automation') ||
+        cmd.includes('run blog') ||
+        cmd.includes('create blog') ||
+        cmd.includes('content agent') ||
+        cmd.includes('content researcher') ||
+        cmd.includes('draft blog')
+      ) {
+        speak(`Deploying Content Researcher agent to discover tech trends and draft a fresh article, ${adminName}.`);
+        executeActions([{ type: 'run_agent', agentId: 'content_researcher' }]);
+        setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      if (
+        cmd.includes('lead automation') ||
+        cmd.includes('run lead') ||
+        cmd.includes('find leads') ||
+        cmd.includes('scout leads') ||
+        cmd.includes('lead scout')
+      ) {
+        speak(`Deploying Lead Scout across enterprise and e-commerce sectors now, ${adminName}.`);
+        executeActions([{ type: 'run_agent', agentId: 'lead_scout' }]);
+        setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      if (
+        cmd.includes('audit report') ||
+        cmd.includes('run audit') ||
+        cmd.includes('check health') ||
+        cmd.includes('website guardian') ||
+        cmd.includes('audit website')
+      ) {
+        speak(`Initiating Website Guardian diagnostic audit across core routes now, ${adminName}.`);
+        executeActions([{ type: 'run_agent', agentId: 'website_guardian' }]);
+        setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
       if (cmd.includes('outreach') || cmd.includes('lead intelligence') || cmd.includes('prospects')) {
         speak(`Opening Lead Intelligence and Discovery.`);
         router.push('/admin/outreach/');
@@ -946,7 +994,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         const resData = await res.json();
         if (resData.success) {
           if (resData.reply) {
-            speak(resData.reply);
+            speak(extractCleanSpokenText(resData.reply));
           }
           if (Array.isArray(resData.actions) && resData.actions.length > 0) {
             await executeActions(resData.actions);
@@ -1549,12 +1597,12 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                   }}
                 >
                   {[
-                    { label: '🌐 24/7 World Brief', cmd: 'scan global news' },
-                    { label: '📉 Recession Outlook', cmd: 'what is the recession and economic outlook' },
-                    { label: '🤖 All Agents Mode B', cmd: 'turn all agents to mode b' },
-                    { label: '3️⃣ First 3 to Mode B', cmd: 'turn first three agents to mode b' },
-                    { label: '⚡ Run Audit', cmd: 'run audit' },
+                    { label: '⚡ Audit Report', cmd: 'run audit' },
                     { label: '🔑 Change Password', cmd: 'change password' },
+                    { label: '✍️ Blog Automation', cmd: 'run blog automation' },
+                    { label: '🎯 Lead Automation', cmd: 'run lead automation' },
+                    { label: '🤖 All Agents Mode B', cmd: 'turn all agents to mode b' },
+                    { label: '📊 Status Briefing', cmd: 'status report' },
                   ].map((chip) => (
                     <button
                       key={chip.label}

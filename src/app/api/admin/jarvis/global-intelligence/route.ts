@@ -5,6 +5,7 @@ import {
   runFullGlobalBrainSurveillance,
   scanGlobalSector,
   IntelligenceSector,
+  extractCleanSpokenText,
 } from '@/lib/jarvis/global-brain';
 import { getAllMemories } from '@/lib/jarvis/memory';
 
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Action 2: Run full 24/7 surveillance cycle across all 6 sectors
     const fullReport = await runFullGlobalBrainSurveillance();
+    fullReport.executiveBriefing = extractCleanSpokenText(fullReport.executiveBriefing);
 
     return NextResponse.json({
       success: true,
@@ -75,3 +77,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

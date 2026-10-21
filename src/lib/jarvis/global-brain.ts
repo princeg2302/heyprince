@@ -1,5 +1,8 @@
 import { callAIModel, isAIConfigured } from '../daily-news/ai-provider';
 import { saveMemory, getAllMemories, JarvisMemory } from './memory';
+import { extractCleanSpokenText } from './cleaner';
+
+export { extractCleanSpokenText };
 
 export type IntelligenceSector =
   | 'ai'
@@ -215,11 +218,15 @@ Given these 6 fresh global intelligence updates:
 ${briefings.map((b) => `- [${b.sectorLabel}] (${b.region}): ${b.headline}. ${b.summary}`).join('\n')}
 
 Generate a 3-sentence executive spoken briefing for Prince (Senior Engineer & Consultant at HeyPrince.in).
-Tone: Dignified, sharp, British, calm authority. Address him as Prince or sir.`;
+Tone: Dignified, sharp, British, calm authority. Address him as Prince or sir.
+CRITICAL FORMAT RULE: Respond ONLY with plain spoken English sentences to be read aloud. Do NOT wrap in JSON, objects, markdown code blocks, quotes, curly braces or speaker prefixes.`;
 
       const aiRes = await callAIModel('You are JARVIS, British Chief of Staff.', prompt);
       if (aiRes.text?.trim()) {
-        executiveBriefing = aiRes.text.trim();
+        const cleaned = extractCleanSpokenText(aiRes.text);
+        if (cleaned) {
+          executiveBriefing = cleaned;
+        }
       }
     } catch {}
   }
@@ -253,3 +260,4 @@ export async function getGlobalIntelligenceContext(): Promise<string> {
     return '24/7 Surveillance: Nominal.';
   }
 }
+
