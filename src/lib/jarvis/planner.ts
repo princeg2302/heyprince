@@ -276,3 +276,4 @@ CRITICAL FORMAT RULE: Plain text sentences ONLY. No JSON, no quotes, no speaker 
     createdAt: new Date().toISOString(),
   };
 }
+

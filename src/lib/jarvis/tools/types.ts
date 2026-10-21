@@ -56,3 +56,4 @@ export interface JarvisTool<TInput = any, TOutput = any> {
   parameters: ToolParametersSchema;
   execute: (input: TInput, context?: JarvisExecutionContext) => Promise<ToolResult<TOutput>>;
 }
+

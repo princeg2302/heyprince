@@ -125,3 +125,4 @@ export const siteScannerTool: JarvisTool<SiteScannerInput, SiteScannerOutput> = 
     };
   },
 };
+
