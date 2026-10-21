@@ -522,33 +522,32 @@
 .milestone-dots {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 2px;
 }
 
 .milestone-dot {
-  position: relative;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
+  border-radius: 50%;
+}
+
+.milestone-dot .milestone-dot-inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
   transition: all 0.25s ease;
+  pointer-events: none;
 }
 
-/* 44px accessible touch target for mobile devices */
-.milestone-dot::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 44px;
-  height: 44px;
-}
-
-.milestone-dot.active {
+.milestone-dot.active .milestone-dot-inner {
   background: #ff2d55;
   box-shadow: 0 0 10px #ff2d55;
   transform: scale(1.3);

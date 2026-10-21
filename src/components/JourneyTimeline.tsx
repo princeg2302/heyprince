@@ -262,7 +262,9 @@ export const JourneyTimeline: React.FC = () => {
                     className={`milestone-dot ${activeMilestonePos === m.pos ? 'active' : ''}`}
                     onClick={() => setActiveMilestonePos(m.pos)}
                     aria-label={`Go to ${m.year}`}
-                  />
+                  >
+                    <span className="milestone-dot-inner" />
+                  </button>
                 ))}
               </div>
 

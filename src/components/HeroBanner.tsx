@@ -18,6 +18,9 @@ export const HeroBanner: React.FC = () => {
           <span>PRINCE</span>
           <span>YOUR TECH PARTNER</span>
         </h1>
+        <div className="banner-subtitle">
+          <span>Senior Full Stack Engineer &amp; IT Consultant</span>
+        </div>
         <p className="visually-hidden">
           Prince is a Senior Full Stack Engineer &amp; IT Consultant specializing in high-performance Next.js &amp; React web applications, bespoke WordPress &amp; CMS architecture, and enterprise AI workflow automations.
         </p>

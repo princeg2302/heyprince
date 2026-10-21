@@ -1,3 +1,7 @@
+html {
+  background-color: #0b0b0f;
+}
+
 /*
 Theme Name: Hey Prince
 Theme URI: Theme Url
@@ -8,7 +12,7 @@ Version: 1.0.0
 */
 
 
-@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+/* Anton font loaded via next/font/google in layout.tsx */
 
 /******Mouse Cursor*******/
 .mf-cursor {
@@ -49,8 +53,8 @@ body {
   font-style: normal;
   font-size: 18px;
   line-height: 1.4;
-  background-color: #EFECD2;
-  color: var(--color-bg-dark);
+  background-color: #0b0b0f;
+  color: #fff;
   background-repeat: repeat-y;
   background-size: cover;
   background-attachment: scroll;
@@ -62,7 +66,7 @@ body {
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #00000094;
+  background-color: #0b0b0f;
   position: relative;
   color: #fff;
   -webkit-touch-callout: none;
@@ -737,7 +741,7 @@ button.portal-btn:hover {
 }
 
 .text-red {
-  color: #949494;
+  color: #ff4757;
 }
 
 p.site-tagline {
@@ -1040,7 +1044,9 @@ img.shape-separator {
   gap: 8px;
   background: rgba(212, 0, 39, 0.12);
   border: 1px solid rgba(212, 0, 39, 0.35);
-  color: #ff3355;
+  color: #ffffff !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  border: 1px solid rgba(255, 45, 85, 0.7) !important;
   padding: 6px 18px;
   border-radius: 999px;
   font-size: 0.74rem;
@@ -1987,7 +1993,7 @@ ul.footer-menu a:hover {
 }
 
 p.foot-copyright {
-  color: rgba(255, 255, 255, 0.75);
+  color: #ffffff !important;
   font-size: 13.5px;
   white-space: nowrap;
   margin: 0 !important;
@@ -2891,7 +2897,7 @@ ul#menu-main {
   font-size: 260px;
   color: transparent;
   text-transform: uppercase;
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-anton), 'Anton', sans-serif;
   letter-spacing: -2px;
   white-space: nowrap;
 }
@@ -2964,7 +2970,7 @@ ul#menu-main {
 }
 
 .word {
-  font-family: 'Anton', sans-serif;
+  font-family: var(--font-anton), 'Anton', sans-serif;
   perspective: 1000px;
   display: inline-block;
 }
@@ -7833,7 +7839,7 @@ body {
   border: none !important;
   padding: 0 !important;
   margin: 0 !important;
-  color: #cbd5e1 !important;
+  color: #ffffff !important;
   font-size: 12.5px !important;
   text-decoration: none !important;
   cursor: pointer !important;
@@ -10112,4 +10118,31 @@ body {
 .platformer-info-grid {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 28px 24px 24px;
+}
+
+/* High-performance visible hero subtitle for LCP & accessibility */
+.banner-subtitle {
+  position: absolute;
+  bottom: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #ffffff;
+  z-index: 2;
+  pointer-events: none;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+@media (max-width: 767px) {
+  .banner-subtitle {
+    bottom: 26%;
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
 }

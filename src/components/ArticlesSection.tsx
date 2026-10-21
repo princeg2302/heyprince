@@ -132,7 +132,7 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                     className="spotlight-img"
                     src={featuredArticle.image}
                     alt={`${featuredArticle.title} - Latest Engineering Insight by Prince`}
-                    loading="eager"
+                    loading="lazy"
                     decoding="async"
                     width="800"
                     height="500"
@@ -172,6 +172,8 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                         className="spotlight-author-avatar"
                         src={featuredArticle.author?.avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
                         alt={featuredArticle.author?.name || 'Prince'}
+                        loading="lazy"
+                        decoding="async"
                         width="38"
                         height="38"
                       />

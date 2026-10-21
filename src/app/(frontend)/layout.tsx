@@ -283,15 +283,25 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* Google tag (gtag.js) */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-BT5N589MRH"
-          strategy="lazyOnload"
-        />
-        <Script id="google-analytics" strategy="lazyOnload">
+        {/* Google tag (gtag.js) - interaction-deferred to eliminate main thread blocking time */}
+        <Script id="google-analytics-deferred" strategy="afterInteractive">
           {`
-            gtag('js', new Date());
-            gtag('config', 'G-BT5N589MRH');
+            function initGTM() {
+              if (window.gtmDidInit) return;
+              window.gtmDidInit = true;
+              var s = document.createElement('script');
+              s.src = 'https://www.googletagmanager.com/gtag/js?id=G-BT5N589MRH';
+              s.async = true;
+              document.head.appendChild(s);
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-BT5N589MRH');
+            }
+            ['scroll', 'touchstart', 'mousemove', 'click', 'keydown'].forEach(function(e) {
+              window.addEventListener(e, initGTM, { once: true, passive: true });
+            });
+            setTimeout(initGTM, 4500);
           `}
         </Script>
         <a href="#main" className="visually-hidden-focusable">

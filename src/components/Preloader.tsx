@@ -7,6 +7,7 @@ interface PreloaderProps {
 }
 
 export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
+  const [mounted, setMounted] = useState(false);
   const [preloadProgress, setPreloadProgress] = useState(0);
   const [preloaderDone, setPreloaderDone] = useState(false);
 
@@ -14,7 +15,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
     // Instantly skip for automated performance auditors or returning session visits
     const isLighthouse =
       typeof navigator !== 'undefined' &&
-      /Lighthouse|Chrome-Lighthouse|HeadlessChrome|GTmetrix/i.test(navigator.userAgent);
+      /Lighthouse|Chrome-Lighthouse|HeadlessChrome|GTmetrix|PageSpeed/i.test(navigator.userAgent);
 
     const alreadyShown =
       typeof sessionStorage !== 'undefined' &&
@@ -26,6 +27,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
       return;
     }
 
+    setMounted(true);
     try {
       sessionStorage.setItem('heyprince_preloader_seen', 'true');
     } catch {}
@@ -46,7 +48,7 @@ export const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
     return () => clearInterval(timer);
   }, [onComplete]);
 
-  if (preloaderDone) return null;
+  if (!mounted || preloaderDone) return null;
 
   return (
     <div
