@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeAgentTask } from '@/lib/chief-of-staff/orchestrator';
 import { getAllAgents } from '@/lib/chief-of-staff/db';
+import { scanGlobalSector, IntelligenceSector } from '@/lib/jarvis/global-brain';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -86,6 +87,15 @@ async function handleCronTrigger(request: NextRequest) {
           }
         }
       }
+    }
+
+    // 24/7 JARVIS Global Brain Surveillance: cycle through sectors in the background
+    try {
+      const sectors: IntelligenceSector[] = ['ai', 'technology', 'automobile', 'geopolitics', 'infrastructure', 'recession'];
+      const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
+      await scanGlobalSector(randomSector);
+    } catch (e) {
+      console.warn('[Cron Chief of Staff] Global brain scan notice:', e);
     }
 
     return NextResponse.json({

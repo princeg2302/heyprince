@@ -4,10 +4,10 @@ import { callAIModel, isAIConfigured } from '../daily-news/ai-provider';
 
 export interface JarvisMemory {
   id: string;
-  category: 'teaching' | 'self_study' | 'rule' | 'preference';
+  category: 'teaching' | 'self_study' | 'rule' | 'preference' | 'global_intelligence';
   title: string;
   content: string;
-  source: 'prince' | 'autonomous_study';
+  source: 'prince' | 'autonomous_study' | 'global_surveillance';
   tags: string[];
   metadata?: Record<string, any>;
   importance: number;
@@ -80,7 +80,7 @@ export async function ensureJarvisMemoryTable(): Promise<void> {
     await query(`
       CREATE TABLE IF NOT EXISTS jarvis_memories (
         id TEXT PRIMARY KEY,
-        category TEXT NOT NULL CHECK (category IN ('teaching', 'self_study', 'rule', 'preference')),
+        category TEXT NOT NULL,
         title TEXT NOT NULL,
         content TEXT NOT NULL,
         source TEXT NOT NULL DEFAULT 'prince',
@@ -90,6 +90,7 @@ export async function ensureJarvisMemoryTable(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      ALTER TABLE jarvis_memories DROP CONSTRAINT IF EXISTS jarvis_memories_category_check;
       CREATE INDEX IF NOT EXISTS idx_jarvis_memories_cat ON jarvis_memories(category);
       CREATE INDEX IF NOT EXISTS idx_jarvis_memories_created ON jarvis_memories(created_at DESC);
     `);
@@ -171,10 +172,10 @@ export async function getAllMemories(category?: string, limit = 50): Promise<Jar
 }
 
 export async function saveMemory(item: {
-  category: 'teaching' | 'self_study' | 'rule' | 'preference';
+  category: 'teaching' | 'self_study' | 'rule' | 'preference' | 'global_intelligence';
   title: string;
   content: string;
-  source?: 'prince' | 'autonomous_study';
+  source?: 'prince' | 'autonomous_study' | 'global_surveillance';
   tags?: string[];
   metadata?: Record<string, any>;
   importance?: number;
@@ -303,3 +304,4 @@ export async function getJarvisMemoryContext(): Promise<string> {
 
   return out;
 }
+

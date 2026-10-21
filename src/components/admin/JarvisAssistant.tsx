@@ -30,6 +30,11 @@ import {
   Plus,
   Trash2,
   CheckCircle2,
+  TrendingDown,
+  Car,
+  Cpu,
+  Building2,
+  Compass,
 } from 'lucide-react';
 
 interface JarvisAssistantProps {
@@ -51,6 +56,7 @@ interface JarvisAction {
     | 'scroll'
     | 'select_tab'
     | 'batch_agents'
+    | 'global_scan'
     | 'toast';
   url?: string;
   targetText?: string;
@@ -66,12 +72,13 @@ interface JarvisAction {
 
 interface MemoryItem {
   id: string;
-  category: 'teaching' | 'self_study' | 'rule' | 'preference';
+  category: 'teaching' | 'self_study' | 'rule' | 'preference' | 'global_intelligence';
   title: string;
   content: string;
-  source: 'prince' | 'autonomous_study';
+  source: 'prince' | 'autonomous_study' | 'global_surveillance';
   tags: string[];
   importance: number;
+  metadata?: Record<string, any>;
   created_at: string;
 }
 
@@ -81,7 +88,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
 
   // Assistant UI States
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'console' | 'memory'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'global_brain' | 'memory'>('console');
   const [isListening, setIsListening] = useState(false);
   const [isContinuous, setIsContinuous] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -98,6 +105,12 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
   const [loadingMemories, setLoadingMemories] = useState(false);
   const [isStudying, setIsStudying] = useState(false);
   const [newRuleInput, setNewRuleInput] = useState('');
+
+  // 24/7 Global Intelligence Brain States
+  const [globalBriefings, setGlobalBriefings] = useState<MemoryItem[]>([]);
+  const [loadingGlobal, setLoadingGlobal] = useState(false);
+  const [isScanningGlobal, setIsScanningGlobal] = useState(false);
+  const [globalFilter, setGlobalFilter] = useState<string>('all');
 
   // Engine Refs
   const recognitionRef = useRef<any>(null);
@@ -260,7 +273,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     if (!hasGreeted) {
       greetingTimeoutRef.current = setTimeout(() => {
         playChime('wake');
-        const greeting = `Welcome back, ${adminName}. AI Chief of Staff is online. Memory vault and continuous voice executive are ready.`;
+        const greeting = `Welcome back, ${adminName}. AI Chief of Staff is online. 24/7 Global Intelligence brain is scanning worldwide, and continuous voice executive is standing by.`;
         speak(greeting);
         sessionStorage.setItem('hp_jarvis_greeted', 'true');
       }, 1400);
@@ -287,11 +300,60 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     }
   }, []);
 
-  useEffect(() => {
-    if (isOpen && activeTab === 'memory') {
-      fetchMemories();
+  // 5. 24/7 Global Intelligence Surveillance
+  const fetchGlobalIntelligence = useCallback(async () => {
+    setLoadingGlobal(true);
+    try {
+      const res = await fetch('/api/admin/jarvis/global-intelligence');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.briefings)) {
+        setGlobalBriefings(data.briefings);
+      }
+    } catch (e) {
+      console.warn('[JARVIS Global Intelligence Fetch Error]', e);
+    } finally {
+      setLoadingGlobal(false);
     }
-  }, [isOpen, activeTab, fetchMemories]);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (activeTab === 'memory') fetchMemories();
+      if (activeTab === 'global_brain') fetchGlobalIntelligence();
+    }
+  }, [isOpen, activeTab, fetchMemories, fetchGlobalIntelligence]);
+
+  const triggerGlobalSurveillance = async (sector?: string) => {
+    setIsScanningGlobal(true);
+    setActionNotice('JARVIS is conducting 24/7 worldwide intelligence surveillance...');
+    playChime('wake');
+
+    try {
+      const res = await fetch('/api/admin/jarvis/global-intelligence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'scan', sector }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        playChime('success');
+        const spoken =
+          data.report?.executiveBriefing ||
+          `24/7 Global surveillance scan complete across all worldwide sectors, ${adminName}. Strategic intelligence has been committed to permanent memory.`;
+        speak(spoken);
+        fetchGlobalIntelligence();
+      } else {
+        playChime('alert');
+        speak(`Global surveillance scan completed with advisory notice.`);
+      }
+    } catch {
+      playChime('alert');
+      speak(`Could not complete worldwide surveillance scan.`);
+    } finally {
+      setIsScanningGlobal(false);
+      setActionNotice(null);
+    }
+  };
 
   const triggerSelfStudy = async (customTopic?: string) => {
     setIsStudying(true);
@@ -307,7 +369,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
       const data = await res.json();
       if (data.success && data.memory) {
         playChime('success');
-        speak(`Self-study complete on ${data.memory.title}, Prince. Key takeaways have been stored in my permanent memory.`);
+        speak(`Self-study complete on ${data.memory.title}, Prince. Key takeaways have been stored in permanent memory.`);
         fetchMemories();
       } else {
         playChime('alert');
@@ -353,7 +415,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     }
   };
 
-  // 5. Autonomous DOM Inspector: "Learns Dashboard" in Real Time
+  // 6. Autonomous DOM Inspector: "Learns Dashboard" in Real Time
   const learnCurrentDashboard = useCallback(() => {
     if (typeof window === 'undefined') return null;
 
@@ -401,7 +463,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     };
   }, [userId]);
 
-  // 6. DOM Execution Engine (Highlighting, Clicking, Typing)
+  // 7. DOM Execution Engine (Highlighting, Clicking, Typing)
   const highlightElement = useCallback((el: HTMLElement) => {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const originalShadow = el.style.boxShadow;
@@ -500,7 +562,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     [highlightElement]
   );
 
-  // 7. Action Sequence Executor
+  // 8. Action Sequence Executor
   const executeActions = useCallback(
     async (actions: JarvisAction[]) => {
       for (const act of actions) {
@@ -532,7 +594,6 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
             });
             playChime('success');
 
-            // If on the Chief of Staff page, click the buttons on cards for immediate visual feedback
             const modeTarget = act.mode === 'prepare' ? 'Mode B' : act.mode === 'observe' ? 'Mode A' : 'Mode C';
             const cards = Array.from(document.querySelectorAll('.cos-agent-card, [data-agent-card]'));
             let targetCards = cards;
@@ -554,6 +615,8 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
           } finally {
             setActionNotice(null);
           }
+        } else if (act.type === 'global_scan') {
+          await triggerGlobalSurveillance();
         } else if (act.type === 'run_agent' && act.agentId) {
           try {
             setActionNotice(`Executing Agent ${act.agentId}...`);
@@ -587,7 +650,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     [findAndClickButton, findAndTypeIntoInput, highlightElement, playChime, router, userId]
   );
 
-  // 8. Full Voice Command Router
+  // 9. Full Voice Command Router
   const processCommand = useCallback(
     async (rawText: string) => {
       if (isProcessingRef.current) return;
@@ -609,6 +672,20 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
           } catch {}
         }
         speak(`Voice recognition paused. Click my Arc Reactor anytime you need me, Prince.`);
+        setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // --- COMMAND: 24/7 GLOBAL SURVEILLANCE SCAN ---
+      if (
+        cmd.includes('scan global') ||
+        cmd.includes('global scan') ||
+        cmd.includes('scan world') ||
+        cmd.includes('world scan') ||
+        cmd.includes('global surveillance')
+      ) {
+        await triggerGlobalSurveillance();
         setIsThinking(false);
         isProcessingRef.current = false;
         return;
@@ -857,8 +934,8 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         return;
       }
 
-      // --- COGNITIVE REASONING VIA GEMINI WITH SCREEN CONTEXT & MEMORY VAULT ---
-      setActionNotice('Consulting JARVIS Core Intelligence & Memory...');
+      // --- COGNITIVE REASONING VIA GEMINI WITH 24/7 GLOBAL BRAIN & MEMORY VAULT ---
+      setActionNotice('Consulting JARVIS Chief of Staff Intelligence...');
       try {
         const pageContext = learnCurrentDashboard();
         const res = await fetch('/api/admin/jarvis', {
@@ -890,7 +967,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     [adminName, executeActions, findAndClickButton, findAndTypeIntoInput, learnCurrentDashboard, playChime, router, speak, userId]
   );
 
-  // 9. Always-On Continuous Speech Recognition Engine
+  // 10. Always-On Continuous Speech Recognition Engine
   const startListeningEngine = useCallback(() => {
     if (typeof window === 'undefined') return;
 
@@ -1176,10 +1253,10 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         {isOpen && (
           <div
             style={{
-              width: '420px',
-              maxHeight: '580px',
+              width: '450px',
+              maxHeight: '620px',
               borderRadius: '20px',
-              background: 'linear-gradient(180deg, rgba(14, 18, 28, 0.96) 0%, rgba(9, 12, 18, 0.99) 100%)',
+              background: 'linear-gradient(180deg, rgba(14, 18, 28, 0.97) 0%, rgba(9, 12, 18, 0.99) 100%)',
               border: '1px solid rgba(0, 255, 255, 0.3)',
               boxShadow: '0 20px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 255, 255, 0.15)',
               backdropFilter: 'blur(20px)',
@@ -1216,7 +1293,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                     J.A.R.V.I.S.
                   </h4>
                   <span style={{ fontSize: '0.64rem', color: isContinuous ? '#10b981' : '#00ffff', fontWeight: 700, letterSpacing: '0.08em' }}>
-                    {isContinuous ? '● ALWAYS LISTENING ACTIVE' : 'AUTONOMOUS EXECUTIVE & MEMORY'}
+                    {isContinuous ? '● ALWAYS LISTENING ACTIVE' : 'AI CHIEF OF STAFF • 24/7 WORLD INTEL'}
                   </span>
                 </div>
               </div>
@@ -1245,7 +1322,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
               </div>
             </div>
 
-            {/* Mode & Tab Switcher Bar */}
+            {/* Mode & 3-Tab Switcher Bar */}
             <div
               style={{
                 display: 'flex',
@@ -1257,18 +1334,18 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                 onClick={() => setActiveTab('console')}
                 style={{
                   flex: 1,
-                  padding: '9px 12px',
+                  padding: '9px 8px',
                   border: 'none',
                   background: activeTab === 'console' ? 'rgba(0, 255, 255, 0.1)' : 'transparent',
                   borderBottom: activeTab === 'console' ? '2px solid #00ffff' : '2px solid transparent',
                   color: activeTab === 'console' ? '#00ffff' : '#94a3b8',
-                  fontSize: '0.74rem',
+                  fontSize: '0.72rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '6px',
+                  gap: '5px',
                 }}
               >
                 <Zap size={13} />
@@ -1276,25 +1353,47 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
               </button>
 
               <button
-                onClick={() => setActiveTab('memory')}
+                onClick={() => setActiveTab('global_brain')}
                 style={{
-                  flex: 1,
-                  padding: '9px 12px',
+                  flex: 1.3,
+                  padding: '9px 8px',
                   border: 'none',
-                  background: activeTab === 'memory' ? 'rgba(0, 255, 255, 0.1)' : 'transparent',
-                  borderBottom: activeTab === 'memory' ? '2px solid #00ffff' : '2px solid transparent',
-                  color: activeTab === 'memory' ? '#00ffff' : '#94a3b8',
-                  fontSize: '0.74rem',
+                  background: activeTab === 'global_brain' ? 'rgba(0, 255, 255, 0.1)' : 'transparent',
+                  borderBottom: activeTab === 'global_brain' ? '2px solid #00ffff' : '2px solid transparent',
+                  color: activeTab === 'global_brain' ? '#00ffff' : '#94a3b8',
+                  fontSize: '0.72rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '6px',
+                  gap: '5px',
+                }}
+              >
+                <Globe size={13} color="#00ffff" />
+                <span>24/7 Global Brain</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('memory')}
+                style={{
+                  flex: 1,
+                  padding: '9px 8px',
+                  border: 'none',
+                  background: activeTab === 'memory' ? 'rgba(0, 255, 255, 0.1)' : 'transparent',
+                  borderBottom: activeTab === 'memory' ? '2px solid #00ffff' : '2px solid transparent',
+                  color: activeTab === 'memory' ? '#00ffff' : '#94a3b8',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
                 }}
               >
                 <Brain size={13} />
-                <span>Memory & Self-Study ({memories.length})</span>
+                <span>Memory ({memories.length})</span>
               </button>
             </div>
 
@@ -1450,11 +1549,12 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                   }}
                 >
                   {[
+                    { label: '🌐 24/7 World Brief', cmd: 'scan global news' },
+                    { label: '📉 Recession Outlook', cmd: 'what is the recession and economic outlook' },
                     { label: '🤖 All Agents Mode B', cmd: 'turn all agents to mode b' },
                     { label: '3️⃣ First 3 to Mode B', cmd: 'turn first three agents to mode b' },
                     { label: '⚡ Run Audit', cmd: 'run audit' },
                     { label: '🔑 Change Password', cmd: 'change password' },
-                    { label: '📚 Study Books', cmd: 'study software architecture and clean code' },
                   ].map((chip) => (
                     <button
                       key={chip.label}
@@ -1517,7 +1617,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                     type="text"
                     value={typedInput}
                     onChange={(e) => setTypedInput(e.target.value)}
-                    placeholder="Command JARVIS or teach him a rule..."
+                    placeholder="Command JARVIS or ask about global sectors..."
                     style={{
                       flex: 1,
                       background: 'rgba(255, 255, 255, 0.04)',
@@ -1553,7 +1653,194 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
               </>
             )}
 
-            {/* TAB 2: MEMORY VAULT & AUTONOMOUS SELF-STUDY */}
+            {/* TAB 2: 24/7 GLOBAL INTELLIGENCE BRAIN */}
+            {activeTab === 'global_brain' && (
+              <div
+                style={{
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px',
+                  overflowY: 'auto',
+                  flex: 1,
+                }}
+              >
+                {/* 24/7 Surveillance Radar Header */}
+                <div
+                  style={{
+                    padding: '14px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.14) 0%, rgba(16, 185, 129, 0.08) 100%)',
+                    border: '1px solid rgba(0, 255, 255, 0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Globe size={18} color="#00ffff" />
+                      <div>
+                        <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ffffff', display: 'block' }}>
+                          24/7 Global Surveillance Radar
+                        </span>
+                        <span style={{ fontSize: '0.62rem', color: '#10b981', fontWeight: 700 }}>
+                          ● ACTIVE COGNITIVE SURVEILLANCE
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => triggerGlobalSurveillance()}
+                      disabled={isScanningGlobal}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        background: '#00ffff',
+                        border: 'none',
+                        color: '#000000',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        cursor: isScanningGlobal ? 'default' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      {isScanningGlobal ? (
+                        <>
+                          <Loader2 size={13} className="hpa-spin" />
+                          <span>Scanning 6 Sectors...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Zap size={13} />
+                          <span>Scan All Sectors</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <p style={{ margin: 0, fontSize: '0.72rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+                    JARVIS operates around the clock scanning worldwide news, frontier AI, automobile & mobility, international geopolitics, energy infrastructure, and macroeconomic recession indicators.
+                  </p>
+                </div>
+
+                {/* Sector Filter Chips */}
+                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+                  {[
+                    { id: 'all', label: 'All Sectors' },
+                    { id: 'ai', label: '🤖 AI' },
+                    { id: 'technology', label: '💻 Tech' },
+                    { id: 'automobile', label: '🚗 Auto' },
+                    { id: 'geopolitics', label: '🌍 Geopolitics' },
+                    { id: 'infrastructure', label: '🏗️ Infra' },
+                    { id: 'recession', label: '📉 Recession' },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setGlobalFilter(s.id)}
+                      style={{
+                        background: globalFilter === s.id ? 'rgba(0, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                        border: globalFilter === s.id ? '1px solid #00ffff' : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        padding: '4px 10px',
+                        color: globalFilter === s.id ? '#00ffff' : '#94a3b8',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Global Briefings Feed */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#00ffff', letterSpacing: '0.04em' }}>
+                      SYNTHESIZED WORLDWIDE INTELLIGENCE ({globalBriefings.length})
+                    </span>
+                    <button
+                      onClick={fetchGlobalIntelligence}
+                      style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                      title="Refresh Intelligence"
+                    >
+                      <RotateCw size={12} className={loadingGlobal ? 'hpa-spin' : ''} />
+                    </button>
+                  </div>
+
+                  {loadingGlobal && globalBriefings.length === 0 ? (
+                    <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '0.75rem' }}>
+                      <Loader2 size={16} className="hpa-spin" style={{ margin: '0 auto 6px' }} />
+                      Accessing 24/7 global intelligence feeds...
+                    </div>
+                  ) : globalBriefings.length === 0 ? (
+                    <div
+                      style={{
+                        padding: '24px',
+                        textAlign: 'center',
+                        color: '#94a3b8',
+                        fontSize: '0.76rem',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        borderRadius: '10px',
+                        border: '1px dashed rgba(255, 255, 255, 0.1)',
+                      }}
+                    >
+                      Click &ldquo;Scan All Sectors&rdquo; above to conduct your first 24/7 global surveillance scan.
+                    </div>
+                  ) : (
+                    globalBriefings
+                      .filter((b) => globalFilter === 'all' || b.metadata?.sector === globalFilter)
+                      .map((b) => (
+                        <div
+                          key={b.id}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: '10px',
+                            background: 'rgba(0, 255, 255, 0.04)',
+                            border: '1px solid rgba(0, 255, 255, 0.18)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span
+                              style={{
+                                fontSize: '0.62rem',
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                background: 'rgba(0, 255, 255, 0.15)',
+                                color: '#00ffff',
+                              }}
+                            >
+                              {b.metadata?.region ? `REGION: ${b.metadata.region}` : 'GLOBAL SECTOR'}
+                            </span>
+                            <span style={{ fontSize: '0.64rem', color: '#64748b' }}>
+                              {new Date(b.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          <h5 style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.35 }}>
+                            {b.title}
+                          </h5>
+
+                          <p style={{ margin: 0, fontSize: '0.74rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                            {b.content}
+                          </p>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: MEMORY VAULT & AUTONOMOUS SELF-STUDY */}
             {activeTab === 'memory' && (
               <div
                 style={{
@@ -1622,12 +1909,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                 </div>
 
                 {/* Teach JARVIS Input Form */}
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '6px',
-                  }}
-                >
+                <div style={{ display: 'flex', gap: '6px' }}>
                   <input
                     type="text"
                     value={newRuleInput}
@@ -1683,50 +1965,52 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                       Loading memory vault...
                     </div>
                   ) : (
-                    memories.map((m) => (
-                      <div
-                        key={m.id}
-                        style={{
-                          padding: '12px',
-                          borderRadius: '10px',
-                          background:
-                            m.category === 'teaching'
-                              ? 'rgba(16, 185, 129, 0.06)'
-                              : 'rgba(59, 130, 246, 0.06)',
-                          border:
-                            m.category === 'teaching'
-                              ? '1px solid rgba(16, 185, 129, 0.25)'
-                              : '1px solid rgba(59, 130, 246, 0.25)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span
-                            style={{
-                              fontSize: '0.62rem',
-                              fontWeight: 800,
-                              textTransform: 'uppercase',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              background: m.category === 'teaching' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                              color: m.category === 'teaching' ? '#34d399' : '#60a5fa',
-                            }}
-                          >
-                            {m.category === 'teaching' ? "👑 Prince's Rule" : '📚 Self-Study'}
-                          </span>
-                          <span style={{ fontSize: '0.64rem', color: '#64748b' }}>
-                            {new Date(m.created_at).toLocaleDateString()}
-                          </span>
+                    memories
+                      .filter((m) => m.category !== 'global_intelligence')
+                      .map((m) => (
+                        <div
+                          key={m.id}
+                          style={{
+                            padding: '12px',
+                            borderRadius: '10px',
+                            background:
+                              m.category === 'teaching'
+                                ? 'rgba(16, 185, 129, 0.06)'
+                                : 'rgba(59, 130, 246, 0.06)',
+                            border:
+                              m.category === 'teaching'
+                                ? '1px solid rgba(16, 185, 129, 0.25)'
+                                : '1px solid rgba(59, 130, 246, 0.25)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span
+                              style={{
+                                fontSize: '0.62rem',
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                background: m.category === 'teaching' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                color: m.category === 'teaching' ? '#34d399' : '#60a5fa',
+                              }}
+                            >
+                              {m.category === 'teaching' ? "👑 Prince's Rule" : '📚 Self-Study'}
+                            </span>
+                            <span style={{ fontSize: '0.64rem', color: '#64748b' }}>
+                              {new Date(m.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+
+                          <h5 style={{ margin: '0 0 6px 0', fontSize: '0.8rem', fontWeight: 800, color: '#ffffff' }}>
+                            {m.title}
+                          </h5>
+
+                          <p style={{ margin: 0, fontSize: '0.74rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+                            {m.content}
+                          </p>
                         </div>
-
-                        <h5 style={{ margin: '0 0 6px 0', fontSize: '0.8rem', fontWeight: 800, color: '#ffffff' }}>
-                          {m.title}
-                        </h5>
-
-                        <p style={{ margin: 0, fontSize: '0.74rem', color: '#cbd5e1', lineHeight: 1.4 }}>
-                          {m.content}
-                        </p>
-                      </div>
-                    ))
+                      ))
                   )}
                 </div>
               </div>
@@ -1758,6 +2042,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         }
         @keyframes hpaFadeUp {
           from {
+            opacity: 0;
             transform: translateY(12px) scale(0.97);
           }
           to {

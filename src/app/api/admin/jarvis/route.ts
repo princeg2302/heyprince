@@ -7,6 +7,12 @@ import {
   saveMemory,
   conductAutonomousSelfStudy,
 } from '@/lib/jarvis/memory';
+import {
+  getGlobalIntelligenceContext,
+  runFullGlobalBrainSurveillance,
+  scanGlobalSector,
+  IntelligenceSector,
+} from '@/lib/jarvis/global-brain';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -21,6 +27,7 @@ export interface JarvisAction {
     | 'scroll'
     | 'select_tab'
     | 'batch_agents'
+    | 'global_scan'
     | 'toast';
   url?: string;
   targetText?: string;
@@ -50,8 +57,68 @@ export async function POST(request: NextRequest) {
 
     const adminName = admin.name || admin.email.split('@')[0] || 'Prince';
     const userId = admin.id || 1;
+    const lowerQ = query.toLowerCase().trim();
 
-    // 1. DIRECT FAST-PATH: TEACHING / MEMORY STORAGE
+    // 1. FAST-PATH: 24/7 GLOBAL INTELLIGENCE SURVEILLANCE & SECTORS
+    if (
+      lowerQ.includes('scan global') ||
+      lowerQ.includes('global scan') ||
+      lowerQ.includes('scan world') ||
+      lowerQ.includes('world scan') ||
+      lowerQ.includes('global intelligence') ||
+      lowerQ.includes('surveillance scan')
+    ) {
+      const fullReport = await runFullGlobalBrainSurveillance();
+      return NextResponse.json({
+        success: true,
+        reply: fullReport.executiveBriefing,
+        actions: [
+          {
+            type: 'toast',
+            message: `24/7 Global Surveillance complete across all ${fullReport.totalSectorsScanned} worldwide sectors.`,
+          },
+        ],
+      });
+    }
+
+    // Specific sector queries (recession, geopolitics, automobile, infrastructure, ai)
+    if (lowerQ.includes('recession') || lowerQ.includes('macroeconomic') || lowerQ.includes('inflation') || lowerQ.includes('economic crisis')) {
+      const brief = await scanGlobalSector('recession', query);
+      return NextResponse.json({
+        success: true,
+        reply: `Macroeconomic intelligence update, ${adminName}: ${brief.headline}. ${brief.summary}`,
+        actions: [{ type: 'toast', message: `Recession briefing updated: ${brief.headline}` }],
+      });
+    }
+
+    if (lowerQ.includes('geopolitic') || lowerQ.includes('country issue') || lowerQ.includes('world politics') || lowerQ.includes('international')) {
+      const brief = await scanGlobalSector('geopolitics', query);
+      return NextResponse.json({
+        success: true,
+        reply: `Geopolitical intelligence update, ${adminName}: In ${brief.region}, ${brief.headline}. ${brief.summary}`,
+        actions: [{ type: 'toast', message: `Geopolitics update: ${brief.headline}` }],
+      });
+    }
+
+    if (lowerQ.includes('automobile') || lowerQ.includes('automotive') || lowerQ.includes('electric vehicle') || lowerQ.includes('ev market')) {
+      const brief = await scanGlobalSector('automobile', query);
+      return NextResponse.json({
+        success: true,
+        reply: `Automotive & mobility briefing, sir: ${brief.headline}. ${brief.summary}`,
+        actions: [{ type: 'toast', message: `Automobile briefing: ${brief.headline}` }],
+      });
+    }
+
+    if (lowerQ.includes('infrastructure') || lowerQ.includes('power grid') || lowerQ.includes('data center')) {
+      const brief = await scanGlobalSector('infrastructure', query);
+      return NextResponse.json({
+        success: true,
+        reply: `Infrastructure intelligence, ${adminName}: ${brief.headline}. ${brief.summary}`,
+        actions: [{ type: 'toast', message: `Infrastructure update: ${brief.headline}` }],
+      });
+    }
+
+    // 2. DIRECT FAST-PATH: TEACHING / MEMORY STORAGE
     const teachMatch = query.match(/(?:remember|learn|note|memorize)\s+(?:that\s+)?(.+)/i) ||
       query.match(/teaching(?:\s+you)?(?:\s+that)?[:\s]+(.+)/i);
 
@@ -73,7 +140,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 2. DIRECT FAST-PATH: SELF-STUDY / READING BOOKS
+    // 3. DIRECT FAST-PATH: SELF-STUDY / READING BOOKS
     const studyMatch = query.match(/(?:study|read(?:\s+a)?\s+book\s+on|learn\s+about)\s+(.+)/i);
     if (studyMatch && studyMatch[1]?.trim()) {
       const topic = studyMatch[1].trim();
@@ -86,7 +153,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. DIRECT FAST-PATH: AGENT QUANTIFIERS & MODES ("all means all, first three means first three")
+    // 4. DIRECT FAST-PATH: AGENT QUANTIFIERS & MODES ("all means all, first three means first three")
     const agentMatch = query.match(
       /(?:turn|set|switch|change)\s*(all|every|first\s*three|first\s*3|first\s*two|first\s*2|first\s*one|first|one)?\s*agents?\s*(?:to|in)?\s*(mode\s*[abc]|prepare|observe|auto|paused?|active|enabled?)/i
     );
@@ -110,7 +177,6 @@ export async function POST(request: NextRequest) {
       else if (modeRaw.includes('pause')) targetStatus = 'paused';
       else if (modeRaw.includes('active') || modeRaw.includes('enable')) targetStatus = 'enabled';
 
-      // Update via internal API
       try {
         await fetch(`${request.nextUrl.origin}/api/admin/chief-of-staff/agent-toggle`, {
           method: 'POST',
@@ -150,7 +216,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. Gather live telemetry and long-term memory
+    // 5. Gather telemetry, long-term memory & global intelligence
     let dashboardContext = '';
     try {
       const summary = await getChiefDashboardSummary();
@@ -167,11 +233,18 @@ LIVE TELEMETRY:
     }
 
     const memoryContext = await getJarvisMemoryContext();
+    const globalIntelContext = await getGlobalIntelligenceContext();
 
     const systemPrompt = `You are JARVIS, the ultra-competent, highly intelligent, British-inflected AI Chief of Staff and personal digital executive for Prince (Senior Full Stack Engineer & IT Consultant at HeyPrince.in).
 Prince is directly speaking to you from his HeyPrince.in Admin Dashboard.
 
+YOUR ROLE & MANDATE:
+- You are Prince's AI Chief of Staff, overseeing all engineering, autonomous agents, website health, and global strategy.
+- You operate a 24/7 continuous intelligence brain scanning technologies, AI, automobile & mobility, worldwide geopolitics, infrastructure, and global recession/markets.
+
 ${memoryContext}
+
+${globalIntelContext}
 
 CURRENT SCREEN CONTEXT LEARNED FROM DOM:
 - Current Route: ${pageContext?.route || '/admin/'}
@@ -205,14 +278,14 @@ YOUR BEHAVIOR & STYLE:
 - Dignified, calm, subtly witty British cadence (like classic JARVIS).
 - Address him naturally as "${adminName}" or "sir".
 - Keep spoken replies concise: 1 to 2 crisp sentences for audio readout.
-- Learn and translate whatever Prince says into concrete dashboard actions.
+- When asked about world events, AI, cars, recession, or geopolitics, synthesize your 24/7 intelligence brain insights.
 
 RESPOND IN STRICT JSON ONLY:
 {
   "reply": "Spoken text response (1-2 sentences)",
   "actions": [
     {
-      "type": "navigate" | "click_button" | "focus_and_type" | "run_agent" | "change_password" | "scroll" | "select_tab" | "batch_agents",
+      "type": "navigate" | "click_button" | "focus_and_type" | "run_agent" | "change_password" | "scroll" | "select_tab" | "batch_agents" | "global_scan",
       "url": "/admin/...",
       "targetText": "Text of button or tab to click",
       "fieldName": "Input placeholder or name",
@@ -244,9 +317,8 @@ RESPOND IN STRICT JSON ONLY:
     }
 
     // Deterministic fallback rule engine
-    const lowerQ = query.toLowerCase();
     const fallbackActions: JarvisAction[] = [];
-    let fallbackReply = `At your service, ${adminName}. All 5 autonomous agents are operational.`;
+    let fallbackReply = `At your service, ${adminName}. All 5 autonomous agents are operational and 24/7 global surveillance is active.`;
 
     if (lowerQ.includes('password')) {
       fallbackReply = `Opening your security profile now, ${adminName}. Focusing the password field.`;
