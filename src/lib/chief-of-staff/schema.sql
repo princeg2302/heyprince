@@ -178,3 +178,4 @@ ON CONFLICT (id) DO UPDATE SET
   role = EXCLUDED.role,
   description = EXCLUDED.description,
   updated_at = NOW();
+

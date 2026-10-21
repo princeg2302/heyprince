@@ -166,3 +166,4 @@ export interface ChiefDashboardSummary {
     estimatedCostUsd: number;
   };
 }
+

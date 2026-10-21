@@ -105,3 +105,4 @@ async function handleCronTrigger(request: NextRequest) {
     );
   }
 }
+
