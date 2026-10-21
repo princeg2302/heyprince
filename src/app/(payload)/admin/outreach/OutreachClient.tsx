@@ -320,25 +320,50 @@ export default function OutreachClient({
     }
   };
 
-  // Open Business Detail
-  const handleSelectBusiness = async (b: BusinessEntity) => {
-    setSelectedBusiness(b);
-    setCrmNotesInput((b.metadata as any)?.crm_notes || '');
+  // Open Business Detail & CRM
+  const handleOpenBusinessById = async (businessId: string, fallbackName?: string) => {
     setIsLoadingDetail(true);
+    const existing = businesses.find((b) => b.id === businessId);
+    if (existing) {
+      setSelectedBusiness(existing);
+      setCrmNotesInput((existing.metadata as any)?.crm_notes || '');
+    } else {
+      setSelectedBusiness({
+        id: businessId,
+        name: fallbackName || 'Loading business...',
+        status: 'DISCOVERED',
+        country_code: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as BusinessEntity);
+    }
+
     try {
-      const res = await fetch(`/api/admin/outreach/businesses/${b.id}`);
+      const res = await fetch(`/api/admin/outreach/businesses/${businessId}`);
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.business) {
+        setSelectedBusiness(data.business);
         setBusinessDetail(data);
-        if (data.business?.metadata?.crm_notes !== undefined) {
-          setCrmNotesInput(data.business.metadata.crm_notes || '');
-        }
+        setCrmNotesInput(data.business.metadata?.crm_notes || '');
+        setBusinesses((prev) => {
+          if (!prev.some((b) => b.id === data.business.id)) {
+            return [data.business, ...prev];
+          }
+          return prev;
+        });
+        showToast(`CRM Record loaded: ${data.business.name}`, 'success');
+      } else {
+        showToast(data.error || `Could not load business record`, 'error');
       }
     } catch {
       showToast('Error fetching business intelligence record', 'error');
     } finally {
       setIsLoadingDetail(false);
     }
+  };
+
+  const handleSelectBusiness = async (b: BusinessEntity) => {
+    return handleOpenBusinessById(b.id, b.name);
   };
 
   // Update Business Status & CRM Notes
@@ -743,6 +768,546 @@ export default function OutreachClient({
     } catch {
       showToast('Network error while rejecting proposal', 'error');
     }
+  };
+
+  // Reusable CRM & Business Intelligence Drawer
+  const renderBusinessDetailDrawer = () => {
+    if (!selectedBusiness) return null;
+    return (
+            <div
+              style={{
+                position: 'sticky',
+                top: '20px',
+                alignSelf: 'start',
+                background: '#0e0e16',
+                border: '1px solid #1c1c2b',
+                borderRadius: '12px',
+                padding: '24px',
+                maxHeight: 'calc(100vh - 40px)',
+                overflowY: 'auto',
+                minWidth: 0,
+                width: '100%',
+                boxSizing: 'border-box',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+                zIndex: 20,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>{selectedBusiness.name}</h3>
+                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>{selectedBusiness.category} • {selectedBusiness.city}</span>
+                </div>
+                <button
+                  onClick={() => setSelectedBusiness(null)}
+                  style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '16px' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* CRM Pipeline & Deal Stage Card */}
+              <div
+                style={{
+                  background: '#161622',
+                  border: '1px solid #2d2d42',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>
+                    Lead Pipeline Stage
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '8px',
+                      background: getStatusBadgeStyle(selectedBusiness.status).bg,
+                      color: getStatusBadgeStyle(selectedBusiness.status).color,
+                      border: `1px solid ${getStatusBadgeStyle(selectedBusiness.status).border}`,
+                    }}
+                  >
+                    {getStatusBadgeStyle(selectedBusiness.status).longLabel}
+                  </span>
+                </div>
+
+                {/* Quick 1-Click Status Changers */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '12px' }}>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CONTACTED')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'CONTACTED'}
+                    style={{
+                      background: selectedBusiness.status === 'CONTACTED' ? 'rgba(56, 189, 248, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'CONTACTED' ? '1px solid #38bdf8' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'CONTACTED' ? '#38bdf8' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    ✉️ Contacted
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'IN_DISCUSSION')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'IN_DISCUSSION'}
+                    style={{
+                      background: selectedBusiness.status === 'IN_DISCUSSION' ? 'rgba(245, 158, 11, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'IN_DISCUSSION' ? '1px solid #f59e0b' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'IN_DISCUSSION' ? '#f59e0b' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    💬 Talking
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_WON')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_WON'}
+                    style={{
+                      background: selectedBusiness.status === 'CLOSED_WON' ? 'rgba(16, 185, 129, 0.25)' : '#0e0e16',
+                      border: selectedBusiness.status === 'CLOSED_WON' ? '1px solid #10b981' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'CLOSED_WON' ? '#10b981' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    🎉 Won!
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_LOST')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_LOST'}
+                    style={{
+                      background: selectedBusiness.status === 'CLOSED_LOST' ? 'rgba(239, 68, 68, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'CLOSED_LOST' ? '1px solid #ef4444' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'CLOSED_LOST' ? '#ef4444' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    ❌ Lost
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISQUALIFIED')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISQUALIFIED'}
+                    style={{
+                      background: selectedBusiness.status === 'DISQUALIFIED' ? 'rgba(107, 114, 128, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'DISQUALIFIED' ? '1px solid #9ca3af' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'DISQUALIFIED' ? '#9ca3af' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    🚫 Disqualify
+                  </button>
+                  <button
+                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISCOVERED')}
+                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISCOVERED'}
+                    style={{
+                      background: selectedBusiness.status === 'DISCOVERED' ? 'rgba(148, 163, 184, 0.2)' : '#0e0e16',
+                      border: selectedBusiness.status === 'DISCOVERED' ? '1px solid #cbd5e1' : '1px solid #2d2d42',
+                      color: selectedBusiness.status === 'DISCOVERED' ? '#cbd5e1' : '#e5e7eb',
+                      padding: '6px 4px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                    }}
+                  >
+                    📍 Fresh
+                  </button>
+                </div>
+
+                {/* CRM Notes & Follow-up log */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', color: '#9ca3af' }}>Deal Notes & Meeting Recap:</label>
+                    {isUpdatingStatus && <span style={{ fontSize: '10px', color: '#ff3366' }}>Saving...</span>}
+                  </div>
+                  <textarea
+                    value={crmNotesInput}
+                    onChange={(e) => setCrmNotesInput(e.target.value)}
+                    placeholder="e.g. Spoke with manager on call. Interested in redesign, quoted $2,500. Follow-up meeting Friday."
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      background: '#0a0a10',
+                      border: '1px solid #2d2d42',
+                      borderRadius: '6px',
+                      color: '#ffffff',
+                      padding: '8px',
+                      fontSize: '12px',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                    <button
+                      onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, selectedBusiness.status, crmNotesInput)}
+                      disabled={isUpdatingStatus}
+                      style={{
+                        background: '#2d2d42',
+                        border: 'none',
+                        color: '#ffffff',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Save Note
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                <button
+                  disabled={isAuditing || !selectedBusiness.website_url}
+                  onClick={() => handleRunAudit(selectedBusiness.id)}
+                  style={{
+                    flex: 1,
+                    background: '#161622',
+                    border: '1px solid #2d2d42',
+                    color: '#ffffff',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: isAuditing ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {isAuditing && <Loader2 size={13} className="hpa-spin" />}
+                  <span>{isAuditing ? 'Auditing & Crawling Pages...' : 'Deep Audit & Crawl Pages'}</span>
+                </button>
+                <button
+                  disabled={isGeneratingAi}
+                  onClick={() => handleGenerateAi(selectedBusiness.id)}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                    border: 'none',
+                    color: '#ffffff',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: isGeneratingAi ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  {isGeneratingAi ? <Loader2 size={14} className="hpa-spin" /> : <Sparkles size={14} />}
+                  <span>{isGeneratingAi ? 'Analyzing...' : 'Generate AI Draft'}</span>
+                </button>
+              </div>
+
+              {isLoadingDetail ? (
+                <p style={{ color: '#9ca3af', fontSize: '13px' }}>Loading intelligence data...</p>
+              ) : businessDetail ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
+                  {/* Direct Outreach Channels (Phone & WhatsApp) */}
+                  {(() => {
+                    const phone = (businessDetail.business?.metadata as any)?.phone || (selectedBusiness.metadata as any)?.phone;
+                    const phones = (businessDetail.business?.metadata as any)?.phones || (selectedBusiness.metadata as any)?.phones || [];
+                    const whatsappUrl = (businessDetail.business?.metadata as any)?.whatsapp_url || getWhatsAppUrl(phone, selectedBusiness.name);
+                    const isWa = isWhatsAppEligible(phone, (businessDetail.business?.metadata as any)?.whatsapp_url);
+                    const crawledPages = (businessDetail.business?.metadata as any)?.crawled_pages || (selectedBusiness.metadata as any)?.crawled_pages || [];
+
+                    return (
+                      <div style={{ background: '#161622', border: '1px solid #2d2d42', borderRadius: '8px', padding: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {isWa ? <WhatsAppIcon size={15} /> : <Phone size={14} />} Direct Outreach {isWa ? '(WhatsApp & Phone)' : '(Phone / Landline)'}
+                          </span>
+                          {crawledPages.length > 0 && (
+                            <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                              Crawled {crawledPages.length} {crawledPages.length === 1 ? 'page' : 'pages'}
+                            </span>
+                          )}
+                        </div>
+
+                        {phone ? (
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>Phone: </span>
+                                <a href={`tel:${phone}`} style={{ color: '#ffffff', fontWeight: 600, textDecoration: 'none' }}>
+                                  {phone}
+                                </a>
+                              </div>
+                              {isWa && whatsappUrl ? (
+                                <a
+                                  href={whatsappUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Open WhatsApp chat with pre-filled pitch"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: '#25d366',
+                                    color: '#ffffff',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    textDecoration: 'none',
+                                    fontWeight: 700,
+                                    fontSize: '12px',
+                                  }}
+                                >
+                                  <WhatsAppIcon size={14} /> Chat &amp; Pitch
+                                </a>
+                              ) : (
+                                <a
+                                  href={`tel:${phone}`}
+                                  title={`Call ${phone}`}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    background: 'rgba(56, 189, 248, 0.15)',
+                                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                                    color: '#38bdf8',
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    textDecoration: 'none',
+                                    fontWeight: 700,
+                                    fontSize: '12px',
+                                  }}
+                                >
+                                  <Phone size={13} /> Call Direct
+                                </a>
+                              )}
+                            </div>
+                            {phones.length > 1 && (
+                              <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                Additional numbers: {phones.filter((p: string) => p !== phone).join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            <p style={{ color: '#9ca3af', margin: '0 0 8px 0', fontSize: '12px' }}>
+                              No phone found yet. Click &quot;Deep Audit &amp; Crawl Pages&quot; to crawl subpages (/contact, /about) and auto-extract phone numbers and WhatsApp links.
+                            </p>
+                          </div>
+                        )}
+
+                        {crawledPages.length > 0 && (
+                          <div style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
+                            Crawled routes: {crawledPages.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Verified Contacts */}
+                  <div>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 700, color: '#ff3366' }}>
+                      Contacts ({businessDetail.contacts?.length || 0})
+                    </h4>
+                    {businessDetail.contacts?.length > 0 ? (
+                      businessDetail.contacts.map((c: any) => (
+                        <div key={c.id} style={{ background: '#07070d', border: '1px solid #1c1c2b', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.email}</div>
+                            <span style={{ fontSize: '11px', color: c.verification_status === 'VALID' ? '#00f5a0' : '#f59e0b' }}>
+                              Status: {c.verification_status}
+                            </span>
+                          </div>
+                          {c.phone && (() => {
+                            const isWa = isWhatsAppEligible(c.phone);
+                            const waUrl = getWhatsAppUrl(c.phone, selectedBusiness.name);
+                            return (
+                              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+                                <a href={`tel:${c.phone}`} style={{ color: '#9ca3af', textDecoration: 'none' }}>
+                                  {c.phone}
+                                </a>
+                                {isWa && waUrl ? (
+                                  <a
+                                    href={waUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    title="Open WhatsApp chat"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '20px',
+                                      height: '20px',
+                                      background: 'rgba(37, 211, 102, 0.15)',
+                                      border: '1px solid rgba(37, 211, 102, 0.4)',
+                                      color: '#25d366',
+                                      borderRadius: '50%',
+                                      textDecoration: 'none',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <WhatsAppIcon size={11} />
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={`tel:${c.phone}`}
+                                    title={`Call ${c.phone}`}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '20px',
+                                      height: '20px',
+                                      background: 'rgba(56, 189, 248, 0.12)',
+                                      border: '1px solid rgba(56, 189, 248, 0.35)',
+                                      color: '#38bdf8',
+                                      borderRadius: '50%',
+                                      textDecoration: 'none',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <Phone size={10} />
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ))
+                    ) : (
+                      <p style={{ color: '#6b7280', margin: '0 0 8px 0', fontSize: '12px' }}>
+                        No email discovered yet. Audit the website or enter a public contact email below:
+                      </p>
+                    )}
+
+                    {/* Inline Add Contact */}
+                    <form onSubmit={handleAddContact} style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <input
+                        type="email"
+                        placeholder="e.g. info@business.com"
+                        value={newContactEmail}
+                        onChange={(e) => setNewContactEmail(e.target.value)}
+                        required
+                        style={{
+                          flex: 1,
+                          background: '#07070d',
+                          border: '1px solid #2d2d42',
+                          color: '#ffffff',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={isAddingContact}
+                        style={{
+                          background: '#161622',
+                          border: '1px solid #2d2d42',
+                          color: '#ffffff',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: isAddingContact ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {isAddingContact ? 'Verifying...' : 'Save & Verify'}
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* AI Recommendation & Personalized Draft */}
+                  {businessDetail.aiAnalysis && (
+                    <div style={{ background: '#07070d', border: '1px solid #1c1c2b', borderRadius: '8px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#8b5cf6', fontWeight: 700, marginBottom: '6px' }}>
+                        <Sparkles size={14} /> Recommended Service:
+                      </div>
+                      <div style={{ fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
+                        {businessDetail.aiAnalysis.recommended_service}
+                      </div>
+                      <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '12px' }}>
+                        <strong>Evidence:</strong> {businessDetail.aiAnalysis.evidence}
+                      </div>
+
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
+                        Draft Subject:
+                      </div>
+                      <div style={{ background: '#0e0e16', padding: '6px 10px', borderRadius: '4px', color: '#38bdf8', marginBottom: '8px' }}>
+                        {businessDetail.aiAnalysis.suggested_subject}
+                      </div>
+
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
+                        Personalized Draft:
+                      </div>
+                      <pre style={{ background: '#0e0e16', padding: '10px', borderRadius: '4px', color: '#d1d5db', fontSize: '11px', whiteSpace: 'pre-wrap', maxHeight: '160px', overflowY: 'auto' }}>
+                        {businessDetail.aiAnalysis.personalized_draft}
+                      </pre>
+
+                      {/* Approve & Enqueue Action Button */}
+                      <div style={{ marginTop: '14px' }}>
+                        <button
+                          disabled={isQueueingEmail || !businessDetail.contacts || businessDetail.contacts.length === 0}
+                          onClick={handleEnqueueDraft}
+                          style={{
+                            width: '100%',
+                            background: businessDetail.contacts && businessDetail.contacts.length > 0 ? '#ff3366' : '#2d2d42',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            cursor: businessDetail.contacts && businessDetail.contacts.length > 0 ? 'pointer' : 'not-allowed',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                          }}
+                        >
+                          <Send size={15} />
+                          {isQueueingEmail ? 'Enqueuing...' : 'Approve & Enqueue for Dispatch'}
+                        </button>
+                        {(!businessDetail.contacts || businessDetail.contacts.length === 0) && (
+                          <p style={{ color: '#f59e0b', fontSize: '11px', marginTop: '6px', textAlign: 'center' }}>
+                            Add a contact email above to enable enqueuing.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+    );
   };
 
   return (
@@ -1571,541 +2136,7 @@ export default function OutreachClient({
           </div>
 
           {/* Drawer: Selected Business Detail & AI Analysis */}
-          {selectedBusiness && (
-            <div
-              style={{
-                position: 'sticky',
-                top: '20px',
-                alignSelf: 'start',
-                background: '#0e0e16',
-                border: '1px solid #1c1c2b',
-                borderRadius: '12px',
-                padding: '24px',
-                maxHeight: 'calc(100vh - 40px)',
-                overflowY: 'auto',
-                minWidth: 0,
-                width: '100%',
-                boxSizing: 'border-box',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
-                zIndex: 20,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>{selectedBusiness.name}</h3>
-                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>{selectedBusiness.category} • {selectedBusiness.city}</span>
-                </div>
-                <button
-                  onClick={() => setSelectedBusiness(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '16px' }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* CRM Pipeline & Deal Stage Card */}
-              <div
-                style={{
-                  background: '#161622',
-                  border: '1px solid #2d2d42',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  marginBottom: '16px',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>
-                    Lead Pipeline Stage
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: '8px',
-                      background: getStatusBadgeStyle(selectedBusiness.status).bg,
-                      color: getStatusBadgeStyle(selectedBusiness.status).color,
-                      border: `1px solid ${getStatusBadgeStyle(selectedBusiness.status).border}`,
-                    }}
-                  >
-                    {getStatusBadgeStyle(selectedBusiness.status).longLabel}
-                  </span>
-                </div>
-
-                {/* Quick 1-Click Status Changers */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '12px' }}>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CONTACTED')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'CONTACTED'}
-                    style={{
-                      background: selectedBusiness.status === 'CONTACTED' ? 'rgba(56, 189, 248, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'CONTACTED' ? '1px solid #38bdf8' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'CONTACTED' ? '#38bdf8' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    ✉️ Contacted
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'IN_DISCUSSION')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'IN_DISCUSSION'}
-                    style={{
-                      background: selectedBusiness.status === 'IN_DISCUSSION' ? 'rgba(245, 158, 11, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'IN_DISCUSSION' ? '1px solid #f59e0b' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'IN_DISCUSSION' ? '#f59e0b' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    💬 Talking
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_WON')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_WON'}
-                    style={{
-                      background: selectedBusiness.status === 'CLOSED_WON' ? 'rgba(16, 185, 129, 0.25)' : '#0e0e16',
-                      border: selectedBusiness.status === 'CLOSED_WON' ? '1px solid #10b981' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'CLOSED_WON' ? '#10b981' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    🎉 Won!
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_LOST')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_LOST'}
-                    style={{
-                      background: selectedBusiness.status === 'CLOSED_LOST' ? 'rgba(239, 68, 68, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'CLOSED_LOST' ? '1px solid #ef4444' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'CLOSED_LOST' ? '#ef4444' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    ❌ Lost
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISQUALIFIED')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISQUALIFIED'}
-                    style={{
-                      background: selectedBusiness.status === 'DISQUALIFIED' ? 'rgba(107, 114, 128, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'DISQUALIFIED' ? '1px solid #9ca3af' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'DISQUALIFIED' ? '#9ca3af' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    🚫 Disqualify
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISCOVERED')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISCOVERED'}
-                    style={{
-                      background: selectedBusiness.status === 'DISCOVERED' ? 'rgba(148, 163, 184, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'DISCOVERED' ? '1px solid #cbd5e1' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'DISCOVERED' ? '#cbd5e1' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    📍 Fresh
-                  </button>
-                </div>
-
-                {/* CRM Notes & Follow-up log */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <label style={{ fontSize: '11px', color: '#9ca3af' }}>Deal Notes & Meeting Recap:</label>
-                    {isUpdatingStatus && <span style={{ fontSize: '10px', color: '#ff3366' }}>Saving...</span>}
-                  </div>
-                  <textarea
-                    value={crmNotesInput}
-                    onChange={(e) => setCrmNotesInput(e.target.value)}
-                    placeholder="e.g. Spoke with manager on call. Interested in redesign, quoted $2,500. Follow-up meeting Friday."
-                    rows={2}
-                    style={{
-                      width: '100%',
-                      background: '#0a0a10',
-                      border: '1px solid #2d2d42',
-                      borderRadius: '6px',
-                      color: '#ffffff',
-                      padding: '8px',
-                      fontSize: '12px',
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-                    <button
-                      onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, selectedBusiness.status, crmNotesInput)}
-                      disabled={isUpdatingStatus}
-                      style={{
-                        background: '#2d2d42',
-                        border: 'none',
-                        color: '#ffffff',
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Save Note
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                <button
-                  disabled={isAuditing || !selectedBusiness.website_url}
-                  onClick={() => handleRunAudit(selectedBusiness.id)}
-                  style={{
-                    flex: 1,
-                    background: '#161622',
-                    border: '1px solid #2d2d42',
-                    color: '#ffffff',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: isAuditing ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  {isAuditing && <Loader2 size={13} className="hpa-spin" />}
-                  <span>{isAuditing ? 'Auditing & Crawling Pages...' : 'Deep Audit & Crawl Pages'}</span>
-                </button>
-                <button
-                  disabled={isGeneratingAi}
-                  onClick={() => handleGenerateAi(selectedBusiness.id)}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                    border: 'none',
-                    color: '#ffffff',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: isGeneratingAi ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  {isGeneratingAi ? <Loader2 size={14} className="hpa-spin" /> : <Sparkles size={14} />}
-                  <span>{isGeneratingAi ? 'Analyzing...' : 'Generate AI Draft'}</span>
-                </button>
-              </div>
-
-              {isLoadingDetail ? (
-                <p style={{ color: '#9ca3af', fontSize: '13px' }}>Loading intelligence data...</p>
-              ) : businessDetail ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
-                  {/* Direct Outreach Channels (Phone & WhatsApp) */}
-                  {(() => {
-                    const phone = (businessDetail.business?.metadata as any)?.phone || (selectedBusiness.metadata as any)?.phone;
-                    const phones = (businessDetail.business?.metadata as any)?.phones || (selectedBusiness.metadata as any)?.phones || [];
-                    const whatsappUrl = (businessDetail.business?.metadata as any)?.whatsapp_url || getWhatsAppUrl(phone, selectedBusiness.name);
-                    const isWa = isWhatsAppEligible(phone, (businessDetail.business?.metadata as any)?.whatsapp_url);
-                    const crawledPages = (businessDetail.business?.metadata as any)?.crawled_pages || (selectedBusiness.metadata as any)?.crawled_pages || [];
-
-                    return (
-                      <div style={{ background: '#161622', border: '1px solid #2d2d42', borderRadius: '8px', padding: '14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {isWa ? <WhatsAppIcon size={15} /> : <Phone size={14} />} Direct Outreach {isWa ? '(WhatsApp & Phone)' : '(Phone / Landline)'}
-                          </span>
-                          {crawledPages.length > 0 && (
-                            <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                              Crawled {crawledPages.length} {crawledPages.length === 1 ? 'page' : 'pages'}
-                            </span>
-                          )}
-                        </div>
-
-                        {phone ? (
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>Phone: </span>
-                                <a href={`tel:${phone}`} style={{ color: '#ffffff', fontWeight: 600, textDecoration: 'none' }}>
-                                  {phone}
-                                </a>
-                              </div>
-                              {isWa && whatsappUrl ? (
-                                <a
-                                  href={whatsappUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  title="Open WhatsApp chat with pre-filled pitch"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: '#25d366',
-                                    color: '#ffffff',
-                                    padding: '6px 12px',
-                                    borderRadius: '6px',
-                                    textDecoration: 'none',
-                                    fontWeight: 700,
-                                    fontSize: '12px',
-                                  }}
-                                >
-                                  <WhatsAppIcon size={14} /> Chat &amp; Pitch
-                                </a>
-                              ) : (
-                                <a
-                                  href={`tel:${phone}`}
-                                  title={`Call ${phone}`}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: 'rgba(56, 189, 248, 0.15)',
-                                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                                    color: '#38bdf8',
-                                    padding: '6px 12px',
-                                    borderRadius: '6px',
-                                    textDecoration: 'none',
-                                    fontWeight: 700,
-                                    fontSize: '12px',
-                                  }}
-                                >
-                                  <Phone size={13} /> Call Direct
-                                </a>
-                              )}
-                            </div>
-                            {phones.length > 1 && (
-                              <div style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                Additional numbers: {phones.filter((p: string) => p !== phone).join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div>
-                            <p style={{ color: '#9ca3af', margin: '0 0 8px 0', fontSize: '12px' }}>
-                              No phone found yet. Click &quot;Deep Audit &amp; Crawl Pages&quot; to crawl subpages (/contact, /about) and auto-extract phone numbers and WhatsApp links.
-                            </p>
-                          </div>
-                        )}
-
-                        {crawledPages.length > 0 && (
-                          <div style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
-                            Crawled routes: {crawledPages.join(', ')}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Verified Contacts */}
-                  <div>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 700, color: '#ff3366' }}>
-                      Contacts ({businessDetail.contacts?.length || 0})
-                    </h4>
-                    {businessDetail.contacts?.length > 0 ? (
-                      businessDetail.contacts.map((c: any) => (
-                        <div key={c.id} style={{ background: '#07070d', border: '1px solid #1c1c2b', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.email}</div>
-                            <span style={{ fontSize: '11px', color: c.verification_status === 'VALID' ? '#00f5a0' : '#f59e0b' }}>
-                              Status: {c.verification_status}
-                            </span>
-                          </div>
-                          {c.phone && (() => {
-                            const isWa = isWhatsAppEligible(c.phone);
-                            const waUrl = getWhatsAppUrl(c.phone, selectedBusiness.name);
-                            return (
-                              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
-                                <a href={`tel:${c.phone}`} style={{ color: '#9ca3af', textDecoration: 'none' }}>
-                                  {c.phone}
-                                </a>
-                                {isWa && waUrl ? (
-                                  <a
-                                    href={waUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    title="Open WhatsApp chat"
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      width: '20px',
-                                      height: '20px',
-                                      background: 'rgba(37, 211, 102, 0.15)',
-                                      border: '1px solid rgba(37, 211, 102, 0.4)',
-                                      color: '#25d366',
-                                      borderRadius: '50%',
-                                      textDecoration: 'none',
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <WhatsAppIcon size={11} />
-                                  </a>
-                                ) : (
-                                  <a
-                                    href={`tel:${c.phone}`}
-                                    title={`Call ${c.phone}`}
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      width: '20px',
-                                      height: '20px',
-                                      background: 'rgba(56, 189, 248, 0.12)',
-                                      border: '1px solid rgba(56, 189, 248, 0.35)',
-                                      color: '#38bdf8',
-                                      borderRadius: '50%',
-                                      textDecoration: 'none',
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <Phone size={10} />
-                                  </a>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      ))
-                    ) : (
-                      <p style={{ color: '#6b7280', margin: '0 0 8px 0', fontSize: '12px' }}>
-                        No email discovered yet. Audit the website or enter a public contact email below:
-                      </p>
-                    )}
-
-                    {/* Inline Add Contact */}
-                    <form onSubmit={handleAddContact} style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      <input
-                        type="email"
-                        placeholder="e.g. info@business.com"
-                        value={newContactEmail}
-                        onChange={(e) => setNewContactEmail(e.target.value)}
-                        required
-                        style={{
-                          flex: 1,
-                          background: '#07070d',
-                          border: '1px solid #2d2d42',
-                          color: '#ffffff',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        disabled={isAddingContact}
-                        style={{
-                          background: '#161622',
-                          border: '1px solid #2d2d42',
-                          color: '#ffffff',
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          cursor: isAddingContact ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {isAddingContact ? 'Verifying...' : 'Save & Verify'}
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* AI Recommendation & Personalized Draft */}
-                  {businessDetail.aiAnalysis && (
-                    <div style={{ background: '#07070d', border: '1px solid #1c1c2b', borderRadius: '8px', padding: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#8b5cf6', fontWeight: 700, marginBottom: '6px' }}>
-                        <Sparkles size={14} /> Recommended Service:
-                      </div>
-                      <div style={{ fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
-                        {businessDetail.aiAnalysis.recommended_service}
-                      </div>
-                      <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '12px' }}>
-                        <strong>Evidence:</strong> {businessDetail.aiAnalysis.evidence}
-                      </div>
-
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
-                        Draft Subject:
-                      </div>
-                      <div style={{ background: '#0e0e16', padding: '6px 10px', borderRadius: '4px', color: '#38bdf8', marginBottom: '8px' }}>
-                        {businessDetail.aiAnalysis.suggested_subject}
-                      </div>
-
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
-                        Personalized Draft:
-                      </div>
-                      <pre style={{ background: '#0e0e16', padding: '10px', borderRadius: '4px', color: '#d1d5db', fontSize: '11px', whiteSpace: 'pre-wrap', maxHeight: '160px', overflowY: 'auto' }}>
-                        {businessDetail.aiAnalysis.personalized_draft}
-                      </pre>
-
-                      {/* Approve & Enqueue Action Button */}
-                      <div style={{ marginTop: '14px' }}>
-                        <button
-                          disabled={isQueueingEmail || !businessDetail.contacts || businessDetail.contacts.length === 0}
-                          onClick={handleEnqueueDraft}
-                          style={{
-                            width: '100%',
-                            background: businessDetail.contacts && businessDetail.contacts.length > 0 ? '#ff3366' : '#2d2d42',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            cursor: businessDetail.contacts && businessDetail.contacts.length > 0 ? 'pointer' : 'not-allowed',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                          }}
-                        >
-                          <Send size={15} />
-                          {isQueueingEmail ? 'Enqueuing...' : 'Approve & Enqueue for Dispatch'}
-                        </button>
-                        {(!businessDetail.contacts || businessDetail.contacts.length === 0) && (
-                          <p style={{ color: '#f59e0b', fontSize: '11px', marginTop: '6px', textAlign: 'center' }}>
-                            Add a contact email above to enable enqueuing.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          )}
+          {renderBusinessDetailDrawer()}
         </div>
       )}
 
@@ -2718,7 +2749,18 @@ export default function OutreachClient({
 
       {/* TAB: CONTACTS DIRECTORY */}
       {activeTab === 'contacts' && (
-        <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
+        <div
+          className="hpa-leads-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: selectedBusiness ? 'minmax(0, 1fr) 420px' : 'minmax(0, 1fr)',
+            gap: '20px',
+            minWidth: 0,
+            width: '100%',
+            alignItems: 'start',
+          }}
+        >
+          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px', minWidth: 0, overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
@@ -2924,15 +2966,7 @@ export default function OutreachClient({
                       <td style={{ padding: '12px 10px' }}>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <button
-                            onClick={() => {
-                              const foundBiz = businesses.find((b) => b.id === c.business_id);
-                              if (foundBiz) {
-                                setActiveTab('leads');
-                                handleSelectBusiness(foundBiz);
-                              } else {
-                                showToast(`Business record loaded: ${c.business_name}`, 'info');
-                              }
-                            }}
+                            onClick={() => handleOpenBusinessById(c.business_id, c.business_name)}
                             style={{
                               background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
                               color: '#ffffff',
@@ -2943,6 +2977,9 @@ export default function OutreachClient({
                               fontWeight: 600,
                               cursor: 'pointer',
                               whiteSpace: 'nowrap',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
                             }}
                           >
                             Inspect & CRM
@@ -2984,7 +3021,9 @@ export default function OutreachClient({
             </div>
           )}
         </div>
-      )}
+        {renderBusinessDetailDrawer()}
+      </div>
+    )}
 
       {/* TAB 4: QUEUE & DISPATCH */}
       {activeTab === 'queue' && (
