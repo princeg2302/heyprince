@@ -21,6 +21,9 @@ import {
   FileText,
   Mail,
   Zap,
+  Globe,
+  Radio,
+  Eye,
 } from 'lucide-react';
 
 interface JarvisAssistantProps {
@@ -32,13 +35,33 @@ interface JarvisAssistantProps {
   };
 }
 
+interface JarvisAction {
+  type:
+    | 'navigate'
+    | 'click_button'
+    | 'focus_and_type'
+    | 'run_agent'
+    | 'change_password'
+    | 'scroll'
+    | 'select_tab'
+    | 'toast';
+  url?: string;
+  targetText?: string;
+  fieldName?: string;
+  value?: string;
+  agentId?: string;
+  direction?: 'down' | 'up' | 'top';
+  message?: string;
+}
+
 export function JarvisAssistant({ user }: JarvisAssistantProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // State
+  // Assistant UI States
   const [isOpen, setIsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isContinuous, setIsContinuous] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -46,14 +69,22 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
   const [typedInput, setTypedInput] = useState('');
   const [replyText, setReplyText] = useState('');
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [learnedSummary, setLearnedSummary] = useState<string>('Learned active screen elements.');
 
+  // Engine Refs
   const recognitionRef = useRef<any>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const greetingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const restartTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const continuousListeningRef = useRef<boolean>(false);
+  const isSpeakingRef = useRef<boolean>(false);
+  const isListeningRef = useRef<boolean>(false);
+  const isProcessingRef = useRef<boolean>(false);
 
   const adminName = user?.name || user?.email?.split('@')[0] || 'Prince';
+  const userId = user?.id || 1;
 
-  // 1. Initialize Web Audio Synthesizer for high-tech chimes
+  // 1. Web Audio Synthesizer (Zero-dependency acoustic signals)
   const getAudioContext = useCallback(() => {
     if (!audioCtxRef.current && typeof window !== 'undefined') {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -119,13 +150,13 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
           osc.stop(now + 0.18);
         }
       } catch (err) {
-        console.warn('[JARVIS Audio] Sound synthesis notice:', err);
+        console.warn('[JARVIS Audio] Sound notice:', err);
       }
     },
     [getAudioContext, isMuted]
   );
 
-  // 2. Speech Synthesis (TTS) - Custom British Cadence
+  // 2. Speech Synthesis (TTS) - British Male Cadence with Echo Protection
   const speak = useCallback(
     (text: string, onDone?: () => void) => {
       setReplyText(text);
@@ -146,7 +177,6 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         const utterance = new SpeechSynthesisUtterance(text);
         const voices = window.speechSynthesis.getVoices();
 
-        // Find preferred British English male voice
         const preferredVoice =
           voices.find(
             (v) =>
@@ -162,36 +192,39 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
           utterance.voice = preferredVoice;
         }
 
-        // Sophisticated JARVIS cadence: slightly lower pitch, crisp rate
         utterance.pitch = 0.94;
         utterance.rate = 1.04;
         utterance.volume = 1.0;
 
         utterance.onstart = () => {
           setIsSpeaking(true);
+          isSpeakingRef.current = true;
         };
 
-        utterance.onend = () => {
+        const handleFinish = () => {
           setIsSpeaking(false);
+          // 350ms delay after speech finishes to prevent microphone picking up acoustic tail
+          setTimeout(() => {
+            isSpeakingRef.current = false;
+          }, 350);
           if (onDone) onDone();
         };
 
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-          if (onDone) onDone();
-        };
+        utterance.onend = handleFinish;
+        utterance.onerror = handleFinish;
 
         window.speechSynthesis.speak(utterance);
       } catch (err) {
         console.warn('[JARVIS TTS] Speech error:', err);
         setIsSpeaking(false);
+        isSpeakingRef.current = false;
         if (onDone) onDone();
       }
     },
     [isMuted]
   );
 
-  // 3. Welcome / Login Greeting (Once per session)
+  // 3. Welcome / Login Executive Briefing
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -204,7 +237,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     if (!hasGreeted) {
       greetingTimeoutRef.current = setTimeout(() => {
         playChime('wake');
-        const greeting = `Welcome back, ${adminName}. AI Chief of Staff is online and all systems are nominal. How may I assist you today?`;
+        const greeting = `Welcome back, ${adminName}. AI Chief of Staff is online and all systems are nominal. Always-on voice executive is ready.`;
         speak(greeting);
         sessionStorage.setItem('hp_jarvis_greeted', 'true');
       }, 1400);
@@ -215,57 +248,241 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     };
   }, [adminName, playChime, speak]);
 
-  // 4. Interactive DOM Typewriter & Input Focusing Helper
-  const focusAndTypeIntoInput = useCallback((selector: string, textToType?: string, maxAttempts = 15) => {
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      const input = document.querySelector<HTMLInputElement>(selector);
-      if (input) {
-        clearInterval(interval);
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        input.focus();
+  // 4. Autonomous DOM Inspector: "Learns Dashboard" in Real Time
+  const learnCurrentDashboard = useCallback(() => {
+    if (typeof window === 'undefined') return null;
 
-        // Pulsing holographic focus outline
-        input.style.transition = 'all 0.3s ease';
-        input.style.boxShadow = '0 0 0 3px rgba(0, 255, 255, 0.7), 0 0 25px rgba(0, 255, 255, 0.5)';
-        input.style.borderColor = '#00ffff';
+    // Discover clickable buttons and action links
+    const buttons = Array.from(
+      document.querySelectorAll<HTMLElement>('button, a.hpa-btn, .hpa-btn, [role="button"]')
+    )
+      .map((b) => (b.innerText || b.getAttribute('aria-label') || b.getAttribute('title') || '').trim())
+      .filter((t) => t.length > 1 && t.length < 50 && !t.includes('\n'));
 
-        if (textToType) {
-          input.value = '';
-          let charIndex = 0;
-          const timer = setInterval(() => {
-            if (charIndex < textToType.length) {
-              input.value += textToType.charAt(charIndex);
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-              charIndex++;
-            } else {
-              clearInterval(timer);
-              input.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-          }, 35);
-        }
+    // Discover input fields, textareas, search boxes
+    const inputs = Array.from(
+      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+        'input, textarea, select'
+      )
+    )
+      .map((i) => {
+        const id = i.id;
+        const label = id ? document.querySelector(`label[for="${id}"]`)?.textContent?.trim() : null;
+        const placeholder = 'placeholder' in i ? (i as HTMLInputElement).placeholder : '';
+        return label || placeholder || i.name || i.id || '';
+      })
+      .filter((t) => t.length > 0 && t.length < 50);
 
-        setTimeout(() => {
-          input.style.boxShadow = '';
-          input.style.borderColor = '';
-        }, 4000);
-      } else if (attempts >= maxAttempts) {
-        clearInterval(interval);
-      }
-    }, 150);
+    // Discover tabs
+    const tabs = Array.from(
+      document.querySelectorAll<HTMLElement>('[role="tab"], .hpa-tab, .cos-tab-btn, [data-tab]')
+    )
+      .map((t) => t.innerText.trim())
+      .filter((t) => t.length > 0);
+
+    const heading = document.querySelector('h1')?.innerText?.trim() || document.title;
+    const uniqueButtons = Array.from(new Set(buttons)).slice(0, 25);
+    const uniqueInputs = Array.from(new Set(inputs)).slice(0, 15);
+    const uniqueTabs = Array.from(new Set(tabs));
+
+    setLearnedSummary(
+      `Learned: ${uniqueButtons.length} buttons, ${uniqueInputs.length} inputs, ${uniqueTabs.length} tabs on "${heading}"`
+    );
+
+    return {
+      route: window.location.pathname,
+      heading,
+      visibleButtons: uniqueButtons,
+      visibleInputs: uniqueInputs,
+      visibleTabs: uniqueTabs,
+      userId,
+    };
+  }, [userId]);
+
+  // 5. Automated DOM Execution Engine (Clicking, Typing, Highlighting, Selecting)
+  const highlightElement = useCallback((el: HTMLElement) => {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const originalShadow = el.style.boxShadow;
+    const originalBorder = el.style.borderColor;
+    const originalTransition = el.style.transition;
+
+    el.style.transition = 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+    el.style.boxShadow = '0 0 0 3px #00ffff, 0 0 25px rgba(0, 255, 255, 0.7)';
+    el.style.borderColor = '#00ffff';
+
+    setTimeout(() => {
+      el.style.boxShadow = originalShadow;
+      el.style.borderColor = originalBorder;
+      el.style.transition = originalTransition;
+    }, 3500);
   }, []);
 
-  // 5. Comprehensive Voice Command Router & Action Execution
+  const findAndClickButton = useCallback(
+    (targetText: string): boolean => {
+      const lowerTarget = targetText.toLowerCase().trim();
+      const candidates = Array.from(
+        document.querySelectorAll<HTMLElement>('button, a.hpa-btn, .hpa-btn, [role="button"], [role="tab"]')
+      );
+
+      // 1. Exact match
+      let matched = candidates.find((b) => (b.innerText || b.getAttribute('aria-label') || '').toLowerCase().trim() === lowerTarget);
+
+      // 2. Substring match
+      if (!matched) {
+        matched = candidates.find((b) => {
+          const text = (b.innerText || b.getAttribute('aria-label') || '').toLowerCase();
+          return text.includes(lowerTarget);
+        });
+      }
+
+      if (matched) {
+        highlightElement(matched);
+        playChime('execute');
+        matched.focus();
+        matched.click();
+        return true;
+      }
+      return false;
+    },
+    [highlightElement, playChime]
+  );
+
+  const findAndTypeIntoInput = useCallback(
+    (fieldNameOrSelector: string, textToType?: string, maxAttempts = 15) => {
+      let attempts = 0;
+      const lowerField = fieldNameOrSelector.toLowerCase().trim();
+
+      const interval = setInterval(() => {
+        attempts++;
+
+        // 1. Try direct selector
+        let input: HTMLInputElement | HTMLTextAreaElement | null = null;
+        try {
+          input = document.querySelector<HTMLInputElement>(fieldNameOrSelector);
+        } catch {}
+
+        // 2. Try match by placeholder, name, id, or preceding label
+        if (!input) {
+          const allInputs = Array.from(
+            document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')
+          );
+          input =
+            allInputs.find((i) => {
+              const name = (i.name || '').toLowerCase();
+              const ph = (i.placeholder || '').toLowerCase();
+              const id = (i.id || '').toLowerCase();
+              const label = id ? (document.querySelector(`label[for="${id}"]`)?.textContent || '').toLowerCase() : '';
+              return name.includes(lowerField) || ph.includes(lowerField) || id.includes(lowerField) || label.includes(lowerField);
+            }) || null;
+        }
+
+        if (input) {
+          clearInterval(interval);
+          highlightElement(input);
+          input.focus();
+
+          if (textToType) {
+            input.value = '';
+            let charIndex = 0;
+            const timer = setInterval(() => {
+              if (charIndex < textToType.length) {
+                input!.value += textToType.charAt(charIndex);
+                input!.dispatchEvent(new Event('input', { bubbles: true }));
+                charIndex++;
+              } else {
+                clearInterval(timer);
+                input!.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }, 35);
+          }
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+        }
+      }, 150);
+    },
+    [highlightElement]
+  );
+
+  // 6. Action Sequence Executor
+  const executeActions = useCallback(
+    async (actions: JarvisAction[]) => {
+      for (const act of actions) {
+        if (act.type === 'navigate' && act.url) {
+          playChime('execute');
+          router.push(act.url);
+          // Allow page transition
+          await new Promise((r) => setTimeout(r, 400));
+        } else if (act.type === 'click_button' && act.targetText) {
+          findAndClickButton(act.targetText);
+        } else if (act.type === 'select_tab' && act.targetText) {
+          findAndClickButton(act.targetText);
+        } else if (act.type === 'focus_and_type') {
+          findAndTypeIntoInput(act.fieldName || 'input', act.value);
+        } else if (act.type === 'change_password') {
+          const editUrl = act.url || `/admin/users/${userId}/edit`;
+          router.push(editUrl);
+          findAndTypeIntoInput('input[type="password"]', act.value);
+        } else if (act.type === 'run_agent' && act.agentId) {
+          try {
+            setActionNotice(`Executing Agent ${act.agentId}...`);
+            const res = await fetch('/api/admin/chief-of-staff/run-task', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ agentId: act.agentId, payload: act.value ? { customTopic: act.value } : undefined }),
+            });
+            const data = await res.json();
+            if (data.success) {
+              playChime('success');
+            } else {
+              playChime('alert');
+            }
+          } catch {
+            playChime('alert');
+          } finally {
+            setActionNotice(null);
+          }
+        } else if (act.type === 'scroll') {
+          if (act.direction === 'down') {
+            window.scrollBy({ top: 450, behavior: 'smooth' });
+          } else if (act.direction === 'up') {
+            window.scrollBy({ top: -450, behavior: 'smooth' });
+          } else if (act.direction === 'top') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }
+      }
+    },
+    [findAndClickButton, findAndTypeIntoInput, playChime, router, userId]
+  );
+
+  // 7. Full Voice Command Router & AI Cognitive Engine
   const processCommand = useCallback(
     async (rawText: string) => {
+      if (isProcessingRef.current) return;
       const cmd = rawText.trim().toLowerCase();
-      if (!cmd) return;
+      if (!cmd || cmd.length < 2) return;
 
+      isProcessingRef.current = true;
       setIsThinking(true);
       playChime('execute');
 
-      // --- COMMAND: CHANGE PASSWORD / SECURITY CREDENTIALS ---
+      // --- COMMAND: STOP / PAUSE LISTENING ---
+      if (cmd === 'stop listening' || cmd === 'pause listening' || cmd === 'jarvis sleep' || cmd === 'mute jarvis') {
+        continuousListeningRef.current = false;
+        setIsContinuous(false);
+        setIsListening(false);
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch {}
+        }
+        speak(`Voice recognition paused. Click my Arc Reactor anytime you need me, Prince.`);
+        setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // --- COMMAND: CHANGE PASSWORD & CREDENTIALS ---
       if (
         cmd.includes('password') ||
         cmd.includes('change my password') ||
@@ -275,189 +492,56 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         setActionNotice('Redirecting to Password Credentials...');
         const pwdMatch = cmd.match(/(?:password\s+to|type\s+password)\s+([^\s]+)/i);
         const typedPassword = pwdMatch ? pwdMatch[1] : undefined;
-        const targetUrl = user?.id ? `/admin/users/${user.id}/edit` : '/admin/settings/';
+        const targetUrl = `/admin/users/${userId}/edit`;
+
         speak(`Opening your security profile now, ${adminName}. Focusing the password field for you.`, () => {
           router.push(targetUrl);
-          focusAndTypeIntoInput('input[type="password"], input[name="password"]', typedPassword);
+          findAndTypeIntoInput('input[type="password"]', typedPassword);
         });
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
-      // --- COMMAND: RUN WEBSITE GUARDIAN HEALTH AUDIT ---
-      if (
-        cmd.includes('run audit') ||
-        cmd.includes('check audit') ||
-        cmd.includes('site health') ||
-        cmd.includes('check health') ||
-        cmd.includes('guardian') ||
-        cmd.includes('check site')
-      ) {
-        setActionNotice('Executing Website Guardian Audit...');
-        speak(`Initiating Website Guardian diagnostic audit across core routes now, ${adminName}.`);
-        try {
-          const res = await fetch('/api/admin/chief-of-staff/run-task', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ agentId: 'website_guardian' }),
-          });
-          const resData = await res.json();
-          if (resData.success) {
-            playChime('success');
-            speak(
-              `Diagnostic audit complete, ${adminName}. Core routes are 100% online with zero regressions detected. Status is nominal.`
-            );
-          } else {
-            playChime('alert');
-            speak(`Audit flagged an advisory note: ${resData.message || 'Check health log.'}`);
-          }
-        } catch {
-          playChime('alert');
-          speak(`Network anomaly while communicating with Website Guardian.`);
-        } finally {
+      // --- FAST DOM ACTION: "CLICK [BUTTON]" ---
+      const clickMatch = cmd.match(/^click\s+(.+)/i);
+      if (clickMatch && clickMatch[1]) {
+        const btnQuery = clickMatch[1].trim();
+        const clicked = findAndClickButton(btnQuery);
+        if (clicked) {
+          speak(`Clicking ${btnQuery} now, ${adminName}.`);
           setIsThinking(false);
-          setActionNotice(null);
+          isProcessingRef.current = false;
+          return;
         }
+      }
+
+      // --- FAST DOM ACTION: "TYPE [TEXT] IN [FIELD]" ---
+      const typeMatch = cmd.match(/^(?:type|enter|fill)\s+(.+?)\s+(?:in|into)\s+(.+)/i);
+      if (typeMatch && typeMatch[1] && typeMatch[2]) {
+        const textVal = typeMatch[1].trim();
+        const fieldTarget = typeMatch[2].trim();
+        findAndTypeIntoInput(fieldTarget, textVal);
+        speak(`Entered "${textVal}" into ${fieldTarget}, Prince.`);
+        setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
-      // --- COMMAND: RUN TECHNICAL SEO SCAN ---
-      if (
-        cmd.includes('check seo') ||
-        cmd.includes('run seo') ||
-        cmd.includes('seo audit') ||
-        cmd.includes('seo opportunities') ||
-        cmd.includes('search optimization')
-      ) {
-        setActionNotice('Scanning Technical SEO & Clusters...');
-        speak(`Scanning published articles and commercial keyword clusters now, sir.`);
-        try {
-          const res = await fetch('/api/admin/chief-of-staff/run-task', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ agentId: 'seo_growth' }),
-          });
-          const resData = await res.json();
-          if (resData.success) {
-            playChime('success');
-            speak(
-              `SEO analysis complete, ${adminName}. Identified actionable title and cluster recommendations ready in your Approvals Queue.`
-            );
-          } else {
-            speak(`SEO scan completed with advisory notes.`);
-          }
-        } catch {
-          speak(`Unable to complete SEO scan at this moment.`);
-        } finally {
-          setIsThinking(false);
-          setActionNotice(null);
-        }
-        return;
-      }
-
-      // --- COMMAND: CREATE/DRAFT ARTICLE OR POST ON [TOPIC] ---
-      const createPostMatch = cmd.match(/(?:create|draft|write)\s*(?:a\s*)?(?:post|article|blog)\s*(?:on|about)?\s*(.*)/i);
-      if (createPostMatch && createPostMatch[1]?.trim()) {
-        const topic = createPostMatch[1].trim();
-        setActionNotice(`Drafting article on "${topic}"...`);
-        speak(`Researching technology developments and drafting a full engineering article on "${topic}", ${adminName}.`);
-        try {
-          const res = await fetch('/api/admin/chief-of-staff/run-task', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              agentId: 'content_researcher',
-              payload: { customTopic: topic },
-            }),
-          });
-          const resData = await res.json();
-          if (resData.success) {
-            playChime('success');
-            speak(
-              `Article draft on ${topic} has been created with SEO tags and placed in your Approvals Queue for 1-click publishing.`
-            );
-          } else {
-            speak(`Content research run completed with advisory notice.`);
-          }
-        } catch {
-          speak(`Could not complete automatic content research.`);
-        } finally {
-          setIsThinking(false);
-          setActionNotice(null);
-        }
-        return;
-      }
-
-      // --- COMMAND: SCOUT LEADS & BUSINESS PROSPECTS ---
-      if (
-        cmd.includes('find leads') ||
-        cmd.includes('scout leads') ||
-        cmd.includes('scout prospects') ||
-        cmd.includes('lead scout') ||
-        cmd.includes('discover clients')
-      ) {
-        setActionNotice('Deploying Lead Scout Agent...');
-        speak(`Deploying Lead Scout across e-commerce and digital commerce sectors now, ${adminName}.`);
-        try {
-          const res = await fetch('/api/admin/chief-of-staff/run-task', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ agentId: 'lead_scout' }),
-          });
-          const resData = await res.json();
-          if (resData.success) {
-            playChime('success');
-            speak(`Lead evaluation complete, sir. Fresh client proposals have been drafted for your review.`);
-          }
-        } catch {
-          speak(`Lead Scout encountered a network timeout.`);
-        } finally {
-          setIsThinking(false);
-          setActionNotice(null);
-        }
-        return;
-      }
-
-      // --- COMMAND: STATUS REPORT / SYSTEM BRIEFING ---
-      if (
-        cmd.includes('status report') ||
-        cmd.includes('brief me') ||
-        cmd.includes('system status') ||
-        cmd.includes('how are we doing') ||
-        cmd.includes('give me a report')
-      ) {
-        setActionNotice('Compiling Chief of Staff Briefing...');
-        try {
-          const res = await fetch('/api/admin/chief-of-staff/status');
-          const resData = await res.json();
-          if (resData.success && resData.data) {
-            const d = resData.data;
-            const brief = `Status report, ${adminName}: All ${d.activeAgentsCount} autonomous agents are functioning smoothly. You have ${d.draftsAwaitingApprovalCount} items awaiting approval in the queue, and website uptime is 100%.`;
-            speak(brief);
-          } else {
-            speak(`All autonomous systems are running normally, Prince.`);
-          }
-        } catch {
-          speak(`Systems operational, ${adminName}. All 5 agents active.`);
-        } finally {
-          setIsThinking(false);
-          setActionNotice(null);
-        }
-        return;
-      }
-
-      // --- NAVIGATION MENU COMMANDS ---
-      if (cmd.includes('chief of staff') || cmd.includes('go to agents') || cmd.includes('open agents')) {
+      // --- FAST NAVIGATION MENU COMMANDS ---
+      if (cmd.includes('chief of staff') || cmd.includes('go to agents') || cmd.includes('open agents') || cmd.includes('command center')) {
         speak(`Opening Chief of Staff command center.`);
         router.push('/admin/chief-of-staff/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
       if (cmd.includes('client lead') || cmd.includes('go to leads') || cmd.includes('show leads') || cmd.includes('inquiries')) {
-        speak(`Opening Client Inquiries and Inbound Leads.`);
+        speak(`Opening Client Inquiries and Leads.`);
         router.push('/admin/leads/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -465,6 +549,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Opening Lead Intelligence and Discovery.`);
         router.push('/admin/outreach/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -472,6 +557,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Launching new insight article editor.`);
         router.push('/admin/posts/new/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -479,6 +565,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Viewing published Insights and Blog Posts.`);
         router.push('/admin/posts/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -486,6 +573,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Opening Daily AI News Automation.`);
         router.push('/admin/news-automation/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -493,6 +581,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Opening Engineering Services directory.`);
         router.push('/admin/services/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -500,6 +589,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Accessing Media Vault assets.`);
         router.push('/admin/media/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -507,13 +597,15 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Opening Platform & System Settings.`);
         router.push('/admin/settings/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
-      if (cmd.includes('user') || cmd.includes('admin user')) {
+      if (cmd.includes('user') || cmd.includes('admin user') || cmd.includes('team')) {
         speak(`Opening Administrator Access Management.`);
         router.push('/admin/users/');
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -521,6 +613,31 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         speak(`Returning to Executive Dashboard.`);
         router.push('/admin/');
         setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      if (cmd.includes('run audit') || cmd.includes('check health') || cmd.includes('website guardian')) {
+        speak(`Initiating Website Guardian diagnostic audit across core routes now, ${adminName}.`);
+        executeActions([{ type: 'run_agent', agentId: 'website_guardian' }]);
+        setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      if (cmd.includes('check seo') || cmd.includes('run seo') || cmd.includes('seo audit')) {
+        speak(`Scanning published articles and commercial keyword clusters now, sir.`);
+        executeActions([{ type: 'run_agent', agentId: 'seo_growth' }]);
+        setIsThinking(false);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      if (cmd.includes('find leads') || cmd.includes('scout leads') || cmd.includes('lead scout')) {
+        speak(`Deploying Lead Scout across e-commerce and digital commerce sectors now, ${adminName}.`);
+        executeActions([{ type: 'run_agent', agentId: 'lead_scout' }]);
+        setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -530,236 +647,236 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
           window.location.href = '/admin/login/';
         });
         setIsThinking(false);
+        isProcessingRef.current = false;
         return;
       }
 
-      // --- IN-PAGE INTERACTIVE SEARCH AUTOMATION ---
-      const searchMatch = cmd.match(/(?:search|find|filter)(?:\s+for)?\s+(.+)/i);
-      if (searchMatch && searchMatch[1]?.trim()) {
-        const queryTerm = searchMatch[1].trim();
-        speak(`Filtering results for "${queryTerm}", Prince.`);
-        focusAndTypeIntoInput('input[placeholder*="search" i], input[type="search"], .hpa-search-input', queryTerm);
-        setIsThinking(false);
-        return;
-      }
-
-      // --- SCROLLING AUTOMATION ---
-      if (cmd.includes('scroll down')) {
-        window.scrollBy({ top: 400, behavior: 'smooth' });
-        speak(`Scrolling down, sir.`);
-        setIsThinking(false);
-        return;
-      }
-      if (cmd.includes('scroll up') || cmd.includes('scroll to top')) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        speak(`Scrolling to top.`);
-        setIsThinking(false);
-        return;
-      }
-
-      // --- GEMINI NLP BRAIN FALLBACK ---
-      // For conversational inquiries, natural questions, or complex tasks
+      // --- COGNITIVE REASONING VIA GEMINI WITH SCREEN CONTEXT ---
       setActionNotice('Consulting JARVIS Core Intelligence...');
       try {
+        const pageContext = learnCurrentDashboard();
         const res = await fetch('/api/admin/jarvis', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: rawText }),
+          body: JSON.stringify({ query: rawText, pageContext }),
         });
         const resData = await res.json();
-        if (resData.success && resData.reply) {
-          speak(resData.reply);
-          if (resData.suggestedAction === 'run_audit') {
-            processCommand('run audit');
-          } else if (resData.suggestedAction === 'run_seo') {
-            processCommand('check seo');
-          } else if (resData.suggestedAction === 'change_password') {
-            processCommand('change password');
-          } else if (resData.suggestedAction === 'go_leads') {
-            router.push('/admin/leads/');
-          } else if (resData.suggestedAction === 'go_chief') {
-            router.push('/admin/chief-of-staff/');
-          } else if (resData.suggestedAction === 'go_posts') {
-            router.push('/admin/posts/');
-          } else if (resData.suggestedAction === 'go_settings') {
-            router.push('/admin/settings/');
+        if (resData.success) {
+          if (resData.reply) {
+            speak(resData.reply);
+          }
+          if (Array.isArray(resData.actions) && resData.actions.length > 0) {
+            await executeActions(resData.actions);
           }
         } else {
-          speak(`At your command, Prince. All systems are operating smoothly.`);
+          speak(`At your command, Prince. All systems operational.`);
         }
-      } catch {
-        speak(`I am standing by, ${adminName}. You can command me to run audits, scout leads, or navigate anywhere.`);
+      } catch (err) {
+        speak(`Systems operational, ${adminName}. Standing by.`);
       } finally {
         setIsThinking(false);
         setActionNotice(null);
+        setTimeout(() => {
+          isProcessingRef.current = false;
+        }, 500);
       }
     },
-    [adminName, focusAndTypeIntoInput, playChime, router, speak]
+    [adminName, executeActions, findAndClickButton, findAndTypeIntoInput, learnCurrentDashboard, playChime, router, speak, userId]
   );
 
-  // 6. Speech Recognition Toggle (STT)
-  const toggleListening = () => {
-    if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsListening(false);
-      return;
-    }
-
+  // 8. Always-On Continuous Speech Recognition Engine
+  const startListeningEngine = useCallback(() => {
     if (typeof window === 'undefined') return;
 
     const SpeechRec = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     if (!SpeechRec) {
-      speak(`Speech recognition is not supported in this browser. You can type commands directly in my console, Prince.`);
+      speak(`Speech recognition is not supported in this browser. You can type commands in my console, Prince.`);
       setIsOpen(true);
       return;
     }
 
     try {
-      playChime('wake');
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+      }
+
       const rec = new SpeechRec();
-      rec.continuous = false;
+      rec.continuous = true;
       rec.interimResults = true;
       rec.lang = 'en-US';
 
       rec.onstart = () => {
         setIsListening(true);
-        setTranscript('');
+        isListeningRef.current = true;
       };
 
       rec.onresult = (e: any) => {
-        let currentTranscript = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          currentTranscript += e.results[i][0].transcript;
+        // Echo cancellation: Ignore input when JARVIS is actively speaking
+        if (isSpeakingRef.current) {
+          return;
         }
-        setTranscript(currentTranscript);
 
-        if (e.results[e.results.length - 1].isFinal) {
-          rec.stop();
-          setIsListening(false);
-          processCommand(currentTranscript);
+        let interim = '';
+        let final = '';
+
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const item = e.results[i];
+          if (item.isFinal) {
+            final += item[0].transcript;
+          } else {
+            interim += item[0].transcript;
+          }
+        }
+
+        if (interim) {
+          setTranscript(interim);
+        }
+
+        if (final.trim()) {
+          const cleaned = final.trim();
+          setTranscript(cleaned);
+          processCommand(cleaned);
         }
       };
 
-      rec.onerror = (err: any) => {
-        console.warn('[JARVIS STT] Error:', err);
-        setIsListening(false);
+      rec.onerror = (event: any) => {
+        console.log('[JARVIS STT Notice]', event.error);
+        if (event.error === 'not-allowed') {
+          continuousListeningRef.current = false;
+          setIsContinuous(false);
+          setIsListening(false);
+          isListeningRef.current = false;
+          speak(`Microphone access was denied. Please allow microphone permissions in your browser.`);
+        }
       };
 
       rec.onend = () => {
-        setIsListening(false);
+        isListeningRef.current = false;
+        // Automatic restart loop: As long as continuous listening is enabled, re-arm seamlessly
+        if (continuousListeningRef.current) {
+          restartTimerRef.current = setTimeout(() => {
+            if (continuousListeningRef.current && !isListeningRef.current) {
+              try {
+                rec.start();
+              } catch {
+                startListeningEngine();
+              }
+            }
+          }, 150);
+        } else {
+          setIsListening(false);
+        }
       };
 
       recognitionRef.current = rec;
       rec.start();
-    } catch (recErr) {
-      console.warn('[JARVIS STT] Initialization notice:', recErr);
+    } catch (err) {
+      console.warn('[JARVIS STT Setup Notice]', err);
+    }
+  }, [processCommand, speak]);
+
+  const toggleContinuousListening = () => {
+    if (isContinuous || isListening) {
+      continuousListeningRef.current = false;
+      setIsContinuous(false);
       setIsListening(false);
+      isListeningRef.current = false;
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      playChime('alert');
+      speak(`Always-on voice paused.`);
+    } else {
+      continuousListeningRef.current = true;
+      setIsContinuous(true);
+      playChime('wake');
+      speak(`Always-on continuous listening active, ${adminName}. I am listening to all your commands.`);
+      startListeningEngine();
     }
   };
 
   const handleMuteToggle = () => {
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
-    localStorage.setItem('hp_jarvis_muted', String(nextMuted));
-    if (nextMuted && typeof window !== 'undefined') {
-      window.speechSynthesis?.cancel();
+    localStorage.setItem('hp_jarvis_muted', nextMuted ? 'true' : 'false');
+    if (nextMuted && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
       setIsSpeaking(false);
-    } else {
-      speak(`Audio response enabled, ${adminName}.`);
+      isSpeakingRef.current = false;
     }
   };
 
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!typedInput.trim()) return;
-    const text = typedInput.trim();
-    setTranscript(text);
+    const q = typedInput.trim();
     setTypedInput('');
-    processCommand(text);
+    setTranscript(q);
+    processCommand(q);
   };
 
   return (
     <>
-      {/* 1. FLOATING HOLOGRAPHIC JARVIS ORB (Always Visible Bottom-Right) */}
+      {/* PERSISTENT FLOATING JARVIS HUD */}
       <div
         style={{
           position: 'fixed',
-          bottom: '26px',
-          right: '26px',
+          bottom: '24px',
+          right: '24px',
           zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'flex-end',
           gap: '12px',
+          fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)',
         }}
       >
-        {/* Floating Quick Action / Speech Bubble Pill */}
-        {(isSpeaking || isListening || isThinking || actionNotice) && (
+        {/* Floating Mini Status Pill */}
+        {actionNotice && (
           <div
             style={{
-              background: 'rgba(11, 14, 23, 0.92)',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              background: 'rgba(0, 255, 255, 0.15)',
               border: '1px solid rgba(0, 255, 255, 0.4)',
-              borderRadius: '24px',
-              padding: '8px 16px',
-              color: '#ffffff',
-              fontSize: '0.82rem',
+              color: '#00ffff',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 4px 20px rgba(0, 255, 255, 0.25)',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 8px 32px rgba(0, 255, 255, 0.25)',
-              backdropFilter: 'blur(12px)',
-              maxWidth: '380px',
-              animation: 'hpaPulse 2s infinite',
+              gap: '8px',
+              animation: 'hpaPulse 1.8s ease-in-out infinite',
             }}
           >
-            {isThinking ? (
-              <Loader2 size={15} className="hpa-spin" color="#00ffff" />
-            ) : isListening ? (
-              <span
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#ff4757',
-                  boxShadow: '0 0 10px #ff4757',
-                }}
-              />
-            ) : (
-              <Sparkles size={15} color="#00ffff" />
-            )}
-            <span style={{ color: '#00ffff', fontWeight: 700, fontSize: '0.74rem' }}>JARVIS:</span>
-            <span style={{ color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {actionNotice || (isListening ? transcript || 'Listening to Prince...' : replyText || 'Standing by...')}
-            </span>
+            <Loader2 size={12} className="hpa-spin" />
+            <span>{actionNotice}</span>
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Main Glowing Arc Reactor Orb */}
+        {/* 1. ARC REACTOR ORB CONTROLLER */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
-            onClick={() => {
-              if (!isOpen) {
-                setIsOpen(true);
-                toggleListening();
-              } else {
-                toggleListening();
-              }
-            }}
-            title={isListening ? 'Stop Listening' : 'Command JARVIS (Click to Talk)'}
+            onClick={toggleContinuousListening}
+            title={
+              isContinuous
+                ? 'Always-On Voice ACTIVE (Click to Pause)'
+                : 'Click once to activate Always-On Voice'
+            }
             style={{
-              width: '58px',
-              height: '58px',
+              width: '60px',
+              height: '60px',
               borderRadius: '50%',
               background: isListening
-                ? 'radial-gradient(circle, #ff4757 0%, #b31224 100%)'
-                : isSpeaking
-                ? 'radial-gradient(circle, #00ffff 0%, #0088cc 100%)'
+                ? 'radial-gradient(circle, #00ffff 0%, #0088cc 70%, #031422 100%)'
                 : 'radial-gradient(circle, #00e5ff 0%, #005588 70%, #071728 100%)',
-              border: isListening
-                ? '2px solid #ff4757'
-                : isSpeaking
+              border: isContinuous
                 ? '2px solid #00ffff'
                 : '2px solid rgba(0, 255, 255, 0.5)',
               color: '#ffffff',
@@ -767,14 +884,12 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: isListening
-                ? '0 0 30px rgba(255, 71, 87, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.5)'
-                : isSpeaking
-                ? '0 0 35px rgba(0, 255, 255, 0.8), inset 0 0 18px rgba(255, 255, 255, 0.6)'
+              boxShadow: isContinuous
+                ? '0 0 35px rgba(0, 255, 255, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.6)'
                 : '0 8px 30px rgba(0, 229, 255, 0.45), inset 0 0 12px rgba(0, 255, 255, 0.3)',
               position: 'relative',
               transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-              transform: isListening ? 'scale(1.08)' : 'scale(1)',
+              transform: isContinuous ? 'scale(1.06)' : 'scale(1)',
             }}
           >
             {/* Outer Spinning Hologram Ring */}
@@ -783,18 +898,40 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                 position: 'absolute',
                 inset: '-4px',
                 borderRadius: '50%',
-                border: '1.5px dashed rgba(0, 255, 255, 0.4)',
-                animation: 'hpaSpin 12s linear infinite',
+                border: '1.5px dashed rgba(0, 255, 255, 0.5)',
+                animation: isContinuous ? 'hpaSpin 4s linear infinite' : 'hpaSpin 14s linear infinite',
                 pointerEvents: 'none',
               }}
             />
 
+            {/* Glowing Active Status Beacon */}
+            {isContinuous && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '-2px',
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  background: '#10b981',
+                  border: '2px solid #090c12',
+                  boxShadow: '0 0 10px #10b981',
+                }}
+              />
+            )}
+
             {isThinking ? (
               <Loader2 size={24} className="hpa-spin" />
-            ) : isListening ? (
-              <Mic size={24} color="#ffffff" />
             ) : isSpeaking ? (
               <Sparkles size={24} color="#ffffff" />
+            ) : isContinuous ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Mic size={20} color="#ffffff" />
+                <span style={{ fontSize: '0.48rem', fontWeight: 900, letterSpacing: '0.06em', color: '#ffffff' }}>
+                  ACTIVE
+                </span>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Mic size={20} />
@@ -805,9 +942,12 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
             )}
           </button>
 
-          {/* Toggle HUD Console Button */}
+          {/* Toggle HUD Window */}
           <button
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => {
+              setIsOpen(!isOpen);
+              learnCurrentDashboard();
+            }}
             title={isOpen ? 'Collapse JARVIS HUD' : 'Open JARVIS Console'}
             style={{
               width: '36px',
@@ -832,10 +972,10 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         {isOpen && (
           <div
             style={{
-              width: '390px',
-              maxHeight: '520px',
+              width: '400px',
+              maxHeight: '560px',
               borderRadius: '20px',
-              background: 'linear-gradient(180deg, rgba(14, 18, 28, 0.95) 0%, rgba(9, 12, 18, 0.98) 100%)',
+              background: 'linear-gradient(180deg, rgba(14, 18, 28, 0.96) 0%, rgba(9, 12, 18, 0.99) 100%)',
               border: '1px solid rgba(0, 255, 255, 0.3)',
               boxShadow: '0 20px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 255, 255, 0.15)',
               backdropFilter: 'blur(20px)',
@@ -863,16 +1003,16 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                     width: '12px',
                     height: '12px',
                     borderRadius: '50%',
-                    background: isListening ? '#ff4757' : '#00ffff',
-                    boxShadow: isListening ? '0 0 10px #ff4757' : '0 0 10px #00ffff',
+                    background: isContinuous ? '#10b981' : '#00ffff',
+                    boxShadow: isContinuous ? '0 0 10px #10b981' : '0 0 10px #00ffff',
                   }}
                 />
                 <div>
                   <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>
                     J.A.R.V.I.S.
                   </h4>
-                  <span style={{ fontSize: '0.64rem', color: '#00ffff', fontWeight: 700, letterSpacing: '0.08em' }}>
-                    AUTONOMOUS VOICE EXECUTIVE
+                  <span style={{ fontSize: '0.64rem', color: isContinuous ? '#10b981' : '#00ffff', fontWeight: 700, letterSpacing: '0.08em' }}>
+                    {isContinuous ? '● ALWAYS LISTENING ACTIVE' : 'AUTONOMOUS VOICE EXECUTIVE'}
                   </span>
                 </div>
               </div>
@@ -880,7 +1020,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   onClick={handleMuteToggle}
-                  title={isMuted ? 'Unmute JARVIS Voice' : 'Mute JARVIS Voice'}
+                  title={isMuted ? 'Unmute Voice' : 'Mute Voice'}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -901,111 +1041,164 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
               </div>
             </div>
 
-            {/* Simulated Animated Holographic Waveform (Active while speaking / listening) */}
-            <div
-              style={{
-                height: '48px',
-                background: 'rgba(0, 0, 0, 0.4)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                padding: '0 20px',
-              }}
-            >
-              {Array.from({ length: 24 }).map((_, i) => {
-                const isActive = isSpeaking || isListening;
-                const dynamicHeight = isActive ? Math.sin((i + Date.now() / 150) * 0.8) * 14 + 16 : 4;
-                return (
-                  <span
-                    key={i}
-                    style={{
-                      width: '3px',
-                      height: `${dynamicHeight}px`,
-                      borderRadius: '2px',
-                      background: isListening
-                        ? 'linear-gradient(180deg, #ff4757 0%, #ff6b81 100%)'
-                        : 'linear-gradient(180deg, #00ffff 0%, #3b82f6 100%)',
-                      boxShadow: isActive ? '0 0 8px rgba(0, 255, 255, 0.5)' : 'none',
-                      transition: 'height 0.1s ease',
-                    }}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Chat / Subtitle Transcript Area */}
-            <div
-              style={{
-                flex: 1,
-                padding: '16px 20px',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                minHeight: '140px',
-              }}
-            >
-              {transcript && (
-                <div
-                  style={{
-                    alignSelf: 'flex-end',
-                    background: 'rgba(255, 71, 87, 0.15)',
-                    border: '1px solid rgba(255, 71, 87, 0.3)',
-                    borderRadius: '12px 12px 2px 12px',
-                    padding: '8px 12px',
-                    fontSize: '0.82rem',
-                    color: '#ffffff',
-                    maxWidth: '85%',
-                  }}
-                >
-                  <span style={{ fontSize: '0.66rem', color: '#ff6b81', fontWeight: 700, display: 'block' }}>
-                    {adminName}:
-                  </span>
-                  {transcript}
-                </div>
-              )}
-
-              <div
-                style={{
-                  alignSelf: 'flex-start',
-                  background: 'rgba(0, 255, 255, 0.08)',
-                  border: '1px solid rgba(0, 255, 255, 0.25)',
-                  borderRadius: '12px 12px 12px 2px',
-                  padding: '10px 14px',
-                  fontSize: '0.84rem',
-                  color: '#e2e8f0',
-                  lineHeight: 1.5,
-                  maxWidth: '90%',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                  <Sparkles size={12} color="#00ffff" />
-                  <span style={{ fontSize: '0.68rem', color: '#00ffff', fontWeight: 800 }}>JARVIS:</span>
-                </div>
-                {replyText || `At your service, ${adminName}. Command me to run site audits, check SEO, draft posts, or navigate anywhere.`}
-              </div>
-            </div>
-
-            {/* Quick Command Suggestions Chips */}
+            {/* Continuous Voice Mode Toggle Banner */}
             <div
               style={{
                 padding: '10px 16px',
+                background: isContinuous ? 'rgba(16, 185, 129, 0.1)' : 'rgba(0, 255, 255, 0.04)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Radio size={14} color={isContinuous ? '#10b981' : '#00ffff'} />
+                <span style={{ fontSize: '0.74rem', color: '#e2e8f0', fontWeight: 600 }}>
+                  {isContinuous ? 'Continuous Voice: ON (No need to click)' : 'Always-on Voice: OFF'}
+                </span>
+              </div>
+
+              <button
+                onClick={toggleContinuousListening}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: '12px',
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: isContinuous ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0, 255, 255, 0.2)',
+                  border: isContinuous ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(0, 255, 255, 0.4)',
+                  color: isContinuous ? '#fca5a5' : '#00ffff',
+                }}
+              >
+                {isContinuous ? 'Pause Voice' : 'Activate Always-On'}
+              </button>
+            </div>
+
+            {/* Learned Screen Status Banner */}
+            <div
+              style={{
+                padding: '8px 16px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.7rem',
+                color: '#94a3b8',
+              }}
+            >
+              <Eye size={12} color="#00ffff" />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {learnedSummary}
+              </span>
+            </div>
+
+            {/* Middle Section: Waveform & Live Transcript */}
+            <div
+              style={{
+                padding: '16px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                overflowY: 'auto',
+                flex: 1,
+              }}
+            >
+              {/* Dynamic Waveform Visualizer */}
+              <div
+                style={{
+                  height: '42px',
+                  borderRadius: '10px',
+                  background: 'rgba(0, 255, 255, 0.03)',
+                  border: '1px solid rgba(0, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  padding: '0 12px',
+                }}
+              >
+                {[...Array(24)].map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: '3px',
+                      height: isListening
+                        ? `${Math.max(15, Math.sin((i + Date.now() / 150) * 0.5) * 35)}px`
+                        : isSpeaking
+                        ? `${Math.max(20, Math.sin((i + Date.now() / 100) * 0.8) * 38)}px`
+                        : '6px',
+                      borderRadius: '2px',
+                      background: isListening
+                        ? '#00ffff'
+                        : isSpeaking
+                        ? 'linear-gradient(180deg, #00ffff 0%, #3b82f6 100%)'
+                        : 'rgba(255, 255, 255, 0.15)',
+                      transition: 'height 0.1s ease',
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Spoken Response Balloon */}
+              {replyText && (
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(0, 255, 255, 0.06)',
+                    border: '1px solid rgba(0, 255, 255, 0.2)',
+                    fontSize: '0.84rem',
+                    color: '#e2e8f0',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <div style={{ fontSize: '0.66rem', color: '#00ffff', fontWeight: 800, marginBottom: '4px' }}>
+                    JARVIS RESPONSE
+                  </div>
+                  {replyText}
+                </div>
+              )}
+
+              {/* User Voice Input Transcript */}
+              {transcript && (
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    fontSize: '0.8rem',
+                    color: '#94a3b8',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  <span style={{ color: '#00ffff', fontWeight: 700, fontStyle: 'normal' }}>Heard: </span>
+                  &ldquo;{transcript}&rdquo;
+                </div>
+              )}
+            </div>
+
+            {/* Quick Command Chips */}
+            <div
+              style={{
+                padding: '8px 16px',
                 borderTop: '1px solid rgba(255, 255, 255, 0.06)',
                 display: 'flex',
                 gap: '6px',
                 overflowX: 'auto',
-                background: 'rgba(0, 0, 0, 0.3)',
+                scrollbarWidth: 'none',
               }}
             >
               {[
                 { label: '⚡ Run Audit', cmd: 'run audit' },
-                { label: '📊 Status Report', cmd: 'status report' },
-                { label: '🔍 Check SEO', cmd: 'check seo' },
-                { label: '👥 Client Leads', cmd: 'go to leads' },
-                { label: '✍️ New Post', cmd: 'create post' },
                 { label: '🔑 Change Password', cmd: 'change password' },
+                { label: '👥 Client Leads', cmd: 'go to leads' },
+                { label: '✍️ New Post', cmd: 'new post' },
+                { label: '🔍 Check SEO', cmd: 'check seo' },
+                { label: '🎯 Scout Leads', cmd: 'scout leads' },
               ].map((chip) => (
                 <button
                   key={chip.label}
@@ -1045,23 +1238,23 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
             >
               <button
                 type="button"
-                onClick={toggleListening}
+                onClick={toggleContinuousListening}
                 style={{
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
-                  background: isListening ? '#ff4757' : 'rgba(0, 255, 255, 0.15)',
-                  border: isListening ? 'none' : '1px solid rgba(0, 255, 255, 0.3)',
-                  color: isListening ? '#ffffff' : '#00ffff',
+                  background: isContinuous ? '#10b981' : 'rgba(0, 255, 255, 0.15)',
+                  border: isContinuous ? 'none' : '1px solid rgba(0, 255, 255, 0.3)',
+                  color: isContinuous ? '#ffffff' : '#00ffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   flexShrink: 0,
                 }}
-                title={isListening ? 'Stop' : 'Speak to JARVIS'}
+                title={isContinuous ? 'Pause Always-On Voice' : 'Activate Always-On Voice'}
               >
-                {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                {isContinuous ? <Mic size={16} /> : <MicOff size={16} />}
               </button>
 
               <input
@@ -1140,3 +1333,5 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     </>
   );
 }
+
+export default JarvisAssistant;
