@@ -31,6 +31,7 @@ import {
   BarChart3,
   Globe,
   Radio,
+  Pause,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import {
@@ -43,6 +44,70 @@ import {
   OperatingMode,
   AgentStatus,
 } from '@/lib/chief-of-staff/types';
+
+interface AgentTheme {
+  primary: string;
+  gradient: string;
+  glow: string;
+  badgeBg: string;
+  badgeBorder: string;
+  category: string;
+  icon: any;
+  accentText: string;
+}
+
+const AGENT_THEMES: Record<string, AgentTheme> = {
+  content_researcher: {
+    primary: '#a855f7',
+    gradient: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+    glow: 'rgba(168, 85, 247, 0.4)',
+    badgeBg: 'rgba(168, 85, 247, 0.1)',
+    badgeBorder: 'rgba(168, 85, 247, 0.25)',
+    category: 'CONTENT ENGINE',
+    icon: Sparkles,
+    accentText: '#c084fc',
+  },
+  website_guardian: {
+    primary: '#10b981',
+    gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+    glow: 'rgba(16, 185, 129, 0.4)',
+    badgeBg: 'rgba(16, 185, 129, 0.1)',
+    badgeBorder: 'rgba(16, 185, 129, 0.25)',
+    category: 'SITE SENTRY & CWV',
+    icon: ShieldCheck,
+    accentText: '#34d399',
+  },
+  seo_growth: {
+    primary: '#f59e0b',
+    gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+    glow: 'rgba(245, 158, 11, 0.4)',
+    badgeBg: 'rgba(245, 158, 11, 0.1)',
+    badgeBorder: 'rgba(245, 158, 11, 0.25)',
+    category: 'TECHNICAL SEO & CLUSTERS',
+    icon: TrendingUp,
+    accentText: '#fbbf24',
+  },
+  inbound_responder: {
+    primary: '#ec4899',
+    gradient: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+    glow: 'rgba(236, 72, 153, 0.4)',
+    badgeBg: 'rgba(236, 72, 153, 0.1)',
+    badgeBorder: 'rgba(236, 72, 153, 0.25)',
+    category: 'INBOUND PROPOSALS',
+    icon: Zap,
+    accentText: '#f472b6',
+  },
+  lead_scout: {
+    primary: '#3b82f6',
+    gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+    glow: 'rgba(59, 130, 246, 0.4)',
+    badgeBg: 'rgba(59, 130, 246, 0.1)',
+    badgeBorder: 'rgba(59, 130, 246, 0.25)',
+    category: 'PROSPECT INTELLIGENCE',
+    icon: Globe,
+    accentText: '#60a5fa',
+  },
+};
 
 export default function ChiefOfStaffClient() {
   const { showToast } = useToast();
@@ -505,143 +570,460 @@ export default function ChiefOfStaffClient() {
 
       {/* TAB 1: AGENTS & CONTROLS */}
       {activeTab === 'agents' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(390px, 1fr))', gap: '22px' }}>
           {agents.map((agent) => {
             const isPaused = agent.status === 'paused';
             const isRunning = runningAgentId === agent.id;
             const isToggling = togglingAgentId === agent.id;
+            const theme = AGENT_THEMES[agent.id] || {
+              primary: '#ff4757',
+              gradient: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)',
+              glow: 'rgba(255, 71, 87, 0.4)',
+              badgeBg: 'rgba(255, 71, 87, 0.1)',
+              badgeBorder: 'rgba(255, 71, 87, 0.25)',
+              category: 'AUTONOMOUS AGENT',
+              icon: Bot,
+              accentText: '#ff6b81',
+            };
+            const AgentIcon = theme.icon;
 
             return (
               <div
                 key={agent.id}
-                className="hpa-card"
                 style={{
-                  padding: '22px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: '18px',
+                  background: 'linear-gradient(180deg, rgba(22, 22, 32, 0.9) 0%, rgba(13, 13, 19, 0.96) 100%)',
+                  border: isPaused ? '1px solid rgba(255, 255, 255, 0.08)' : `1px solid ${theme.badgeBorder}`,
+                  boxShadow: isPaused
+                    ? '0 10px 30px -8px rgba(0, 0, 0, 0.6)'
+                    : `0 12px 35px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px ${theme.badgeBg}`,
+                  padding: '24px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  opacity: isPaused ? 0.75 : 1,
-                  transition: 'all 0.2s ease',
-                  border: isPaused ? '1px solid var(--hpa-border)' : '1px solid rgba(255, 71, 87, 0.25)',
+                  transition: 'all 0.25s ease',
+                  opacity: isPaused ? 0.78 : 1,
                 }}
               >
+                {/* Top Vibrant Accent Beam */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: theme.gradient,
+                    boxShadow: isPaused ? 'none' : `0 2px 12px ${theme.glow}`,
+                    opacity: isPaused ? 0.35 : 1,
+                  }}
+                />
+
+                {/* Ambient Radial Background Glow */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-50px',
+                    right: '-50px',
+                    width: '180px',
+                    height: '180px',
+                    background: theme.glow,
+                    filter: 'blur(75px)',
+                    pointerEvents: 'none',
+                    opacity: isPaused ? 0.08 : 0.22,
+                  }}
+                />
+
                 <div>
-                  {/* Top Agent Bar */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  {/* Agent Top Header with Icon Avatar & Controls */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      marginBottom: '14px',
+                    }}
+                  >
+                    {/* Left: Avatar + Category + Title */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '12px',
+                          background: theme.gradient,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                          boxShadow: `0 4px 18px ${theme.glow}`,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <AgentIcon size={22} />
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <span
+                          style={{
+                            fontSize: '0.66rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.08em',
+                            color: theme.accentText,
+                            textTransform: 'uppercase',
+                            display: 'block',
+                            marginBottom: '2px',
+                          }}
+                        >
+                          {theme.category}
+                        </span>
+                        <h3
+                          style={{
+                            fontSize: '1.2rem',
+                            fontWeight: 800,
+                            color: '#ffffff',
+                            margin: 0,
+                            letterSpacing: '-0.01em',
+                            lineHeight: 1.25,
+                            wordBreak: 'break-word',
+                          }}
+                        >
                           {agent.name}
                         </h3>
-                        <span
-                          className={`hpa-pill ${agent.status === 'enabled' ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
-                          style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}
-                        >
-                          {agent.status}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#ff4757', fontWeight: 600, marginTop: '2px' }}>
-                        {agent.role}
                       </div>
                     </div>
 
-                    {/* Enable / Pause Toggle Switch */}
-                    <button
-                      onClick={() => handleToggleAgentStatus(agent.id, agent.status)}
-                      disabled={isToggling}
-                      className="hpa-btn hpa-btn-secondary"
-                      style={{ fontSize: '0.78rem', padding: '6px 12px' }}
-                      title={isPaused ? 'Resume Agent' : 'Pause Agent'}
-                    >
-                      {isToggling ? (
-                        <Loader2 size={13} className="hpa-spin" />
-                      ) : isPaused ? (
-                        <Play size={13} color="#00ff88" />
-                      ) : (
-                        <X size={13} color="#ff4757" />
-                      )}
-                      <span>{isPaused ? 'Enable' : 'Pause'}</span>
-                    </button>
+                    {/* Right: Status Pill & Pause Toggle */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          background: isPaused ? 'rgba(255, 255, 255, 0.05)' : 'rgba(16, 185, 129, 0.12)',
+                          border: isPaused ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(16, 185, 129, 0.3)',
+                          color: isPaused ? '#94a3b8' : '#34d399',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: isPaused ? '#94a3b8' : '#34d399',
+                            boxShadow: isPaused ? 'none' : '0 0 8px #34d399',
+                          }}
+                        />
+                        {agent.status}
+                      </span>
+
+                      <button
+                        onClick={() => handleToggleAgentStatus(agent.id, agent.status)}
+                        disabled={isToggling}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          color: isPaused ? '#34d399' : '#f43f5e',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                        title={isPaused ? 'Resume Agent' : 'Pause Agent'}
+                      >
+                        {isToggling ? (
+                          <Loader2 size={12} className="hpa-spin" />
+                        ) : isPaused ? (
+                          <Play size={12} />
+                        ) : (
+                          <Pause size={12} />
+                        )}
+                        <span>{isPaused ? 'Resume' : 'Pause'}</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <p style={{ fontSize: '0.84rem', color: 'var(--hpa-text-dim)', lineHeight: 1.5, marginBottom: '16px' }}>
+                  {/* Elegant Role Pill */}
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      background: theme.badgeBg,
+                      border: `1px solid ${theme.badgeBorder}`,
+                      color: theme.accentText,
+                      fontSize: '0.76rem',
+                      fontWeight: 600,
+                      marginTop: '4px',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    <Activity size={12} />
+                    <span>{agent.role}</span>
+                  </div>
+
+                  {/* Description */}
+                  <p
+                    style={{
+                      fontSize: '0.84rem',
+                      color: '#94a3b8',
+                      lineHeight: 1.55,
+                      margin: '0 0 16px',
+                    }}
+                  >
                     {agent.description}
                   </p>
 
-                  {/* Operating Mode Selector */}
+                  {/* Modern Segmented Operating Mode Control */}
                   <div
                     style={{
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      borderRadius: '8px',
+                      background: 'rgba(0, 0, 0, 0.45)',
+                      borderRadius: '12px',
                       padding: '12px 14px',
-                      marginBottom: '16px',
                       border: '1px solid rgba(255, 255, 255, 0.06)',
+                      marginBottom: '16px',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '8px',
+                        flexWrap: 'wrap',
+                        gap: '6px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          letterSpacing: '0.08em',
+                          color: '#64748b',
+                          textTransform: 'uppercase',
+                        }}
+                      >
                         Operating Mode
                       </span>
-                      <span style={{ fontSize: '0.74rem', color: agent.mode === 'prepare' ? '#ffaa00' : agent.mode === 'auto' ? '#00ff88' : '#3b82f6' }}>
-                        {agent.mode === 'prepare' ? 'Mode B: Drafts for Approval' : agent.mode === 'auto' ? 'Mode C: Autonomous Action' : 'Mode A: Observe Only'}
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color:
+                            agent.mode === 'prepare'
+                              ? '#fbbf24'
+                              : agent.mode === 'auto'
+                              ? '#34d399'
+                              : '#38bdf8',
+                        }}
+                      >
+                        {agent.mode === 'prepare'
+                          ? '● Mode B: Approval Required'
+                          : agent.mode === 'auto'
+                          ? '● Mode C: Autonomous Action'
+                          : '● Mode A: Observe Only'}
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                      {(['observe', 'prepare', 'auto'] as OperatingMode[]).map((modeOption) => (
-                        <button
-                          key={modeOption}
-                          onClick={() => handleChangeAgentMode(agent.id, modeOption)}
-                          disabled={isToggling}
-                          style={{
-                            background: agent.mode === modeOption ? 'rgba(255, 71, 87, 0.2)' : 'transparent',
-                            color: agent.mode === modeOption ? '#ffffff' : 'var(--hpa-text-dim)',
-                            border: agent.mode === modeOption ? '1px solid #ff4757' : '1px solid var(--hpa-border)',
-                            borderRadius: '6px',
-                            padding: '6px 4px',
-                            fontSize: '0.74rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            textTransform: 'capitalize',
-                          }}
-                        >
-                          {modeOption}
-                        </button>
-                      ))}
+                    <div
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        borderRadius: '9px',
+                        padding: '3px',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '4px',
+                      }}
+                    >
+                      {(['observe', 'prepare', 'auto'] as OperatingMode[]).map((modeOption) => {
+                        const isCurrent = agent.mode === modeOption;
+                        let activeBg = 'rgba(56, 189, 248, 0.16)';
+                        let activeBorder = 'rgba(56, 189, 248, 0.5)';
+                        let activeColor = '#38bdf8';
+
+                        if (modeOption === 'prepare') {
+                          activeBg = 'rgba(251, 191, 36, 0.16)';
+                          activeBorder = 'rgba(251, 191, 36, 0.5)';
+                          activeColor = '#fbbf24';
+                        } else if (modeOption === 'auto') {
+                          activeBg = 'rgba(52, 211, 153, 0.16)';
+                          activeBorder = 'rgba(52, 211, 153, 0.5)';
+                          activeColor = '#34d399';
+                        }
+
+                        return (
+                          <button
+                            key={modeOption}
+                            onClick={() => handleChangeAgentMode(agent.id, modeOption)}
+                            disabled={isToggling}
+                            style={{
+                              background: isCurrent ? activeBg : 'transparent',
+                              color: isCurrent ? activeColor : '#64748b',
+                              border: isCurrent ? `1px solid ${activeBorder}` : '1px solid transparent',
+                              borderRadius: '7px',
+                              padding: '7px 4px',
+                              fontSize: '0.74rem',
+                              fontWeight: isCurrent ? 800 : 600,
+                              cursor: 'pointer',
+                              textTransform: 'capitalize',
+                              transition: 'all 0.18s ease',
+                              boxShadow: isCurrent ? `0 2px 10px ${activeBg}` : 'none',
+                            }}
+                          >
+                            {modeOption === 'auto' ? 'Auto (C)' : modeOption === 'prepare' ? 'Prepare (B)' : 'Observe (A)'}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Schedule & Run Metadata */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.78rem', color: 'var(--hpa-text-dim)', marginBottom: '16px' }}>
-                    <div>
-                      <span style={{ display: 'block', color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem' }}>SCHEDULE</span>
-                      <strong style={{ color: '#ffffff' }}>{agent.schedule_display}</strong>
+                  {/* Cadence & Execution Meta Tiles */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '10px',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
+                        <Clock size={11} color={theme.accentText} />
+                        <span style={{ fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.06em', color: '#64748b' }}>
+                          CADENCE
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.84rem',
+                          fontWeight: 700,
+                          color: '#f8fafc',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                        title={agent.schedule_display}
+                      >
+                        {agent.schedule_display}
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ display: 'block', color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem' }}>LAST RUN</span>
-                      <span style={{ color: agent.last_run_at ? '#ffffff' : 'var(--hpa-text-dim)' }}>
-                        {agent.last_run_at ? new Date(agent.last_run_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Pending'}
-                      </span>
+
+                    <div
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
+                        <Activity size={11} color={theme.accentText} />
+                        <span style={{ fontSize: '0.64rem', fontWeight: 800, letterSpacing: '0.06em', color: '#64748b' }}>
+                          LAST RUN
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.84rem',
+                          fontWeight: 700,
+                          color: agent.last_run_at ? '#f8fafc' : '#64748b',
+                        }}
+                      >
+                        {agent.last_run_at
+                          ? new Date(agent.last_run_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : 'Pending Run'}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Agent Action Footer */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--hpa-border)', paddingTop: '14px', marginTop: '10px' }}>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>
-                    Runs: <strong>{agent.stats?.total_runs || 0}</strong> • Produced: <strong>{agent.stats?.items_produced || 0}</strong>
+                {/* Action Footer */}
+                <div
+                  style={{
+                    borderTop: '1px solid rgba(255, 255, 255, 0.07)',
+                    paddingTop: '16px',
+                    marginTop: '6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        color: '#94a3b8',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                      }}
+                    >
+                      Runs: <strong style={{ color: '#ffffff' }}>{agent.stats?.total_runs || 0}</strong>
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        color: '#94a3b8',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                      }}
+                    >
+                      Produced: <strong style={{ color: theme.accentText }}>{agent.stats?.items_produced || 0}</strong>
+                    </span>
                   </div>
 
                   <button
                     onClick={() => handleRunAgentTask(agent.id)}
                     disabled={isRunning}
-                    className="hpa-btn hpa-btn-primary"
-                    style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+                    style={{
+                      background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      color: '#ffffff',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: isRunning ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 16px rgba(255, 71, 87, 0.35)',
+                      transition: 'all 0.2s ease',
+                      opacity: isRunning ? 0.8 : 1,
+                    }}
                   >
                     {isRunning ? (
                       <Loader2 size={13} className="hpa-spin" />
                     ) : (
-                      <Play size={13} />
+                      <Play size={13} fill="currentColor" />
                     )}
                     <span>{isRunning ? 'Executing...' : 'Run Task Now'}</span>
                   </button>
