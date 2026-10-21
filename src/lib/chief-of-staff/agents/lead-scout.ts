@@ -23,7 +23,7 @@ export async function runLeadScoutDiscovery(): Promise<{
     { mode }
   );
 
-  // Discover businesses with pending or incomplete technical audits
+  // Discover businesses with pending or incomplete technical audits that haven't been scouted yet
   const uncontactedBusinesses = await query<{
     id: string;
     name: string;
@@ -31,10 +31,15 @@ export async function runLeadScoutDiscovery(): Promise<{
     industry: string | null;
     metadata: Record<string, any> | null;
   }>(`
-    SELECT id, name, domain, industry, metadata 
-    FROM businesses 
-    WHERE status IN ('DISCOVERED', 'AUDITED', 'ENRICHED') 
-    ORDER BY created_at DESC 
+    SELECT b.id, b.name, b.domain, b.industry, b.metadata 
+    FROM businesses b
+    WHERE b.status IN ('DISCOVERED', 'AUDITED', 'ENRICHED')
+      AND NOT EXISTS (
+        SELECT 1 FROM chief_content_drafts d 
+        WHERE d.metadata->>'businessId' = b.id::text
+           OR (b.domain IS NOT NULL AND d.metadata->>'domain' = b.domain)
+      )
+    ORDER BY b.created_at DESC 
     LIMIT 5;
   `);
 
@@ -86,29 +91,38 @@ export async function runLeadScoutDiscovery(): Promise<{
       draftsCreated++;
     }
   } else {
-    // Generate initial sample high-intent lead opportunity
+    // Check if initial sample high-intent lead opportunity already exists
     const sampleDomain = 'nordicpulse-gear.com';
     const sampleCompany = 'NordicPulse Retail';
-    const opportunityTitle = `Outreach Draft: ${sampleCompany} (${sampleDomain})`;
-    const opportunityExcerpt = `WooCommerce to Headless Next.js optimization proposal (Score: 92/100)`;
 
-    const pitchBody = `Hi ${sampleCompany} Team,\n\nI noticed NordicPulse is running on WooCommerce with high checkout drop-off rates on mobile. We can achieve sub-second TTFB and 100% Core Web Vitals by migrating your store to a headless Next.js frontend while keeping your existing WooCommerce product catalog intact.\n\nWould you be open to a quick 10-minute technical review this week?\n\nBest,\nPrince\nSenior Full Stack Engineer\nhttps://heyprince.in`;
+    const existingSample = await query<any>(
+      `SELECT id FROM chief_content_drafts WHERE metadata->>'domain' = $1 LIMIT 1;`,
+      [sampleDomain]
+    );
 
-    await createContentDraft({
-      agentId: 'lead_scout',
-      draftType: 'outreach_draft',
-      title: opportunityTitle,
-      excerpt: opportunityExcerpt,
-      content: pitchBody,
-      metadata: {
-        companyName: sampleCompany,
-        domain: sampleDomain,
-        industry: 'E-commerce & Apparel',
-        score: 92,
-      },
-      status: 'pending_approval',
-    });
-    draftsCreated++;
+    if (existingSample.length === 0) {
+      const opportunityTitle = `Outreach Draft: ${sampleCompany} (${sampleDomain})`;
+      const opportunityExcerpt = `WooCommerce to Headless Next.js optimization proposal (Score: 92/100)`;
+
+      const pitchBody = `Hi ${sampleCompany} Team,\n\nI noticed NordicPulse is running on WooCommerce with high checkout drop-off rates on mobile. We can achieve sub-second TTFB and 100% Core Web Vitals by migrating your store to a headless Next.js frontend while keeping your existing WooCommerce product catalog intact.\n\nWould you be open to a quick 10-minute technical review this week?\n\nBest,\nPrince\nSenior Full Stack Engineer\nhttps://heyprince.in`;
+
+      await createContentDraft({
+        agentId: 'lead_scout',
+        draftType: 'outreach_draft',
+        title: opportunityTitle,
+        excerpt: opportunityExcerpt,
+        content: pitchBody,
+        metadata: {
+          companyName: sampleCompany,
+          domain: sampleDomain,
+          industry: 'E-commerce & Apparel',
+          score: 92,
+          scoreBreakdown: ['Monolithic WooCommerce stack with mobile checkout friction'],
+        },
+        status: 'pending_approval',
+      });
+      draftsCreated++;
+    }
   }
 
   const duration = Date.now() - startTime;

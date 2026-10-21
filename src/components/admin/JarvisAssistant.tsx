@@ -126,6 +126,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
   const isSpeakingRef = useRef<boolean>(false);
   const isListeningRef = useRef<boolean>(false);
   const isProcessingRef = useRef<boolean>(false);
+  const isAwakeRef = useRef<boolean>(false);
 
   const adminName = user?.name || user?.email?.split('@')[0] || 'Prince';
   const userId = user?.id || 1;
@@ -1046,7 +1047,8 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
       const rec = new SpeechRec();
       rec.continuous = true;
       rec.interimResults = true;
-      rec.lang = 'en-US';
+      const userLang = typeof navigator !== 'undefined' ? (navigator.language || 'en-US') : 'en-US';
+      rec.lang = userLang.startsWith('en') ? userLang : 'en-US';
 
       rec.onstart = () => {
         setIsListening(true);
@@ -1070,14 +1072,49 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
           }
         }
 
+        const wakeRegex = /(?:hey\s+|hi\s+|ok\s+)?jarvis\b[:,\s]*(.*)/i;
+
+        // 1. Real-time Live Typing for Interim Speech
         if (interim) {
-          setTranscript(interim);
+          const interimWake = interim.match(wakeRegex);
+          if (interimWake) {
+            setIsOpen(true);
+            const cmd = interimWake[1];
+            setTypedInput(cmd);
+            setTranscript(interim);
+          } else if (isAwakeRef.current || isOpen) {
+            setTypedInput(interim);
+            setTranscript(interim);
+          }
         }
 
+        // 2. Final Sentence Execution
         if (final.trim()) {
-          const cleaned = final.trim();
-          setTranscript(cleaned);
-          processCommand(cleaned);
+          const raw = final.trim();
+          const finalWake = raw.match(wakeRegex);
+
+          if (finalWake) {
+            setIsOpen(true);
+            const cmd = finalWake[1].trim();
+
+            if (cmd) {
+              setTypedInput(cmd);
+              setTranscript(raw);
+              isAwakeRef.current = false;
+              processCommand(cmd);
+            } else {
+              // User just said "Jarvis"
+              isAwakeRef.current = true;
+              playChime('wake');
+              setTranscript(raw);
+              speak(`Yes ${adminName}, I'm listening.`);
+            }
+          } else if (isAwakeRef.current || isOpen) {
+            setTypedInput(raw);
+            setTranscript(raw);
+            isAwakeRef.current = false;
+            processCommand(raw);
+          }
         }
       };
 
@@ -1114,7 +1151,7 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
     } catch (err) {
       console.warn('[JARVIS STT Setup Notice]', err);
     }
-  }, [processCommand, speak]);
+  }, [adminName, isOpen, playChime, processCommand, speak]);
 
   const toggleContinuousListening = () => {
     if (isContinuous || isListening) {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Mail,
   Search,
@@ -18,6 +19,7 @@ import {
   FileText,
   RefreshCw,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { LeadRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -191,6 +193,65 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
 
   return (
     <div>
+      {/* Unified Lead Ecosystem Header Banner */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(255, 255, 255, 0.02)',
+          border: '1px solid #1c1c2b',
+          borderRadius: '12px',
+          padding: '8px 14px',
+          marginBottom: '20px',
+          gap: '12px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Lead Ecosystem:
+          </span>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(14, 165, 233, 0.08))',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              color: '#ffffff',
+              fontSize: '12px',
+              fontWeight: 700,
+            }}
+          >
+            <Inbox size={13} color="#38bdf8" />
+            <span>📥 Inbound Inquiries (Active)</span>
+          </div>
+          <Link
+            href="/admin/outreach"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: '#12121c',
+              border: '1px solid #232338',
+              color: '#9ca3af',
+              fontSize: '12px',
+              fontWeight: 500,
+              textDecoration: 'none',
+              transition: 'all 0.15s',
+            }}
+          >
+            <Sparkles size={13} color="#ff3366" />
+            <span>🚀 Outbound & AI Lead Scout</span>
+          </Link>
+        </div>
+      </div>
+
       <div className="hpa-page-title-row">
         <div>
           <h1 className="hpa-page-title">Client Leads & Inquiries</h1>

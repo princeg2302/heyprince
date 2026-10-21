@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Globe,
   Search,
@@ -26,6 +27,10 @@ import {
   Phone,
   MessageSquare,
   Loader2,
+  Inbox,
+  X,
+  Target,
+  ArrowRight,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import {
@@ -83,7 +88,7 @@ export default function OutreachClient({
 }: OutreachClientProps) {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<
-    'telemetry' | 'discovery' | 'leads' | 'contacts' | 'queue' | 'compliance' | 'settings'
+    'telemetry' | 'discovery' | 'leads' | 'scout' | 'contacts' | 'queue' | 'compliance' | 'settings'
   >('telemetry');
 
   const [settings, setSettings] = useState<OutreachSettingsEntity>(initialSettings);
@@ -92,6 +97,14 @@ export default function OutreachClient({
   const [jobs, setJobs] = useState<DiscoveryJobEntity[]>(initialJobs);
   const [contacts, setContacts] = useState<any[]>(initialContacts);
   const [messages, setMessages] = useState<any[]>(initialMessages);
+
+  // Scout State
+  const [scoutDrafts, setScoutDrafts] = useState<any[]>([]);
+  const [loadingScoutDrafts, setLoadingScoutDrafts] = useState(false);
+  const [isRunningScout, setIsRunningScout] = useState(false);
+  const [isDeduplicating, setIsDeduplicating] = useState(false);
+  const [selectedScoutDraft, setSelectedScoutDraft] = useState<any | null>(null);
+  const [scoutFilter, setScoutFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   // Discovery Form State
   const [discoverCountry, setDiscoverCountry] = useState('US');
@@ -612,8 +625,211 @@ export default function OutreachClient({
     }
   };
 
+  // Scout Data Loader & Handlers
+  const loadScoutDrafts = async () => {
+    setLoadingScoutDrafts(true);
+    try {
+      const res = await fetch('/api/admin/outreach/scout');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.drafts)) {
+        setScoutDrafts(data.drafts);
+      }
+    } catch {
+      console.warn('Failed to load scout drafts');
+    } finally {
+      setLoadingScoutDrafts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'scout' && scoutDrafts.length === 0) {
+      loadScoutDrafts();
+    }
+  }, [activeTab]);
+
+  const handleRunScout = async () => {
+    setIsRunningScout(true);
+    try {
+      const res = await fetch('/api/admin/outreach/scout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'run_scout' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || 'Lead Scout discovery completed.', 'success');
+        await loadScoutDrafts();
+        const bRes = await fetch('/api/admin/outreach/businesses?limit=25');
+        const bData = await bRes.json();
+        if (bData.items) setBusinesses(bData.items);
+      } else {
+        showToast(data.error || 'Failed to run Lead Scout', 'error');
+      }
+    } catch {
+      showToast('Network error while running Lead Scout', 'error');
+    } finally {
+      setIsRunningScout(false);
+    }
+  };
+
+  const handleDeduplicate = async () => {
+    setIsDeduplicating(true);
+    try {
+      const res = await fetch('/api/admin/outreach/scout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deduplicate' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || `Deduplication complete. Removed ${data.duplicatesRemoved || 0} duplicate records.`, 'success');
+        const bRes = await fetch('/api/admin/outreach/businesses?limit=25');
+        const bData = await bRes.json();
+        if (bData.items) setBusinesses(bData.items);
+        await loadScoutDrafts();
+      } else {
+        showToast(data.error || 'Deduplication failed', 'error');
+      }
+    } catch {
+      showToast('Network error while running deduplication', 'error');
+    } finally {
+      setIsDeduplicating(false);
+    }
+  };
+
+  const handleApproveScoutDraft = async (draftId: string) => {
+    try {
+      const res = await fetch('/api/admin/chief-of-staff/approve-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draftId, action: 'approve' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Proposal approved and staged for outreach!', 'success');
+        setScoutDrafts((prev) =>
+          prev.map((d) => (d.id === draftId ? { ...d, status: 'approved' } : d))
+        );
+        if (selectedScoutDraft && selectedScoutDraft.id === draftId) {
+          setSelectedScoutDraft((prev: any) => (prev ? { ...prev, status: 'approved' } : null));
+        }
+      } else {
+        showToast(data.error || 'Failed to approve proposal', 'error');
+      }
+    } catch {
+      showToast('Network error while approving proposal', 'error');
+    }
+  };
+
+  const handleRejectScoutDraft = async (draftId: string) => {
+    try {
+      const res = await fetch('/api/admin/chief-of-staff/approve-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draftId, action: 'reject' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Proposal rejected and archived.', 'info');
+        setScoutDrafts((prev) =>
+          prev.map((d) => (d.id === draftId ? { ...d, status: 'rejected' } : d))
+        );
+        if (selectedScoutDraft && selectedScoutDraft.id === draftId) {
+          setSelectedScoutDraft((prev: any) => (prev ? { ...prev, status: 'rejected' } : null));
+        }
+      } else {
+        showToast(data.error || 'Failed to reject proposal', 'error');
+      }
+    } catch {
+      showToast('Network error while rejecting proposal', 'error');
+    }
+  };
+
   return (
     <div style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Unified Lead Ecosystem Header Banner */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(255, 255, 255, 0.02)',
+          border: '1px solid #1c1c2b',
+          borderRadius: '12px',
+          padding: '8px 14px',
+          marginBottom: '20px',
+          gap: '12px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Lead Ecosystem:
+          </span>
+          <Link
+            href="/admin/leads"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: '#12121c',
+              border: '1px solid #232338',
+              color: '#9ca3af',
+              fontSize: '12px',
+              fontWeight: 500,
+              textDecoration: 'none',
+              transition: 'all 0.15s',
+            }}
+          >
+            <Inbox size={13} />
+            <span>📥 Inbound Inquiries (Website)</span>
+          </Link>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, rgba(255, 51, 102, 0.18), rgba(225, 29, 72, 0.08))',
+              border: '1px solid rgba(255, 51, 102, 0.4)',
+              color: '#ffffff',
+              fontSize: '12px',
+              fontWeight: 700,
+            }}
+          >
+            <Sparkles size={13} color="#ff3366" />
+            <span>🚀 Outbound & AI Lead Scout (Active)</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={handleDeduplicate}
+            disabled={isDeduplicating}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              background: '#161626',
+              border: '1px solid #2d2d48',
+              color: '#d1d5db',
+              fontSize: '12px',
+              fontWeight: 500,
+              cursor: isDeduplicating ? 'not-allowed' : 'pointer',
+            }}
+            title="Scan database and remove duplicate business records"
+          >
+            <RefreshCw size={12} className={isDeduplicating ? 'hpa-spin' : ''} />
+            <span>{isDeduplicating ? 'Purging...' : 'Purge Duplicates'}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Top Banner: Emergency Kill Switch & Safety Bar */}
       <div
         style={{
@@ -773,6 +989,7 @@ export default function OutreachClient({
           { key: 'telemetry', label: 'Overview & Metrics', icon: Layers },
           { key: 'discovery', label: 'Scanner', icon: Globe },
           { key: 'leads', label: `Businesses (${totalBusinesses})`, icon: Search },
+          { key: 'scout', label: `⚡ Lead Scout${scoutDrafts.length > 0 ? ` (${scoutDrafts.length})` : ''}`, icon: Sparkles },
           { key: 'contacts', label: `Contacts (${contacts.length})`, icon: UserCheck },
           { key: 'queue', label: `Outbox Queue (${queuedEmailCount})`, icon: Mail },
           { key: 'compliance', label: 'Compliance & Suppression', icon: ShieldCheck },
@@ -1094,10 +1311,11 @@ export default function OutreachClient({
                 </p>
               </div>
 
-              {/* Status / Pipeline Filters */}
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                {[
-                  { id: 'ALL', label: `All (${businesses.length})` },
+              {/* Status / Pipeline Filters & Actions */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {[
+                    { id: 'ALL', label: `All (${businesses.length})` },
                   { id: 'DISCOVERED', label: `Fresh (${businesses.filter((b) => b.status === 'DISCOVERED').length})` },
                   { id: 'CONTACTED', label: `Contacted (${businesses.filter((b) => b.status === 'CONTACTED').length})` },
                   { id: 'IN_DISCUSSION', label: `Talking (${businesses.filter((b) => b.status === 'IN_DISCUSSION').length})` },
@@ -1122,6 +1340,51 @@ export default function OutreachClient({
                     {pill.label}
                   </button>
                 ))}
+              </div>
+
+                <button
+                  onClick={handleDeduplicate}
+                  disabled={isDeduplicating}
+                  style={{
+                    background: '#161626',
+                    border: '1px solid #2d2d48',
+                    color: '#cbd5e1',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: isDeduplicating ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title="Purge duplicate business records"
+                >
+                  <RefreshCw size={11} className={isDeduplicating ? 'hpa-spin' : ''} />
+                  <span>{isDeduplicating ? 'Purging...' : 'Purge Duplicates'}</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('scout')}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255, 51, 102, 0.15), rgba(225, 29, 72, 0.05))',
+                    border: '1px solid rgba(255, 51, 102, 0.35)',
+                    color: '#ff3366',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <Sparkles size={11} />
+                  <span>⚡ View Scout Proposals</span>
+                </button>
               </div>
             </div>
 
@@ -1841,6 +2104,613 @@ export default function OutreachClient({
                   )}
                 </div>
               ) : null}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: LEAD INTELLIGENCE SCOUT */}
+      {activeTab === 'scout' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Hero / Header Card */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 51, 102, 0.08), rgba(14, 14, 22, 0.95))',
+              border: '1px solid rgba(255, 51, 102, 0.25)',
+              borderRadius: '12px',
+              padding: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    background: 'rgba(255, 51, 102, 0.2)',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    color: '#ff3366',
+                    display: 'flex',
+                  }}
+                >
+                  <Sparkles size={20} />
+                </div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                  Autonomous Lead Intelligence Scout
+                </h2>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: '12px',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    color: '#38bdf8',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                  }}
+                >
+                  AI Chief of Staff Engine
+                </span>
+              </div>
+              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '8px 0 0 0', maxWidth: '780px', lineHeight: 1.6 }}>
+                The Lead Scout autonomously scours global directories, analyzes prospect websites, scores commercial fit, identifies high-value development or modernization pain points, and drafts high-conversion outreach proposals.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleRunScout}
+                disabled={isRunningScout}
+                style={{
+                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 18px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: isRunningScout ? 'not-allowed' : 'pointer',
+                  opacity: isRunningScout ? 0.7 : 1,
+                  boxShadow: '0 4px 12px rgba(255, 51, 102, 0.25)',
+                }}
+              >
+                {isRunningScout ? <Loader2 size={16} className="hpa-spin" /> : <Sparkles size={16} />}
+                <span>{isRunningScout ? 'Scouting Leads...' : 'Run Lead Scout AI'}</span>
+              </button>
+
+              <button
+                onClick={handleDeduplicate}
+                disabled={isDeduplicating}
+                style={{
+                  background: '#161626',
+                  color: '#e2e8f0',
+                  border: '1px solid #2d2d48',
+                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: isDeduplicating ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <RefreshCw size={14} className={isDeduplicating ? 'hpa-spin' : ''} />
+                <span>{isDeduplicating ? 'Purging...' : 'Clean Duplicates'}</span>
+              </button>
+
+              <button
+                onClick={loadScoutDrafts}
+                disabled={loadingScoutDrafts}
+                style={{
+                  background: '#12121a',
+                  color: '#9ca3af',
+                  border: '1px solid #1c1c2b',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  fontWeight: 500,
+                  fontSize: '13px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                }}
+                title="Refresh Proposals"
+              >
+                <RefreshCw size={14} className={loadingScoutDrafts ? 'hpa-spin' : ''} />
+              </button>
+            </div>
+          </div>
+
+          {/* Scout Metric Counters */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '14px',
+            }}
+          >
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>
+                Total Scout Proposals
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#ffffff', marginTop: '6px' }}>
+                {scoutDrafts.length}
+              </div>
+            </div>
+
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#fbbf24', textTransform: 'uppercase' }}>
+                Pending Review
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#fbbf24', marginTop: '6px' }}>
+                {scoutDrafts.filter((d) => d.status === 'pending').length}
+              </div>
+            </div>
+
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#10b981', textTransform: 'uppercase' }}>
+                Approved & Staged
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981', marginTop: '6px' }}>
+                {scoutDrafts.filter((d) => d.status === 'approved').length}
+              </div>
+            </div>
+
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#c084fc', textTransform: 'uppercase' }}>
+                High-Fit Prospects (≥80)
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#c084fc', marginTop: '6px' }}>
+                {scoutDrafts.filter((d) => (d.metadata?.fitScore || 0) >= 80).length}
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', borderBottom: '1px solid #1c1c2b', paddingBottom: '12px' }}>
+            {[
+              { id: 'all', label: `All Proposals (${scoutDrafts.length})` },
+              { id: 'pending', label: `Pending Review (${scoutDrafts.filter((d) => d.status === 'pending').length})` },
+              { id: 'approved', label: `Approved (${scoutDrafts.filter((d) => d.status === 'approved').length})` },
+              { id: 'rejected', label: `Archived (${scoutDrafts.filter((d) => d.status === 'rejected').length})` },
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => setScoutFilter(pill.id as any)}
+                style={{
+                  background: scoutFilter === pill.id ? 'rgba(255, 51, 102, 0.15)' : '#12121a',
+                  border: scoutFilter === pill.id ? '1px solid #ff3366' : '1px solid #1c1c2b',
+                  color: scoutFilter === pill.id ? '#ff3366' : '#9ca3af',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: scoutFilter === pill.id ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Proposals List */}
+          {loadingScoutDrafts ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
+              <Loader2 size={32} className="hpa-spin" style={{ margin: '0 auto 12px auto', color: '#ff3366' }} />
+              <p style={{ margin: 0, fontSize: '14px' }}>Loading scout proposals from Chief of Staff brain...</p>
+            </div>
+          ) : scoutDrafts.filter((d) => scoutFilter === 'all' || d.status === scoutFilter).length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '60px 20px',
+                background: '#0e0e16',
+                border: '1px dashed #2d2d42',
+                borderRadius: '12px',
+                color: '#9ca3af',
+              }}
+            >
+              <Sparkles size={36} style={{ color: '#ff3366', margin: '0 auto 12px auto', opacity: 0.6 }} />
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>
+                No scout proposals match the current filter
+              </h3>
+              <p style={{ fontSize: '13px', margin: '0 0 16px 0' }}>
+                Trigger the Lead Scout to scan businesses and draft value-first outreach propositions.
+              </p>
+              <button
+                onClick={handleRunScout}
+                disabled={isRunningScout}
+                style={{
+                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 18px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: isRunningScout ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isRunningScout ? 'Running Scout...' : 'Launch Lead Scout Now'}
+              </button>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+                gap: '16px',
+              }}
+            >
+              {scoutDrafts
+                .filter((d) => scoutFilter === 'all' || d.status === scoutFilter)
+                .map((draft) => {
+                  const meta = draft.metadata || {};
+                  const fitScore = meta.fitScore || 85;
+                  const companyName = meta.companyName || draft.title || 'Prospective Business';
+                  const domain = meta.domain || '';
+                  const status = draft.status || 'pending';
+
+                  return (
+                    <div
+                      key={draft.id}
+                      style={{
+                        background: '#0e0e16',
+                        border: status === 'approved'
+                          ? '1px solid rgba(16, 185, 129, 0.4)'
+                          : '1px solid #1c1c2b',
+                        borderRadius: '12px',
+                        padding: '18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '14px',
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Card Header */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
+                              {companyName}
+                            </h3>
+                            {domain && (
+                              <a
+                                href={domain.startsWith('http') ? domain : `https://${domain}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  color: '#38bdf8',
+                                  fontSize: '12px',
+                                  textDecoration: 'none',
+                                  marginTop: '3px',
+                                }}
+                              >
+                                <span>{domain.replace(/^https?:\/\//, '')}</span>
+                                <ExternalLink size={11} />
+                              </a>
+                            )}
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '100px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              background: fitScore >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                              color: fitScore >= 80 ? '#10b981' : '#f59e0b',
+                              border: `1px solid ${fitScore >= 80 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                            }}
+                          >
+                            <Target size={11} />
+                            <span>{fitScore}% Fit</span>
+                          </div>
+                        </div>
+
+                        {/* Meta Tags */}
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
+                          {meta.industry && (
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                background: '#161622',
+                                color: '#9ca3af',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid #232338',
+                              }}
+                            >
+                              {meta.industry}
+                            </span>
+                          )}
+                          {meta.country && (
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                background: '#161622',
+                                color: '#9ca3af',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid #232338',
+                              }}
+                            >
+                              📍 {meta.country}
+                            </span>
+                          )}
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              background: status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : status === 'rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                              color: status === 'approved' ? '#10b981' : status === 'rejected' ? '#ef4444' : '#fbbf24',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {status === 'approved' ? 'Approved ✓' : status === 'rejected' ? 'Archived ✕' : 'Pending Review ⏳'}
+                          </span>
+                        </div>
+
+                        {/* Value Prop & Identified Pain Point */}
+                        <div style={{ marginTop: '12px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#ff3366', marginBottom: '4px' }}>
+                            Identified Opportunity:
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#d1d5db', lineHeight: 1.5 }}>
+                            {meta.identifiedOpportunity || draft.excerpt || 'Technical modernization and high-performance web upgrade.'}
+                          </p>
+                        </div>
+
+                        {/* Proposed Pitch Excerpt */}
+                        <div style={{ marginTop: '10px', background: '#07070d', borderRadius: '6px', padding: '10px', border: '1px solid #161624' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                            Pitch Preview:
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {meta.suggestedPitch || draft.content || 'Hi team, we analyzed your platform and identified opportunities to accelerate speed and conversion...'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Card Actions */}
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid #1c1c2b' }}>
+                        <button
+                          onClick={() => setSelectedScoutDraft(draft)}
+                          style={{
+                            background: '#161626',
+                            border: '1px solid #2d2d48',
+                            color: '#ffffff',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <FileText size={12} />
+                          <span>View Full Pitch</span>
+                        </button>
+
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleRejectScoutDraft(draft.id)}
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  color: '#ef4444',
+                                  padding: '6px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                                title="Reject proposal"
+                              >
+                                Reject
+                              </button>
+                              <button
+                                onClick={() => handleApproveScoutDraft(draft.id)}
+                                style={{
+                                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                                  border: 'none',
+                                  color: '#ffffff',
+                                  padding: '6px 14px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                }}
+                              >
+                                <CheckCircle2 size={12} />
+                                <span>Approve</span>
+                              </button>
+                            </>
+                          )}
+                          {status === 'approved' && (
+                            <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <CheckCircle2 size={12} />
+                              Ready for Dispatch
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+
+          {/* Full Proposal Modal */}
+          {selectedScoutDraft && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(8px)',
+                zIndex: 9999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px',
+              }}
+              onClick={() => setSelectedScoutDraft(null)}
+            >
+              <div
+                style={{
+                  background: '#0e0e16',
+                  border: '1px solid #2d2d42',
+                  borderRadius: '16px',
+                  maxWidth: '680px',
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                  padding: '24px',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                      {selectedScoutDraft.metadata?.companyName || selectedScoutDraft.title}
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#9ca3af' }}>
+                      Commercial Fit Score: {selectedScoutDraft.metadata?.fitScore || 85}% • Status: {selectedScoutDraft.status}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedScoutDraft(null)}
+                    style={{
+                      background: '#1c1c2b',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#9ca3af',
+                      padding: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#ff3366', textTransform: 'uppercase' }}>
+                      Identified Opportunity:
+                    </span>
+                    <p style={{ margin: '4px 0 0 0', color: '#e2e8f0', background: '#07070d', padding: '10px', borderRadius: '8px', border: '1px solid #1c1c2b' }}>
+                      {selectedScoutDraft.metadata?.identifiedOpportunity || selectedScoutDraft.excerpt}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase' }}>
+                      Proposed Subject Line:
+                    </span>
+                    <p style={{ margin: '4px 0 0 0', color: '#ffffff', fontWeight: 600, background: '#07070d', padding: '10px', borderRadius: '8px', border: '1px solid #1c1c2b' }}>
+                      {selectedScoutDraft.metadata?.suggestedSubject || selectedScoutDraft.title}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>
+                      Complete Outreach Pitch:
+                    </span>
+                    <div
+                      style={{
+                        margin: '4px 0 0 0',
+                        color: '#d1d5db',
+                        background: '#07070d',
+                        padding: '14px',
+                        borderRadius: '8px',
+                        border: '1px solid #1c1c2b',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.6,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {selectedScoutDraft.content || selectedScoutDraft.metadata?.suggestedPitch}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #1c1c2b' }}>
+                  <button
+                    onClick={() => setSelectedScoutDraft(null)}
+                    style={{
+                      background: '#161622',
+                      border: '1px solid #2d2d42',
+                      color: '#9ca3af',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Close
+                  </button>
+                  {selectedScoutDraft.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => handleRejectScoutDraft(selectedScoutDraft.id)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          color: '#ef4444',
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleApproveScoutDraft(selectedScoutDraft.id)}
+                        style={{
+                          background: 'linear-gradient(135deg, #10b981, #059669)',
+                          border: 'none',
+                          color: '#ffffff',
+                          padding: '8px 20px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Approve Proposal
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>

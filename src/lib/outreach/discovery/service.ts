@@ -78,10 +78,10 @@ export class DiscoveryService {
 
       // 3. Process & Deduplicate each discovered business
       for (const record of result.records) {
-        // If domain is present, check if already in database under another source
+        // Strict Deduplication: If domain is already known, skip immediately
         if (record.normalizedDomain) {
           const existingDomain = await findBusinessByDomain(record.normalizedDomain);
-          if (existingDomain && existingDomain.source_provider !== record.sourceProvider) {
+          if (existingDomain) {
             duplicateCount++;
             continue;
           }

@@ -141,6 +141,18 @@ export async function findBusinessByDomain(
   return rows[0] || null;
 }
 
+export async function findBusinessByName(
+  name: string,
+  countryCode: string
+): Promise<BusinessEntity | null> {
+  if (!name || !name.trim()) return null;
+  const rows = await query<BusinessEntity>(
+    `SELECT * FROM businesses WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) AND country_code = $2 LIMIT 1;`,
+    [name.trim(), countryCode.toUpperCase()]
+  );
+  return rows[0] || null;
+}
+
 export async function upsertBusiness(data: {
   name: string;
   domain?: string | null;
@@ -160,20 +172,35 @@ export async function upsertBusiness(data: {
   metadata?: Record<string, any>;
   status?: BusinessStatus;
 }): Promise<{ business: BusinessEntity; isNew: boolean }> {
-  // Check provider unique record first
-  const existing = await findBusinessByProviderId(data.source_provider, data.source_provider_id);
+  // 1. Check provider unique record first
+  let existing = await findBusinessByProviderId(data.source_provider, data.source_provider_id);
+
+  // 2. Strict Domain Deduplication: Check if domain is already in database
+  if (!existing && data.normalized_domain) {
+    existing = await findBusinessByDomain(data.normalized_domain);
+  }
+
+  // 3. Strict Name & Country Deduplication: Check if identical business name exists in country
+  if (!existing && data.name) {
+    existing = await findBusinessByName(data.name, data.country_code);
+  }
+
   if (existing) {
     const updated = await query<BusinessEntity>(
       `UPDATE businesses SET 
         name = COALESCE($1, name),
-        website_url = COALESCE($2, website_url),
-        address = COALESCE($3, address),
-        city = COALESCE($4, city),
-        metadata = metadata || $5::jsonb,
+        domain = COALESCE(domain, $2),
+        normalized_domain = COALESCE(normalized_domain, $3),
+        website_url = COALESCE($4, website_url),
+        address = COALESCE($5, address),
+        city = COALESCE($6, city),
+        metadata = metadata || $7::jsonb,
         updated_at = NOW()
-       WHERE id = $6 RETURNING *;`,
+       WHERE id = $8 RETURNING *;`,
       [
         data.name,
+        data.domain || null,
+        data.normalized_domain || null,
         data.website_url,
         data.address,
         data.city,
@@ -181,7 +208,7 @@ export async function upsertBusiness(data: {
         existing.id,
       ]
     );
-    return { business: updated[0], isNew: false };
+    return { business: updated[0] || existing, isNew: false };
   }
 
   const rows = await query<BusinessEntity>(
@@ -212,6 +239,37 @@ export async function upsertBusiness(data: {
     ]
   );
   return { business: rows[0], isNew: true };
+}
+
+/**
+ * Sweeps the businesses table to identify, merge, and purge historical duplicates by normalized_domain or name.
+ */
+export async function deduplicateExistingBusinesses(): Promise<{ duplicatesRemoved: number }> {
+  try {
+    const res = await query<{ count: string }>(`
+      WITH duplicates AS (
+        SELECT id,
+               ROW_NUMBER() OVER (
+                 PARTITION BY COALESCE(NULLIF(normalized_domain, ''), LOWER(TRIM(name)))
+                 ORDER BY 
+                   CASE WHEN status = 'CONTACTED' THEN 4
+                        WHEN status = 'AUDITED' THEN 3
+                        WHEN status = 'ENRICHED' THEN 2
+                        ELSE 1 END DESC,
+                   created_at ASC
+               ) as rnum
+        FROM businesses
+      )
+      DELETE FROM businesses
+      WHERE id IN (SELECT id FROM duplicates WHERE rnum > 1)
+      RETURNING id;
+    `);
+
+    return { duplicatesRemoved: res.length };
+  } catch (err) {
+    console.warn('[Deduplicate Businesses] Query notice:', err);
+    return { duplicatesRemoved: 0 };
+  }
 }
 
 export async function getBusinesses(options: {
