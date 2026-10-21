@@ -34,6 +34,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
+import { MobileDraftApprovalModal } from '@/components/admin/MobileDraftApprovalModal';
 import {
   DailyNewsSettings,
   DailyNewsSource,
@@ -1457,7 +1458,7 @@ export default function NewsAutomationClient() {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      setPreviewData(r.articleContent as any);
+                                      setPreviewData({ ...(r.articleContent as any), runId: r.id });
                                       setPreviewModalOpen(true);
                                     }}
                                     style={{
@@ -2283,181 +2284,31 @@ export default function NewsAutomationClient() {
         </div>
       )}
 
-      {/* MODAL: PREVIEW GENERATED POST DRAFT */}
+      {/* MODAL: PREVIEW & CUSTOMIZE GENERATED POST DRAFT */}
       {previewModalOpen && previewData && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: '20px',
+        <MobileDraftApprovalModal
+          draft={{
+            id: (previewData as any).runId || 'news_preview',
+            sourceType: 'news',
+            draftType: 'scheduled_blog',
+            title: previewData.title,
+            excerpt: previewData.excerpt,
+            coverImage: (previewData as any).coverImage || '/assets/blog/photo1.webp',
+            slug: previewData.slug,
+            readMins: previewData.readMins || '5 min',
+            categoryName: previewData.categoryName || 'Tech & AI News',
+            tags: previewData.tags,
+            sections: previewData.sections,
+            linkedinPost: previewData.linkedinPost,
+            raw: previewData,
           }}
-        >
-          <div
-            className="hpa-card"
-            style={{
-              width: '100%',
-              maxWidth: '800px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '28px',
-              position: 'relative',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid var(--hpa-border)', paddingBottom: '14px' }}>
-              <div>
-                <span className="hpa-pill hpa-pill-draft" style={{ fontSize: '0.72rem', marginBottom: '6px' }}>
-                  Simulated Dry-Run Preview
-                </span>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                  {previewData.title}
-                </h2>
-                <div style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)', marginTop: '4px' }}>
-                  Slug: <code>{previewData.slug}</code> • Read: {previewData.readMins} • Category: {previewData.categoryName}
-                </div>
-              </div>
-              <button
-                onClick={() => setPreviewModalOpen(false)}
-                className="hpa-btn hpa-btn-secondary hpa-btn-icon"
-                style={{ padding: '6px' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Cover Image Preview */}
-            {(previewData as any).coverImage && (
-              <div
-                style={{
-                  marginBottom: '18px',
-                  borderRadius: '10px',
-                  overflow: 'hidden',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  maxHeight: '240px',
-                  position: 'relative',
-                }}
-              >
-                <img
-                  src={(previewData as any).coverImage}
-                  alt={previewData.title}
-                  style={{ width: '100%', height: '240px', objectFit: 'cover', display: 'block' }}
-                />
-                <span
-                  style={{
-                    position: 'absolute',
-                    bottom: '8px',
-                    left: '8px',
-                    background: 'rgba(0, 0, 0, 0.75)',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.72rem',
-                    color: '#ffffff',
-                  }}
-                >
-                  Feature Cover Image (Saved in Media Vault)
-                </span>
-              </div>
-            )}
-
-            {/* Excerpt */}
-            <div
-              style={{
-                padding: '14px',
-                borderRadius: '8px',
-                background: 'rgba(56, 189, 248, 0.08)',
-                border: '1px solid rgba(56, 189, 248, 0.25)',
-                marginBottom: '20px',
-                fontSize: '0.86rem',
-                color: 'rgba(255, 255, 255, 0.9)',
-                lineHeight: 1.5,
-              }}
-            >
-              <strong>Executive Summary:</strong> {previewData.excerpt}
-            </div>
-
-            {/* Sections */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '24px' }}>
-              {previewData.sections.map((sec, idx) => (
-                <div key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '14px' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--hpa-primary)', margin: '0 0 8px 0' }}>
-                    {sec.heading}
-                  </h4>
-                  {sec.paragraphs.map((p, pIdx) => {
-                    const imgMatch = p.trim().match(/^!\[([^\]]*)\]\(([^)"\s]+)(?:\s+"([^"]*)")?\)$/);
-                    if (imgMatch) {
-                      return (
-                        <div key={pIdx} style={{ margin: '12px 0', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <img src={imgMatch[2]} alt={imgMatch[1]} style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }} />
-                          <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.6)', padding: '6px 10px', background: 'rgba(0,0,0,0.3)' }}>
-                            ✦ {imgMatch[3] || imgMatch[1]} (Saved in Media Vault)
-                          </div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <p key={pIdx} style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, margin: '0 0 8px 0' }}>
-                        {p}
-                      </p>
-                    );
-                  })}
-                  {sec.bulletPoints && sec.bulletPoints.length > 0 && (
-                    <ul style={{ margin: '8px 0', paddingLeft: '20px', fontSize: '0.84rem', color: 'rgba(255,255,255,0.85)' }}>
-                      {sec.bulletPoints.map((b, bIdx) => (
-                        <li key={bIdx} style={{ marginBottom: '4px' }}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {sec.quote && (
-                    <blockquote style={{ borderLeft: '3px solid #8b5cf6', paddingLeft: '12px', fontStyle: 'italic', color: '#c4b5fd', margin: '8px 0' }}>
-                      {sec.quote}
-                    </blockquote>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* LinkedIn Post Box */}
-            <div
-              style={{
-                padding: '16px',
-                borderRadius: '8px',
-                background: 'rgba(10, 102, 194, 0.08)',
-                border: '1px solid rgba(10, 102, 194, 0.3)',
-                marginBottom: '20px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#38bdf8' }}>
-                <Share2 size={16} />
-                <strong style={{ fontSize: '0.9rem' }}>Synchronized LinkedIn Post Commentary</strong>
-              </div>
-              <pre
-                style={{
-                  fontSize: '0.82rem',
-                  color: '#ffffff',
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'inherit',
-                  lineHeight: 1.55,
-                  margin: 0,
-                }}
-              >
-                {previewData.linkedinPost}
-              </pre>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                onClick={() => setPreviewModalOpen(false)}
-                className="hpa-btn hpa-btn-secondary"
-              >
-                Close Preview
-              </button>
-            </div>
-          </div>
-        </div>
+          isOpen={previewModalOpen}
+          onClose={() => setPreviewModalOpen(false)}
+          onSuccessPublished={() => {
+            setPreviewModalOpen(false);
+            fetchStatus();
+          }}
+        />
       )}
 
       {/* MODAL: RUN PIPELINE CONFIRMATION */}

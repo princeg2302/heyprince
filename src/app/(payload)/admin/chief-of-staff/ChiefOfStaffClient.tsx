@@ -34,6 +34,7 @@ import {
   Pause,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
+import { MobileDraftApprovalModal } from '@/components/admin/MobileDraftApprovalModal';
 import {
   ChiefAgent,
   ChiefContentDraft,
@@ -1399,135 +1400,36 @@ export default function ChiefOfStaffClient() {
         </div>
       )}
 
-      {/* INSPECT DRAFT MODAL */}
+      {/* MOBILE & DESKTOP DRAFT APPROVAL & CUSTOMIZATION MODAL */}
       {selectedDraftForModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(6px)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
+        <MobileDraftApprovalModal
+          draft={{
+            id: selectedDraftForModal.id,
+            sourceType: 'chief',
+            draftType: selectedDraftForModal.draft_type,
+            title: selectedDraftForModal.title,
+            excerpt: selectedDraftForModal.excerpt,
+            coverImage:
+              selectedDraftForModal.metadata?.coverImage ||
+              selectedDraftForModal.metadata?.featured_image_url ||
+              '/assets/blog/photo1.webp',
+            slug: selectedDraftForModal.metadata?.slug,
+            readMins: selectedDraftForModal.metadata?.readMins || '5 min',
+            categoryName: selectedDraftForModal.metadata?.category || 'Technology',
+            tags: selectedDraftForModal.metadata?.tags,
+            sections: selectedDraftForModal.metadata?.rawSections || [],
+            linkedinPost:
+              selectedDraftForModal.metadata?.linkedinPost ||
+              selectedDraftForModal.metadata?.linkedinCopy,
+            raw: selectedDraftForModal,
           }}
-          onClick={() => setSelectedDraftForModal(null)}
-        >
-          <div
-            className="hpa-card"
-            style={{
-              maxWidth: '840px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '28px',
-              position: 'relative',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
-              border: '1px solid rgba(255, 71, 87, 0.3)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <span className="hpa-pill" style={{ fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '8px', display: 'inline-block' }}>
-                  {selectedDraftForModal.draft_type.replace(/_/g, ' ')}
-                </span>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                  {selectedDraftForModal.title}
-                </h2>
-              </div>
-              <button
-                onClick={() => setSelectedDraftForModal(null)}
-                style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Modal Content Preview */}
-            <div
-              style={{
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid var(--hpa-border)',
-                borderRadius: '8px',
-                padding: '20px',
-                fontSize: '0.88rem',
-                color: '#e2e8f0',
-                lineHeight: 1.6,
-                whiteSpace: 'pre-wrap',
-                maxHeight: '440px',
-                overflowY: 'auto',
-                marginBottom: '20px',
-                fontFamily: 'monospace',
-              }}
-            >
-              {selectedDraftForModal.content}
-            </div>
-
-            {/* LinkedIn Publish Checkbox if Article */}
-            {selectedDraftForModal.draft_type === 'article' && (
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '20px',
-                  cursor: 'pointer',
-                  fontSize: '0.86rem',
-                  color: '#ffffff',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={shareToLinkedIn}
-                  onChange={(e) => setShareToLinkedIn(e.target.checked)}
-                  style={{ accentColor: '#ff4757', width: '16px', height: '16px' }}
-                />
-                <span>Also publish social post variation to personal LinkedIn profile</span>
-              </label>
-            )}
-
-            {/* Modal Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                onClick={() => setSelectedDraftForModal(null)}
-                className="hpa-btn hpa-btn-secondary"
-              >
-                Close
-              </button>
-
-              {selectedDraftForModal.status === 'pending_approval' && (
-                <>
-                  <button
-                    onClick={() => handleApproveDraft(selectedDraftForModal.id, 'reject')}
-                    disabled={approvingDraftId === selectedDraftForModal.id}
-                    className="hpa-btn hpa-btn-secondary"
-                    style={{ color: '#ff4757' }}
-                  >
-                    Reject
-                  </button>
-
-                  <button
-                    onClick={() => handleApproveDraft(selectedDraftForModal.id, 'publish')}
-                    disabled={approvingDraftId === selectedDraftForModal.id}
-                    className="hpa-btn hpa-btn-primary"
-                    style={{ background: '#00ff88', borderColor: '#00ff88', color: '#000000', fontWeight: 700 }}
-                  >
-                    {approvingDraftId === selectedDraftForModal.id ? (
-                      <Loader2 size={14} className="hpa-spin" />
-                    ) : (
-                      <Check size={14} />
-                    )}
-                    <span>Approve & Publish to Live Site</span>
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+          isOpen={Boolean(selectedDraftForModal)}
+          onClose={() => setSelectedDraftForModal(null)}
+          onSuccessPublished={() => {
+            setSelectedDraftForModal(null);
+            fetchStatus();
+          }}
+        />
       )}
     </div>
   );

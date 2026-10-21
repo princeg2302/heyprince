@@ -215,6 +215,56 @@ export async function getDrafts(status?: DraftStatus, limit = 50): Promise<Chief
   );
 }
 
+export async function getDraftById(draftId: string): Promise<ChiefContentDraft | null> {
+  const rows = await query<ChiefContentDraft>(
+    `SELECT * FROM chief_content_drafts WHERE id = $1 LIMIT 1;`,
+    [draftId]
+  );
+  return rows[0] || null;
+}
+
+export async function updateDraftContent(
+  draftId: string,
+  updates: {
+    title?: string;
+    excerpt?: string;
+    content?: string;
+    metadata?: Record<string, any>;
+  }
+): Promise<boolean> {
+  const fields: string[] = [];
+  const params: any[] = [];
+  let pIdx = 1;
+
+  if (updates.title !== undefined) {
+    fields.push(`title = $${pIdx++}`);
+    params.push(updates.title);
+  }
+  if (updates.excerpt !== undefined) {
+    fields.push(`excerpt = $${pIdx++}`);
+    params.push(updates.excerpt);
+  }
+  if (updates.content !== undefined) {
+    fields.push(`content = $${pIdx++}`);
+    params.push(updates.content);
+  }
+  if (updates.metadata !== undefined) {
+    fields.push(`metadata = $${pIdx++}`);
+    params.push(JSON.stringify(updates.metadata));
+  }
+
+  fields.push(`updated_at = NOW()`);
+
+  if (fields.length === 1) return true;
+
+  params.push(draftId);
+  await query(
+    `UPDATE chief_content_drafts SET ${fields.join(', ')} WHERE id = $${pIdx};`,
+    params
+  );
+  return true;
+}
+
 export async function updateDraftStatus(
   draftId: string,
   status: DraftStatus,

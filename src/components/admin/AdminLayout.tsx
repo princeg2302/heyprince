@@ -24,6 +24,7 @@ import {
   Globe,
   Sparkles,
   Bot,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -49,6 +50,7 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
 
   const navItems = [
     { label: 'Dashboard', href: '/admin/', icon: LayoutDashboard },
+    { label: 'AI Approvals', href: '/admin/approvals/', icon: CheckCircle2 },
     { label: 'AI Chief of Staff', href: '/admin/chief-of-staff/', icon: Bot },
     { label: 'Lead Intelligence', href: '/admin/outreach/', icon: Globe },
     { label: 'Posts & Insights', href: '/admin/posts/', icon: FileText },
