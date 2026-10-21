@@ -113,6 +113,10 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
   const [isScanningGlobal, setIsScanningGlobal] = useState(false);
   const [globalFilter, setGlobalFilter] = useState<string>('all');
 
+  // Multi-Step Planner & Citations State
+  const [latestPlan, setLatestPlan] = useState<any | null>(null);
+  const [citations, setCitations] = useState<any[]>([]);
+
   // Engine Refs
   const recognitionRef = useRef<any>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -993,6 +997,12 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
         });
         const resData = await res.json();
         if (resData.success) {
+          if (resData.plan) {
+            setLatestPlan(resData.plan);
+          }
+          if (Array.isArray(resData.citations)) {
+            setCitations(resData.citations);
+          }
           if (resData.reply) {
             speak(extractCleanSpokenText(resData.reply));
           }
@@ -1564,6 +1574,107 @@ export function JarvisAssistant({ user }: JarvisAssistantProps) {
                         JARVIS RESPONSE
                       </div>
                       {replyText}
+                    </div>
+                  )}
+
+                  {latestPlan && (
+                    <div
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        fontSize: '0.78rem',
+                        color: '#e2e8f0',
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          🎯 MISSION PLAN ({latestPlan.status})
+                        </span>
+                        <span style={{ fontSize: '0.64rem', color: '#94a3b8' }}>{latestPlan.totalDurationMs}ms</span>
+                      </div>
+                      <div style={{ fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>
+                        {latestPlan.strategicObjective}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '8px' }}>
+                        {latestPlan.expectedBenefits}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {latestPlan.steps?.map((st: any) => (
+                          <div
+                            key={st.id}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              background: 'rgba(0, 0, 0, 0.4)',
+                              border: '1px solid rgba(255, 255, 255, 0.06)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <div style={{ marginRight: '8px' }}>
+                              <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: '0.72rem' }}>
+                                {st.order}. {st.title}
+                              </div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.66rem' }}>
+                                {st.result?.summary || st.description}
+                              </div>
+                            </div>
+                            <span
+                              style={{
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.6rem',
+                                fontWeight: 800,
+                                background: st.status === 'completed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                                color: st.status === 'completed' ? '#10b981' : '#eab308',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {st.status.toUpperCase()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {citations && citations.length > 0 && (
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        fontSize: '0.74rem',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.66rem', color: '#38bdf8', fontWeight: 800, marginBottom: '6px' }}>
+                        VERIFIED CITATIONS & SOURCES
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {citations.map((c: any, idx: number) => (
+                          <a
+                            key={idx}
+                            href={c.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: '#93c5fd',
+                              textDecoration: 'none',
+                              display: 'block',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            • {c.title}
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   )}
 

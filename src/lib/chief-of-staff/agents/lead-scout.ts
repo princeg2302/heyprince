@@ -46,6 +46,25 @@ export async function runLeadScoutDiscovery(): Promise<{
       const opportunityTitle = `Outreach Draft: ${biz.name} (${bizDomain})`;
       const opportunityExcerpt = `Technical optimization & modernization proposal for ${biz.name} (${bizDomain})`;
       
+      // Calculate transparent objective fit score (0 - 100)
+      const meta = biz.metadata || {};
+      let calculatedScore = 70; // baseline
+      const scoreReasons: string[] = [];
+
+      if (meta.ttfb && Number(meta.ttfb) > 750) {
+        calculatedScore += 12;
+        scoreReasons.push(`High TTFB latency (${meta.ttfb}ms) indicates server-side caching opportunity`);
+      }
+      if (meta.techStack && (meta.techStack.includes('WordPress') || meta.techStack.includes('WooCommerce'))) {
+        calculatedScore += 10;
+        scoreReasons.push('Monolithic CMS detected; prime candidate for headless Next.js frontend');
+      }
+      if (meta.hasMobileIssues) {
+        calculatedScore += 8;
+        scoreReasons.push('Mobile viewport or layout shift detected impacting Core Web Vitals');
+      }
+      calculatedScore = Math.min(Math.max(calculatedScore, 65), 98);
+
       const pitchBody = `Hi ${biz.name} Team,\n\nI was analyzing high-growth web platforms in the ${biz.industry || 'digital commerce'} space and noticed ${bizDomain}.\n\nYour business has strong momentum, but I noticed a few frontend performance and TTFB bottlenecks that might be impacting customer conversion and Google Core Web Vitals rankings.\n\nI specialize in sub-second Next.js web applications and WordPress/WooCommerce speed optimization. Would you be open to a 2-minute video breakdown or a quick technical audit showing where the gains are?\n\nBest regards,\nPrince\nhttps://heyprince.in`;
 
       await createContentDraft({
@@ -59,7 +78,8 @@ export async function runLeadScoutDiscovery(): Promise<{
           companyName: biz.name,
           domain: bizDomain,
           industry: biz.industry,
-          score: 88,
+          score: calculatedScore,
+          scoreBreakdown: scoreReasons,
         },
         status: 'pending_approval',
       });

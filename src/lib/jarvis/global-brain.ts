@@ -108,6 +108,40 @@ export async function scanGlobalSector(
   let threatLevel: 'low' | 'moderate' | 'elevated' | 'critical' = 'moderate';
   let tags = [sector, '24_7_intelligence', 'chief_of_staff'];
 
+  // 1. Live Wire Feed Ingestion: Fetch real-time public headlines to ground factual analysis
+  let liveFeedContext = '';
+  if (def.sampleFeeds && def.sampleFeeds.length > 0) {
+    try {
+      const feedUrl = def.sampleFeeds[0];
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(feedUrl, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'HeyPrince-GlobalBrain/2.0' },
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const text = await res.text();
+        const itemRegex = /<item\b[^>]*>(.*?)<\/item>/gis;
+        let match;
+        const liveItems: string[] = [];
+        while ((match = itemRegex.exec(text)) !== null && liveItems.length < 3) {
+          const titleMatch = /<title\b[^>]*>(.*?)<\/title>/is.exec(match[1]);
+          if (titleMatch) {
+            const cleanT = titleMatch[1]
+              .replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1')
+              .replace(/<[^>]+>/g, '')
+              .trim();
+            if (cleanT) liveItems.push(cleanT);
+          }
+        }
+        if (liveItems.length > 0) {
+          liveFeedContext = `\nREAL-TIME WIRE HEADLINES DISCOVERED FROM PUBLIC FEED:\n${liveItems.map((h) => `- ${h}`).join('\n')}\n`;
+        }
+      }
+    } catch {}
+  }
+
   if (isAIConfigured()) {
     try {
       const systemPrompt = `You are the 24/7 Global Intelligence & Cognitive Surveillance Brain of JARVIS (AI Chief of Staff for Prince at HeyPrince.in).
@@ -121,6 +155,7 @@ Your mandate is continuous worldwide surveillance across high-stakes sectors:
 
 You are currently scanning sector: "${def.label}" (${def.description}).
 ${customTopicHint ? `Specific focal point: "${customTopicHint}"` : ''}
+${liveFeedContext}
 
 Synthesize a fact-grounded, cutting-edge strategic intelligence briefing.
 Analyze what is happening globally in this domain right now, its regional impact (which country or global), and what it means strategically for an elite software engineer & AI consultant (Prince).

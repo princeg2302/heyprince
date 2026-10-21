@@ -14,6 +14,8 @@ import {
   IntelligenceSector,
 } from '@/lib/jarvis/global-brain';
 import { extractCleanSpokenText } from '@/lib/jarvis/cleaner';
+import { executeJarvisTool, generateToolsPromptManifest } from '@/lib/jarvis/tools';
+import { planAndExecuteMission } from '@/lib/jarvis/planner';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -29,12 +31,17 @@ export interface JarvisAction {
     | 'select_tab'
     | 'batch_agents'
     | 'global_scan'
+    | 'tool_call'
+    | 'plan_mission'
     | 'toast';
   url?: string;
   targetText?: string;
   fieldName?: string;
   value?: string;
   agentId?: string;
+  toolName?: string;
+  toolInput?: Record<string, any>;
+  toolResult?: any;
   quantifier?: 'all' | 'first_three' | 'first_two' | 'first_one';
   mode?: 'observe' | 'prepare' | 'auto';
   status?: 'enabled' | 'paused';
@@ -116,6 +123,75 @@ export async function POST(request: NextRequest) {
         success: true,
         reply: `Infrastructure intelligence, ${adminName}: ${brief.headline}. ${brief.summary}`,
         actions: [{ type: 'toast', message: `Infrastructure update: ${brief.headline}` }],
+      });
+    }
+
+    // 2. DIRECT FAST-PATH: MULTI-STEP MISSION PLANNER & BUSINESS GROWTH DIRECTIVES
+    if (
+      lowerQ.includes('improve traffic') ||
+      lowerQ.includes('grow traffic') ||
+      lowerQ.includes('get more client') ||
+      lowerQ.includes('more clients') ||
+      lowerQ.includes('grow website') ||
+      lowerQ.includes('grow business') ||
+      lowerQ.includes('mission plan') ||
+      lowerQ.includes('plan mission') ||
+      lowerQ.includes('execute plan') ||
+      lowerQ.startsWith('plan ')
+    ) {
+      const plan = await planAndExecuteMission(query, {
+        adminName,
+        adminEmail: admin.email,
+        route: pageContext?.route,
+      });
+
+      return NextResponse.json({
+        success: true,
+        reply: plan.spokenBriefing,
+        plan,
+        actions: [
+          {
+            type: 'toast',
+            message: `Mission Plan: ${plan.steps.filter((s) => s.status === 'completed').length}/${plan.steps.length} steps executed.`,
+          },
+        ],
+      });
+    }
+
+    // 3. DIRECT FAST-PATH: REAL-TIME WEB RESEARCH & FACTUAL RETRIEVAL
+    if (
+      lowerQ.startsWith('search web for ') ||
+      lowerQ.startsWith('research ') ||
+      lowerQ.startsWith('web search for ') ||
+      lowerQ.includes('search hacker news')
+    ) {
+      const topic = query.replace(/^(?:search\s+web\s+for|research|web\s+search\s+for|search\s+hacker\s+news\s+for)\s+/i, '').trim();
+      const toolRes = await executeJarvisTool('web_research', { query: topic, maxResults: 4 });
+      return NextResponse.json({
+        success: true,
+        reply: toolRes.summary,
+        citations: toolRes.citations,
+        actions: [
+          {
+            type: 'toast',
+            message: `Web Research: ${toolRes.citations?.length || 0} verified sources found.`,
+          },
+        ],
+      });
+    }
+
+    // 4. DIRECT FAST-PATH: SITE SCANNER & ROUTE HEALTH
+    if (lowerQ === 'scan site' || lowerQ === 'scan website' || lowerQ.includes('check all routes') || lowerQ.includes('audit routes')) {
+      const toolRes = await executeJarvisTool('site_scanner', { scanType: 'all' });
+      return NextResponse.json({
+        success: true,
+        reply: toolRes.summary,
+        actions: [
+          {
+            type: 'toast',
+            message: `Site Scanner: ${toolRes.data?.healthyRoutes}/${toolRes.data?.routesChecked?.length} routes healthy.`,
+          },
+        ],
       });
     }
 
@@ -235,6 +311,7 @@ LIVE TELEMETRY:
 
     const memoryContext = await getJarvisMemoryContext();
     const globalIntelContext = await getGlobalIntelligenceContext();
+    const toolsManifest = generateToolsPromptManifest();
 
     const systemPrompt = `You are JARVIS, the ultra-competent, highly intelligent, British-inflected AI Chief of Staff and personal digital executive for Prince (Senior Full Stack Engineer & IT Consultant at HeyPrince.in).
 Prince is directly speaking to you from his HeyPrince.in Admin Dashboard.
@@ -242,6 +319,8 @@ Prince is directly speaking to you from his HeyPrince.in Admin Dashboard.
 YOUR ROLE & MANDATE:
 - You are Prince's AI Chief of Staff, overseeing all engineering, autonomous agents, website health, and global strategy.
 - You operate a 24/7 continuous intelligence brain scanning technologies, AI, automobile & mobility, worldwide geopolitics, infrastructure, and global recession/markets.
+
+${toolsManifest}
 
 ${memoryContext}
 
@@ -286,12 +365,14 @@ RESPOND IN STRICT JSON ONLY:
   "reply": "Spoken text response (1-2 sentences)",
   "actions": [
     {
-      "type": "navigate" | "click_button" | "focus_and_type" | "run_agent" | "change_password" | "scroll" | "select_tab" | "batch_agents" | "global_scan",
+      "type": "navigate" | "click_button" | "focus_and_type" | "run_agent" | "change_password" | "scroll" | "select_tab" | "batch_agents" | "global_scan" | "tool_call",
       "url": "/admin/...",
       "targetText": "Text of button or tab to click",
       "fieldName": "Input placeholder or name",
       "value": "Text to type into input",
       "agentId": "website_guardian | content_researcher | lead_scout | seo_growth | news_synthesizer",
+      "toolName": "web_research | http_inspector | site_scanner | agent_dispatcher | memory_inspector",
+      "toolInput": {},
       "quantifier": "all | first_three | first_two | first_one",
       "mode": "observe | prepare | auto",
       "direction": "down | up | top"
@@ -307,10 +388,26 @@ RESPOND IN STRICT JSON ONLY:
         const cleaned = aiRes.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const parsed = JSON.parse(cleaned);
 
+        const finalActions = Array.isArray(parsed.actions) ? parsed.actions : [];
+        for (const act of finalActions) {
+          if (act.type === 'tool_call' && act.toolName) {
+            try {
+              const toolRes = await executeJarvisTool(act.toolName, act.toolInput || {}, {
+                adminName,
+                adminEmail: admin.email,
+                pageContext: { route: pageContext?.route },
+              });
+              act.toolResult = toolRes;
+            } catch (toolErr) {
+              console.warn('[JARVIS AI Tool Call] Error:', toolErr);
+            }
+          }
+        }
+
         return NextResponse.json({
           success: true,
           reply: extractCleanSpokenText(parsed.reply) || `Understood, ${adminName}. Carrying that out now.`,
-          actions: Array.isArray(parsed.actions) ? parsed.actions : [],
+          actions: finalActions,
         });
       } catch (aiErr) {
         console.warn('[JARVIS API] AI parse error, fallback to rule engine:', aiErr);
