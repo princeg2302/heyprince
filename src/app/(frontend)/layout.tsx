@@ -234,8 +234,8 @@ export default function RootLayout({
     <html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#" className={anton.variable} suppressHydrationWarning>
       <head>
         <meta name="google-site-verification" content="DTYZ06bg-WLMAH8U5dWbZvr6XRzTFVv_pOidUPq9UQU" />
-        <link rel="stylesheet" href="/fonts/arboria/arboria.css" />
-        <link rel="stylesheet" href="/fonts/futuru/futuru.css" />
+        <link rel="preload" href="/fonts/arboria/Arboria-Book.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/futuru/Futuru-VariableVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdData) }}

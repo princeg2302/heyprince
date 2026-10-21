@@ -1,2 +1,203 @@
-/* Local Web Fonts (Arboria & Futuru) are loaded via <link> tags in app/layout.tsx for reliable browser resolution */
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-BlackItalic.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-BlackItalic.woff') format('woff'),
+        url('/fonts/arboria/Arboria-BlackItalic.ttf') format('truetype');
+    font-weight: 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-Black.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-Black.woff') format('woff'),
+        url('/fonts/arboria/Arboria-Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-BoldItalic.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-BoldItalic.woff') format('woff'),
+        url('/fonts/arboria/Arboria-BoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-LightItalic.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-LightItalic.woff') format('woff'),
+        url('/fonts/arboria/Arboria-LightItalic.ttf') format('truetype');
+    font-weight: 300;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria-BookItalic';
+    src: url('/fonts/arboria/Arboria-BookItalic.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-BookItalic.woff') format('woff'),
+        url('/fonts/arboria/Arboria-BookItalic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-Light.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-Light.woff') format('woff'),
+        url('/fonts/arboria/Arboria-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria-Book';
+    src: url('/fonts/arboria/Arboria-Book.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-Book.woff') format('woff'),
+        url('/fonts/arboria/Arboria-Book.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-Bold.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-Bold.woff') format('woff'),
+        url('/fonts/arboria/Arboria-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-Medium.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-Medium.woff') format('woff'),
+        url('/fonts/arboria/Arboria-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-MediumItalic.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-MediumItalic.woff') format('woff'),
+        url('/fonts/arboria/Arboria-MediumItalic.ttf') format('truetype');
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-ThinItalic.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-ThinItalic.woff') format('woff'),
+        url('/fonts/arboria/Arboria-ThinItalic.ttf') format('truetype');
+    font-weight: 100;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Arboria';
+    src: url('/fonts/arboria/Arboria-Thin.woff2') format('woff2'),
+        url('/fonts/arboria/Arboria-Thin.woff') format('woff'),
+        url('/fonts/arboria/Arboria-Thin.ttf') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Futuru';
+    src: url('/fonts/futuru/Futuru-VariableVF.woff2') format('woff2'),
+        url('/fonts/futuru/Futuru-VariableVF.woff') format('woff');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
 
