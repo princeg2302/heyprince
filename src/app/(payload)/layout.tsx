@@ -13,7 +13,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Executive Admin Portal — HeyPrince',
   description: 'Production administration dashboard for heyprince.in',
-  icons: [{ url: '/favicon.svg' }],
+  icons: [{ url: '/favicon.svg' }, { url: '/favicon.png', rel: 'apple-touch-icon' }],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'HeyPrince',
+  },
 };
 
 export default function AdminRootLayout({

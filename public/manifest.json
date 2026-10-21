@@ -1,0 +1,26 @@
+{
+  "name": "HeyPrince AI Executive Portal",
+  "short_name": "HeyPrince",
+  "description": "Autonomous AI Business Manager and Approval Portal for HeyPrince.in",
+  "start_url": "/admin/approvals",
+  "scope": "/admin/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0c0d14",
+  "theme_color": "#13141f",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/profile-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

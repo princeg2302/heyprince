@@ -17,6 +17,12 @@ import {
   Globe,
   Bot,
   Filter,
+  Bell,
+  BellRing,
+  Smartphone,
+  Info,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import {
@@ -30,6 +36,17 @@ interface ApprovalItem extends ModalDraftItem {
   createdAt: string;
 }
 
+function urlB64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export default function ApprovalsClient() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -37,6 +54,45 @@ export default function ApprovalsClient() {
   const [selectedItemForModal, setSelectedItemForModal] = useState<ApprovalItem | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'news' | 'chief'>('all');
   const [quickPublishingId, setQuickPublishingId] = useState<string | number | null>(null);
+
+  // Push Notification States
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [enablingPush, setEnablingPush] = useState(false);
+  const [sendingTestPush, setSendingTestPush] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = useState(false);
+  const [showIosGuide, setShowIosGuide] = useState(false);
+
+  // Check Push Capability & Existing Subscription
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (navigator as any).standalone === true;
+
+      setIsIosDevice(isIos);
+      setIsStandaloneApp(isStandalone);
+
+      const supported =
+        'serviceWorker' in navigator &&
+        'PushManager' in window &&
+        'Notification' in window;
+
+      setPushSupported(supported);
+
+      if (supported) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.pushManager.getSubscription().then((sub) => {
+            if (sub) {
+              setPushSubscribed(true);
+            }
+          });
+        });
+      }
+    }
+  }, []);
 
   const fetchApprovals = async () => {
     setLoading(true);
@@ -59,12 +115,109 @@ export default function ApprovalsClient() {
     fetchApprovals();
   }, []);
 
+  // Deep linking: If URL has ?draftId=..., open modal automatically
+  useEffect(() => {
+    if (typeof window !== 'undefined' && items.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const targetDraftId = params.get('draftId');
+      if (targetDraftId) {
+        const match = items.find((i) => String(i.id) === String(targetDraftId));
+        if (match) {
+          setSelectedItemForModal(match);
+        }
+      }
+    }
+  }, [items]);
+
   const filteredItems = items.filter((item) => {
     if (filterType === 'all') return true;
     if (filterType === 'news') return item.sourceType === 'news';
     if (filterType === 'chief') return item.sourceType === 'chief';
     return true;
   });
+
+  const handleEnablePush = async () => {
+    if (!pushSupported) {
+      if (isIosDevice && !isStandaloneApp) {
+        setShowIosGuide(true);
+        showToast(
+          'On iPhone, please tap Safari Share ⎋ -> "Add to Home Screen" first to enable Web Push.',
+          'info'
+        );
+        return;
+      }
+      showToast('Push notifications are not supported on this browser.', 'error');
+      return;
+    }
+
+    setEnablingPush(true);
+    try {
+      // 1. Register Service Worker
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+
+      // 2. Request Notification Permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        showToast('Notification permission was not granted.', 'error');
+        setEnablingPush(false);
+        return;
+      }
+
+      // 3. Fetch VAPID Public Key
+      const keyRes = await fetch('/api/admin/push/vapid-public-key');
+      const keyData = await keyRes.json();
+      if (!keyData.success || !keyData.publicKey) {
+        throw new Error('Failed to retrieve VAPID public key');
+      }
+
+      // 4. Subscribe with Push Manager
+      const convertedVapidKey = urlB64ToUint8Array(keyData.publicKey);
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedVapidKey,
+      });
+
+      // 5. Send subscription to server
+      const saveRes = await fetch('/api/admin/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription }),
+      });
+
+      const saveData = await saveRes.json();
+      if (saveData.success) {
+        setPushSubscribed(true);
+        showToast('iPhone Lock Screen Push Notifications activated!', 'success');
+      } else {
+        showToast(saveData.error || 'Failed to save subscription', 'error');
+      }
+    } catch (err: any) {
+      console.error('[EnablePush] Error:', err);
+      showToast(err?.message || 'Error subscribing to push notifications', 'error');
+    } finally {
+      setEnablingPush(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setSendingTestPush(true);
+    try {
+      const res = await fetch('/api/admin/push/test', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Test push notification sent! Check your phone lock screen.', 'success');
+      } else {
+        showToast(data.error || 'Failed to send test push', 'error');
+      }
+    } catch {
+      showToast('Network error sending test push', 'error');
+    } finally {
+      setSendingTestPush(false);
+    }
+  };
 
   const handleQuickPublish = async (item: ApprovalItem) => {
     setQuickPublishingId(item.id);
@@ -105,7 +258,7 @@ export default function ApprovalsClient() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '12px',
-          marginBottom: '20px',
+          marginBottom: '16px',
         }}
       >
         <div>
@@ -137,6 +290,169 @@ export default function ApprovalsClient() {
           <RefreshCw size={14} className={loading ? 'hpa-spin' : ''} />
           <span>Refresh</span>
         </button>
+      </div>
+
+      {/* iPhone Push Notification Card */}
+      <div
+        className="hpa-card"
+        style={{
+          marginBottom: '20px',
+          padding: '14px 16px',
+          background: pushSubscribed
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(19, 20, 31, 0.9) 100%)'
+            : 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(19, 20, 31, 0.9) 100%)',
+          border: pushSubscribed
+            ? '1px solid rgba(16, 185, 129, 0.3)'
+            : '1px solid rgba(56, 189, 248, 0.25)',
+          borderRadius: '12px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                background: pushSubscribed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                color: pushSubscribed ? '#34d399' : '#38bdf8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {pushSubscribed ? <BellRing size={18} /> : <Smartphone size={18} />}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h4 style={{ margin: 0, fontSize: '0.92rem', color: '#ffffff', fontWeight: 700 }}>
+                  iPhone Lock Screen Push Notifications
+                </h4>
+                {pushSubscribed && (
+                  <span
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                    }}
+                  >
+                    ACTIVE
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+                {pushSubscribed
+                  ? 'Your iPhone will receive native alerts whenever JARVIS drafts a blog. Tapping it opens this approval screen.'
+                  : 'Receive instant native alerts on your iPhone lock screen when new scheduled blogs and drafts are ready.'}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {pushSubscribed ? (
+              <button
+                type="button"
+                onClick={handleSendTestPush}
+                disabled={sendingTestPush}
+                className="hpa-btn hpa-btn-secondary"
+                style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+              >
+                {sendingTestPush ? (
+                  <Loader2 size={12} className="hpa-spin" />
+                ) : (
+                  <Bell size={12} />
+                )}
+                <span>Send Test Alert</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleEnablePush}
+                disabled={enablingPush}
+                className="hpa-btn hpa-btn-primary"
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '7px 14px',
+                  background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
+                  borderColor: '#38bdf8',
+                  color: '#000000',
+                  fontWeight: 700,
+                }}
+              >
+                {enablingPush ? (
+                  <Loader2 size={13} className="hpa-spin" />
+                ) : (
+                  <BellRing size={13} />
+                )}
+                <span>Enable iPhone Push</span>
+              </button>
+            )}
+
+            {isIosDevice && !isStandaloneApp && (
+              <button
+                type="button"
+                onClick={() => setShowIosGuide(!showIosGuide)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title="iPhone Setup Guide"
+              >
+                {showIosGuide ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* iPhone Safari PWA Instructions Collapsible */}
+        {showIosGuide && (
+          <div
+            style={{
+              marginTop: '12px',
+              paddingTop: '12px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              fontSize: '0.8rem',
+              color: '#cbd5e1',
+              lineHeight: 1.5,
+            }}
+          >
+            <div style={{ fontWeight: 700, color: '#38bdf8', marginBottom: '4px' }}>
+              📲 Quick 10-Second Setup for iPhone (iOS 16.4+):
+            </div>
+            <ol style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+              <li>
+                In <strong>Safari</strong> on your iPhone, tap the <strong>Share button (⎋)</strong> at the bottom of the screen.
+              </li>
+              <li>
+                Scroll down and tap <strong>&quot;Add to Home Screen&quot;</strong>.
+              </li>
+              <li>
+                Open the newly created <strong>HeyPrince</strong> icon on your iPhone Home Screen.
+              </li>
+              <li>
+                Tap <strong>&quot;Enable iPhone Push&quot;</strong> and tap <strong>Allow</strong> when iOS asks for notification permission!
+              </li>
+            </ol>
+          </div>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -442,7 +758,15 @@ export default function ApprovalsClient() {
         <MobileDraftApprovalModal
           draft={selectedItemForModal}
           isOpen={Boolean(selectedItemForModal)}
-          onClose={() => setSelectedItemForModal(null)}
+          onClose={() => {
+            setSelectedItemForModal(null);
+            // Clear URL draftId parameter if set
+            if (typeof window !== 'undefined' && window.history.replaceState) {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('draftId');
+              window.history.replaceState({}, '', url.toString());
+            }
+          }}
           onSuccessPublished={() => {
             fetchApprovals();
           }}
@@ -451,4 +775,3 @@ export default function ApprovalsClient() {
     </div>
   );
 }
-

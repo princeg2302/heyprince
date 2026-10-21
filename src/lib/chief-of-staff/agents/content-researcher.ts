@@ -1,6 +1,7 @@
 import { executeDailyNewsAutomation } from '../../daily-news/orchestrator';
 import { createPost } from '../../admin-db';
 import { publishArticleToLinkedIn } from '../../linkedin/client';
+import { sendPushToAllAdmins } from '../../push/push-service';
 import {
   createContentDraft,
   updateDraftStatus,
@@ -100,6 +101,18 @@ export async function runContentResearcherDiscovery(options?: {
       },
       status: 'pending_approval',
     });
+
+    // Notify Admin via iPhone Web Push
+    try {
+      await sendPushToAllAdmins({
+        title: '🤖 JARVIS: New Draft Ready for Review',
+        body: `"${draftTitle}" - Tap to review & customize on your phone`,
+        url: `/admin/approvals?draftId=${draftId}`,
+        draftId,
+      });
+    } catch (pushErr) {
+      console.warn('[content-researcher] Push alert error:', pushErr);
+    }
 
     const duration = Date.now() - startTime;
     await updateAgentExecutionTime('content_researcher', new Date(), new Date(Date.now() + 24 * 3600 * 1000));
