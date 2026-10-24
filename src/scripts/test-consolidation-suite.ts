@@ -12,7 +12,8 @@ import {
 import { query } from '../lib/outreach/db';
 import { processLeadSubmission } from '../lib/leads';
 import { runContentResearcherDiscovery } from '../lib/chief-of-staff/agents/content-researcher';
-import { createContentDraft } from '../lib/chief-of-staff/db';
+import { createContentDraft, getDrafts } from '../lib/chief-of-staff/db';
+import { generateLeadProposal } from '../lib/outreach/proposal-generator';
 
 async function runConsolidationTests() {
   console.log('====================================================');
@@ -272,6 +273,36 @@ async function runConsolidationTests() {
   });
   assert(evalZero.isQualified === false, 'Business with zero contact points is UNQUALIFIED');
   assert(evalZero.bestChannel === 'none', 'No channel selected for zero contact business');
+
+  // --------------------------------------------------------------------------
+  // TEST 8: Proposal Generation & AI Approval Routing Pipeline
+  // --------------------------------------------------------------------------
+  console.log('\n▶ TEST 8: Proposal Generation & AI Approval Routing Pipeline');
+  const sampleBiz = await query<any>(
+    "SELECT id, name FROM businesses WHERE name ILIKE '%Armenian%' LIMIT 1;"
+  );
+  if (sampleBiz.length > 0) {
+    const proposalRes = await generateLeadProposal(sampleBiz[0].id);
+    assert(proposalRes.success === true, 'generateLeadProposal completed successfully');
+    assert(Boolean(proposalRes.draftId), `Valid draftId returned: ${proposalRes.draftId}`);
+
+    const dbDraft = await query<any>(
+      'SELECT id, draft_type, status, metadata FROM chief_content_drafts WHERE id = $1;',
+      [proposalRes.draftId]
+    );
+    assert(dbDraft.length === 1, 'Proposal draft persisted in chief_content_drafts table');
+    assert(dbDraft[0]?.draft_type === 'outreach_proposal', 'Draft type is outreach_proposal');
+    assert(dbDraft[0]?.status === 'pending_approval', 'Proposal status is pending_approval for AI Approvals review');
+    assert(Boolean(dbDraft[0]?.metadata?.contactEmail || dbDraft[0]?.metadata?.whatsappUrl), 'Draft has validated contact point');
+
+    const pendingApprovals = await getDrafts('pending_approval', 50);
+    assert(
+      pendingApprovals.some((d) => d.id === proposalRes.draftId),
+      'Pending proposal appears in getDrafts("pending_approval") queried by /admin/approvals'
+    );
+  } else {
+    console.log('  ℹ️ Skipped DB proposal test (no sample business found)');
+  }
 
   // --------------------------------------------------------------------------
   // Summary

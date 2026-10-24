@@ -42,6 +42,7 @@ interface ApprovalItem extends ModalDraftItem {
   status: string;
   createdAt: string;
   metadata?: Record<string, any>;
+  whatsappUrl?: string;
 }
 
 function urlB64ToUint8Array(base64String: string) {
@@ -1153,6 +1154,30 @@ export default function ApprovalsClient() {
                         )}
                         <span>Approve & Send</span>
                       </button>
+
+                      {(item.whatsappUrl || item.metadata?.whatsappUrl) && (
+                        <a
+                          href={item.whatsappUrl || item.metadata?.whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hpa-btn hpa-btn-secondary"
+                          title="Open WhatsApp chat with prospect"
+                          style={{
+                            padding: '8px 12px',
+                            fontSize: '0.8rem',
+                            color: '#25d366',
+                            border: '1px solid rgba(37, 211, 102, 0.3)',
+                            background: 'rgba(37, 211, 102, 0.08)',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <span>💬 WhatsApp</span>
+                        </a>
+                      )}
 
                       <button
                         type="button"

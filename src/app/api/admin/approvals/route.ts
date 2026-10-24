@@ -35,6 +35,9 @@ export interface UnifiedApprovalItem {
   websiteUrl?: string;
   contactEmail?: string;
   contactName?: string;
+  phone?: string;
+  whatsappUrl?: string;
+  recommendedChannel?: string;
   leadScore?: number;
   confidenceLevel?: number;
   evidence?: string[];
@@ -43,8 +46,10 @@ export interface UnifiedApprovalItem {
   proposedNextAction?: string;
   personalizedEmailSubject?: string;
   personalizedEmailBody?: string;
+  whatsappPitch?: string;
   sendStatus?: string;
   idempotencyKey?: string;
+  metadata?: Record<string, any>;
   raw: any;
 }
 
@@ -56,8 +61,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const [chiefDrafts, recentNewsRuns] = await Promise.all([
-      getDrafts('pending_approval', 50),
-      getRecentDailyRuns(30),
+      getDrafts('pending_approval', 100),
+      getRecentDailyRuns(50),
     ]);
 
     const unifiedList: UnifiedApprovalItem[] = [];
@@ -71,6 +76,12 @@ export async function GET(request: NextRequest) {
         d.draft_type === 'client_proposal';
 
       if (isOutreach) {
+        const evidenceArr = Array.isArray(meta.evidence)
+          ? meta.evidence
+          : Array.isArray(meta.scoreBreakdown)
+          ? meta.scoreBreakdown
+          : ['Slow server response and outdated CMS detected'];
+
         unifiedList.push({
           id: d.id,
           sourceType: 'outreach',
@@ -96,20 +107,30 @@ export async function GET(request: NextRequest) {
           websiteUrl: meta.websiteUrl || (meta.domain ? `https://${meta.domain}` : undefined),
           contactEmail: meta.contactEmail || meta.email,
           contactName: meta.contactName || meta.name,
+          phone: meta.phone,
+          whatsappUrl: meta.whatsappUrl,
+          recommendedChannel: meta.recommendedChannel || 'email',
           leadScore: meta.leadScore || meta.score || 85,
           confidenceLevel: meta.confidenceLevel || 88,
-          evidence: Array.isArray(meta.evidence)
-            ? meta.evidence
-            : Array.isArray(meta.scoreBreakdown)
-            ? meta.scoreBreakdown
-            : ['Slow server response and outdated CMS detected'],
+          evidence: evidenceArr,
           likelyNeeds: meta.likelyNeeds || 'Frontend modernization and performance tuning',
           recommendedService: meta.recommendedService || 'Next.js Frontend Architecture & Speed Optimization',
-          proposedNextAction: meta.proposedNextAction || 'Send 1-on-1 Strategy Video Pitch via Email',
+          proposedNextAction: meta.proposedNextAction || 'Send 1-on-1 Strategy Pitch via Email',
           personalizedEmailSubject: meta.personalizedEmailSubject || `Website performance ideas for ${meta.companyName || meta.domain}`,
           personalizedEmailBody: meta.personalizedEmailBody || d.content,
+          whatsappPitch: meta.whatsappPitch || meta.personalizedWhatsAppMessage,
           sendStatus: meta.send_status || 'pending',
           idempotencyKey: d.idempotency_key || meta.idempotency_key,
+          metadata: {
+            ...meta,
+            company_name: meta.companyName || meta.name || d.title,
+            domain: meta.domain,
+            contact_email: meta.contactEmail || meta.email,
+            recommended_service: meta.recommendedService || 'Modernization',
+            audit_evidence: evidenceArr,
+            fit_score: meta.leadScore || 85,
+            confidence: meta.confidenceLevel || 88,
+          },
           raw: d,
         });
       } else {
@@ -134,15 +155,17 @@ export async function GET(request: NextRequest) {
           title: d.title,
           excerpt: d.excerpt || '',
           coverImage: meta.coverImage || meta.featured_image_url || '/assets/blog/photo1.webp',
-          slug: meta.slug || '',
-          readMins: meta.readMins || '5 min',
-          categoryName: meta.category || 'Technology & Engineering',
-          tags: meta.tags || [],
+          slug: meta.slug || d.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          readMins: meta.readMins || '4 min read',
+          categoryName: meta.categoryName || 'Engineering & AI',
+          tags: meta.tags || ['Engineering', 'Architecture'],
           sections,
-          linkedinPost: meta.linkedinPost || meta.linkedinCopy || '',
+          linkedinPost: meta.linkedinPost || '',
           createdAt: d.created_at,
           status: d.status,
           targetUrl: d.target_url,
+          isOutreachProposal: false,
+          metadata: meta,
           raw: d,
         });
       }
@@ -168,25 +191,29 @@ export async function GET(request: NextRequest) {
           linkedinPost: content.linkedinPost || r.linkedinCommentary || '',
           createdAt: r.startedAt,
           status: 'pending_approval',
+          isOutreachProposal: false,
           raw: r,
         });
       }
     }
 
-    // Sort newest first
+    // Sort latest first
     unifiedList.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
     return NextResponse.json({
       success: true,
-      count: unifiedList.length,
       items: unifiedList,
+      totalCount: unifiedList.length,
+      chiefCount: unifiedList.filter((i) => i.sourceType === 'chief').length,
+      newsCount: unifiedList.filter((i) => i.sourceType === 'news').length,
+      outreachCount: unifiedList.filter((i) => i.sourceType === 'outreach').length,
     });
   } catch (error: any) {
     console.error('[API /api/admin/approvals] Error:', error);
     return NextResponse.json(
-      { success: false, error: error?.message || 'Failed to fetch pending approvals.' },
+      { success: false, error: error?.message || 'Failed to fetch pending approval items.' },
       { status: 500 }
     );
   }

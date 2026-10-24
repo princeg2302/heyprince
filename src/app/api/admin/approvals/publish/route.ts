@@ -6,6 +6,7 @@ import {
   logChiefActivity,
   deleteDraftsBulk,
   getDrafts,
+  getDraftById,
 } from '@/lib/chief-of-staff/db';
 import { publishDraftRun } from '@/lib/daily-news/orchestrator';
 import { updateDailyRun, deleteDailyRunsBulk } from '@/lib/daily-news/db';
@@ -15,7 +16,7 @@ import {
   recordSendFailure,
   generateOutreachIdempotencyKey,
 } from '@/lib/deduplication';
-import { query, updateBusinessStatus } from '@/lib/outreach/db';
+import { query, updateBusinessStatus, getContactsForBusiness } from '@/lib/outreach/db';
 import {
   SmtpSenderAdapter,
   ResendSenderAdapter,
@@ -100,53 +101,60 @@ export async function POST(request: NextRequest) {
     // ========================================================================
     if (action === 'delete') {
       if (isNews) {
-        await deleteDailyRunsBulk([Number(id)]);
+        const runId = typeof id === 'number' ? id : parseInt(String(id), 10);
+        await deleteDailyRunsBulk([runId]);
       } else {
         await deleteDraftsBulk([String(id)]);
       }
-      return NextResponse.json({ success: true, message: 'Item deleted.' });
+      return NextResponse.json({ success: true, message: 'Draft deleted.' });
     }
 
     // ========================================================================
-    // 3. Edit Draft Inline (Updates existing draft without duplication)
+    // 3. Edit Draft Action
     // ========================================================================
     if (action === 'edit_draft') {
-      const { title, excerpt, content, subject, bodyText } = body;
-      await query(
-        `UPDATE chief_content_drafts 
-         SET title = COALESCE($1, title),
-             excerpt = COALESCE($2, excerpt),
-             content = COALESCE($3, content),
-             metadata = jsonb_set(
-               jsonb_set(metadata, '{personalizedEmailSubject}', to_jsonb(COALESCE($4, metadata->>'personalizedEmailSubject'))),
-               '{personalizedEmailBody}', to_jsonb(COALESCE($5, metadata->>'personalizedEmailBody'))
-             ),
-             updated_at = NOW()
-         WHERE id = $6;`,
-        [title, excerpt, content, subject || title, bodyText || content, String(id)]
-      );
-
-      return NextResponse.json({
-        success: true,
-        message: 'Draft updated in place successfully.',
-      });
+      const { title, excerpt, content } = body;
+      if (!isNews) {
+        await query(
+          `UPDATE chief_content_drafts 
+           SET title = COALESCE($1, title),
+               excerpt = COALESCE($2, excerpt),
+               content = COALESCE($3, content),
+               metadata = CASE 
+                 WHEN $4::text IS NOT NULL THEN jsonb_set(COALESCE(metadata, '{}'::jsonb), '{personalizedEmailSubject}', to_jsonb($4::text))
+                 ELSE metadata
+               END,
+               updated_at = NOW()
+           WHERE id = $5;`,
+          [title, excerpt, content, customSubject || title, String(id)]
+        );
+        return NextResponse.json({ success: true, message: 'Draft updated successfully.' });
+      } else {
+        const runId = typeof id === 'number' ? id : parseInt(String(id), 10);
+        await updateDailyRun(runId, {
+          articleTitle: title || undefined,
+          articleExcerpt: excerpt || undefined,
+        });
+        return NextResponse.json({ success: true, message: 'Daily run updated successfully.' });
+      }
     }
 
     // ========================================================================
     // 4. Save For Later Action
     // ========================================================================
     if (action === 'save_for_later') {
-      await query(
-        `UPDATE chief_content_drafts 
-         SET metadata = jsonb_set(metadata, '{saved_for_later}', 'true'),
-             updated_at = NOW()
-         WHERE id = $1;`,
-        [String(id)]
-      );
-
+      if (!isNews) {
+        await query(
+          `UPDATE chief_content_drafts SET status = 'saved_for_later', updated_at = NOW() WHERE id = $1;`,
+          [String(id)]
+        );
+      } else {
+        const runId = typeof id === 'number' ? id : parseInt(String(id), 10);
+        await updateDailyRun(runId, { status: 'saved_for_later' as any });
+      }
       return NextResponse.json({
         success: true,
-        message: 'Proposal saved for later review.',
+        message: 'Draft saved for later. It will not be published automatically.',
       });
     }
 
@@ -154,15 +162,28 @@ export async function POST(request: NextRequest) {
     // 5. Approve & Send Outreach Proposal (With Strict Idempotency Lock)
     // ========================================================================
     if (action === 'approve_and_send_outreach') {
-      const drafts = await getDrafts(undefined, 100);
-      const draft = drafts.find((d) => d.id === String(id));
+      let draft = await getDraftById(String(id));
+      if (!draft) {
+        const drafts = await getDrafts(undefined, 100);
+        draft = drafts.find((d) => d.id === String(id)) || null;
+      }
 
       if (!draft) {
         return NextResponse.json({ success: false, error: 'Outreach draft not found.' }, { status: 404 });
       }
 
       const meta = draft.metadata || {};
-      const targetEmail = recipientEmail || meta.contactEmail || meta.email;
+      let targetEmail = recipientEmail || meta.contactEmail || meta.email;
+
+      // Fallback: Check business contacts table if email not directly in metadata
+      if ((!targetEmail || !targetEmail.includes('@')) && meta.businessId) {
+        try {
+          const bizContacts = await getContactsForBusiness(meta.businessId);
+          if (bizContacts.length > 0 && bizContacts[0].email) {
+            targetEmail = bizContacts[0].email;
+          }
+        } catch {}
+      }
 
       if (!targetEmail || !targetEmail.includes('@')) {
         return NextResponse.json(
@@ -224,15 +245,38 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Record successful dispatch & update state
+        // Record successful dispatch & update draft state
         await recordSendSuccess(draft.id, {
           approverEmail: admin.email,
           providerMessageId: sendResult.providerMessageId,
           sentAt: new Date().toISOString(),
         });
 
+        // Update business status & persist message into email_messages
         if (meta.businessId) {
           await updateBusinessStatus(meta.businessId, 'CONTACTED');
+          try {
+            await query(
+              `INSERT INTO email_messages (
+                business_id, recipient_email, recipient_name, sender_email, sender_name,
+                subject, body_text, body_html, status, sent_at, provider, provider_message_id, created_at, updated_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'SENT', NOW(), $9, $10, NOW(), NOW());`,
+              [
+                meta.businessId,
+                targetEmail,
+                meta.contactName || meta.companyName || 'Business Owner',
+                process.env.SMTP_USER || 'prince@heyprince.in',
+                'Prince • HeyPrince.in',
+                emailSubject,
+                emailBody,
+                `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif; font-size: 15px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">${emailBody}</div>`,
+                sendResult.provider,
+                sendResult.providerMessageId || `msg_${Date.now()}`,
+              ]
+            );
+          } catch (insertErr) {
+            console.warn('[approve_and_send_outreach] Note inserting into email_messages:', insertErr);
+          }
         }
 
         await logChiefActivity(

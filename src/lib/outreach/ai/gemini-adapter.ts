@@ -50,45 +50,63 @@ Respond with JSON adhering to:
   "unsupportedClaimWarnings": []
 }`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const candidateModels = [
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-2.5-flash',
+    ];
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.2,
-        },
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
+    let lastError: Error | null = null;
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API error (HTTP ${response.status}): ${errText}`);
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
+            ],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              temperature: 0.2,
+            },
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Gemini API error (HTTP ${response.status}): ${errText}`);
+        }
+
+        const data = await response.json();
+        const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!candidateText) {
+          throw new Error('Gemini API returned empty response candidate.');
+        }
+
+        const parsedJson = JSON.parse(candidateText);
+        const validated: AIAnalysisPayload = AIAnalysisSchema.parse(parsedJson);
+
+        return {
+          provider: 'gemini',
+          modelName: model,
+          analysis: validated,
+          promptTokens: data.usageMetadata?.promptTokenCount || 0,
+          completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+          estimatedCostUsd: 0.0001,
+        };
+      } catch (err: any) {
+        lastError = err;
+        // Try next candidate model
+      }
     }
 
-    const data = await response.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) {
-      throw new Error('Gemini API returned empty response candidate.');
-    }
-
-    const parsedJson = JSON.parse(candidateText);
-    const validated: AIAnalysisPayload = AIAnalysisSchema.parse(parsedJson);
-
-    return {
-      provider: 'gemini',
-      modelName: 'gemini-2.5-flash',
-      analysis: validated,
-      promptTokens: data.usageMetadata?.promptTokenCount || 0,
-      completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
-      estimatedCostUsd: 0.0001,
-    };
+    throw lastError || new Error('All Gemini candidate models failed.');
   }
 }
 

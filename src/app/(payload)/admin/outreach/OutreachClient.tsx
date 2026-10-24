@@ -648,7 +648,22 @@ export default function OutreachClient({
       const data = await res.json();
       if (data.success) {
         showToast('AI opportunity proposal generated & submitted to AI Approvals Hub!', 'success');
+        if (data.draft) {
+          setScoutDrafts((prev) => {
+            const filtered = prev.filter(
+              (d) => d.id !== data.draft.id && d.metadata?.businessId !== businessId
+            );
+            return [data.draft, ...filtered];
+          });
+        }
         await loadScoutDrafts();
+        setBusinesses((prev) =>
+          prev.map((b) =>
+            b.id === businessId
+              ? { ...b, status: b.status === 'DISCOVERED' ? 'ENRICHED' : b.status }
+              : b
+          )
+        );
         if (selectedBusiness?.id === businessId) {
           handleOpenBusinessById(businessId);
         }
@@ -659,6 +674,42 @@ export default function OutreachClient({
       showToast('Network error during proposal generation', 'error');
     } finally {
       setIsGeneratingAi(false);
+    }
+  };
+
+  const [isQuickSending, setIsQuickSending] = useState(false);
+
+  // Direct quick-send from CRM drawer
+  const handleQuickSendProposal = async (draftId: string, bizId: string) => {
+    setIsQuickSending(true);
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draftId,
+          sourceType: 'outreach',
+          action: 'approve_and_send_outreach',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || 'Outreach email dispatched successfully!', 'success');
+        await loadScoutDrafts();
+        setBusinesses((prev) =>
+          prev.map((b) => (b.id === bizId ? { ...b, status: 'CONTACTED' } : b))
+        );
+        if (selectedBusiness?.id === bizId) {
+          handleOpenBusinessById(bizId);
+        }
+        refreshQueueMessages();
+      } else {
+        showToast(data.error || 'Failed to dispatch email', 'error');
+      }
+    } catch {
+      showToast('Network error while dispatching outreach proposal', 'error');
+    } finally {
+      setIsQuickSending(false);
     }
   };
 
@@ -1013,39 +1064,123 @@ export default function OutreachClient({
           {existingDraft ? (
             <div>
               <div style={{ background: '#0a0a10', border: '1px solid #2d2d42', borderRadius: '8px', padding: '10px', marginBottom: '10px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>
-                  {existingDraft.title}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>
+                    {existingDraft.title}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background:
+                        existingDraft.metadata?.send_status === 'sent' || existingDraft.status === 'approved'
+                          ? 'rgba(16, 185, 129, 0.2)'
+                          : 'rgba(255, 184, 0, 0.2)',
+                      color:
+                        existingDraft.metadata?.send_status === 'sent' || existingDraft.status === 'approved'
+                          ? '#10b981'
+                          : '#f59e0b',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {existingDraft.metadata?.send_status === 'sent' || existingDraft.status === 'approved'
+                      ? 'Sent ✅'
+                      : 'Pending Approval ⏳'}
+                  </span>
                 </div>
                 <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>
                   {existingDraft.excerpt}
                 </div>
-                <div style={{ fontSize: '11px', color: '#d1d5db', whiteSpace: 'pre-wrap', maxHeight: '120px', overflowY: 'auto', background: '#050508', padding: '8px', borderRadius: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#d1d5db', whiteSpace: 'pre-wrap', maxHeight: '140px', overflowY: 'auto', background: '#050508', padding: '8px', borderRadius: '4px', border: '1px solid #1c1c2b' }}>
                   {existingDraft.content}
                 </div>
+                {existingDraft.metadata?.contactEmail && (
+                  <div style={{ marginTop: '8px', fontSize: '11px', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Mail size={12} />
+                    <span>Target Recipient: <strong>{existingDraft.metadata.contactEmail}</strong></span>
+                  </div>
+                )}
               </div>
 
-              {/* Direct Authorization Action linking to AI Approvals */}
-              <Link
-                href="/admin/approvals"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
-                  color: '#ffffff',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <span>Authorize & Send in AI Approvals Hub</span>
-                <ArrowRight size={14} />
-              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* 1. Quick Send Action right here in the drawer if email exists */}
+                {existingDraft.metadata?.contactEmail && existingDraft.metadata?.send_status !== 'sent' && (
+                  <button
+                    onClick={() => handleQuickSendProposal(existingDraft.id, selectedBusiness.id)}
+                    disabled={isQuickSending}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      width: '100%',
+                      background: 'rgba(0, 255, 136, 0.15)',
+                      border: '1px solid rgba(0, 255, 136, 0.4)',
+                      color: '#00ff88',
+                      padding: '9px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: isQuickSending ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    <Send size={13} className={isQuickSending ? 'hpa-spin' : ''} />
+                    <span>{isQuickSending ? 'Dispatching Email...' : '⚡ Approve & Send Email Now'}</span>
+                  </button>
+                )}
+
+                {/* 2. Direct WhatsApp link if WhatsApp exists */}
+                {existingDraft.metadata?.whatsappUrl && (
+                  <a
+                    href={existingDraft.metadata.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      width: '100%',
+                      background: 'rgba(37, 211, 102, 0.15)',
+                      border: '1px solid rgba(37, 211, 102, 0.4)',
+                      color: '#25d366',
+                      padding: '9px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <span>💬 Open WhatsApp Pitch Chat</span>
+                    <ExternalLink size={13} />
+                  </a>
+                )}
+
+                {/* 3. Link to AI Approvals Hub */}
+                <Link
+                  href="/admin/approvals"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                    color: '#ffffff',
+                    padding: '9px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <span>Review in AI Approvals Hub</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
           ) : (
             <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
@@ -1804,22 +1939,37 @@ export default function OutreachClient({
 
                             <td style={{ padding: '12px 10px' }}>
                               {existingDraft ? (
-                                <Link
-                                  href="/admin/approvals"
-                                  style={{
-                                    fontSize: '11px',
-                                    fontWeight: 700,
-                                    color: '#ff3366',
-                                    textDecoration: 'none',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                  }}
-                                  title="View and authorize in central AI Approvals hub"
-                                >
-                                  <span>In Approvals</span>
-                                  <ArrowRight size={11} />
-                                </Link>
+                                existingDraft.metadata?.send_status === 'sent' || existingDraft.status === 'approved' ? (
+                                  <span
+                                    style={{
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      color: '#10b981',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}
+                                  >
+                                    <span>Sent ✉️</span>
+                                  </span>
+                                ) : (
+                                  <Link
+                                    href="/admin/approvals"
+                                    style={{
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      color: '#ff3366',
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}
+                                    title="View and authorize in central AI Approvals hub"
+                                  >
+                                    <span>In Approvals</span>
+                                    <ArrowRight size={11} />
+                                  </Link>
+                                )
                               ) : (
                                 <button
                                   onClick={() => handleGenerateAi(b.id)}
