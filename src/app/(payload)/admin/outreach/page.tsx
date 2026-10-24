@@ -34,7 +34,7 @@ export default async function OutreachAdminPage() {
     getDiscoveryJobs(15),
     query<{ count: string }>(`SELECT COUNT(*) as count FROM email_messages WHERE status = 'QUEUED';`),
     getAllContacts(100),
-    query(`SELECT m.*, b.name as business_name, b.domain as business_domain FROM email_messages m LEFT JOIN businesses b ON m.business_id = b.id ORDER BY m.created_at DESC LIMIT 50;`),
+    query(`SELECT m.*, b.name as business_name, b.domain as business_domain, b.phone as business_phone, b.country_code as business_country, b.city as business_city, b.metadata as business_metadata FROM email_messages m LEFT JOIN businesses b ON m.business_id = b.id ORDER BY m.created_at DESC LIMIT 50;`),
   ]);
 
   return (

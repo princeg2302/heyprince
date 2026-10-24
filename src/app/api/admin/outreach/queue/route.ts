@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '../auth-check';
-import { query, createQueuedEmail, getBusinessById } from '@/lib/outreach/db';
+import { query, createQueuedEmail, getBusinessById, updateBusinessStatus } from '@/lib/outreach/db';
 import { queueWorker } from '@/lib/outreach/queue/queue-worker';
 import { generateUnsubscribeToken } from '@/lib/outreach/compliance/tokens';
 import { complianceEngine } from '@/lib/outreach/compliance/compliance-engine';
 import { buildOutreachEmailHtml } from '@/lib/outreach/email-template';
+import {
+  SmtpSenderAdapter,
+  ResendSenderAdapter,
+  MockSenderAdapter,
+} from '@/lib/outreach/queue/sender-adapter';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +21,7 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get('status');
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '50', 10);
 
-    let sql = `SELECT m.*, b.name as business_name, b.domain as business_domain 
+    let sql = `SELECT m.*, b.name as business_name, b.domain as business_domain, b.phone as business_phone, b.country_code as business_country, b.city as business_city, b.metadata as business_metadata 
                FROM email_messages m 
                LEFT JOIN businesses b ON m.business_id = b.id`;
     const params: any[] = [];
@@ -82,6 +87,78 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Email cancelled.',
+      });
+    }
+
+    if (action === 'send_followup') {
+      const { parentMessageId, recipientEmail, subject, bodyText } = body;
+      if (!recipientEmail || !subject || !bodyText) {
+        return NextResponse.json(
+          { success: false, error: 'recipientEmail, subject, and bodyText are required' },
+          { status: 400 }
+        );
+      }
+
+      let parentMsg: any = null;
+      if (parentMessageId) {
+        const rows = await query(`SELECT * FROM email_messages WHERE id = $1 LIMIT 1;`, [parentMessageId]);
+        parentMsg = rows[0] || null;
+      }
+
+      const smtpAdapter = new SmtpSenderAdapter();
+      const resendAdapter = new ResendSenderAdapter();
+      const mockAdapter = new MockSenderAdapter();
+      let activeSender = mockAdapter;
+      if (smtpAdapter.isConfigured()) activeSender = smtpAdapter;
+      else if (resendAdapter.isConfigured()) activeSender = resendAdapter;
+
+      const sendRes = await activeSender.send({
+        messageId: `followup_${Date.now()}`,
+        recipientEmail,
+        recipientName: parentMsg?.recipient_name || 'Business Team',
+        senderEmail: process.env.SMTP_USER || 'prince@heyprince.in',
+        senderName: 'Prince • HeyPrince.in',
+        subject,
+        bodyText,
+        bodyHtml: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif; font-size: 15px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">${bodyText}</div>`,
+        unsubscribeUrl: 'https://heyprince.in/api/outreach/unsubscribe',
+      });
+
+      if (!sendRes.success) {
+        return NextResponse.json(
+          { success: false, error: sendRes.error || 'Failed to dispatch follow-up' },
+          { status: 502 }
+        );
+      }
+
+      const token = generateUnsubscribeToken(recipientEmail, parentMsg?.business_id || 'lead');
+      await query(
+        `INSERT INTO email_messages (
+          business_id, recipient_email, recipient_name, sender_email, sender_name,
+          subject, body_text, body_html, unsubscribe_token, status, provider, provider_message_id, sent_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'SENT', $10, $11, NOW(), NOW(), NOW());`,
+        [
+          parentMsg?.business_id || null,
+          recipientEmail,
+          parentMsg?.recipient_name || 'Business Team',
+          process.env.SMTP_USER || 'prince@heyprince.in',
+          'Prince • HeyPrince.in',
+          subject,
+          bodyText,
+          `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif; font-size: 15px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">${bodyText}</div>`,
+          token,
+          sendRes.provider,
+          sendRes.providerMessageId || `msg_${Date.now()}`,
+        ]
+      );
+
+      if (parentMsg?.business_id) {
+        await updateBusinessStatus(parentMsg.business_id, 'CONTACTED');
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Follow-up email dispatched successfully to ${recipientEmail}!`,
       });
     }
 

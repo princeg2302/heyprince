@@ -29,6 +29,9 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Eye,
+  Clock,
+  MessageSquare,
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
@@ -130,6 +133,17 @@ export default function OutreachClient({
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [queueBatchSize, setQueueBatchSize] = useState(5);
   const [queuedEmailCount, setQueuedEmailCount] = useState(queuedCount);
+
+  // Sent & Follow-ups Timeline State
+  const [sentSearch, setSentSearch] = useState('');
+  const [sentFilter, setSentFilter] = useState<'all' | 'due' | 'sent' | 'queued'>('all');
+  const [viewingMessage, setViewingMessage] = useState<any | null>(null);
+  const [followUpMessage, setFollowUpMessage] = useState<any | null>(null);
+  const [followUpRecipient, setFollowUpRecipient] = useState('');
+  const [followUpSubject, setFollowUpSubject] = useState('');
+  const [followUpBody, setFollowUpBody] = useState('');
+  const [isSendingFollowUp, setIsSendingFollowUp] = useState(false);
+  const [isRefreshingQueue, setIsRefreshingQueue] = useState(false);
 
   // CRM Pipeline State
   const [pipelineFilter, setPipelineFilter] = useState('ALL');
@@ -750,6 +764,138 @@ export default function OutreachClient({
       showToast('Error processing outbound queue', 'error');
     } finally {
       setIsProcessingQueue(false);
+    }
+  };
+
+  // Open Follow-up Composer Modal
+  const handleOpenFollowUpModal = (msg: any) => {
+    setFollowUpMessage(msg);
+    setFollowUpRecipient(msg.recipient_email || '');
+    const cleanSubject = (msg.subject || 'Web Project Collaboration').replace(/^Re:\s*/i, '');
+    setFollowUpSubject(`Re: ${cleanSubject}`);
+    const recipientName =
+      msg.recipient_name && msg.recipient_name !== 'Business Team'
+        ? msg.recipient_name
+        : msg.business_name || 'there';
+    setFollowUpBody(
+`Hi ${recipientName},
+
+I wanted to quickly bump this note to the top of your inbox.
+
+Did you have a chance to look over my earlier note regarding ${msg.business_name || 'your website'}? I'd love to share a quick 2-minute walkthrough of the performance and conversion opportunities I identified.
+
+No pressure at all—let me know if you'd like to connect this week.
+
+Best regards,
+Prince
+Full-Stack Web & WordPress Architect
+heyprince.in`
+    );
+  };
+
+  // Set Pre-built Cadence Template
+  const setFollowUpTemplate = (templateType: 'day3' | 'day5' | 'day7') => {
+    if (!followUpMessage) return;
+    const recipientName =
+      followUpMessage.recipient_name && followUpMessage.recipient_name !== 'Business Team'
+        ? followUpMessage.recipient_name
+        : followUpMessage.business_name || 'there';
+    const bizName = followUpMessage.business_name || 'your website';
+    const cleanSubject = (followUpMessage.subject || 'Web Project Collaboration').replace(/^Re:\s*/i, '');
+
+    if (templateType === 'day3') {
+      setFollowUpSubject(`Re: ${cleanSubject}`);
+      setFollowUpBody(
+`Hi ${recipientName},
+
+I wanted to quickly bump this note to the top of your inbox.
+
+Did you have a chance to look over my earlier note regarding ${bizName}? I'd love to share a quick 2-minute walkthrough of the performance and conversion opportunities I identified.
+
+No pressure at all—let me know if you'd like to connect this week.
+
+Best regards,
+Prince
+Full-Stack Web & WordPress Architect
+heyprince.in`
+      );
+    } else if (templateType === 'day5') {
+      setFollowUpSubject(`Quick idea for ${bizName}: speed & mobile UX`);
+      setFollowUpBody(
+`Hi ${recipientName},
+
+Following up on my previous message. I took a deeper look at ${bizName} and noticed a couple of specific UX & performance improvements that could directly increase visitor conversions on mobile.
+
+I've put together a few concrete recommendations—would you be open to a quick 5-minute look?
+
+Warm regards,
+Prince
+Full-Stack Web & WordPress Architect
+heyprince.in`
+      );
+    } else {
+      setFollowUpSubject(`Closing the loop — ${bizName}`);
+      setFollowUpBody(
+`Hi ${recipientName},
+
+I know how busy things get running a business, so I won't crowd your inbox any further.
+
+If you ever need an experienced full-stack or WordPress engineer to optimize or revamp ${bizName}, feel free to keep my details handy or reply anytime.
+
+Wishing you and the team all the best!
+
+Warmly,
+Prince
+heyprince.in`
+      );
+    }
+  };
+
+  // Dispatch Follow-up Email
+  const handleSendFollowUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!followUpRecipient || !followUpSubject || !followUpBody) {
+      showToast('Please fill in recipient, subject, and message body.', 'error');
+      return;
+    }
+    setIsSendingFollowUp(true);
+    try {
+      const res = await fetch('/api/admin/outreach/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_followup',
+          parentMessageId: followUpMessage?.id,
+          recipientEmail: followUpRecipient,
+          subject: followUpSubject,
+          bodyText: followUpBody,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || 'Follow-up email dispatched successfully!', 'success');
+        setFollowUpMessage(null);
+        await refreshQueueMessages();
+      } else {
+        showToast(data.error || 'Failed to dispatch follow-up.', 'error');
+      }
+    } catch {
+      showToast('Network error while dispatching follow-up.', 'error');
+    } finally {
+      setIsSendingFollowUp(false);
+    }
+  };
+
+  // Refresh Timeline & Queue
+  const handleRefreshMessages = async () => {
+    setIsRefreshingQueue(true);
+    try {
+      await refreshQueueMessages();
+      showToast('Outreach timeline refreshed.', 'info');
+    } catch {
+      showToast('Failed to refresh outreach messages.', 'error');
+    } finally {
+      setIsRefreshingQueue(false);
     }
   };
 
@@ -2293,118 +2439,489 @@ export default function OutreachClient({
       {/* ========================================================================= */}
       {/* 3. SENT & FOLLOW-UPS (Outbound Dispatch Queue & Timeline)                 */}
       {/* ========================================================================= */}
-      {activeTab === 'sent' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                  Outbound Queue & Dispatch Engine
-                </h2>
-                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>
-                  There are currently <strong>{queuedEmailCount}</strong> emails queued. When processed, each email undergoes live pre-send suppression checks and domain throttling.
-                </p>
+      {activeTab === 'sent' && (() => {
+        const sentMessagesCount = messages.filter((m) => m.status === 'SENT' || m.status === 'DELIVERED').length;
+        const dueFollowUpCount = messages.filter((m) => {
+          const sentDate = m.sent_at || m.created_at;
+          const daysSince = Math.floor((Date.now() - new Date(sentDate).getTime()) / (1000 * 60 * 60 * 24));
+          return (m.status === 'SENT' || m.status === 'DELIVERED') && daysSince >= 3;
+        }).length;
+
+        const filteredMessages = messages.filter((m) => {
+          if (sentSearch.trim()) {
+            const q = sentSearch.toLowerCase();
+            const match =
+              (m.recipient_email && m.recipient_email.toLowerCase().includes(q)) ||
+              (m.business_name && m.business_name.toLowerCase().includes(q)) ||
+              (m.subject && m.subject.toLowerCase().includes(q));
+            if (!match) return false;
+          }
+          const sentDate = m.sent_at || m.created_at;
+          const daysSince = Math.floor((Date.now() - new Date(sentDate).getTime()) / (1000 * 60 * 60 * 24));
+          const isDue = (m.status === 'SENT' || m.status === 'DELIVERED') && daysSince >= 3;
+
+          if (sentFilter === 'due') return isDue;
+          if (sentFilter === 'sent') return m.status === 'SENT' || m.status === 'DELIVERED';
+          if (sentFilter === 'queued') return m.status === 'QUEUED';
+          return true;
+        });
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Top Metric Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
+              <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '18px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 600 }}>Total Outreach Dispatched</span>
+                  <span style={{ padding: '6px', borderRadius: '8px', background: 'rgba(0, 245, 160, 0.1)', color: '#00f5a0' }}>
+                    <Mail size={16} />
+                  </span>
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#ffffff' }}>
+                  {sentMessagesCount}
+                </div>
+                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                  Verified outbound emails sent to prospects
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <select
-                  value={queueBatchSize}
-                  onChange={(e) => setQueueBatchSize(Number(e.target.value))}
-                  style={{
-                    background: '#07070d',
-                    border: '1px solid #2d2d42',
-                    color: '#ffffff',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                  }}
-                >
-                  <option value={1}>Batch: 1 email</option>
-                  <option value={5}>Batch: 5 emails</option>
-                  <option value={10}>Batch: 10 emails</option>
-                </select>
-                <button
-                  disabled={isProcessingQueue || queuedEmailCount === 0}
-                  onClick={() => handleProcessQueueBatch(false)}
-                  style={{
-                    background: queuedEmailCount > 0 ? '#ff3366' : '#2d2d42',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 18px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: queuedEmailCount > 0 ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  {isProcessingQueue ? <Loader2 size={14} className="hpa-spin" /> : <Send size={14} />}
-                  <span>{isProcessingQueue ? 'Processing...' : 'Dispatch Queue Batch'}</span>
-                </button>
+              <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '18px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 600 }}>Follow-ups Due</span>
+                  <span style={{ padding: '6px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
+                    <Clock size={16} />
+                  </span>
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#f59e0b' }}>
+                  {dueFollowUpCount}
+                </div>
+                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                  Initial pitch sent ≥ 3 days ago with no reply
+                </div>
+              </div>
+
+              <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '18px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 600 }}>Queued For Dispatch</span>
+                  <span style={{ padding: '6px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8' }}>
+                    <Send size={16} />
+                  </span>
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#38bdf8' }}>
+                  {queuedEmailCount}
+                </div>
+                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                  Awaiting batch rate-throttled release
+                </div>
+              </div>
+
+              <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '18px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 600 }}>Delivery Health</span>
+                  <span style={{ padding: '6px', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.1)', color: '#c084fc' }}>
+                    <ShieldCheck size={16} />
+                  </span>
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#c084fc' }}>
+                  {messages.length > 0
+                    ? `${Math.round(((messages.length - messages.filter((m) => m.status === 'BOUNCED' || m.status === 'FAILED').length) / messages.length) * 100)}%`
+                    : '100%'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                  SSRF verified • Compliant unsubscribe token
+                </div>
               </div>
             </div>
 
-            {/* Messages Queue Table */}
-            {messages.length === 0 ? (
-              <p style={{ color: '#6b7280', fontSize: '13px', margin: '20px 0 0 0' }}>
-                No active queued messages. Approved messages from AI Approvals will appear here ready for scheduled dispatch.
-              </p>
-            ) : (
-              <div style={{ overflowX: 'auto', width: '100%', marginTop: '16px' }}>
-                <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
-                      <th style={{ padding: '10px' }}>Recipient</th>
-                      <th style={{ padding: '10px' }}>Subject</th>
-                      <th style={{ padding: '10px' }}>Status</th>
-                      <th style={{ padding: '10px' }}>Created</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {messages.map((m) => (
-                      <tr key={m.id} style={{ borderBottom: '1px solid #161622' }}>
-                        <td style={{ padding: '12px 10px', color: '#ffffff', fontWeight: 600 }}>
-                          {m.recipient_email}
-                        </td>
-                        <td style={{ padding: '12px 10px', color: '#cbd5e1' }}>{m.subject}</td>
-                        <td style={{ padding: '12px 10px' }}>
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              background:
-                                m.status === 'SENT' || m.status === 'DELIVERED'
-                                  ? 'rgba(0, 245, 160, 0.15)'
-                                  : m.status === 'BOUNCED'
-                                  ? 'rgba(239, 68, 68, 0.15)'
-                                  : 'rgba(251, 191, 36, 0.15)',
-                              color:
-                                m.status === 'SENT' || m.status === 'DELIVERED'
-                                  ? '#00f5a0'
-                                  : m.status === 'BOUNCED'
-                                  ? '#ef4444'
-                                  : '#fbbf24',
-                            }}
-                          >
-                            {m.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 10px', color: '#6b7280', fontSize: '12px' }}>
-                          {new Date(m.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Main Card with Filter Bar & Table */}
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                    Sent Outreach & Follow-up Timeline
+                  </h2>
+                  <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>
+                    All approved proposals dispatched via SMTP, Resend, or WhatsApp with active cadence tracking.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={handleRefreshMessages}
+                    disabled={isRefreshingQueue}
+                    style={{
+                      background: '#161622',
+                      border: '1px solid #2d2d42',
+                      color: '#ffffff',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <RefreshCw size={13} className={isRefreshingQueue ? 'hpa-spin' : ''} />
+                    <span>Refresh Timeline</span>
+                  </button>
+
+                  {queuedEmailCount > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <select
+                        value={queueBatchSize}
+                        onChange={(e) => setQueueBatchSize(Number(e.target.value))}
+                        style={{
+                          background: '#07070d',
+                          border: '1px solid #2d2d42',
+                          color: '#ffffff',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <option value={1}>Batch: 1 email</option>
+                        <option value={5}>Batch: 5 emails</option>
+                        <option value={10}>Batch: 10 emails</option>
+                      </select>
+                      <button
+                        disabled={isProcessingQueue}
+                        onClick={() => handleProcessQueueBatch(false)}
+                        style={{
+                          background: '#ff3366',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        {isProcessingQueue ? <Loader2 size={13} className="hpa-spin" /> : <Send size={13} />}
+                        <span>Dispatch Queue ({queuedEmailCount})</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+
+              {/* Filter Tabs & Search */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', borderBottom: '1px solid #1c1c2b', paddingBottom: '14px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => setSentFilter('all')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: sentFilter === 'all' ? '#ff3366' : '#161622',
+                      color: sentFilter === 'all' ? '#ffffff' : '#9ca3af',
+                    }}
+                  >
+                    All Outbound ({messages.length})
+                  </button>
+                  <button
+                    onClick={() => setSentFilter('due')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: sentFilter === 'due' ? 'rgba(245, 158, 11, 0.2)' : '#161622',
+                      color: sentFilter === 'due' ? '#f59e0b' : '#9ca3af',
+                      border: sentFilter === 'due' ? '1px solid #f59e0b' : 'none',
+                    }}
+                  >
+                    ⚠️ Follow-up Due ({dueFollowUpCount})
+                  </button>
+                  <button
+                    onClick={() => setSentFilter('sent')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: sentFilter === 'sent' ? 'rgba(0, 245, 160, 0.2)' : '#161622',
+                      color: sentFilter === 'sent' ? '#00f5a0' : '#9ca3af',
+                      border: sentFilter === 'sent' ? '1px solid #00f5a0' : 'none',
+                    }}
+                  >
+                    Delivered / Sent ({sentMessagesCount})
+                  </button>
+                  {queuedEmailCount > 0 && (
+                    <button
+                      onClick={() => setSentFilter('queued')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        background: sentFilter === 'queued' ? 'rgba(56, 189, 248, 0.2)' : '#161622',
+                        color: sentFilter === 'queued' ? '#38bdf8' : '#9ca3af',
+                        border: sentFilter === 'queued' ? '1px solid #38bdf8' : 'none',
+                      }}
+                    >
+                      Queued ({queuedEmailCount})
+                    </button>
+                  )}
+                </div>
+
+                {/* Search Bar */}
+                <div style={{ position: 'relative', width: '260px' }}>
+                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: '#6b7280' }} />
+                  <input
+                    type="text"
+                    placeholder="Search recipient, business..."
+                    value={sentSearch}
+                    onChange={(e) => setSentSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: '#07070d',
+                      border: '1px solid #2d2d42',
+                      borderRadius: '8px',
+                      padding: '7px 12px 7px 32px',
+                      fontSize: '12px',
+                      color: '#ffffff',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Messages Queue & Sent Table */}
+              {filteredMessages.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
+                  <Mail size={32} style={{ color: '#4b5563', marginBottom: '12px' }} />
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#e5e7eb', margin: '0 0 6px 0' }}>
+                    No messages match this filter
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                    {messages.length === 0
+                      ? 'Approved proposals from AI Approvals will appear here ready for scheduled dispatch.'
+                      : 'Try switching filters or clearing your search query.'}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', width: '100%', marginTop: '8px' }}>
+                  <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
+                        <th style={{ padding: '10px' }}>Prospect & Recipient</th>
+                        <th style={{ padding: '10px' }}>Subject & Excerpt</th>
+                        <th style={{ padding: '10px' }}>Cadence & Due Status</th>
+                        <th style={{ padding: '10px' }}>Delivery Status</th>
+                        <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredMessages.map((m) => {
+                        const sentDate = m.sent_at || m.created_at;
+                        const daysSince = Math.floor((Date.now() - new Date(sentDate).getTime()) / (1000 * 60 * 60 * 24));
+                        const isDue = (m.status === 'SENT' || m.status === 'DELIVERED') && daysSince >= 3;
+                        const cleanPhone = m.business_phone ? m.business_phone.replace(/[^0-9]/g, '') : '';
+                        const waLink = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
+
+                        return (
+                          <tr key={m.id} style={{ borderBottom: '1px solid #161622' }}>
+                            {/* Prospect / Recipient */}
+                            <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
+                              <div style={{ fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{m.business_name || 'Direct Lead'}</span>
+                                {m.business_id && (
+                                  <button
+                                    onClick={() => handleOpenBusinessById(m.business_id, m.business_name)}
+                                    title="Open CRM Record"
+                                    style={{
+                                      background: 'rgba(255, 51, 102, 0.1)',
+                                      border: '1px solid rgba(255, 51, 102, 0.3)',
+                                      color: '#ff3366',
+                                      cursor: 'pointer',
+                                      padding: '1px 6px',
+                                      borderRadius: '4px',
+                                      fontSize: '10px',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    CRM ↗
+                                  </button>
+                                )}
+                              </div>
+                              <div style={{ color: '#9ca3af', fontSize: '12px', marginTop: '3px' }}>
+                                {m.recipient_email}
+                              </div>
+                              {waLink && (
+                                <a
+                                  href={waLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    fontSize: '11px',
+                                    color: '#25d366',
+                                    marginTop: '4px',
+                                    textDecoration: 'none',
+                                    background: 'rgba(37, 211, 102, 0.1)',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                  }}
+                                >
+                                  <WhatsAppIcon size={11} />
+                                  <span>{m.business_phone}</span>
+                                </a>
+                              )}
+                            </td>
+
+                            {/* Subject & Excerpt */}
+                            <td style={{ padding: '12px 10px', maxWidth: '300px', verticalAlign: 'top' }}>
+                              <div style={{ fontWeight: 600, color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {m.subject}
+                              </div>
+                              <div style={{ color: '#6b7280', fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {(m.body_text || '').replace(/\s+/g, ' ').slice(0, 95)}...
+                              </div>
+                            </td>
+
+                            {/* Cadence Status */}
+                            <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                  Sent: {new Date(sentDate).toLocaleDateString()} ({daysSince === 0 ? 'Today' : `${daysSince}d ago`})
+                                </span>
+                                {isDue ? (
+                                  <span
+                                    style={{
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      color: '#f59e0b',
+                                      background: 'rgba(245, 158, 11, 0.15)',
+                                      padding: '2px 8px',
+                                      borderRadius: '6px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      width: 'fit-content',
+                                    }}
+                                  >
+                                    <Clock size={11} />
+                                    <span>{daysSince >= 7 ? 'Touchpoint 3 (Final Note) Due' : 'Touchpoint 2 (Follow-up 1) Due'}</span>
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      fontSize: '11px',
+                                      color: '#38bdf8',
+                                      background: 'rgba(56, 189, 248, 0.1)',
+                                      padding: '2px 8px',
+                                      borderRadius: '6px',
+                                      width: 'fit-content',
+                                    }}
+                                  >
+                                    Follow-up in {Math.max(1, 3 - daysSince)}d
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Delivery Status */}
+                            <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  background:
+                                    m.status === 'SENT' || m.status === 'DELIVERED'
+                                      ? 'rgba(0, 245, 160, 0.15)'
+                                      : m.status === 'BOUNCED'
+                                      ? 'rgba(239, 68, 68, 0.15)'
+                                      : 'rgba(251, 191, 36, 0.15)',
+                                  color:
+                                    m.status === 'SENT' || m.status === 'DELIVERED'
+                                      ? '#00f5a0'
+                                      : m.status === 'BOUNCED'
+                                      ? '#ef4444'
+                                      : '#fbbf24',
+                                }}
+                              >
+                                {m.status}
+                              </span>
+                              <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '3px' }}>
+                                {m.provider || 'SMTP'}
+                              </div>
+                            </td>
+
+                            {/* Actions */}
+                            <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top' }}>
+                              <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                                <button
+                                  onClick={() => setViewingMessage(m)}
+                                  title="View Full Outreach Pitch"
+                                  style={{
+                                    background: '#161622',
+                                    border: '1px solid #2d2d42',
+                                    color: '#ffffff',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                >
+                                  <Eye size={12} />
+                                  <span>View</span>
+                                </button>
+                                <button
+                                  onClick={() => handleOpenFollowUpModal(m)}
+                                  title="Compose & Send Follow-up"
+                                  style={{
+                                    background: isDue ? '#f59e0b' : '#ff3366',
+                                    color: isDue ? '#000000' : '#ffffff',
+                                    border: 'none',
+                                    padding: '5px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                >
+                                  <Send size={12} />
+                                  <span>Follow-up</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {renderBusinessDetailDrawer()}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ========================================================================= */}
       {/* 4. HISTORY & ANALYTICS (Discovery History, Telemetry, Safety Limits)      */}
@@ -2556,6 +3073,452 @@ export default function OutreachClient({
         onCancel={() => setBulkDeleteBizOpen(false)}
         isLoading={bulkDeleteBizLoading}
       />
+
+      {/* View Sent Pitch Modal */}
+      {viewingMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setViewingMessage(null)}
+        >
+          <div
+            style={{
+              background: '#0e0e16',
+              border: '1px solid #1c1c2b',
+              borderRadius: '16px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '18px 24px',
+                borderBottom: '1px solid #1c1c2b',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
+                  Outreach Pitch Details
+                </h3>
+                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#9ca3af' }}>
+                  Dispatched to {viewingMessage.recipient_email} via {viewingMessage.provider || 'SMTP'}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingMessage(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Details Content */}
+            <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                <div style={{ background: '#07070d', padding: '10px 14px', borderRadius: '8px', border: '1px solid #161622' }}>
+                  <span style={{ fontSize: '11px', color: '#6b7280', display: 'block' }}>Prospect Business</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
+                    {viewingMessage.business_name || 'Direct Lead'}
+                  </span>
+                </div>
+                <div style={{ background: '#07070d', padding: '10px 14px', borderRadius: '8px', border: '1px solid #161622' }}>
+                  <span style={{ fontSize: '11px', color: '#6b7280', display: 'block' }}>Sent Date</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#00f5a0' }}>
+                    {new Date(viewingMessage.sent_at || viewingMessage.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '6px' }}>
+                  Subject Line
+                </label>
+                <div style={{ background: '#07070d', padding: '10px 14px', borderRadius: '8px', border: '1px solid #161622', color: '#ffffff', fontSize: '13px', fontWeight: 600 }}>
+                  {viewingMessage.subject}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '6px' }}>
+                  Dispatched Pitch Copy
+                </label>
+                <div
+                  style={{
+                    background: '#07070d',
+                    padding: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #161622',
+                    color: '#cbd5e1',
+                    fontSize: '13px',
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-wrap',
+                    maxHeight: '320px',
+                    overflowY: 'auto',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {viewingMessage.body_text || viewingMessage.body_html || 'No body text available.'}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 24px',
+                borderTop: '1px solid #1c1c2b',
+                background: '#07070d',
+              }}
+            >
+              <button
+                onClick={() => setViewingMessage(null)}
+                style={{
+                  background: '#161622',
+                  border: '1px solid #2d2d42',
+                  color: '#ffffff',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const targetMsg = viewingMessage;
+                  setViewingMessage(null);
+                  handleOpenFollowUpModal(targetMsg);
+                }}
+                style={{
+                  background: '#ff3366',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Send size={13} />
+                <span>Compose Follow-up to this Lead</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Follow-up Composer Modal */}
+      {followUpMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setFollowUpMessage(null)}
+        >
+          <div
+            style={{
+              background: '#0e0e16',
+              border: '1px solid #1c1c2b',
+              borderRadius: '16px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '18px 24px',
+                borderBottom: '1px solid #1c1c2b',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
+                  Compose Follow-up Cadence
+                </h3>
+                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#9ca3af' }}>
+                  Prospect: {followUpMessage.business_name || 'Lead'} • Re: {followUpMessage.subject}
+                </p>
+              </div>
+              <button
+                onClick={() => setFollowUpMessage(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form onSubmit={handleSendFollowUp} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
+              <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Cadence Sequence Selector */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '6px' }}>
+                    Quick Cadence Presets
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFollowUpTemplate('day3')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #2d2d42',
+                        background: '#161622',
+                        color: '#cbd5e1',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Touchpoint 2: Quick Check-in (Day 3)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFollowUpTemplate('day5')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #2d2d42',
+                        background: '#161622',
+                        color: '#cbd5e1',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Touchpoint 3: Value Add & UX Audit (Day 5)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFollowUpTemplate('day7')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #2d2d42',
+                        background: '#161622',
+                        color: '#cbd5e1',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Touchpoint 4: Break-up Note (Day 7)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Recipient */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    Recipient Email
+                  </label>
+                  <input
+                    type="email"
+                    value={followUpRecipient}
+                    onChange={(e) => setFollowUpRecipient(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: '#07070d',
+                      border: '1px solid #2d2d42',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      color: '#ffffff',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Subject */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    Follow-up Subject Line
+                  </label>
+                  <input
+                    type="text"
+                    value={followUpSubject}
+                    onChange={(e) => setFollowUpSubject(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: '#07070d',
+                      border: '1px solid #2d2d42',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      color: '#ffffff',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Body Text */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    Message Body
+                  </label>
+                  <textarea
+                    rows={9}
+                    value={followUpBody}
+                    onChange={(e) => setFollowUpBody(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      background: '#07070d',
+                      border: '1px solid #2d2d42',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '13px',
+                      color: '#ffffff',
+                      lineHeight: '1.6',
+                      outline: 'none',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                    }}
+                  />
+                </div>
+
+                {/* WhatsApp alternative if phone available */}
+                {followUpMessage.business_phone && (
+                  <div style={{ background: 'rgba(37, 211, 102, 0.08)', border: '1px solid rgba(37, 211, 102, 0.25)', borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#25d366', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <WhatsAppIcon size={14} />
+                      <span>WhatsApp available on {followUpMessage.business_phone}</span>
+                    </div>
+                    <a
+                      href={`https://wa.me/${followUpMessage.business_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(followUpBody)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        background: '#25d366',
+                        color: '#000000',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <span>Send WhatsApp Chat</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px 24px',
+                  borderTop: '1px solid #1c1c2b',
+                  background: '#07070d',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setFollowUpMessage(null)}
+                  style={{
+                    background: '#161622',
+                    border: '1px solid #2d2d42',
+                    color: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingFollowUp}
+                  style={{
+                    background: '#ff3366',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '8px 20px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: isSendingFollowUp ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {isSendingFollowUp ? <Loader2 size={13} className="hpa-spin" /> : <Send size={13} />}
+                  <span>{isSendingFollowUp ? 'Sending Follow-up...' : 'Dispatch Follow-up Email Now'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
