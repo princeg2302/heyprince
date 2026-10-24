@@ -276,6 +276,7 @@ export const DiscoveryJobCreateSchema = z.object({
   city: z.string().min(1, 'City is required'),
   category: z.string().min(1, 'Business category is required'),
   query: z.string().optional(),
+  triggerSource: z.enum(['manual', 'automated']).default('manual').optional(),
 });
 
 export type DiscoveryJobCreateInput = z.infer<typeof DiscoveryJobCreateSchema>;

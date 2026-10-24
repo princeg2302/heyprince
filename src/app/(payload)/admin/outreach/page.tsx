@@ -30,7 +30,7 @@ export default async function OutreachAdminPage() {
   const [analytics, settings, businessesRes, jobs, queuedCountRes, contacts, messages] = await Promise.all([
     getOutreachAnalyticsSummary(),
     getOutreachSettings(),
-    getBusinesses({ limit: 25 }),
+    getBusinesses({ limit: 100 }),
     getDiscoveryJobs(15),
     query<{ count: string }>(`SELECT COUNT(*) as count FROM email_messages WHERE status = 'QUEUED';`),
     getAllContacts(100),

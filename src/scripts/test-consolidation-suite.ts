@@ -208,6 +208,72 @@ async function runConsolidationTests() {
   }
 
   // --------------------------------------------------------------------------
+  // TEST 7: Automated Lead Scout, Qualification & Channel Selection
+  // --------------------------------------------------------------------------
+  console.log('\n▶ TEST 7: Lead Scout Automation, Qualification & Channel Selection');
+  const { evaluateLeadContactChannels, LEAD_SCOUT_TARGET_ROTATION } = await import(
+    '../lib/outreach/qualification'
+  );
+
+  // 1. Target Rotation sanity
+  assert(
+    Array.isArray(LEAD_SCOUT_TARGET_ROTATION) && LEAD_SCOUT_TARGET_ROTATION.length >= 10,
+    `Lead Scout rotation configured with ${LEAD_SCOUT_TARGET_ROTATION.length} global targets`
+  );
+
+  // 2. Scenario A: Business with ONLY website
+  const evalWebsiteOnly = evaluateLeadContactChannels({
+    website_url: 'https://example-dentist.com',
+    domain: 'example-dentist.com',
+    phone: null,
+    contacts: [],
+  });
+  assert(evalWebsiteOnly.isQualified === true, 'Business with only website URL is QUALIFIED');
+  assert(evalWebsiteOnly.hasWebsite === true, 'Website presence flagged correctly');
+  assert(evalWebsiteOnly.bestChannel === 'none', 'No outreach attempted without direct communication channel');
+
+  // 3. Scenario B: Business with ONLY email
+  const evalEmailOnly = evaluateLeadContactChannels({
+    website_url: null,
+    domain: null,
+    phone: null,
+    contacts: [{ email: 'hello@agency.co', verification_status: 'VALID' }],
+  });
+  assert(evalEmailOnly.isQualified === true, 'Business with only email is QUALIFIED');
+  assert(evalEmailOnly.bestChannel === 'email', 'Email channel selected when email is available');
+  assert(evalEmailOnly.emailStatus === 'verified', 'Email verified status detected');
+
+  // 4. Scenario C: Business with ONLY phone
+  const evalPhoneOnly = evaluateLeadContactChannels({
+    website_url: null,
+    domain: null,
+    phone: '+1-512-555-0199',
+    contacts: [],
+  });
+  assert(evalPhoneOnly.isQualified === true, 'Business with only phone is QUALIFIED');
+
+  // 5. Scenario D: Business with all three (WhatsApp preferred over Email)
+  const evalAllThree = evaluateLeadContactChannels({
+    website_url: 'https://premier-retail.com',
+    domain: 'premier-retail.com',
+    phone: '+1-512-555-0199',
+    contacts: [{ email: 'info@premier-retail.com', verification_status: 'VALID' }],
+  });
+  assert(evalAllThree.isQualified === true, 'Business with all 3 contact points is QUALIFIED (single lead)');
+  assert(evalAllThree.bestChannel === 'whatsapp', 'WhatsApp is preferred channel over Email (1st Priority)');
+  assert(Boolean(evalAllThree.whatsappUrl), 'Generated valid WhatsApp chat URL');
+
+  // 6. Scenario E: Business with ZERO contact points
+  const evalZero = evaluateLeadContactChannels({
+    website_url: null,
+    domain: null,
+    phone: null,
+    contacts: [],
+  });
+  assert(evalZero.isQualified === false, 'Business with zero contact points is UNQUALIFIED');
+  assert(evalZero.bestChannel === 'none', 'No channel selected for zero contact business');
+
+  // --------------------------------------------------------------------------
   // Summary
   // --------------------------------------------------------------------------
   console.log('\n====================================================');

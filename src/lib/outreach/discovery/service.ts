@@ -40,6 +40,7 @@ export class DiscoveryService {
     category: string;
     region?: string;
     limit?: number;
+    triggerSource?: 'manual' | 'automated';
   }): Promise<{
     job: DiscoveryJobEntity;
     totalFound: number;
@@ -48,6 +49,7 @@ export class DiscoveryService {
   }> {
     const providerName = (jobInput.provider || 'openstreetmap').toLowerCase();
     const provider = this.getProvider(providerName);
+    const triggerSource = jobInput.triggerSource || 'manual';
 
     // 1. Create Job record in database
     const job = await createDiscoveryJob({
@@ -56,6 +58,7 @@ export class DiscoveryService {
       region: jobInput.region || null,
       city: jobInput.city,
       category: jobInput.category,
+      query: triggerSource === 'automated' ? 'automated_daily_scout' : 'manual_scan',
     });
 
     await updateDiscoveryJob(job.id, {
@@ -87,6 +90,12 @@ export class DiscoveryService {
           }
         }
 
+        const phoneVal = record.phone || (record.metadata as any)?.phone || null;
+        const hasWebsite = Boolean(record.websiteUrl || record.domain);
+        const hasEmail = Boolean(record.email && record.email.includes('@'));
+        const hasPhone = Boolean(phoneVal && String(phoneVal).replace(/[^0-9]/g, '').length >= 8);
+        const isQualified = hasWebsite || hasEmail || hasPhone;
+
         const { business, isNew } = await upsertBusiness({
           name: record.name,
           domain: record.domain,
@@ -105,7 +114,13 @@ export class DiscoveryService {
           source_provider_id: record.sourceProviderId,
           metadata: {
             ...record.metadata,
-            phone: record.phone || (record.metadata as any)?.phone || null,
+            phone: phoneVal,
+            discovery_source: triggerSource,
+            discovery_date: new Date().toISOString(),
+            is_qualified: isQualified,
+            has_website: hasWebsite,
+            has_email: hasEmail,
+            has_phone: hasPhone,
           },
           status: 'DISCOVERED',
         });

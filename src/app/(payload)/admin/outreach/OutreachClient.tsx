@@ -7,7 +7,6 @@ import {
   Search,
   ShieldAlert,
   ShieldCheck,
-  Cpu,
   Mail,
   Send,
   RefreshCw,
@@ -19,19 +18,17 @@ import {
   ExternalLink,
   Plus,
   Sparkles,
-  Ban,
-  Clock,
   Layers,
   FileText,
-  UserCheck,
   Phone,
-  MessageSquare,
   Loader2,
-  Inbox,
   X,
   Target,
   ArrowRight,
   Trash2,
+  Check,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
@@ -41,6 +38,10 @@ import {
   OutreachSettingsEntity,
   BusinessStatus,
 } from '@/lib/outreach/types';
+import {
+  evaluateLeadContactChannels,
+  LEAD_SCOUT_TARGET_ROTATION,
+} from '@/lib/outreach/qualification';
 
 interface OutreachClientProps {
   initialAnalytics: {
@@ -89,34 +90,9 @@ export default function OutreachClient({
   initialMessages = [],
 }: OutreachClientProps) {
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<
-    | 'discover'
-    | 'research'
-    | 'qualified'
-    | 'proposals'
-    | 'pending_approval'
-    | 'sent'
-    | 'analytics'
-    | 'discovery'
-    | 'leads'
-    | 'scout'
-    | 'contacts'
-    | 'queue'
-    | 'compliance'
-    | 'settings'
-    | 'telemetry'
-  >('discover');
 
-  const currentView = (() => {
-    if (activeTab === 'discovery' || activeTab === 'discover') return 'discover';
-    if (activeTab === 'research') return 'research';
-    if (activeTab === 'leads' || activeTab === 'contacts' || activeTab === 'qualified') return 'qualified';
-    if (activeTab === 'scout' || activeTab === 'proposals') return 'proposals';
-    if (activeTab === 'pending_approval') return 'pending_approval';
-    if (activeTab === 'queue' || activeTab === 'sent') return 'sent';
-    if (activeTab === 'telemetry' || activeTab === 'compliance' || activeTab === 'settings' || activeTab === 'analytics') return 'analytics';
-    return 'discover';
-  })();
+  // 4 Core Pipeline Views
+  const [activeTab, setActiveTab] = useState<'discover' | 'qualified' | 'sent' | 'analytics'>('discover');
 
   const [settings, setSettings] = useState<OutreachSettingsEntity>(initialSettings);
   const [analytics, setAnalytics] = useState(initialAnalytics);
@@ -125,22 +101,25 @@ export default function OutreachClient({
   const [contacts, setContacts] = useState<any[]>(initialContacts);
   const [messages, setMessages] = useState<any[]>(initialMessages);
 
-  // Scout State
-  const [scoutDrafts, setScoutDrafts] = useState<any[]>([]);
-  const [loadingScoutDrafts, setLoadingScoutDrafts] = useState(false);
+  // Automated Daily Scout State
   const [isRunningScout, setIsRunningScout] = useState(false);
   const [isDeduplicating, setIsDeduplicating] = useState(false);
-  const [selectedScoutDraft, setSelectedScoutDraft] = useState<any | null>(null);
-  const [scoutFilter, setScoutFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [scoutDrafts, setScoutDrafts] = useState<any[]>([]);
 
-  // Discovery Form State
+  // Discover Leads Workspace State
+  const [discoverSearch, setDiscoverSearch] = useState('');
+  const [discoverSourceFilter, setDiscoverSourceFilter] = useState<'all' | 'automated' | 'manual'>('all');
+  const [discoverQualFilter, setDiscoverQualFilter] = useState<'all' | 'qualified' | 'unqualified'>('all');
+  const [showManualScanForm, setShowManualScanForm] = useState(false);
+
+  // Manual Scan Form Inputs
   const [discoverCountry, setDiscoverCountry] = useState('US');
   const [discoverCity, setDiscoverCity] = useState('Austin');
-  const [discoverCategory, setDiscoverCategory] = useState('Restaurants & Cafes');
+  const [discoverCategory, setDiscoverCategory] = useState('WordPress & Web Development');
   const [discoverProvider, setDiscoverProvider] = useState<'openstreetmap' | 'mock'>('openstreetmap');
   const [isDiscovering, setIsDiscovering] = useState(false);
 
-  // Business Action State
+  // Business Detail / CRM State
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessEntity | null>(null);
   const [businessDetail, setBusinessDetail] = useState<any | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
@@ -151,18 +130,8 @@ export default function OutreachClient({
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [queueBatchSize, setQueueBatchSize] = useState(5);
   const [queuedEmailCount, setQueuedEmailCount] = useState(queuedCount);
-  const [isQueueingEmail, setIsQueueingEmail] = useState(false);
 
-  // Contact Form State
-  const [newContactEmail, setNewContactEmail] = useState('');
-  const [isAddingContact, setIsAddingContact] = useState(false);
-
-  // Suppression State
-  const [suppressEmail, setSuppressEmail] = useState('');
-  const [suppressReason, setSuppressReason] = useState('MANUAL_BLOCK');
-  const [isAddingSuppression, setIsAddingSuppression] = useState(false);
-
-  // CRM & Pipeline State
+  // CRM Pipeline State
   const [pipelineFilter, setPipelineFilter] = useState('ALL');
   const [crmNotesInput, setCrmNotesInput] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -173,6 +142,25 @@ export default function OutreachClient({
   const [bulkDeleteBizLoading, setBulkDeleteBizLoading] = useState(false);
   const [deletingBizId, setDeletingBizId] = useState<string | null>(null);
   const [deletingBizLoading, setDeletingBizLoading] = useState(false);
+
+  // Compute today's scheduled rotation target
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const todayTarget = LEAD_SCOUT_TARGET_ROTATION[dayOfYear % LEAD_SCOUT_TARGET_ROTATION.length];
+
+  // Load existing proposals
+  const loadScoutDrafts = async () => {
+    try {
+      const res = await fetch('/api/admin/outreach/scout');
+      const data = await res.json();
+      if (data.drafts) setScoutDrafts(data.drafts);
+    } catch {}
+  };
+
+  useEffect(() => {
+    loadScoutDrafts();
+  }, []);
 
   const getStatusBadgeStyle = (status?: string) => {
     switch (status) {
@@ -244,28 +232,81 @@ export default function OutreachClient({
     }
   };
 
-  const getWhatsAppUrl = (phone?: string | null, businessName?: string) => {
-    if (!phone) return null;
-    const digits = phone.replace(/[^0-9]/g, '');
-    if (digits.length < 8) return null;
-    if (/^(1?(800|888|877|866|855|844|833)|1800|44(800|808|845|844|870)|0800|0808)/.test(digits)) return null;
-    const greeting = encodeURIComponent(
-      `Hello ${businessName ? businessName + ' team' : 'there'}! 👋 I came across your website. I'm Prince from HeyPrince (https://heyprince.in). We analyzed your website and identified high-impact opportunities to improve your online presence and customer bookings. Would you be open to a quick chat?`
-    );
-    return `https://wa.me/${digits}?text=${greeting}`;
+  // Evaluate lead qualification across all businesses
+  const getLeadEval = (biz: BusinessEntity) => {
+    return evaluateLeadContactChannels({
+      website_url: biz.website_url,
+      domain: biz.domain,
+      phone: (biz.metadata as any)?.phone,
+      metadata: biz.metadata,
+      contacts: contacts.filter((c) => c.business_id === biz.id),
+    });
   };
 
-  // Check if a phone number is eligible for WhatsApp vs standard phone only (e.g. landline/toll-free)
-  const isWhatsAppEligible = (phone?: string | null, whatsappUrl?: string | null): boolean => {
-    if (whatsappUrl) return true;
-    if (!phone) return false;
-    const digits = phone.replace(/[^0-9]/g, '');
-    if (digits.length < 8) return false;
-    // Toll-free prefixes (US 800, 888, 877, 866, 855, 844, 833; UK 0800, 0808; India 1800) are landlines
-    if (/^(1?(800|888|877|866|855|844|833)|1800|44(800|808|845|844|870)|0800|0808)/.test(digits)) {
-      return false;
+  const qualifiedBusinesses = businesses.filter((b) => getLeadEval(b).isQualified);
+
+  // Discover Leads Display Filter
+  const displayedDiscoverBusinesses = businesses
+    .filter((b) => {
+      if (discoverSearch.trim()) {
+        const q = discoverSearch.toLowerCase();
+        const matchName = b.name.toLowerCase().includes(q);
+        const matchDomain = (b.domain || b.website_url || '').toLowerCase().includes(q);
+        const matchCity = (b.city || '').toLowerCase().includes(q);
+        const matchCategory = (b.category || '').toLowerCase().includes(q);
+        if (!matchName && !matchDomain && !matchCity && !matchCategory) return false;
+      }
+
+      const isAuto =
+        (b.metadata as any)?.discovery_source === 'automated' ||
+        (b.metadata as any)?.discovery_source === 'automated_daily_scout';
+      if (discoverSourceFilter === 'automated' && !isAuto) return false;
+      if (discoverSourceFilter === 'manual' && isAuto) return false;
+
+      const evalInfo = getLeadEval(b);
+      if (discoverQualFilter === 'qualified' && !evalInfo.isQualified) return false;
+      if (discoverQualFilter === 'unqualified' && evalInfo.isQualified) return false;
+
+      return true;
+    })
+    .sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeB - timeA;
+    });
+
+  // Qualified Leads CRM Filter
+  const displayedQualifiedBusinesses = qualifiedBusinesses
+    .filter((b) => {
+      if (pipelineFilter === 'ALL') return true;
+      return b.status === pipelineFilter;
+    })
+    .sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeB - timeA;
+    });
+
+  const activeDisplayList = activeTab === 'qualified' ? displayedQualifiedBusinesses : displayedDiscoverBusinesses;
+
+  const allBizSelected =
+    activeDisplayList.length > 0 &&
+    activeDisplayList.every((b) => selectedBusinessIds.includes(b.id));
+  const someBizSelected =
+    activeDisplayList.some((b) => selectedBusinessIds.includes(b.id)) && !allBizSelected;
+
+  const handleSelectAllBiz = () => {
+    if (allBizSelected) {
+      setSelectedBusinessIds([]);
+    } else {
+      setSelectedBusinessIds(activeDisplayList.map((b) => b.id));
     }
-    return true;
+  };
+
+  const handleToggleSelectBiz = (id: string) => {
+    setSelectedBusinessIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   // Toggle Kill Switch
@@ -312,13 +353,73 @@ export default function OutreachClient({
           nextState ? 'Test mode activated (Simulated sends only)' : 'Production mode activated',
           'info'
         );
+      } else {
+        showToast('Error updating test mode', 'error');
       }
     } catch {
       showToast('Error updating test mode', 'error');
     }
   };
 
-  // Execute Discovery Scan
+  // Trigger Automated Daily Lead Scout
+  const handleRunAutomatedScout = async () => {
+    setIsRunningScout(true);
+    try {
+      const res = await fetch('/api/admin/outreach/scout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'run_scout' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || 'Automated Lead Scout scan completed successfully!', 'success');
+        await loadScoutDrafts();
+        const bRes = await fetch('/api/admin/outreach/businesses?limit=100');
+        const bData = await bRes.json();
+        if (bData.items) setBusinesses(bData.items);
+        const jRes = await fetch('/api/admin/outreach/discovery');
+        const jData = await jRes.json();
+        if (jData.jobs) setJobs(jData.jobs);
+      } else {
+        showToast(data.error || 'Failed to run Lead Scout', 'error');
+      }
+    } catch {
+      showToast('Network error while running automated Lead Scout', 'error');
+    } finally {
+      setIsRunningScout(false);
+    }
+  };
+
+  // Deduplicate Existing Businesses
+  const handleDeduplicate = async () => {
+    setIsDeduplicating(true);
+    try {
+      const res = await fetch('/api/admin/outreach/scout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deduplicate' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(
+          data.message || `Deduplication complete. Removed ${data.duplicatesRemoved || 0} duplicate records.`,
+          'success'
+        );
+        const bRes = await fetch('/api/admin/outreach/businesses?limit=100');
+        const bData = await bRes.json();
+        if (bData.items) setBusinesses(bData.items);
+        await loadScoutDrafts();
+      } else {
+        showToast(data.error || 'Deduplication failed', 'error');
+      }
+    } catch {
+      showToast('Network error while running deduplication', 'error');
+    } finally {
+      setIsDeduplicating(false);
+    }
+  };
+
+  // Execute Manual Discovery Scan
   const handleRunDiscovery = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsDiscovering(true);
@@ -331,19 +432,20 @@ export default function OutreachClient({
           countryCode: discoverCountry,
           city: discoverCity,
           category: discoverCategory,
+          triggerSource: 'manual',
         }),
       });
       const data = await res.json();
       if (data.success) {
         showToast(data.message, 'success');
-        // Refresh businesses and jobs
-        const bRes = await fetch('/api/admin/outreach/businesses?limit=25');
+        const bRes = await fetch('/api/admin/outreach/businesses?limit=100');
         const bData = await bRes.json();
         if (bData.items) setBusinesses(bData.items);
 
         const jRes = await fetch('/api/admin/outreach/discovery');
         const jData = await jRes.json();
         if (jData.jobs) setJobs(jData.jobs);
+        setShowManualScanForm(false);
       } else {
         showToast(data.error || 'Discovery scan failed', 'error');
       }
@@ -385,19 +487,12 @@ export default function OutreachClient({
           }
           return prev;
         });
-        showToast(`CRM Record loaded: ${data.business.name}`, 'success');
-      } else {
-        showToast(data.error || `Could not load business record`, 'error');
       }
     } catch {
-      showToast('Error fetching business intelligence record', 'error');
+      showToast('Error fetching business CRM record', 'error');
     } finally {
       setIsLoadingDetail(false);
     }
-  };
-
-  const handleSelectBusiness = async (b: BusinessEntity) => {
-    return handleOpenBusinessById(b.id, b.name);
   };
 
   // Update Business Status & CRM Notes
@@ -435,6 +530,7 @@ export default function OutreachClient({
     }
   };
 
+  // Delete Single Business (Cascades cleanly)
   const handleDeleteSingleBiz = async () => {
     if (!deletingBizId) return;
     setDeletingBizLoading(true);
@@ -464,6 +560,7 @@ export default function OutreachClient({
     }
   };
 
+  // Bulk Delete Selected Businesses
   const handleBulkDeleteBiz = async () => {
     if (selectedBusinessIds.length === 0) return;
     setBulkDeleteBizLoading(true);
@@ -484,7 +581,10 @@ export default function OutreachClient({
         setSelectedBusiness(null);
         setBusinessDetail(null);
       }
-      showToast(`Successfully deleted ${selectedBusinessIds.length} business lead${selectedBusinessIds.length > 1 ? 's' : ''}.`, 'success');
+      showToast(
+        `Successfully deleted ${selectedBusinessIds.length} business lead${selectedBusinessIds.length > 1 ? 's' : ''}.`,
+        'success'
+      );
       setSelectedBusinessIds([]);
       setBulkDeleteBizOpen(false);
     } catch {
@@ -494,52 +594,7 @@ export default function OutreachClient({
     }
   };
 
-  const qualifiedCount = businesses.filter(
-    (b) => b.status !== 'DISQUALIFIED' && b.status !== 'DISCOVERED'
-  ).length;
-  const freshCount = businesses.filter((b) => b.status === 'DISCOVERED').length;
-  const enrichedCount = businesses.filter((b) => b.status === 'ENRICHED').length;
-  const auditedCount = businesses.filter((b) => b.status === 'AUDITED').length;
-  const contactedCount = businesses.filter((b) => b.status === 'CONTACTED').length;
-  const talkingCount = businesses.filter((b) => b.status === 'IN_DISCUSSION').length;
-  const wonCount = businesses.filter((b) => b.status === 'CLOSED_WON').length;
-  const lostCount = businesses.filter((b) => b.status === 'CLOSED_LOST').length;
-
-  const filteredBusinesses = businesses
-    .filter((b) => {
-      if (pipelineFilter === 'ALL') return true;
-      if (pipelineFilter === 'QUALIFIED') {
-        return b.status !== 'DISQUALIFIED' && b.status !== 'DISCOVERED';
-      }
-      return b.status === pipelineFilter;
-    })
-    .sort((a, b) => {
-      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return timeB - timeA;
-    });
-
-  const allBizSelected =
-    filteredBusinesses.length > 0 &&
-    filteredBusinesses.every((b) => selectedBusinessIds.includes(b.id));
-  const someBizSelected =
-    filteredBusinesses.some((b) => selectedBusinessIds.includes(b.id)) && !allBizSelected;
-
-  const handleSelectAllBiz = () => {
-    if (allBizSelected) {
-      setSelectedBusinessIds([]);
-    } else {
-      setSelectedBusinessIds(filteredBusinesses.map((b) => b.id));
-    }
-  };
-
-  const handleToggleSelectBiz = (id: string) => {
-    setSelectedBusinessIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  // Trigger Website Audit & Deep Multi-Page Crawl
+  // Run Website Tech Audit
   const handleRunAudit = async (businessId: string) => {
     setIsAuditing(true);
     try {
@@ -554,25 +609,22 @@ export default function OutreachClient({
         const emailsFound = data.discoveredContacts?.length || 0;
         const phonesFound = data.discoveredPhones?.length || 0;
         showToast(
-          `Deep audit complete! Crawled ${pagesCrawled} pages. Discovered ${emailsFound} emails & ${phonesFound} phones/WhatsApp.`,
+          `Deep audit complete! Crawled ${pagesCrawled} pages. Discovered ${emailsFound} emails & ${phonesFound} phones.`,
           'success'
         );
-        // Refresh businesses list with newly discovered phone/metadata
         if (data.business) {
           setBusinesses((prev) =>
             prev.map((biz) => (biz.id === businessId ? { ...biz, ...data.business } : biz))
           );
         }
-        // Refresh contacts list
         fetch('/api/admin/outreach/contacts')
           .then((r) => r.json())
           .then((cData) => {
             if (cData.contacts) setContacts(cData.contacts);
           })
           .catch(() => {});
-        // Refresh detail drawer
-        if (selectedBusiness) {
-          handleSelectBusiness(data.business || selectedBusiness);
+        if (selectedBusiness?.id === businessId) {
+          handleOpenBusinessById(businessId);
         }
       } else {
         showToast(data.error || 'Audit failed', 'error');
@@ -584,7 +636,7 @@ export default function OutreachClient({
     }
   };
 
-  // Trigger AI Intelligence & Personalization Draft
+  // Trigger AI Intelligence Opportunity & Pitch (Routes to AI Approvals)
   const handleGenerateAi = async (businessId: string) => {
     setIsGeneratingAi(true);
     try {
@@ -595,84 +647,18 @@ export default function OutreachClient({
       });
       const data = await res.json();
       if (data.success) {
-        showToast('AI intelligence opportunity & draft generated.', 'success');
-        if (selectedBusiness) handleSelectBusiness(selectedBusiness);
+        showToast('AI opportunity proposal generated & submitted to AI Approvals Hub!', 'success');
+        await loadScoutDrafts();
+        if (selectedBusiness?.id === businessId) {
+          handleOpenBusinessById(businessId);
+        }
       } else {
-        showToast(data.error || 'AI generation failed', 'error');
+        showToast(data.error || 'AI proposal generation failed', 'error');
       }
     } catch {
-      showToast('Network error during AI analysis', 'error');
+      showToast('Network error during proposal generation', 'error');
     } finally {
       setIsGeneratingAi(false);
-    }
-  };
-
-  // Add & Verify Contact Email
-  const handleAddContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBusiness || !newContactEmail) return;
-    setIsAddingContact(true);
-    try {
-      const res = await fetch(`/api/admin/outreach/businesses/${selectedBusiness.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newContactEmail }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(data.message, 'success');
-        setNewContactEmail('');
-        setAnalytics((prev) => ({
-          ...prev,
-          totalContacts: prev.totalContacts + 1,
-          validContacts: data.contact?.verification_status === 'VALID' ? prev.validContacts + 1 : prev.validContacts,
-        }));
-        handleSelectBusiness(selectedBusiness);
-      } else {
-        showToast(data.error || 'Failed to add contact', 'error');
-      }
-    } catch {
-      showToast('Error adding contact', 'error');
-    } finally {
-      setIsAddingContact(false);
-    }
-  };
-
-  // Enqueue Approved AI Draft for Dispatch
-  const handleEnqueueDraft = async () => {
-    if (!selectedBusiness || !businessDetail?.aiAnalysis) return;
-    const contact = businessDetail.contacts?.[0];
-    if (!contact) {
-      showToast('Please add or discover a verified contact email first', 'error');
-      return;
-    }
-
-    setIsQueueingEmail(true);
-    try {
-      const res = await fetch('/api/admin/outreach/queue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'enqueue_draft',
-          businessId: selectedBusiness.id,
-          contactId: contact.id,
-          aiAnalysisId: businessDetail.aiAnalysis.id,
-          subject: businessDetail.aiAnalysis.suggested_subject,
-          bodyText: businessDetail.aiAnalysis.personalized_draft,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Email draft approved and added to outbound queue!', 'success');
-        setQueuedEmailCount((prev) => prev + 1);
-        setAnalytics((prev) => ({ ...prev, queuedEmails: prev.queuedEmails + 1 }));
-      } else {
-        showToast(data.error || 'Failed to queue email draft', 'error');
-      }
-    } catch {
-      showToast('Network error enqueuing draft', 'error');
-    } finally {
-      setIsQueueingEmail(false);
     }
   };
 
@@ -685,7 +671,7 @@ export default function OutreachClient({
     } catch {}
   };
 
-  // Process Outbound Queue Batch (Supports standard due check or forceNow override)
+  // Process Outbound Queue Batch
   const handleProcessQueueBatch = async (forceNow = false) => {
     setIsProcessingQueue(true);
     try {
@@ -716,872 +702,363 @@ export default function OutreachClient({
     }
   };
 
-  // Send single queued email immediately
-  const handleSendSingle = async (messageId: string) => {
-    try {
-      const res = await fetch('/api/admin/outreach/queue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send_single', messageId, forceNow: true }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(data.message, 'success');
-        refreshQueueMessages();
-        setQueuedEmailCount((prev) => Math.max(0, prev - 1));
-        setAnalytics((prev) => ({
-          ...prev,
-          queuedEmails: Math.max(0, prev.queuedEmails - 1),
-          sentEmails: prev.sentEmails + 1,
-        }));
-      } else {
-        showToast(data.error || data.message || 'Send failed', 'error');
-      }
-    } catch {
-      showToast('Error sending message', 'error');
-    }
-  };
-
-  // Cancel queued message
-  const handleCancelMessage = async (messageId: string) => {
-    try {
-      const res = await fetch('/api/admin/outreach/queue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel_message', messageId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Message cancelled', 'info');
-        refreshQueueMessages();
-        setQueuedEmailCount((prev) => Math.max(0, prev - 1));
-        setAnalytics((prev) => ({ ...prev, queuedEmails: Math.max(0, prev.queuedEmails - 1) }));
-      }
-    } catch {
-      showToast('Error cancelling message', 'error');
-    }
-  };
-
-  // Add Manual Suppression
-  const handleAddSuppression = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!suppressEmail) return;
-    setIsAddingSuppression(true);
-    try {
-      const res = await fetch('/api/admin/outreach/suppressions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: suppressEmail, reason: suppressReason }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(`Suppression added for ${suppressEmail}`, 'success');
-        setSuppressEmail('');
-        setAnalytics((prev) => ({ ...prev, suppressedEmails: prev.suppressedEmails + 1 }));
-      } else {
-        showToast(data.error || 'Failed to add suppression', 'error');
-      }
-    } catch {
-      showToast('Network error adding suppression', 'error');
-    } finally {
-      setIsAddingSuppression(false);
-    }
-  };
-
-  // Scout Data Loader & Handlers
-  const loadScoutDrafts = async () => {
-    setLoadingScoutDrafts(true);
-    try {
-      const res = await fetch('/api/admin/outreach/scout');
-      const data = await res.json();
-      if (data.success && Array.isArray(data.drafts)) {
-        setScoutDrafts(data.drafts);
-      }
-    } catch {
-      console.warn('Failed to load scout drafts');
-    } finally {
-      setLoadingScoutDrafts(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'scout' && scoutDrafts.length === 0) {
-      loadScoutDrafts();
-    }
-  }, [activeTab]);
-
-  const handleRunScout = async () => {
-    setIsRunningScout(true);
-    try {
-      const res = await fetch('/api/admin/outreach/scout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'run_scout' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(data.message || 'Lead Scout discovery completed.', 'success');
-        await loadScoutDrafts();
-        const bRes = await fetch('/api/admin/outreach/businesses?limit=25');
-        const bData = await bRes.json();
-        if (bData.items) setBusinesses(bData.items);
-      } else {
-        showToast(data.error || 'Failed to run Lead Scout', 'error');
-      }
-    } catch {
-      showToast('Network error while running Lead Scout', 'error');
-    } finally {
-      setIsRunningScout(false);
-    }
-  };
-
-  const handleDeduplicate = async () => {
-    setIsDeduplicating(true);
-    try {
-      const res = await fetch('/api/admin/outreach/scout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deduplicate' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(data.message || `Deduplication complete. Removed ${data.duplicatesRemoved || 0} duplicate records.`, 'success');
-        const bRes = await fetch('/api/admin/outreach/businesses?limit=25');
-        const bData = await bRes.json();
-        if (bData.items) setBusinesses(bData.items);
-        await loadScoutDrafts();
-      } else {
-        showToast(data.error || 'Deduplication failed', 'error');
-      }
-    } catch {
-      showToast('Network error while running deduplication', 'error');
-    } finally {
-      setIsDeduplicating(false);
-    }
-  };
-
-  const handleApproveScoutDraft = async (draftId: string) => {
-    try {
-      const res = await fetch('/api/admin/chief-of-staff/approve-draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draftId, action: 'approve' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Proposal approved and staged for outreach!', 'success');
-        setScoutDrafts((prev) =>
-          prev.map((d) => (d.id === draftId ? { ...d, status: 'approved' } : d))
-        );
-        if (selectedScoutDraft && selectedScoutDraft.id === draftId) {
-          setSelectedScoutDraft((prev: any) => (prev ? { ...prev, status: 'approved' } : null));
-        }
-      } else {
-        showToast(data.error || 'Failed to approve proposal', 'error');
-      }
-    } catch {
-      showToast('Network error while approving proposal', 'error');
-    }
-  };
-
-  const handleRejectScoutDraft = async (draftId: string) => {
-    try {
-      const res = await fetch('/api/admin/approvals/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: draftId, sourceType: 'outreach', action: 'reject' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Proposal rejected and archived.', 'info');
-        setScoutDrafts((prev) =>
-          prev.map((d) => (d.id === draftId ? { ...d, status: 'rejected' } : d))
-        );
-        if (selectedScoutDraft && selectedScoutDraft.id === draftId) {
-          setSelectedScoutDraft((prev: any) => (prev ? { ...prev, status: 'rejected' } : null));
-        }
-      } else {
-        showToast(data.error || 'Failed to reject proposal', 'error');
-      }
-    } catch {
-      showToast('Network error while rejecting proposal', 'error');
-    }
-  };
-
-  const handleApproveAndSendFromOutreach = async (draftId: string) => {
-    try {
-      const res = await fetch('/api/admin/approvals/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: draftId,
-          sourceType: 'outreach',
-          action: 'approve_and_send_outreach',
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Client outreach email dispatched successfully with send-lock protection!', 'success');
-        setScoutDrafts((prev) =>
-          prev.map((d) => (d.id === draftId ? { ...d, status: 'approved' } : d))
-        );
-        await loadScoutDrafts();
-      } else {
-        showToast(data.error || 'Failed to dispatch proposal', 'error');
-      }
-    } catch {
-      showToast('Network error while dispatching proposal', 'error');
-    }
-  };
-
-  const handleSaveForLaterFromOutreach = async (draftId: string) => {
-    try {
-      const res = await fetch('/api/admin/approvals/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: draftId,
-          sourceType: 'outreach',
-          action: 'save_for_later',
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Proposal saved for later review.', 'info');
-        await loadScoutDrafts();
-      } else {
-        showToast(data.error || 'Failed to save for later', 'error');
-      }
-    } catch {
-      showToast('Network error saving proposal for later', 'error');
-    }
-  };
-
-  // Reusable CRM & Business Intelligence Drawer
+  // Reusable CRM & Lead Dossier Drawer
   const renderBusinessDetailDrawer = () => {
     if (!selectedBusiness) return null;
-    return (
-            <div
-              style={{
-                position: 'sticky',
-                top: '20px',
-                alignSelf: 'start',
-                background: '#0e0e16',
-                border: '1px solid #1c1c2b',
-                borderRadius: '12px',
-                padding: '24px',
-                maxHeight: 'calc(100vh - 40px)',
-                overflowY: 'auto',
-                minWidth: 0,
-                width: '100%',
-                boxSizing: 'border-box',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
-                zIndex: 20,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>{selectedBusiness.name}</h3>
-                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>{selectedBusiness.category} • {selectedBusiness.city}</span>
-                </div>
-                <button
-                  onClick={() => setSelectedBusiness(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '16px' }}
-                >
-                  ✕
-                </button>
-              </div>
+    const evalData = getLeadEval(selectedBusiness);
 
-              {/* CRM Pipeline & Deal Stage Card */}
-              <div
+    // Check if there is an existing proposal for this business
+    const existingDraft = scoutDrafts.find(
+      (d) =>
+        d.metadata?.businessId === selectedBusiness.id ||
+        (selectedBusiness.domain && d.metadata?.domain === selectedBusiness.domain)
+    );
+
+    return (
+      <div
+        style={{
+          position: 'sticky',
+          top: '20px',
+          alignSelf: 'start',
+          background: '#0e0e16',
+          border: '1px solid #1c1c2b',
+          borderRadius: '12px',
+          padding: '24px',
+          maxHeight: 'calc(100vh - 40px)',
+          overflowY: 'auto',
+          minWidth: 0,
+          width: '100%',
+          boxSizing: 'border-box',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+          zIndex: 20,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>
+              {selectedBusiness.name}
+            </h3>
+            <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+              {selectedBusiness.category} • {selectedBusiness.city || selectedBusiness.country_code}
+            </span>
+          </div>
+          <button
+            onClick={() => setSelectedBusiness(null)}
+            style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '16px' }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Contact Channels Dossier */}
+        <div style={{ background: '#12121a', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>
+            Available Contact Channels
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: '#9ca3af' }}>Website URL:</span>
+              {selectedBusiness.website_url ? (
+                <a
+                  href={selectedBusiness.website_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <span>{selectedBusiness.domain || selectedBusiness.website_url}</span>
+                  <ExternalLink size={11} />
+                </a>
+              ) : (
+                <span style={{ color: '#ef4444' }}>None</span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: '#9ca3af' }}>Public Email:</span>
+              {evalData.hasEmail ? (
+                <span style={{ color: '#00f5a0', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Mail size={12} />
+                  <span>{contacts.find((c) => c.business_id === selectedBusiness.id)?.email}</span>
+                </span>
+              ) : (
+                <span style={{ color: '#ef4444' }}>None Discovered</span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: '#9ca3af' }}>Phone & WhatsApp:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {evalData.hasPhone ? (
+                  <a
+                    href={`tel:${evalData.phoneDigits}`}
+                    style={{ color: '#d1d5db', textDecoration: 'none' }}
+                  >
+                    {evalData.phoneDigits}
+                  </a>
+                ) : (
+                  <span style={{ color: '#ef4444' }}>None</span>
+                )}
+                {evalData.isWhatsAppEligible && evalData.whatsappUrl && (
+                  <a
+                    href={evalData.whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      background: 'rgba(37, 211, 102, 0.2)',
+                      border: '1px solid #25d366',
+                      color: '#25d366',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      textDecoration: 'none',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                    }}
+                  >
+                    <WhatsAppIcon size={11} />
+                    <span>WhatsApp</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #1c1c2b', paddingTop: '8px', marginTop: '4px' }}>
+              <span style={{ color: '#ffffff', fontWeight: 600 }}>Recommended Outreach Channel:</span>
+              <span
                 style={{
-                  background: '#161622',
-                  border: '1px solid #2d2d42',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  marginBottom: '16px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  background:
+                    evalData.bestChannel === 'whatsapp'
+                      ? 'rgba(37, 211, 102, 0.2)'
+                      : evalData.bestChannel === 'email'
+                      ? 'rgba(56, 189, 248, 0.2)'
+                      : 'rgba(239, 68, 68, 0.2)',
+                  color:
+                    evalData.bestChannel === 'whatsapp'
+                      ? '#25d366'
+                      : evalData.bestChannel === 'email'
+                      ? '#38bdf8'
+                      : '#ef4444',
+                  border: `1px solid ${
+                    evalData.bestChannel === 'whatsapp'
+                      ? '#25d366'
+                      : evalData.bestChannel === 'email'
+                      ? '#38bdf8'
+                      : '#ef4444'
+                  }`,
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>
-                    Lead Pipeline Stage
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: '8px',
-                      background: getStatusBadgeStyle(selectedBusiness.status).bg,
-                      color: getStatusBadgeStyle(selectedBusiness.status).color,
-                      border: `1px solid ${getStatusBadgeStyle(selectedBusiness.status).border}`,
-                    }}
-                  >
-                    {getStatusBadgeStyle(selectedBusiness.status).longLabel}
-                  </span>
-                </div>
-
-                {/* Quick 1-Click Status Changers */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '12px' }}>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CONTACTED')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'CONTACTED'}
-                    style={{
-                      background: selectedBusiness.status === 'CONTACTED' ? 'rgba(56, 189, 248, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'CONTACTED' ? '1px solid #38bdf8' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'CONTACTED' ? '#38bdf8' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    ✉️ Contacted
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'IN_DISCUSSION')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'IN_DISCUSSION'}
-                    style={{
-                      background: selectedBusiness.status === 'IN_DISCUSSION' ? 'rgba(245, 158, 11, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'IN_DISCUSSION' ? '1px solid #f59e0b' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'IN_DISCUSSION' ? '#f59e0b' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    💬 Talking
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_WON')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_WON'}
-                    style={{
-                      background: selectedBusiness.status === 'CLOSED_WON' ? 'rgba(16, 185, 129, 0.25)' : '#0e0e16',
-                      border: selectedBusiness.status === 'CLOSED_WON' ? '1px solid #10b981' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'CLOSED_WON' ? '#10b981' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    🎉 Won!
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'CLOSED_LOST')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'CLOSED_LOST'}
-                    style={{
-                      background: selectedBusiness.status === 'CLOSED_LOST' ? 'rgba(239, 68, 68, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'CLOSED_LOST' ? '1px solid #ef4444' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'CLOSED_LOST' ? '#ef4444' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    ❌ Lost
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISQUALIFIED')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISQUALIFIED'}
-                    style={{
-                      background: selectedBusiness.status === 'DISQUALIFIED' ? 'rgba(107, 114, 128, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'DISQUALIFIED' ? '1px solid #9ca3af' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'DISQUALIFIED' ? '#9ca3af' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    🚫 Disqualify
-                  </button>
-                  <button
-                    onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, 'DISCOVERED')}
-                    disabled={isUpdatingStatus || selectedBusiness.status === 'DISCOVERED'}
-                    style={{
-                      background: selectedBusiness.status === 'DISCOVERED' ? 'rgba(148, 163, 184, 0.2)' : '#0e0e16',
-                      border: selectedBusiness.status === 'DISCOVERED' ? '1px solid #cbd5e1' : '1px solid #2d2d42',
-                      color: selectedBusiness.status === 'DISCOVERED' ? '#cbd5e1' : '#e5e7eb',
-                      padding: '6px 4px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                    }}
-                  >
-                    📍 Fresh
-                  </button>
-                </div>
-
-                {/* CRM Notes & Follow-up log */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <label style={{ fontSize: '11px', color: '#9ca3af' }}>Deal Notes & Meeting Recap:</label>
-                    {isUpdatingStatus && <span style={{ fontSize: '10px', color: '#ff3366' }}>Saving...</span>}
-                  </div>
-                  <textarea
-                    value={crmNotesInput}
-                    onChange={(e) => setCrmNotesInput(e.target.value)}
-                    placeholder="e.g. Spoke with manager on call. Interested in redesign, quoted $2,500. Follow-up meeting Friday."
-                    rows={2}
-                    style={{
-                      width: '100%',
-                      background: '#0a0a10',
-                      border: '1px solid #2d2d42',
-                      borderRadius: '6px',
-                      color: '#ffffff',
-                      padding: '8px',
-                      fontSize: '12px',
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-                    <button
-                      onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, selectedBusiness.status, crmNotesInput)}
-                      disabled={isUpdatingStatus}
-                      style={{
-                        background: '#2d2d42',
-                        border: 'none',
-                        color: '#ffffff',
-                        padding: '5px 12px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Save Note
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-                <button
-                  disabled={isAuditing || !selectedBusiness.website_url}
-                  onClick={() => handleRunAudit(selectedBusiness.id)}
-                  style={{
-                    flex: 1,
-                    background: '#161622',
-                    border: '1px solid #2d2d42',
-                    color: '#ffffff',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: isAuditing ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  {isAuditing && <Loader2 size={13} className="hpa-spin" />}
-                  <span>{isAuditing ? 'Auditing & Crawling Pages...' : 'Deep Audit & Crawl Pages'}</span>
-                </button>
-                <button
-                  disabled={isGeneratingAi}
-                  onClick={() => handleGenerateAi(selectedBusiness.id)}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                    border: 'none',
-                    color: '#ffffff',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: isGeneratingAi ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  {isGeneratingAi ? <Loader2 size={14} className="hpa-spin" /> : <Sparkles size={14} />}
-                  <span>{isGeneratingAi ? 'Analyzing...' : 'Generate AI Draft'}</span>
-                </button>
-              </div>
-
-              {isLoadingDetail ? (
-                <p style={{ color: '#9ca3af', fontSize: '13px' }}>Loading intelligence data...</p>
-              ) : businessDetail ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
-                  {/* Direct Outreach Channels (Phone & WhatsApp) */}
-                  {(() => {
-                    const phone = (businessDetail.business?.metadata as any)?.phone || (selectedBusiness.metadata as any)?.phone;
-                    const phones = (businessDetail.business?.metadata as any)?.phones || (selectedBusiness.metadata as any)?.phones || [];
-                    const whatsappUrl = (businessDetail.business?.metadata as any)?.whatsapp_url || getWhatsAppUrl(phone, selectedBusiness.name);
-                    const isWa = isWhatsAppEligible(phone, (businessDetail.business?.metadata as any)?.whatsapp_url);
-                    const crawledPages = (businessDetail.business?.metadata as any)?.crawled_pages || (selectedBusiness.metadata as any)?.crawled_pages || [];
-
-                    return (
-                      <div style={{ background: '#161622', border: '1px solid #2d2d42', borderRadius: '8px', padding: '14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {isWa ? <WhatsAppIcon size={15} /> : <Phone size={14} />} Direct Outreach {isWa ? '(WhatsApp & Phone)' : '(Phone / Landline)'}
-                          </span>
-                          {crawledPages.length > 0 && (
-                            <span style={{ fontSize: '11px', color: '#9ca3af' }}>
-                              Crawled {crawledPages.length} {crawledPages.length === 1 ? 'page' : 'pages'}
-                            </span>
-                          )}
-                        </div>
-
-                        {phone ? (
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>Phone: </span>
-                                <a href={`tel:${phone}`} style={{ color: '#ffffff', fontWeight: 600, textDecoration: 'none' }}>
-                                  {phone}
-                                </a>
-                              </div>
-                              {isWa && whatsappUrl ? (
-                                <a
-                                  href={whatsappUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  title="Open WhatsApp chat with pre-filled pitch"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: '#25d366',
-                                    color: '#ffffff',
-                                    padding: '6px 12px',
-                                    borderRadius: '6px',
-                                    textDecoration: 'none',
-                                    fontWeight: 700,
-                                    fontSize: '12px',
-                                  }}
-                                >
-                                  <WhatsAppIcon size={14} /> Chat &amp; Pitch
-                                </a>
-                              ) : (
-                                <a
-                                  href={`tel:${phone}`}
-                                  title={`Call ${phone}`}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: 'rgba(56, 189, 248, 0.15)',
-                                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                                    color: '#38bdf8',
-                                    padding: '6px 12px',
-                                    borderRadius: '6px',
-                                    textDecoration: 'none',
-                                    fontWeight: 700,
-                                    fontSize: '12px',
-                                  }}
-                                >
-                                  <Phone size={13} /> Call Direct
-                                </a>
-                              )}
-                            </div>
-                            {phones.length > 1 && (
-                              <div style={{ fontSize: '11px', color: '#9ca3af' }}>
-                                Additional numbers: {phones.filter((p: string) => p !== phone).join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div>
-                            <p style={{ color: '#9ca3af', margin: '0 0 8px 0', fontSize: '12px' }}>
-                              No phone found yet. Click &quot;Deep Audit &amp; Crawl Pages&quot; to crawl subpages (/contact, /about) and auto-extract phone numbers and WhatsApp links.
-                            </p>
-                          </div>
-                        )}
-
-                        {crawledPages.length > 0 && (
-                          <div style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
-                            Crawled routes: {crawledPages.join(', ')}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Verified Contacts */}
-                  <div>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 700, color: '#ff3366' }}>
-                      Contacts ({businessDetail.contacts?.length || 0})
-                    </h4>
-                    {businessDetail.contacts?.length > 0 ? (
-                      businessDetail.contacts.map((c: any) => (
-                        <div key={c.id} style={{ background: '#07070d', border: '1px solid #1c1c2b', padding: '8px 12px', borderRadius: '6px', marginBottom: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.email}</div>
-                            <span style={{ fontSize: '11px', color: c.verification_status === 'VALID' ? '#00f5a0' : '#f59e0b' }}>
-                              Status: {c.verification_status}
-                            </span>
-                          </div>
-                          {c.phone && (() => {
-                            const isWa = isWhatsAppEligible(c.phone);
-                            const waUrl = getWhatsAppUrl(c.phone, selectedBusiness.name);
-                            return (
-                              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
-                                <a href={`tel:${c.phone}`} style={{ color: '#9ca3af', textDecoration: 'none' }}>
-                                  {c.phone}
-                                </a>
-                                {isWa && waUrl ? (
-                                  <a
-                                    href={waUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    title="Open WhatsApp chat"
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      width: '20px',
-                                      height: '20px',
-                                      background: 'rgba(37, 211, 102, 0.15)',
-                                      border: '1px solid rgba(37, 211, 102, 0.4)',
-                                      color: '#25d366',
-                                      borderRadius: '50%',
-                                      textDecoration: 'none',
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <WhatsAppIcon size={11} />
-                                  </a>
-                                ) : (
-                                  <a
-                                    href={`tel:${c.phone}`}
-                                    title={`Call ${c.phone}`}
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      width: '20px',
-                                      height: '20px',
-                                      background: 'rgba(56, 189, 248, 0.12)',
-                                      border: '1px solid rgba(56, 189, 248, 0.35)',
-                                      color: '#38bdf8',
-                                      borderRadius: '50%',
-                                      textDecoration: 'none',
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <Phone size={10} />
-                                  </a>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      ))
-                    ) : (
-                      <p style={{ color: '#6b7280', margin: '0 0 8px 0', fontSize: '12px' }}>
-                        No email discovered yet. Audit the website or enter a public contact email below:
-                      </p>
-                    )}
-
-                    {/* Inline Add Contact */}
-                    <form onSubmit={handleAddContact} style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                      <input
-                        type="email"
-                        placeholder="e.g. info@business.com"
-                        value={newContactEmail}
-                        onChange={(e) => setNewContactEmail(e.target.value)}
-                        required
-                        style={{
-                          flex: 1,
-                          background: '#07070d',
-                          border: '1px solid #2d2d42',
-                          color: '#ffffff',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        disabled={isAddingContact}
-                        style={{
-                          background: '#161622',
-                          border: '1px solid #2d2d42',
-                          color: '#ffffff',
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          cursor: isAddingContact ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {isAddingContact ? 'Verifying...' : 'Save & Verify'}
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* AI Recommendation & Personalized Draft */}
-                  {businessDetail.aiAnalysis && (
-                    <div style={{ background: '#07070d', border: '1px solid #1c1c2b', borderRadius: '8px', padding: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#8b5cf6', fontWeight: 700, marginBottom: '6px' }}>
-                        <Sparkles size={14} /> Recommended Service:
-                      </div>
-                      <div style={{ fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>
-                        {businessDetail.aiAnalysis.recommended_service}
-                      </div>
-                      <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '12px' }}>
-                        <strong>Evidence:</strong> {businessDetail.aiAnalysis.evidence}
-                      </div>
-
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
-                        Draft Subject:
-                      </div>
-                      <div style={{ background: '#0e0e16', padding: '6px 10px', borderRadius: '4px', color: '#38bdf8', marginBottom: '8px' }}>
-                        {businessDetail.aiAnalysis.suggested_subject}
-                      </div>
-
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
-                        Personalized Draft:
-                      </div>
-                      <pre style={{ background: '#0e0e16', padding: '10px', borderRadius: '4px', color: '#d1d5db', fontSize: '11px', whiteSpace: 'pre-wrap', maxHeight: '160px', overflowY: 'auto' }}>
-                        {businessDetail.aiAnalysis.personalized_draft}
-                      </pre>
-
-                      {/* Approve & Enqueue Action Button */}
-                      <div style={{ marginTop: '14px' }}>
-                        <button
-                          disabled={isQueueingEmail || !businessDetail.contacts || businessDetail.contacts.length === 0}
-                          onClick={handleEnqueueDraft}
-                          style={{
-                            width: '100%',
-                            background: businessDetail.contacts && businessDetail.contacts.length > 0 ? '#ff3366' : '#2d2d42',
-                            color: '#ffffff',
-                            border: 'none',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            cursor: businessDetail.contacts && businessDetail.contacts.length > 0 ? 'pointer' : 'not-allowed',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                          }}
-                        >
-                          <Send size={15} />
-                          {isQueueingEmail ? 'Enqueuing...' : 'Approve & Enqueue for Dispatch'}
-                        </button>
-                        {(!businessDetail.contacts || businessDetail.contacts.length === 0) && (
-                          <p style={{ color: '#f59e0b', fontSize: '11px', marginTop: '6px', textAlign: 'center' }}>
-                            Add a contact email above to enable enqueuing.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : null}
+                {evalData.bestChannel.toUpperCase()}
+              </span>
             </div>
+          </div>
+        </div>
+
+        {/* Lead Pipeline & Deal Stage */}
+        <div style={{ background: '#161622', border: '1px solid #2d2d42', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>
+              Lead Pipeline Stage
+            </span>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: '8px',
+                background: getStatusBadgeStyle(selectedBusiness.status).bg,
+                color: getStatusBadgeStyle(selectedBusiness.status).color,
+                border: `1px solid ${getStatusBadgeStyle(selectedBusiness.status).border}`,
+              }}
+            >
+              {getStatusBadgeStyle(selectedBusiness.status).longLabel}
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '12px' }}>
+            {['CONTACTED', 'IN_DISCUSSION', 'CLOSED_WON', 'CLOSED_LOST', 'DISQUALIFIED', 'DISCOVERED'].map((st) => (
+              <button
+                key={st}
+                onClick={() => handleUpdateBusinessStatus(selectedBusiness.id, st as BusinessStatus)}
+                disabled={isUpdatingStatus || selectedBusiness.status === st}
+                style={{
+                  background: selectedBusiness.status === st ? 'rgba(255, 51, 102, 0.2)' : '#0e0e16',
+                  border: selectedBusiness.status === st ? '1px solid #ff3366' : '1px solid #2d2d42',
+                  color: selectedBusiness.status === st ? '#ff3366' : '#e5e7eb',
+                  padding: '6px 4px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                {getStatusBadgeStyle(st).label}
+              </button>
+            ))}
+          </div>
+
+          <div>
+            <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+              Deal Notes & Follow-up Recap:
+            </label>
+            <textarea
+              value={crmNotesInput}
+              onChange={(e) => setCrmNotesInput(e.target.value)}
+              placeholder="e.g. Spoke with founder. Needs WooCommerce speed tuning. Proposal sent."
+              rows={2}
+              style={{
+                width: '100%',
+                background: '#0a0a10',
+                border: '1px solid #2d2d42',
+                borderRadius: '6px',
+                color: '#ffffff',
+                padding: '8px',
+                fontSize: '12px',
+                resize: 'vertical',
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <button
+                onClick={() =>
+                  handleUpdateBusinessStatus(selectedBusiness.id, selectedBusiness.status, crmNotesInput)
+                }
+                disabled={isUpdatingStatus}
+                style={{
+                  background: '#2d2d42',
+                  border: 'none',
+                  color: '#ffffff',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Investigation & Audit */}
+        <div style={{ background: '#12121a', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700 }}>
+              Technical Website Audit
+            </span>
+            <button
+              onClick={() => handleRunAudit(selectedBusiness.id)}
+              disabled={isAuditing}
+              style={{
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid #38bdf8',
+                color: '#38bdf8',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: isAuditing ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <Search size={11} className={isAuditing ? 'hpa-spin' : ''} />
+              <span>{isAuditing ? 'Crawling...' : 'Run Audit'}</span>
+            </button>
+          </div>
+
+          <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>
+            Audits tech stack (WordPress, Shopify, Next.js), TTFB speed latency, and extracts public contact points.
+          </p>
+        </div>
+
+        {/* AI Proposal & Outreach Review */}
+        <div style={{ background: '#12121a', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#ff3366', fontWeight: 700 }}>
+              AI Proposal & Outreach
+            </span>
+            {!existingDraft && (
+              <button
+                onClick={() => handleGenerateAi(selectedBusiness.id)}
+                disabled={isGeneratingAi}
+                style={{
+                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                  border: 'none',
+                  color: '#ffffff',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: isGeneratingAi ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Sparkles size={11} className={isGeneratingAi ? 'hpa-spin' : ''} />
+                <span>{isGeneratingAi ? 'Generating...' : 'Draft Pitch'}</span>
+              </button>
+            )}
+          </div>
+
+          {existingDraft ? (
+            <div>
+              <div style={{ background: '#0a0a10', border: '1px solid #2d2d42', borderRadius: '8px', padding: '10px', marginBottom: '10px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>
+                  {existingDraft.title}
+                </div>
+                <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>
+                  {existingDraft.excerpt}
+                </div>
+                <div style={{ fontSize: '11px', color: '#d1d5db', whiteSpace: 'pre-wrap', maxHeight: '120px', overflowY: 'auto', background: '#050508', padding: '8px', borderRadius: '4px' }}>
+                  {existingDraft.content}
+                </div>
+              </div>
+
+              {/* Direct Authorization Action linking to AI Approvals */}
+              <Link
+                href="/admin/approvals"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                  color: '#ffffff',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <span>Authorize & Send in AI Approvals Hub</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
+              No proposal generated yet. Click &quot;Draft Pitch&quot; above to create a tailored strategy pitch and route it to AI Approvals.
+            </p>
+          )}
+        </div>
+      </div>
     );
   };
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Unified Lead Ecosystem Header Banner */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid #1c1c2b',
-          borderRadius: '12px',
-          padding: '8px 14px',
-          marginBottom: '20px',
-          gap: '12px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Lead Ecosystem:
-          </span>
-          <Link
-            href="/admin/leads"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              background: '#12121c',
-              border: '1px solid #232338',
-              color: '#9ca3af',
-              fontSize: '12px',
-              fontWeight: 500,
-              textDecoration: 'none',
-              transition: 'all 0.15s',
-            }}
-          >
-            <Inbox size={13} />
-            <span>📥 Inbound Inquiries (Website)</span>
-          </Link>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(255, 51, 102, 0.18), rgba(225, 29, 72, 0.08))',
-              border: '1px solid rgba(255, 51, 102, 0.4)',
-              color: '#ffffff',
-              fontSize: '12px',
-              fontWeight: 700,
-            }}
-          >
-            <Sparkles size={13} color="#ff3366" />
-            <span>🚀 Outbound & AI Lead Scout (Active)</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={handleDeduplicate}
-            disabled={isDeduplicating}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              background: '#161626',
-              border: '1px solid #2d2d48',
-              color: '#d1d5db',
-              fontSize: '12px',
-              fontWeight: 500,
-              cursor: isDeduplicating ? 'not-allowed' : 'pointer',
-            }}
-            title="Scan database and remove duplicate business records"
-          >
-            <RefreshCw size={12} className={isDeduplicating ? 'hpa-spin' : ''} />
-            <span>{isDeduplicating ? 'Purging...' : 'Purge Duplicates'}</span>
-          </button>
-        </div>
-      </div>
-
+    <div style={{ padding: '24px 32px', color: '#ffffff', maxWidth: '1440px', margin: '0 auto', minWidth: 0, boxSizing: 'border-box' }}>
       {/* Top Banner: Emergency Kill Switch & Safety Bar */}
       <div
         style={{
@@ -1673,57 +1150,40 @@ export default function OutreachClient({
       </div>
 
       {/* Main Page Title */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
             Lead Intelligence & Outreach Command Center
           </h1>
           <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#9ca3af' }}>
-            Multi-country business discovery, SSRF-safe website auditing, contact verification, and compliant outreach engine.
+            Automated daily Lead Scout, multi-country business discovery, SSRF-safe website auditing, and AI Approvals.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => setActiveTab('discovery')}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Link
+            href="/admin/approvals"
             style={{
-              background: 'linear-gradient(135deg, #ff3366, #e11d48)',
-              color: '#ffffff',
-              border: 'none',
+              background: 'rgba(255, 51, 102, 0.12)',
+              border: '1px solid rgba(255, 51, 102, 0.4)',
+              color: '#ff3366',
               borderRadius: '8px',
-              padding: '10px 18px',
+              padding: '10px 16px',
               fontWeight: 600,
               fontSize: '13px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
+              gap: '6px',
+              textDecoration: 'none',
             }}
           >
-            <Plus size={16} /> New Discovery Scan
-          </button>
+            <Sparkles size={15} />
+            <span>AI Approvals Hub</span>
+          </Link>
         </div>
       </div>
 
-      {/* Styles for scrollbar suppression and responsive layouts */}
-      <style>{`
-        .hpa-outreach-tabs-bar::-webkit-scrollbar {
-          display: none !important;
-          height: 0px !important;
-        }
-        .hpa-outreach-tabs-bar {
-          -ms-overflow-style: none !important;
-          scrollbar-width: none !important;
-        }
-        @media (max-width: 1200px) {
-          .hpa-leads-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
-
-      {/* Navigation Sub-Tabs */}
+      {/* Navigation Sub-Tabs: 4 Clear Workspaces */}
       <div
-        className="hpa-outreach-tabs-bar"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -1733,41 +1193,16 @@ export default function OutreachClient({
           marginBottom: '24px',
           overflowX: 'auto',
           whiteSpace: 'nowrap',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
         }}
       >
         {[
-          { key: 'discover', label: '1. Discover Leads', icon: Globe },
-          {
-            key: 'research',
-            label: `2. Research Queue (${jobs.filter((j) => j.status === 'RUNNING' || j.status === 'PENDING').length + businesses.filter((b) => b.status === 'DISCOVERED').length})`,
-            icon: Clock,
-          },
-          {
-            key: 'qualified',
-            label: `3. Qualified Leads (${qualifiedCount} / ${businesses.length})`,
-            icon: Target,
-          },
-          {
-            key: 'proposals',
-            label: `4. Proposals & Outreach (${scoutDrafts.length})`,
-            icon: Sparkles,
-          },
-          {
-            key: 'pending_approval',
-            label: `5. Pending Approval (${scoutDrafts.filter((d) => d.status === 'pending' || !d.status).length})`,
-            icon: CheckCircle2,
-          },
-          {
-            key: 'sent',
-            label: `6. Sent & Follow-ups (${analytics.sentEmails + queuedEmailCount})`,
-            icon: Send,
-          },
-          { key: 'analytics', label: '7. History & Analytics', icon: Layers },
+          { key: 'discover', label: `1. Discover Leads (${businesses.length})`, icon: Globe },
+          { key: 'qualified', label: `2. Qualified Leads (${qualifiedBusinesses.length})`, icon: Target },
+          { key: 'sent', label: `3. Sent & Follow-ups (${analytics.sentEmails + queuedEmailCount})`, icon: Send },
+          { key: 'analytics', label: '4. History & Analytics', icon: Layers },
         ].map((tab) => {
           const Icon = tab.icon;
-          const isActive = currentView === tab.key;
+          const isActive = activeTab === tab.key;
           return (
             <button
               key={tab.key}
@@ -1786,7 +1221,6 @@ export default function OutreachClient({
                 cursor: 'pointer',
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease',
               }}
             >
               <Icon size={15} color={isActive ? '#ff3366' : '#9ca3af'} />
@@ -1796,18 +1230,1039 @@ export default function OutreachClient({
         })}
       </div>
 
-      {/* VIEW 7: HISTORY & ANALYTICS */}
-      {(currentView === 'analytics' || activeTab === 'telemetry') && (
-        <div>
-          {/* Key Metric Tiles */}
+      {/* ========================================================================= */}
+      {/* 1. DISCOVER LEADS (Central Workspace: Manual + Automated Discovery)       */}
+      {/* ========================================================================= */}
+      {activeTab === 'discover' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Automated Daily Lead Scout Status Card */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 51, 102, 0.08), rgba(14, 14, 22, 0.95))',
+              border: '1px solid rgba(255, 51, 102, 0.3)',
+              borderRadius: '12px',
+              padding: '20px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    background: 'rgba(255, 51, 102, 0.2)',
+                    padding: '6px',
+                    borderRadius: '8px',
+                    color: '#ff3366',
+                    display: 'flex',
+                  }}
+                >
+                  <Sparkles size={18} />
+                </span>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#ffffff' }}>
+                  Automated Daily Lead Scout: Active & Scheduled
+                </h3>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '10px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: '#10b981',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                  }}
+                >
+                  Daily 05:00 UTC
+                </span>
+              </div>
+              <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#9ca3af', maxWidth: '780px' }}>
+                Today&apos;s rotation target: <strong style={{ color: '#ffffff' }}>{todayTarget.city}, {todayTarget.country}</strong> ({todayTarget.category}).
+                Automatically discovers public businesses, verifies contact points, and prepares tailored proposals for AI Approval without duplicates.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleRunAutomatedScout}
+                disabled={isRunningScout}
+                style={{
+                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 18px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: isRunningScout ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 12px rgba(255, 51, 102, 0.25)',
+                }}
+              >
+                {isRunningScout ? <Loader2 size={16} className="hpa-spin" /> : <Sparkles size={16} />}
+                <span>{isRunningScout ? 'Scouting Leads...' : '⚡ Run Automated Daily Scout Now'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowManualScanForm(!showManualScanForm)}
+                style={{
+                  background: '#161622',
+                  border: '1px solid #2d2d42',
+                  color: '#ffffff',
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Plus size={15} />
+                <span>{showManualScanForm ? 'Hide Manual Scan Form' : 'New Manual Scan'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Manual Discovery Scan Form (Collapsible) */}
+          {showManualScanForm && (
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
+                Launch Custom Manual Discovery Scan
+              </h4>
+              <form onSubmit={handleRunDiscovery} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    Country
+                  </label>
+                  <select
+                    value={discoverCountry}
+                    onChange={(e) => setDiscoverCountry(e.target.value)}
+                    style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '8px', borderRadius: '6px', fontSize: '12px' }}
+                  >
+                    <option value="US">United States (US)</option>
+                    <option value="GB">United Kingdom (GB)</option>
+                    <option value="IN">India (IN)</option>
+                    <option value="CA">Canada (CA)</option>
+                    <option value="AU">Australia (AU)</option>
+                    <option value="AE">United Arab Emirates (AE)</option>
+                    <option value="DE">Germany (DE)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={discoverCity}
+                    onChange={(e) => setDiscoverCity(e.target.value)}
+                    required
+                    style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '8px', borderRadius: '6px', fontSize: '12px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    Category
+                  </label>
+                  <select
+                    value={discoverCategory}
+                    onChange={(e) => setDiscoverCategory(e.target.value)}
+                    style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '8px', borderRadius: '6px', fontSize: '12px' }}
+                  >
+                    <option value="WordPress & Web Development">WordPress & Web Development</option>
+                    <option value="E-commerce & Retail Storefront">E-commerce & Retail Storefront</option>
+                    <option value="Healthcare & Dental Clinics">Healthcare & Dental Clinics</option>
+                    <option value="Tech & Marketing Agencies">Tech & Marketing Agencies</option>
+                    <option value="Restaurants & Hospitality">Restaurants & Hospitality</option>
+                    <option value="Law & Professional Services">Law & Professional Services</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
+                    Provider
+                  </label>
+                  <select
+                    value={discoverProvider}
+                    onChange={(e) => setDiscoverProvider(e.target.value as any)}
+                    style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '8px', borderRadius: '6px', fontSize: '12px' }}
+                  >
+                    <option value="openstreetmap">OpenStreetMap Nominatim (Live Real Data)</option>
+                    <option value="mock">Test Mock Provider</option>
+                  </select>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowManualScanForm(false)}
+                    style={{ background: '#161622', border: '1px solid #2d2d42', color: '#9ca3af', padding: '8px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isDiscovering}
+                    style={{ background: '#ff3366', color: '#ffffff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: isDiscovering ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {isDiscovering ? <Loader2 size={13} className="hpa-spin" /> : <Globe size={13} />}
+                    <span>{isDiscovering ? 'Scanning...' : 'Launch Manual Scan'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Combined Discovered Leads Directory */}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '16px',
-              marginBottom: '28px',
+              gridTemplateColumns: selectedBusiness ? 'minmax(0, 1fr) 420px' : 'minmax(0, 1fr)',
+              gap: '20px',
+              minWidth: 0,
+              width: '100%',
+              alignItems: 'start',
             }}
           >
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px', minWidth: 0 }}>
+              {/* Header & Sub-filters */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                    All Discovered Businesses ({displayedDiscoverBusinesses.length} of {businesses.length})
+                  </h2>
+                  <p style={{ color: '#9ca3af', fontSize: '12px', margin: '4px 0 0 0' }}>
+                    Shared pipeline of automated Lead Scout discoveries and manual scans with unified deduplication.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* Search Input */}
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      placeholder="Search name, city, domain..."
+                      value={discoverSearch}
+                      onChange={(e) => setDiscoverSearch(e.target.value)}
+                      style={{
+                        background: '#07070d',
+                        border: '1px solid #2d2d42',
+                        borderRadius: '6px',
+                        color: '#ffffff',
+                        padding: '6px 10px 6px 28px',
+                        fontSize: '12px',
+                        width: '200px',
+                      }}
+                    />
+                    <Search size={13} style={{ position: 'absolute', left: '9px', top: '9px', color: '#6b7280' }} />
+                  </div>
+
+                  {/* Source Filters */}
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {[
+                      { id: 'all', label: 'All Sources' },
+                      { id: 'automated', label: 'Automated 🤖' },
+                      { id: 'manual', label: 'Manual 🔍' },
+                    ].map((pill) => (
+                      <button
+                        key={pill.id}
+                        onClick={() => setDiscoverSourceFilter(pill.id as any)}
+                        style={{
+                          background: discoverSourceFilter === pill.id ? 'rgba(255, 51, 102, 0.15)' : '#161622',
+                          border: discoverSourceFilter === pill.id ? '1px solid #ff3366' : '1px solid #2d2d42',
+                          color: discoverSourceFilter === pill.id ? '#ff3366' : '#d1d5db',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Qualification Filter */}
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {[
+                      { id: 'all', label: 'All Leads' },
+                      { id: 'qualified', label: 'Qualified 🎯' },
+                      { id: 'unqualified', label: 'No Contact 🚫' },
+                    ].map((pill) => (
+                      <button
+                        key={pill.id}
+                        onClick={() => setDiscoverQualFilter(pill.id as any)}
+                        style={{
+                          background: discoverQualFilter === pill.id ? 'rgba(0, 245, 160, 0.15)' : '#161622',
+                          border: discoverQualFilter === pill.id ? '1px solid #00f5a0' : '1px solid #2d2d42',
+                          color: discoverQualFilter === pill.id ? '#00f5a0' : '#d1d5db',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleDeduplicate}
+                    disabled={isDeduplicating}
+                    style={{
+                      background: '#161626',
+                      border: '1px solid #2d2d48',
+                      color: '#cbd5e1',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: isDeduplicating ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                    title="Purge duplicate business records"
+                  >
+                    <RefreshCw size={11} className={isDeduplicating ? 'hpa-spin' : ''} />
+                    <span>{isDeduplicating ? 'Purging...' : 'Purge Duplicates'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Bulk Action Bar */}
+              {selectedBusinessIds.length > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 16px',
+                    background: 'rgba(255, 51, 102, 0.08)',
+                    border: '1px solid rgba(255, 51, 102, 0.25)',
+                    borderRadius: '10px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <div style={{ fontSize: '13px', color: '#ffffff' }}>
+                    <strong>{selectedBusinessIds.length}</strong> {selectedBusinessIds.length === 1 ? 'business' : 'businesses'} selected
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBusinessIds([])}
+                      style={{ background: '#161622', border: '1px solid #2d2d42', color: '#cbd5e1', padding: '5px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
+                    >
+                      Deselect All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkDeleteBizOpen(true)}
+                      style={{ background: '#ef4444', border: 'none', color: '#ffffff', padding: '5px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete Selected</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Table */}
+              {displayedDiscoverBusinesses.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280', fontSize: '13px' }}>
+                  No businesses found matching current filters. Run a discovery scan or change filters.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', width: '100%' }}>
+                  <table style={{ width: '100%', minWidth: '820px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
+                        <th style={{ width: '36px', padding: '10px' }}>
+                          <input
+                            type="checkbox"
+                            checked={allBizSelected}
+                            ref={(el) => {
+                              if (el) el.indeterminate = someBizSelected;
+                            }}
+                            onChange={handleSelectAllBiz}
+                            style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                          />
+                        </th>
+                        <th style={{ padding: '10px' }}>Business</th>
+                        <th style={{ padding: '10px' }}>Contacts Discovered</th>
+                        <th style={{ padding: '10px' }}>Qualification</th>
+                        <th style={{ padding: '10px' }}>Best Channel</th>
+                        <th style={{ padding: '10px' }}>Tech Audit</th>
+                        <th style={{ padding: '10px' }}>Proposal</th>
+                        <th style={{ padding: '10px' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayedDiscoverBusinesses.map((b) => {
+                        const evalInfo = getLeadEval(b);
+                        const isSelected = selectedBusinessIds.includes(b.id);
+                        const isAuto =
+                          (b.metadata as any)?.discovery_source === 'automated' ||
+                          (b.metadata as any)?.discovery_source === 'automated_daily_scout';
+                        const existingDraft = scoutDrafts.find(
+                          (d) =>
+                            d.metadata?.businessId === b.id ||
+                            (b.domain && d.metadata?.domain === b.domain)
+                        );
+
+                        return (
+                          <tr
+                            key={b.id}
+                            style={{
+                              borderBottom: '1px solid #161622',
+                              background:
+                                selectedBusiness?.id === b.id
+                                  ? 'rgba(255, 51, 102, 0.08)'
+                                  : isSelected
+                                  ? 'rgba(255, 51, 102, 0.04)'
+                                  : 'transparent',
+                            }}
+                          >
+                            <td style={{ width: '36px', padding: '12px 10px' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleSelectBiz(b.id)}
+                                style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                              />
+                            </td>
+
+                            <td style={{ padding: '12px 10px' }}>
+                              <div style={{ fontWeight: 600, color: '#ffffff' }}>{b.name}</div>
+                              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{b.city || b.country_code}</span>
+                                <span>•</span>
+                                <span
+                                  style={{
+                                    fontSize: '10px',
+                                    padding: '1px 5px',
+                                    borderRadius: '4px',
+                                    background: isAuto ? 'rgba(168, 85, 247, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                                    color: isAuto ? '#c084fc' : '#38bdf8',
+                                  }}
+                                >
+                                  {isAuto ? 'Automated Scout 🤖' : 'Manual Scan 🔍'}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td style={{ padding: '12px 10px' }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', fontSize: '11px' }}>
+                                {evalInfo.hasWebsite && (
+                                  <a
+                                    href={b.website_url || `https://${b.domain}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      background: 'rgba(56, 189, 248, 0.15)',
+                                      color: '#38bdf8',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}
+                                  >
+                                    <span>Web</span>
+                                    <ExternalLink size={9} />
+                                  </a>
+                                )}
+                                {evalInfo.hasEmail && (
+                                  <span
+                                    style={{
+                                      background: evalInfo.emailStatus === 'verified' ? 'rgba(0, 245, 160, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                                      color: evalInfo.emailStatus === 'verified' ? '#00f5a0' : '#fbbf24',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                    }}
+                                    title={evalInfo.emailStatus === 'verified' ? 'Verified MX Email' : 'Public Discovered Email'}
+                                  >
+                                    Email ✉️
+                                  </span>
+                                )}
+                                {evalInfo.hasPhone && (
+                                  <a
+                                    href={`tel:${evalInfo.phoneDigits}`}
+                                    style={{
+                                      background: 'rgba(156, 163, 175, 0.15)',
+                                      color: '#d1d5db',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      textDecoration: 'none',
+                                    }}
+                                  >
+                                    Phone 📞
+                                  </a>
+                                )}
+                                {evalInfo.isWhatsAppEligible && evalInfo.whatsappUrl && (
+                                  <a
+                                    href={evalInfo.whatsappUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      background: 'rgba(37, 211, 102, 0.15)',
+                                      color: '#25d366',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}
+                                  >
+                                    <WhatsAppIcon size={10} />
+                                    <span>WA</span>
+                                  </a>
+                                )}
+                                {!evalInfo.hasWebsite && !evalInfo.hasEmail && !evalInfo.hasPhone && (
+                                  <span style={{ color: '#ef4444', fontSize: '11px' }}>None</span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td style={{ padding: '12px 10px' }}>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  background: evalInfo.isQualified ? 'rgba(0, 245, 160, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                  color: evalInfo.isQualified ? '#00f5a0' : '#ef4444',
+                                  border: `1px solid ${evalInfo.isQualified ? '#00f5a0' : '#ef4444'}`,
+                                }}
+                              >
+                                {evalInfo.isQualified ? 'Qualified 🎯' : 'No Contact 🚫'}
+                              </span>
+                            </td>
+
+                            <td style={{ padding: '12px 10px' }}>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  background:
+                                    evalInfo.bestChannel === 'whatsapp'
+                                      ? 'rgba(37, 211, 102, 0.2)'
+                                      : evalInfo.bestChannel === 'email'
+                                      ? 'rgba(56, 189, 248, 0.2)'
+                                      : 'rgba(107, 114, 128, 0.2)',
+                                  color:
+                                    evalInfo.bestChannel === 'whatsapp'
+                                      ? '#25d366'
+                                      : evalInfo.bestChannel === 'email'
+                                      ? '#38bdf8'
+                                      : '#9ca3af',
+                                }}
+                              >
+                                {evalInfo.bestChannel.toUpperCase()}
+                              </span>
+                            </td>
+
+                            <td style={{ padding: '12px 10px' }}>
+                              <button
+                                onClick={() => handleRunAudit(b.id)}
+                                disabled={isAuditing}
+                                style={{
+                                  background: b.status === 'AUDITED' || b.status === 'ENRICHED' ? 'rgba(16, 185, 129, 0.15)' : '#161622',
+                                  border: b.status === 'AUDITED' || b.status === 'ENRICHED' ? '1px solid #10b981' : '1px solid #2d2d42',
+                                  color: b.status === 'AUDITED' || b.status === 'ENRICHED' ? '#10b981' : '#9ca3af',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: isAuditing ? 'not-allowed' : 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                }}
+                              >
+                                <Search size={11} />
+                                <span>{b.status === 'AUDITED' || b.status === 'ENRICHED' ? 'Audited 🔍' : 'Run Audit'}</span>
+                              </button>
+                            </td>
+
+                            <td style={{ padding: '12px 10px' }}>
+                              {existingDraft ? (
+                                <Link
+                                  href="/admin/approvals"
+                                  style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    color: '#ff3366',
+                                    textDecoration: 'none',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                  }}
+                                  title="View and authorize in central AI Approvals hub"
+                                >
+                                  <span>In Approvals</span>
+                                  <ArrowRight size={11} />
+                                </Link>
+                              ) : (
+                                <button
+                                  onClick={() => handleGenerateAi(b.id)}
+                                  disabled={isGeneratingAi}
+                                  style={{
+                                    background: 'rgba(255, 51, 102, 0.15)',
+                                    border: '1px solid rgba(255, 51, 102, 0.3)',
+                                    color: '#ff3366',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: isGeneratingAi ? 'not-allowed' : 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                >
+                                  <Sparkles size={11} />
+                                  <span>AI Pitch</span>
+                                </button>
+                              )}
+                            </td>
+
+                            <td style={{ padding: '12px 10px' }}>
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <button
+                                  onClick={() => handleOpenBusinessById(b.id)}
+                                  style={{
+                                    background: selectedBusiness?.id === b.id ? '#ff3366' : '#161622',
+                                    border: selectedBusiness?.id === b.id ? '1px solid #ff3366' : '1px solid #2d2d42',
+                                    color: '#ffffff',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  Inspect & CRM
+                                </button>
+                                <button
+                                  onClick={() => setDeletingBizId(b.id)}
+                                  style={{
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#ef4444',
+                                    padding: '5px 7px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                  }}
+                                  title="Delete lead"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Reusable CRM Drawer */}
+            {renderBusinessDetailDrawer()}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. QUALIFIED LEADS (CRM Pipeline & Deal Closing Workspace)               */}
+      {/* ========================================================================= */}
+      {activeTab === 'qualified' && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: selectedBusiness ? 'minmax(0, 1fr) 420px' : 'minmax(0, 1fr)',
+            gap: '20px',
+            minWidth: 0,
+            width: '100%',
+            alignItems: 'start',
+          }}
+        >
+          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px', minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                  Qualified Business Leads ({displayedQualifiedBusinesses.length} of {qualifiedBusinesses.length})
+                </h2>
+                <p style={{ color: '#9ca3af', fontSize: '12px', margin: '4px 0 0 0' }}>
+                  Every lead here has at least one usable contact method (website, verified email, or phone/WhatsApp).
+                </p>
+              </div>
+
+              {/* Deal Stage Pipeline Filter Pills */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'ALL', label: `All Qualified (${qualifiedBusinesses.length})` },
+                  { id: 'DISCOVERED', label: `Fresh (${qualifiedBusinesses.filter((b) => b.status === 'DISCOVERED').length})` },
+                  { id: 'ENRICHED', label: `Audited/Enriched (${qualifiedBusinesses.filter((b) => b.status === 'ENRICHED' || b.status === 'AUDITED').length})` },
+                  { id: 'CONTACTED', label: `Contacted (${qualifiedBusinesses.filter((b) => b.status === 'CONTACTED').length})` },
+                  { id: 'IN_DISCUSSION', label: `Talking (${qualifiedBusinesses.filter((b) => b.status === 'IN_DISCUSSION').length})` },
+                  { id: 'CLOSED_WON', label: `Won 🎉 (${qualifiedBusinesses.filter((b) => b.status === 'CLOSED_WON').length})` },
+                  { id: 'CLOSED_LOST', label: `Lost (${qualifiedBusinesses.filter((b) => b.status === 'CLOSED_LOST').length})` },
+                ].map((pill) => (
+                  <button
+                    key={pill.id}
+                    onClick={() => setPipelineFilter(pill.id)}
+                    style={{
+                      background: pipelineFilter === pill.id ? 'rgba(255, 51, 102, 0.15)' : '#161622',
+                      border: pipelineFilter === pill.id ? '1px solid #ff3366' : '1px solid #2d2d42',
+                      color: pipelineFilter === pill.id ? '#ff3366' : '#d1d5db',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Table */}
+            {displayedQualifiedBusinesses.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280', fontSize: '13px' }}>
+                No qualified leads found for the selected pipeline stage.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto', width: '100%' }}>
+                <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
+                      <th style={{ width: '36px', padding: '10px' }}>
+                        <input
+                          type="checkbox"
+                          checked={allBizSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = someBizSelected;
+                          }}
+                          onChange={handleSelectAllBiz}
+                          style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                        />
+                      </th>
+                      <th style={{ padding: '10px' }}>Business</th>
+                      <th style={{ padding: '10px' }}>Location</th>
+                      <th style={{ padding: '10px' }}>Category</th>
+                      <th style={{ padding: '10px' }}>Direct Contact</th>
+                      <th style={{ padding: '10px' }}>Stage</th>
+                      <th style={{ padding: '10px' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedQualifiedBusinesses.map((b) => {
+                      const evalInfo = getLeadEval(b);
+                      const badge = getStatusBadgeStyle(b.status);
+                      const isSelected = selectedBusinessIds.includes(b.id);
+
+                      return (
+                        <tr
+                          key={b.id}
+                          style={{
+                            borderBottom: '1px solid #161622',
+                            background:
+                              selectedBusiness?.id === b.id
+                                ? 'rgba(255, 51, 102, 0.08)'
+                                : isSelected
+                                ? 'rgba(255, 51, 102, 0.04)'
+                                : 'transparent',
+                          }}
+                        >
+                          <td style={{ width: '36px', padding: '12px 10px' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectBiz(b.id)}
+                              style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                            />
+                          </td>
+
+                          <td style={{ padding: '12px 10px' }}>
+                            <div style={{ fontWeight: 600, color: '#ffffff' }}>{b.name}</div>
+                            {b.website_url && (
+                              <a
+                                href={b.website_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ fontSize: '11px', color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}
+                              >
+                                <span>{b.domain || b.website_url}</span>
+                                <ExternalLink size={10} />
+                              </a>
+                            )}
+                          </td>
+
+                          <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.city || b.country_code}</td>
+                          <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.category}</td>
+
+                          <td style={{ padding: '12px 10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {evalInfo.hasPhone && (
+                                <a
+                                  href={`tel:${evalInfo.phoneDigits}`}
+                                  style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '11px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}
+                                >
+                                  {evalInfo.phoneDigits}
+                                </a>
+                              )}
+                              {evalInfo.isWhatsAppEligible && evalInfo.whatsappUrl && (
+                                <a
+                                  href={evalInfo.whatsappUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: 'rgba(37, 211, 102, 0.15)',
+                                    color: '#25d366',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    textDecoration: 'none',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <WhatsAppIcon size={11} />
+                                  <span>Chat</span>
+                                </a>
+                              )}
+                            </div>
+                          </td>
+
+                          <td style={{ padding: '12px 10px' }}>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                padding: '3px 8px',
+                                borderRadius: '8px',
+                                background: badge.bg,
+                                color: badge.color,
+                                border: `1px solid ${badge.border}`,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {badge.label}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: '12px 10px' }}>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              <button
+                                onClick={() => handleOpenBusinessById(b.id)}
+                                style={{
+                                  background: selectedBusiness?.id === b.id ? '#ff3366' : '#161622',
+                                  border: selectedBusiness?.id === b.id ? '1px solid #ff3366' : '1px solid #2d2d42',
+                                  color: '#ffffff',
+                                  padding: '5px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                CRM
+                              </button>
+                              {b.status !== 'CLOSED_WON' && (
+                                <button
+                                  onClick={() => handleUpdateBusinessStatus(b.id, 'CLOSED_WON')}
+                                  style={{
+                                    background: 'rgba(16, 185, 129, 0.15)',
+                                    border: '1px solid #10b981',
+                                    color: '#10b981',
+                                    padding: '5px 8px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  Won 🎉
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setDeletingBizId(b.id)}
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                                  color: '#ef4444',
+                                  padding: '5px 7px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {renderBusinessDetailDrawer()}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. SENT & FOLLOW-UPS (Outbound Dispatch Queue & Timeline)                 */}
+      {/* ========================================================================= */}
+      {activeTab === 'sent' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
+                  Outbound Queue & Dispatch Engine
+                </h2>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>
+                  There are currently <strong>{queuedEmailCount}</strong> emails queued. When processed, each email undergoes live pre-send suppression checks and domain throttling.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <select
+                  value={queueBatchSize}
+                  onChange={(e) => setQueueBatchSize(Number(e.target.value))}
+                  style={{
+                    background: '#07070d',
+                    border: '1px solid #2d2d42',
+                    color: '#ffffff',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <option value={1}>Batch: 1 email</option>
+                  <option value={5}>Batch: 5 emails</option>
+                  <option value={10}>Batch: 10 emails</option>
+                </select>
+                <button
+                  disabled={isProcessingQueue || queuedEmailCount === 0}
+                  onClick={() => handleProcessQueueBatch(false)}
+                  style={{
+                    background: queuedEmailCount > 0 ? '#ff3366' : '#2d2d42',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 18px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: queuedEmailCount > 0 ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  {isProcessingQueue ? <Loader2 size={14} className="hpa-spin" /> : <Send size={14} />}
+                  <span>{isProcessingQueue ? 'Processing...' : 'Dispatch Queue Batch'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Messages Queue Table */}
+            {messages.length === 0 ? (
+              <p style={{ color: '#6b7280', fontSize: '13px', margin: '20px 0 0 0' }}>
+                No active queued messages. Approved messages from AI Approvals will appear here ready for scheduled dispatch.
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto', width: '100%', marginTop: '16px' }}>
+                <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
+                      <th style={{ padding: '10px' }}>Recipient</th>
+                      <th style={{ padding: '10px' }}>Subject</th>
+                      <th style={{ padding: '10px' }}>Status</th>
+                      <th style={{ padding: '10px' }}>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {messages.map((m) => (
+                      <tr key={m.id} style={{ borderBottom: '1px solid #161622' }}>
+                        <td style={{ padding: '12px 10px', color: '#ffffff', fontWeight: 600 }}>
+                          {m.recipient_email}
+                        </td>
+                        <td style={{ padding: '12px 10px', color: '#cbd5e1' }}>{m.subject}</td>
+                        <td style={{ padding: '12px 10px' }}>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              background:
+                                m.status === 'SENT' || m.status === 'DELIVERED'
+                                  ? 'rgba(0, 245, 160, 0.15)'
+                                  : m.status === 'BOUNCED'
+                                  ? 'rgba(239, 68, 68, 0.15)'
+                                  : 'rgba(251, 191, 36, 0.15)',
+                              color:
+                                m.status === 'SENT' || m.status === 'DELIVERED'
+                                  ? '#00f5a0'
+                                  : m.status === 'BOUNCED'
+                                  ? '#ef4444'
+                                  : '#fbbf24',
+                            }}
+                          >
+                            {m.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 10px', color: '#6b7280', fontSize: '12px' }}>
+                          {new Date(m.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 4. HISTORY & ANALYTICS (Discovery History, Telemetry, Safety Limits)      */}
+      {/* ========================================================================= */}
+      {activeTab === 'analytics' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Key Metric Tiles */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             {[
               { label: 'Discovered Businesses', value: analytics.totalBusinesses, sub: 'Total in PostgreSQL', color: '#ff3366' },
               { label: 'Websites Audited', value: analytics.totalAudited, sub: 'SSRF-verified signals', color: '#00f5a0' },
@@ -1827,16 +2282,7 @@ export default function OutreachClient({
                   overflow: 'hidden',
                 }}
               >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '3px',
-                    background: metric.color,
-                  }}
-                />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: metric.color }} />
                 <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 600 }}>{metric.label}</span>
                 <div style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', margin: '8px 0 4px 0' }}>
                   {metric.value}
@@ -1846,2332 +2292,101 @@ export default function OutreachClient({
             ))}
           </div>
 
-          {/* Quick Actions & Recent Jobs */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
-                Recent Discovery Jobs
-              </h3>
-              {jobs.length === 0 ? (
-                <p style={{ color: '#6b7280', fontSize: '13px' }}>No discovery jobs recorded yet. Run a scan from the Discovery Scanner tab.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {jobs.slice(0, 5).map((j) => (
-                    <div
-                      key={j.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: '#07070d',
-                        border: '1px solid #161622',
-                        borderRadius: '8px',
-                        padding: '10px 14px',
-                        fontSize: '13px',
-                      }}
-                    >
-                      <div>
-                        <span style={{ fontWeight: 600, color: '#ffffff' }}>{j.city || j.country_code}</span>
-                        <span style={{ color: '#9ca3af', marginLeft: '6px' }}>• {j.category}</span>
-                        <div style={{ fontSize: '11px', color: '#6b7280' }}>Provider: {j.provider}</div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: '10px',
-                            background: j.status === 'COMPLETED' ? 'rgba(0, 245, 160, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                            color: j.status === 'COMPLETED' ? '#00f5a0' : '#ef4444',
-                          }}
-                        >
-                          {j.status}
-                        </span>
-                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
-                          +{j.total_inserted} new
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Outbound Dispatch Queue Quick Box */}
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
-                Queue Dispatch Control
-              </h3>
-              <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: 1.6 }}>
-                There are currently <strong>{queuedEmailCount}</strong> emails queued. When processed, each email undergoes live pre-send suppression checks, domain rate-limiting, and jurisdiction eligibility verification.
-              </p>
-              <div style={{ marginTop: '20px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <select
-                  value={queueBatchSize}
-                  onChange={(e) => setQueueBatchSize(Number(e.target.value))}
-                  style={{
-                    background: '#07070d',
-                    border: '1px solid #2d2d42',
-                    color: '#ffffff',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                  }}
-                >
-                  <option value={1}>Batch: 1 email</option>
-                  <option value={5}>Batch: 5 emails</option>
-                  <option value={10}>Batch: 10 emails</option>
-                </select>
-                <button
-                  disabled={isProcessingQueue || queuedEmailCount === 0}
-                  onClick={() => handleProcessQueueBatch(false)}
-                  style={{
-                    background: queuedEmailCount > 0 ? '#ff3366' : '#2d2d42',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: queuedCount > 0 ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  {isProcessingQueue ? <Loader2 size={15} className="hpa-spin" /> : <Send size={15} />}
-                  <span>{isProcessingQueue ? 'Processing...' : 'Dispatch Queue Batch'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* VIEW 1: DISCOVER LEADS */}
-      {(currentView === 'discover' || activeTab === 'discovery') && (
-        <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 6px 0', color: '#ffffff' }}>
-            Targeted Global Business Discovery
-          </h2>
-          <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 24px 0' }}>
-            Queries public OpenStreetMap geographic business clusters or mock fixtures to discover businesses, websites, and verified contact points.
-          </p>
-
-          <form onSubmit={handleRunDiscovery} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '6px' }}>
-                Target Country
-              </label>
-              <select
-                value={discoverCountry}
-                onChange={(e) => setDiscoverCountry(e.target.value)}
-                style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '10px', borderRadius: '8px', fontSize: '13px' }}
-              >
-                <option value="US">United States (US)</option>
-                <option value="GB">United Kingdom (GB)</option>
-                <option value="IN">India (IN)</option>
-                <option value="CA">Canada (CA)</option>
-                <option value="AU">Australia (AU)</option>
-                <option value="DE">Germany (DE)</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '6px' }}>
-                City / Metropolitan Area
-              </label>
-              <input
-                type="text"
-                value={discoverCity}
-                onChange={(e) => setDiscoverCity(e.target.value)}
-                required
-                style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '10px', borderRadius: '8px', fontSize: '13px' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '6px' }}>
-                Business Category
-              </label>
-              <select
-                value={discoverCategory}
-                onChange={(e) => setDiscoverCategory(e.target.value)}
-                style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '10px', borderRadius: '8px', fontSize: '13px' }}
-              >
-                <option value="Restaurants & Cafes">Restaurants & Cafes</option>
-                <option value="Boutique Hotels">Boutique Hotels & Lodging</option>
-                <option value="Digital Agencies">Digital & Tech Agencies</option>
-                <option value="Healthcare & Dental">Clinics & Healthcare</option>
-                <option value="Retail & Specialty Stores">Retail & Specialty Stores</option>
-                <option value="Automotive Services">Local Automotive Services</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '6px' }}>
-                Discovery Provider
-              </label>
-              <select
-                value={discoverProvider}
-                onChange={(e) => setDiscoverProvider(e.target.value as any)}
-                style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '10px', borderRadius: '8px', fontSize: '13px' }}
-              >
-                <option value="openstreetmap">OpenStreetMap Overpass (Live)</option>
-                <option value="mock">Deterministic Test Mock</option>
-              </select>
-            </div>
-
-            <div style={{ gridColumn: '1 / -1', marginTop: '12px' }}>
-              <button
-                type="submit"
-                disabled={isDiscovering}
-                style={{
-                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  cursor: isDiscovering ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
-                {isDiscovering ? <Loader2 size={16} className="hpa-spin" /> : <Globe size={16} />}
-                <span>{isDiscovering ? 'Scanning & Deduplicating...' : 'Launch Discovery Scan'}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* VIEW 2: RESEARCH QUEUE */}
-      {currentView === 'research' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(14, 14, 22, 0.95))',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
-              borderRadius: '12px',
-              padding: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    background: 'rgba(56, 189, 248, 0.2)',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    color: '#38bdf8',
-                    display: 'flex',
-                  }}
-                >
-                  <Clock size={20} />
-                </div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
-                  Prospect Research & Technical Investigation Queue
-                </h2>
-              </div>
-              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '8px 0 0 0', maxWidth: '780px', lineHeight: 1.6 }}>
-                Active discovery jobs and freshly discovered prospects undergoing website crawling, technical audits, performance benchmarks, and contact discovery.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <button
-                onClick={() => setActiveTab('discover')}
-                style={{
-                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 18px',
-                  fontWeight: 600,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Plus size={15} />
-                <span>Start New Discovery</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Research Metric Counters */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '14px',
-            }}
-          >
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase' }}>
-                Active Discovery Jobs
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#38bdf8', marginTop: '6px' }}>
-                {jobs.filter((j) => j.status === 'RUNNING' || j.status === 'PENDING').length}
-              </div>
-            </div>
-
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#fbbf24', textTransform: 'uppercase' }}>
-                Fresh / In-Investigation
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#fbbf24', marginTop: '6px' }}>
-                {businesses.filter((b) => b.status === 'DISCOVERED').length}
-              </div>
-            </div>
-
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#10b981', textTransform: 'uppercase' }}>
-                Audited & Verified
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981', marginTop: '6px' }}>
-                {businesses.filter((b) => b.status === 'AUDITED').length}
-              </div>
-            </div>
-          </div>
-
-          {/* Active Jobs Table */}
-          {jobs.length > 0 && (
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
-                Discovery Background Tasks
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {jobs.slice(0, 5).map((j) => (
+          {/* Discovery Jobs History Table */}
+          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
+              Discovery Scan History (Manual & Automated)
+            </h3>
+            {jobs.length === 0 ? (
+              <p style={{ color: '#6b7280', fontSize: '13px' }}>No discovery jobs recorded yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {jobs.map((j) => (
                   <div
                     key={j.id}
                     style={{
-                      background: '#12121a',
-                      padding: '12px 14px',
-                      borderRadius: '8px',
                       display: 'flex',
-                      alignItems: 'center',
                       justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: '#07070d',
+                      border: '1px solid #161622',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      fontSize: '13px',
                       flexWrap: 'wrap',
                       gap: '8px',
                     }}
                   >
                     <div>
-                      <strong style={{ color: '#ffffff', fontSize: '13px' }}>{j.provider.toUpperCase()} Scan:</strong>{' '}
-                      <span style={{ color: '#9ca3af', fontSize: '13px' }}>
-                        {j.city}, {j.country_code} ({j.category})
+                      <span style={{ fontWeight: 600, color: '#ffffff' }}>
+                        {j.city || j.country_code}
                       </span>
+                      <span style={{ color: '#9ca3af', marginLeft: '6px' }}>• {j.category}</span>
+                      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                        Provider: {j.provider} • Mode:{' '}
+                        {j.query === 'automated_daily_scout' ? 'Automated Daily Scout 🤖' : 'Manual Scan 🔍'}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ textAlign: 'right' }}>
                       <span
                         style={{
                           fontSize: '11px',
                           fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          background:
-                            j.status === 'COMPLETED'
-                              ? 'rgba(16, 185, 129, 0.2)'
-                              : j.status === 'RUNNING'
-                              ? 'rgba(56, 189, 248, 0.2)'
-                              : 'rgba(239, 68, 68, 0.2)',
-                          color:
-                            j.status === 'COMPLETED' ? '#10b981' : j.status === 'RUNNING' ? '#38bdf8' : '#ef4444',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          background: j.status === 'COMPLETED' ? 'rgba(0, 245, 160, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                          color: j.status === 'COMPLETED' ? '#00f5a0' : '#ef4444',
                         }}
                       >
                         {j.status}
                       </span>
-                      <span style={{ fontSize: '11px', color: '#6b7280' }}>
-                        {j.total_inserted ?? j.total_found ?? 0} discovered
-                      </span>
+                      <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                        +{j.total_inserted ?? 0} inserted • {j.total_duplicates ?? 0} duplicates
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Prospects in Queue List */}
-          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
-            <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
-              Prospects Ready for Technical Investigation
-            </h3>
-
-            {businesses.filter((b) => b.status === 'DISCOVERED').length === 0 ? (
-              <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
-                No fresh un-investigated prospects. Run a discovery scan or check Qualified Leads.
-              </p>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
-                {businesses
-                  .filter((b) => b.status === 'DISCOVERED')
-                  .slice(0, 12)
-                  .map((b) => (
-                    <div
-                      key={b.id}
-                      style={{
-                        background: '#12121a',
-                        border: '1px solid #1c1c2b',
-                        borderRadius: '10px',
-                        padding: '14px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '10px',
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>{b.name}</h4>
-                          <span style={{ fontSize: '10px', color: '#fbbf24', background: 'rgba(251, 191, 36, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                            Fresh 📍
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                          {b.category} • {b.city || b.country_code}
-                        </div>
-                        {b.website_url && (
-                          <a
-                            href={b.website_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#38bdf8', textDecoration: 'none', marginTop: '4px' }}
-                          >
-                            <span>{b.domain || b.website_url}</span>
-                            <ExternalLink size={10} />
-                          </a>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => handleRunAudit(b.id)}
-                          disabled={isAuditing}
-                          style={{
-                            flex: 1,
-                            background: 'rgba(56, 189, 248, 0.12)',
-                            border: '1px solid rgba(56, 189, 248, 0.3)',
-                            color: '#38bdf8',
-                            borderRadius: '6px',
-                            padding: '6px 10px',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <Search size={12} />
-                          <span>Run Audit</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleGenerateAi(b.id)}
-                          disabled={isGeneratingAi}
-                          style={{
-                            flex: 1,
-                            background: 'rgba(168, 85, 247, 0.12)',
-                            border: '1px solid rgba(168, 85, 247, 0.3)',
-                            color: '#c084fc',
-                            borderRadius: '6px',
-                            padding: '6px 10px',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <Sparkles size={12} />
-                          <span>AI Pitch</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* VIEW 3: QUALIFIED LEADS */}
-      {(currentView === 'qualified' || activeTab === 'leads') && (
-        <div
-          className="hpa-leads-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: selectedBusiness ? 'minmax(0, 1fr) 420px' : 'minmax(0, 1fr)',
-            gap: '20px',
-            minWidth: 0,
-            width: '100%',
-            alignItems: 'start',
-          }}
-        >
-          <div
-            style={{
-              background: '#0e0e16',
-              border: '1px solid #1c1c2b',
-              borderRadius: '12px',
-              padding: '20px',
-              minWidth: 0,
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          {/* Safety Settings & Rate Limits */}
+          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px', maxWidth: '700px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>Safety & Rate Limits</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                  {pipelineFilter === 'QUALIFIED'
-                    ? `Qualified Opportunities (${filteredBusinesses.length})`
-                    : pipelineFilter === 'ALL'
-                    ? `All Discovered Records & CRM (${businesses.length})`
-                    : `${pipelineFilter} Leads (${filteredBusinesses.length})`}
-                </h2>
-                <p style={{ color: '#9ca3af', fontSize: '12px', margin: '4px 0 0 0' }}>
-                  {qualifiedCount} qualified/enriched lead ready for outreach • {freshCount} fresh prospects awaiting research in Queue
-                </p>
+                <label style={{ display: 'block', color: '#9ca3af', marginBottom: '4px' }}>Daily Sending Cap</label>
+                <input
+                  type="number"
+                  value={settings.daily_send_cap}
+                  disabled
+                  style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '8px 12px', borderRadius: '6px' }}
+                />
               </div>
-
-              {/* Status / Pipeline Filters & Actions */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                  {[
-                    { id: 'ALL', label: `All (${businesses.length})` },
-                    { id: 'QUALIFIED', label: `Qualified 🎯 (${qualifiedCount})` },
-                    { id: 'DISCOVERED', label: `Fresh (${freshCount})` },
-                    { id: 'ENRICHED', label: `Enriched ⚡ (${enrichedCount})` },
-                    ...(auditedCount > 0 ? [{ id: 'AUDITED', label: `Audited 🔍 (${auditedCount})` }] : []),
-                    { id: 'CONTACTED', label: `Contacted (${contactedCount})` },
-                    { id: 'IN_DISCUSSION', label: `Talking (${talkingCount})` },
-                    { id: 'CLOSED_WON', label: `Won 🎉 (${wonCount})` },
-                    { id: 'CLOSED_LOST', label: `Lost (${lostCount})` },
-                  ].map((pill) => (
-                  <button
-                    key={pill.id}
-                    onClick={() => setPipelineFilter(pill.id)}
-                    style={{
-                      background: pipelineFilter === pill.id ? 'rgba(255, 51, 102, 0.15)' : '#161622',
-                      border: pipelineFilter === pill.id ? '1px solid #ff3366' : '1px solid #2d2d42',
-                      color: pipelineFilter === pill.id ? '#ff3366' : '#d1d5db',
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {pill.label}
-                  </button>
-                ))}
+              <div>
+                <label style={{ display: 'block', color: '#9ca3af', marginBottom: '4px' }}>Domain Hourly Throttle Cap</label>
+                <input
+                  type="number"
+                  value={settings.domain_hourly_cap}
+                  disabled
+                  style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '8px 12px', borderRadius: '6px' }}
+                />
               </div>
-
-                <button
-                  onClick={handleDeduplicate}
-                  disabled={isDeduplicating}
-                  style={{
-                    background: '#161626',
-                    border: '1px solid #2d2d48',
-                    color: '#cbd5e1',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: isDeduplicating ? 'not-allowed' : 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    whiteSpace: 'nowrap',
-                  }}
-                  title="Purge duplicate business records"
-                >
-                  <RefreshCw size={11} className={isDeduplicating ? 'hpa-spin' : ''} />
-                  <span>{isDeduplicating ? 'Purging...' : 'Purge Duplicates'}</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('scout')}
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(255, 51, 102, 0.15), rgba(225, 29, 72, 0.05))',
-                    border: '1px solid rgba(255, 51, 102, 0.35)',
-                    color: '#ff3366',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <Sparkles size={11} />
-                  <span>⚡ View Scout Proposals</span>
-                </button>
+              <div>
+                <label style={{ display: 'block', color: '#9ca3af', marginBottom: '4px' }}>Physical CAN-SPAM Address</label>
+                <input
+                  type="text"
+                  value={settings.physical_address}
+                  disabled
+                  style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '8px 12px', borderRadius: '6px' }}
+                />
               </div>
-            </div>
-
-            {/* Bulk Action Floating Bar */}
-            {selectedBusinessIds.length > 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 16px',
-                  background: 'rgba(255, 51, 102, 0.08)',
-                  border: '1px solid rgba(255, 51, 102, 0.25)',
-                  borderRadius: '10px',
-                  marginBottom: '16px',
-                  color: '#ffffff',
-                  fontSize: '13px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <strong>{selectedBusinessIds.length}</strong> {selectedBusinessIds.length === 1 ? 'business' : 'businesses'} selected
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBusinessIds([])}
-                    style={{
-                      background: '#161622',
-                      border: '1px solid #2d2d42',
-                      color: '#cbd5e1',
-                      padding: '5px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Deselect All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBulkDeleteBizOpen(true)}
-                    style={{
-                      background: '#ef4444',
-                      border: '1px solid #ef4444',
-                      color: '#ffffff',
-                      padding: '5px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <Trash2 size={13} />
-                    <span>Delete Selected ({selectedBusinessIds.length})</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {businesses.length === 0 ? (
-              <p style={{ color: '#6b7280', fontSize: '13px' }}>No businesses in database yet. Run a discovery scan above!</p>
-            ) : (
-              <div style={{ overflowX: 'auto', width: '100%' }}>
-                <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
-                      <th style={{ width: '36px', padding: '10px' }}>
-                        <input
-                          type="checkbox"
-                          checked={allBizSelected}
-                          ref={(el) => {
-                            if (el) el.indeterminate = someBizSelected;
-                          }}
-                          onChange={handleSelectAllBiz}
-                          style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
-                          title="Select All"
-                        />
-                      </th>
-                      <th style={{ padding: '10px' }}>Business</th>
-                      <th style={{ padding: '10px' }}>Location</th>
-                      <th style={{ padding: '10px' }}>Category</th>
-                      <th style={{ padding: '10px' }}>Website</th>
-                      <th style={{ padding: '10px' }}>Lead Stage</th>
-                      <th style={{ padding: '10px' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBusinesses.map((b) => {
-                      const badge = getStatusBadgeStyle(b.status);
-                      const isSelected = selectedBusinessIds.includes(b.id);
-                      return (
-                        <tr
-                          key={b.id}
-                          style={{
-                            borderBottom: '1px solid #161622',
-                            background: selectedBusiness?.id === b.id ? 'rgba(255, 51, 102, 0.08)' : isSelected ? 'rgba(255, 51, 102, 0.04)' : 'transparent',
-                          }}
-                        >
-                          <td style={{ width: '36px', padding: '12px 10px' }}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleToggleSelectBiz(b.id)}
-                              style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
-                            />
-                          </td>
-                          <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
-                              <div>{b.name}</div>
-                              {(() => {
-                                const phone = (b.metadata as any)?.phone;
-                                const waUrl = (b.metadata as any)?.whatsapp_url || getWhatsAppUrl(phone, b.name);
-                                const isWa = isWhatsAppEligible(phone, (b.metadata as any)?.whatsapp_url);
-
-                                if (!phone && !waUrl) return null;
-
-                                return (
-                                  <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 500 }}>
-                                    {phone && (
-                                      <a
-                                        href={`tel:${phone}`}
-                                        onClick={(e) => e.stopPropagation()}
-                                        title={`Call ${phone}`}
-                                        style={{ color: '#9ca3af', textDecoration: 'none' }}
-                                      >
-                                        {phone}
-                                      </a>
-                                    )}
-                                    {isWa && waUrl ? (
-                                      <a
-                                        href={waUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        title="Open WhatsApp chat"
-                                        style={{
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          width: '22px',
-                                          height: '22px',
-                                          background: 'rgba(37, 211, 102, 0.15)',
-                                          border: '1px solid rgba(37, 211, 102, 0.4)',
-                                          color: '#25d366',
-                                          borderRadius: '50%',
-                                          textDecoration: 'none',
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        <WhatsAppIcon size={12} />
-                                      </a>
-                                    ) : phone ? (
-                                      <a
-                                        href={`tel:${phone}`}
-                                        onClick={(e) => e.stopPropagation()}
-                                        title={`Call landline / toll-free: ${phone}`}
-                                        style={{
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          width: '22px',
-                                          height: '22px',
-                                          background: 'rgba(56, 189, 248, 0.12)',
-                                          border: '1px solid rgba(56, 189, 248, 0.35)',
-                                          color: '#38bdf8',
-                                          borderRadius: '50%',
-                                          textDecoration: 'none',
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        <Phone size={11} />
-                                      </a>
-                                    ) : null}
-                                  </div>
-                                );
-                              })()}
-                            </td>
-                            <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.city || b.country_code}</td>
-                            <td style={{ padding: '12px 10px', color: '#9ca3af' }}>{b.category}</td>
-                            <td style={{ padding: '12px 10px' }}>
-                              {b.website_url ? (
-                                <a
-                                  href={b.website_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                  {b.domain || 'Visit'} <ExternalLink size={12} />
-                                </a>
-                              ) : (
-                                <span style={{ color: '#6b7280' }}>None</span>
-                              )}
-                            </td>
-                            <td style={{ padding: '12px 10px' }}>
-                              <span
-                                style={{
-                                  fontSize: '11px',
-                                  fontWeight: 700,
-                                  padding: '3px 8px',
-                                  borderRadius: '8px',
-                                  background: badge.bg,
-                                  color: badge.color,
-                                  border: `1px solid ${badge.border}`,
-                                  whiteSpace: 'nowrap',
-                                  display: 'inline-block',
-                                }}
-                              >
-                                {badge.label}
-                              </span>
-                            </td>
-                            <td style={{ padding: '12px 10px' }}>
-                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                <button
-                                  onClick={() => handleSelectBusiness(b)}
-                                  style={{
-                                    background: selectedBusiness?.id === b.id ? '#ff3366' : '#161622',
-                                    border: selectedBusiness?.id === b.id ? '1px solid #ff3366' : '1px solid #2d2d42',
-                                    color: '#ffffff',
-                                    padding: '6px 10px',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  Inspect & CRM
-                                </button>
-                                {b.status !== 'CLOSED_WON' && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleUpdateBusinessStatus(b.id, 'CLOSED_WON');
-                                    }}
-                                    title="Mark Deal as Won"
-                                    style={{
-                                      background: 'rgba(16, 185, 129, 0.1)',
-                                      border: '1px solid rgba(16, 185, 129, 0.3)',
-                                      color: '#10b981',
-                                      padding: '6px 8px',
-                                      borderRadius: '6px',
-                                      fontSize: '11px',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                      whiteSpace: 'nowrap',
-                                    }}
-                                  >
-                                    Won 🎉
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeletingBizId(b.id);
-                                  }}
-                                  title="Delete Lead"
-                                  style={{
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                    color: '#ef4444',
-                                    padding: '6px 8px',
-                                    borderRadius: '6px',
-                                    fontSize: '11px',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Drawer: Selected Business Detail & AI Analysis */}
-          {renderBusinessDetailDrawer()}
-        </div>
-      )}
-
-      {/* VIEW 4: PROPOSALS & OUTREACH */}
-      {(currentView === 'proposals' || activeTab === 'scout') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Hero / Header Card */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(255, 51, 102, 0.08), rgba(14, 14, 22, 0.95))',
-              border: '1px solid rgba(255, 51, 102, 0.25)',
-              borderRadius: '12px',
-              padding: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    background: 'rgba(255, 51, 102, 0.2)',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    color: '#ff3366',
-                    display: 'flex',
-                  }}
-                >
-                  <Sparkles size={20} />
-                </div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
-                  Autonomous Lead Intelligence Scout
-                </h2>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '3px 8px',
-                    borderRadius: '12px',
-                    background: 'rgba(56, 189, 248, 0.15)',
-                    color: '#38bdf8',
-                    border: '1px solid rgba(56, 189, 248, 0.3)',
-                  }}
-                >
-                  AI Chief of Staff Engine
-                </span>
-              </div>
-              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '8px 0 0 0', maxWidth: '780px', lineHeight: 1.6 }}>
-                The Lead Scout autonomously scours global directories, analyzes prospect websites, scores commercial fit, identifies high-value development or modernization pain points, and drafts high-conversion outreach proposals.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <button
-                onClick={handleRunScout}
-                disabled={isRunningScout}
-                style={{
-                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 18px',
-                  fontWeight: 600,
-                  fontSize: '13px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: isRunningScout ? 'not-allowed' : 'pointer',
-                  opacity: isRunningScout ? 0.7 : 1,
-                  boxShadow: '0 4px 12px rgba(255, 51, 102, 0.25)',
-                }}
-              >
-                {isRunningScout ? <Loader2 size={16} className="hpa-spin" /> : <Sparkles size={16} />}
-                <span>{isRunningScout ? 'Scouting Leads...' : 'Run Lead Scout AI'}</span>
-              </button>
-
-              <button
-                onClick={handleDeduplicate}
-                disabled={isDeduplicating}
-                style={{
-                  background: '#161626',
-                  color: '#e2e8f0',
-                  border: '1px solid #2d2d48',
-                  borderRadius: '8px',
-                  padding: '10px 16px',
-                  fontWeight: 600,
-                  fontSize: '13px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: isDeduplicating ? 'not-allowed' : 'pointer',
-                }}
-              >
-                <RefreshCw size={14} className={isDeduplicating ? 'hpa-spin' : ''} />
-                <span>{isDeduplicating ? 'Purging...' : 'Clean Duplicates'}</span>
-              </button>
-
-              <button
-                onClick={loadScoutDrafts}
-                disabled={loadingScoutDrafts}
-                style={{
-                  background: '#12121a',
-                  color: '#9ca3af',
-                  border: '1px solid #1c1c2b',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  fontWeight: 500,
-                  fontSize: '13px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                }}
-                title="Refresh Proposals"
-              >
-                <RefreshCw size={14} className={loadingScoutDrafts ? 'hpa-spin' : ''} />
-              </button>
-            </div>
-          </div>
-
-          {/* Scout Metric Counters */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '14px',
-            }}
-          >
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>
-                Total Scout Proposals
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#ffffff', marginTop: '6px' }}>
-                {scoutDrafts.length}
-              </div>
-            </div>
-
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#fbbf24', textTransform: 'uppercase' }}>
-                Pending Review
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#fbbf24', marginTop: '6px' }}>
-                {scoutDrafts.filter((d) => d.status === 'pending').length}
-              </div>
-            </div>
-
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#10b981', textTransform: 'uppercase' }}>
-                Approved & Staged
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981', marginTop: '6px' }}>
-                {scoutDrafts.filter((d) => d.status === 'approved').length}
-              </div>
-            </div>
-
-            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#c084fc', textTransform: 'uppercase' }}>
-                High-Fit Prospects (≥80)
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#c084fc', marginTop: '6px' }}>
-                {scoutDrafts.filter((d) => (d.metadata?.fitScore || 0) >= 80).length}
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Pills */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', borderBottom: '1px solid #1c1c2b', paddingBottom: '12px' }}>
-            {[
-              { id: 'all', label: `All Proposals (${scoutDrafts.length})` },
-              { id: 'pending', label: `Pending Review (${scoutDrafts.filter((d) => d.status === 'pending').length})` },
-              { id: 'approved', label: `Approved (${scoutDrafts.filter((d) => d.status === 'approved').length})` },
-              { id: 'rejected', label: `Archived (${scoutDrafts.filter((d) => d.status === 'rejected').length})` },
-            ].map((pill) => (
-              <button
-                key={pill.id}
-                onClick={() => setScoutFilter(pill.id as any)}
-                style={{
-                  background: scoutFilter === pill.id ? 'rgba(255, 51, 102, 0.15)' : '#12121a',
-                  border: scoutFilter === pill.id ? '1px solid #ff3366' : '1px solid #1c1c2b',
-                  color: scoutFilter === pill.id ? '#ff3366' : '#9ca3af',
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: scoutFilter === pill.id ? 700 : 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {pill.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Proposals List */}
-          {loadingScoutDrafts ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
-              <Loader2 size={32} className="hpa-spin" style={{ margin: '0 auto 12px auto', color: '#ff3366' }} />
-              <p style={{ margin: 0, fontSize: '14px' }}>Loading scout proposals from Chief of Staff brain...</p>
-            </div>
-          ) : scoutDrafts.filter((d) => scoutFilter === 'all' || d.status === scoutFilter).length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: '#0e0e16',
-                border: '1px dashed #2d2d42',
-                borderRadius: '12px',
-                color: '#9ca3af',
-              }}
-            >
-              <Sparkles size={36} style={{ color: '#ff3366', margin: '0 auto 12px auto', opacity: 0.6 }} />
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>
-                No scout proposals match the current filter
-              </h3>
-              <p style={{ fontSize: '13px', margin: '0 0 16px 0' }}>
-                Trigger the Lead Scout to scan businesses and draft value-first outreach propositions.
-              </p>
-              <button
-                onClick={handleRunScout}
-                disabled={isRunningScout}
-                style={{
-                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 18px',
-                  fontWeight: 600,
-                  fontSize: '13px',
-                  cursor: isRunningScout ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {isRunningScout ? 'Running Scout...' : 'Launch Lead Scout Now'}
-              </button>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
-                gap: '16px',
-              }}
-            >
-              {scoutDrafts
-                .filter((d) => scoutFilter === 'all' || d.status === scoutFilter)
-                .map((draft) => {
-                  const meta = draft.metadata || {};
-                  const fitScore = meta.fitScore || 85;
-                  const companyName = meta.companyName || draft.title || 'Prospective Business';
-                  const domain = meta.domain || '';
-                  const status = draft.status || 'pending';
-
-                  return (
-                    <div
-                      key={draft.id}
-                      style={{
-                        background: '#0e0e16',
-                        border: status === 'approved'
-                          ? '1px solid rgba(16, 185, 129, 0.4)'
-                          : '1px solid #1c1c2b',
-                        borderRadius: '12px',
-                        padding: '18px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '14px',
-                        position: 'relative',
-                      }}
-                    >
-                      {/* Card Header */}
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                          <div>
-                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
-                              {companyName}
-                            </h3>
-                            {domain && (
-                              <a
-                                href={domain.startsWith('http') ? domain : `https://${domain}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  color: '#38bdf8',
-                                  fontSize: '12px',
-                                  textDecoration: 'none',
-                                  marginTop: '3px',
-                                }}
-                              >
-                                <span>{domain.replace(/^https?:\/\//, '')}</span>
-                                <ExternalLink size={11} />
-                              </a>
-                            )}
-                          </div>
-
-                          <div
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              padding: '3px 8px',
-                              borderRadius: '100px',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              background: fitScore >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                              color: fitScore >= 80 ? '#10b981' : '#f59e0b',
-                              border: `1px solid ${fitScore >= 80 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-                            }}
-                          >
-                            <Target size={11} />
-                            <span>{fitScore}% Fit</span>
-                          </div>
-                        </div>
-
-                        {/* Meta Tags */}
-                        <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
-                          {meta.industry && (
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                background: '#161622',
-                                color: '#9ca3af',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                                border: '1px solid #232338',
-                              }}
-                            >
-                              {meta.industry}
-                            </span>
-                          )}
-                          {meta.country && (
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                background: '#161622',
-                                color: '#9ca3af',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                                border: '1px solid #232338',
-                              }}
-                            >
-                              📍 {meta.country}
-                            </span>
-                          )}
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              background: status === 'approved' ? 'rgba(16, 185, 129, 0.15)' : status === 'rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                              color: status === 'approved' ? '#10b981' : status === 'rejected' ? '#ef4444' : '#fbbf24',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {status === 'approved' ? 'Approved ✓' : status === 'rejected' ? 'Archived ✕' : 'Pending Review ⏳'}
-                          </span>
-                        </div>
-
-                        {/* Value Prop & Identified Pain Point */}
-                        <div style={{ marginTop: '12px' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#ff3366', marginBottom: '4px' }}>
-                            Identified Opportunity:
-                          </div>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#d1d5db', lineHeight: 1.5 }}>
-                            {meta.identifiedOpportunity || draft.excerpt || 'Technical modernization and high-performance web upgrade.'}
-                          </p>
-                        </div>
-
-                        {/* Proposed Pitch Excerpt */}
-                        <div style={{ marginTop: '10px', background: '#07070d', borderRadius: '6px', padding: '10px', border: '1px solid #161624' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '4px' }}>
-                            Pitch Preview:
-                          </div>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {meta.suggestedPitch || draft.content || 'Hi team, we analyzed your platform and identified opportunities to accelerate speed and conversion...'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Card Actions */}
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid #1c1c2b' }}>
-                        <button
-                          onClick={() => setSelectedScoutDraft(draft)}
-                          style={{
-                            background: '#161626',
-                            border: '1px solid #2d2d48',
-                            color: '#ffffff',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <FileText size={12} />
-                          <span>View Full Pitch</span>
-                        </button>
-
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          {status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleRejectScoutDraft(draft.id)}
-                                style={{
-                                  background: 'rgba(239, 68, 68, 0.1)',
-                                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                                  color: '#ef4444',
-                                  padding: '6px 10px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                }}
-                                title="Reject proposal"
-                              >
-                                Reject
-                              </button>
-                              <button
-                                onClick={() => handleApproveScoutDraft(draft.id)}
-                                style={{
-                                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                                  border: 'none',
-                                  color: '#ffffff',
-                                  padding: '6px 14px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                }}
-                              >
-                                <CheckCircle2 size={12} />
-                                <span>Approve</span>
-                              </button>
-                            </>
-                          )}
-                          {status === 'approved' && (
-                            <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <CheckCircle2 size={12} />
-                              Ready for Dispatch
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-
-          {/* Full Proposal Modal */}
-          {selectedScoutDraft && (
-            <div
-              style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0, 0, 0, 0.85)',
-                backdropFilter: 'blur(8px)',
-                zIndex: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '20px',
-              }}
-              onClick={() => setSelectedScoutDraft(null)}
-            >
-              <div
-                style={{
-                  background: '#0e0e16',
-                  border: '1px solid #2d2d42',
-                  borderRadius: '16px',
-                  maxWidth: '680px',
-                  width: '100%',
-                  maxHeight: '90vh',
-                  overflowY: 'auto',
-                  padding: '24px',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
-                      {selectedScoutDraft.metadata?.companyName || selectedScoutDraft.title}
-                    </h3>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#9ca3af' }}>
-                      Commercial Fit Score: {selectedScoutDraft.metadata?.fitScore || 85}% • Status: {selectedScoutDraft.status}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedScoutDraft(null)}
-                    style={{
-                      background: '#1c1c2b',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#9ca3af',
-                      padding: '6px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
-                  <div>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#ff3366', textTransform: 'uppercase' }}>
-                      Identified Opportunity:
-                    </span>
-                    <p style={{ margin: '4px 0 0 0', color: '#e2e8f0', background: '#07070d', padding: '10px', borderRadius: '8px', border: '1px solid #1c1c2b' }}>
-                      {selectedScoutDraft.metadata?.identifiedOpportunity || selectedScoutDraft.excerpt}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase' }}>
-                      Proposed Subject Line:
-                    </span>
-                    <p style={{ margin: '4px 0 0 0', color: '#ffffff', fontWeight: 600, background: '#07070d', padding: '10px', borderRadius: '8px', border: '1px solid #1c1c2b' }}>
-                      {selectedScoutDraft.metadata?.suggestedSubject || selectedScoutDraft.title}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>
-                      Complete Outreach Pitch:
-                    </span>
-                    <div
-                      style={{
-                        margin: '4px 0 0 0',
-                        color: '#d1d5db',
-                        background: '#07070d',
-                        padding: '14px',
-                        borderRadius: '8px',
-                        border: '1px solid #1c1c2b',
-                        whiteSpace: 'pre-wrap',
-                        lineHeight: 1.6,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      {selectedScoutDraft.content || selectedScoutDraft.metadata?.suggestedPitch}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #1c1c2b' }}>
-                  <button
-                    onClick={() => setSelectedScoutDraft(null)}
-                    style={{
-                      background: '#161622',
-                      border: '1px solid #2d2d42',
-                      color: '#9ca3af',
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Close
-                  </button>
-                  {selectedScoutDraft.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => handleRejectScoutDraft(selectedScoutDraft.id)}
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.15)',
-                          border: '1px solid rgba(239, 68, 68, 0.4)',
-                          color: '#ef4444',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => handleApproveScoutDraft(selectedScoutDraft.id)}
-                        style={{
-                          background: 'linear-gradient(135deg, #10b981, #059669)',
-                          border: 'none',
-                          color: '#ffffff',
-                          padding: '8px 20px',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Approve Proposal
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* VIEW 5: PENDING APPROVAL */}
-      {currentView === 'pending_approval' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Header Callout linking to central Approvals */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(14, 14, 22, 0.95))',
-              border: '1px solid rgba(168, 85, 247, 0.35)',
-              borderRadius: '12px',
-              padding: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    background: 'rgba(168, 85, 247, 0.2)',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    color: '#c084fc',
-                    display: 'flex',
-                  }}
-                >
-                  <CheckCircle2 size={20} />
-                </div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
-                  Proposals Awaiting Explicit Approval
-                </h2>
-              </div>
-              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '8px 0 0 0', maxWidth: '780px', lineHeight: 1.6 }}>
-                Every cold outreach email and project proposal requires your explicit human authorization before dispatch. Sending acquires an atomic lock to guarantee zero duplicate emails.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Link
-                href="/admin/approvals?filter=outreach"
-                style={{
-                  background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 18px',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  textDecoration: 'none',
-                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
-                }}
-              >
-                <Sparkles size={15} />
-                <span>Open in AI Approvals Hub</span>
-                <ArrowRight size={14} />
-              </Link>
-            </div>
-          </div>
-
-          {/* Pending Proposals Cards */}
-          {loadingScoutDrafts ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
-              <Loader2 size={32} className="hpa-spin" style={{ margin: '0 auto 12px', color: '#c084fc' }} />
-              <p style={{ margin: 0, fontSize: '14px' }}>Loading pending proposals...</p>
-            </div>
-          ) : scoutDrafts.filter((d) => d.status === 'pending' || !d.status).length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                background: '#0e0e16',
-                border: '1px dashed #2d2d42',
-                borderRadius: '12px',
-                color: '#9ca3af',
-              }}
-            >
-              <CheckCircle2 size={40} style={{ color: '#10b981', margin: '0 auto 12px auto' }} />
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>
-                All Lead Proposals Reviewed
-              </h3>
-              <p style={{ fontSize: '13px', margin: 0 }}>
-                No pending proposals awaiting decision. New discoveries from Lead Scout will appear here.
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '16px' }}>
-              {scoutDrafts
-                .filter((d) => d.status === 'pending' || !d.status)
-                .map((draft) => {
-                  const meta = draft.metadata || {};
-                  const fitScore = meta.fitScore || 85;
-                  const companyName = meta.companyName || draft.title || 'Prospective Business';
-                  const domain = meta.domain || '';
-
-                  return (
-                    <div
-                      key={draft.id}
-                      style={{
-                        background: '#0e0e16',
-                        border: '1px solid rgba(168, 85, 247, 0.3)',
-                        borderRadius: '12px',
-                        padding: '18px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '14px',
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                          <div>
-                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
-                              {companyName}
-                            </h4>
-                            {domain && (
-                              <a
-                                href={`https://${domain.replace(/^https?:\/\//, '')}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#38bdf8', textDecoration: 'none', marginTop: '2px' }}
-                              >
-                                <span>{domain}</span>
-                                <ExternalLink size={10} />
-                              </a>
-                            )}
-                          </div>
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              padding: '2px 8px',
-                              borderRadius: '10px',
-                              background: 'rgba(16, 185, 129, 0.15)',
-                              color: '#34d399',
-                              border: '1px solid rgba(16, 185, 129, 0.3)',
-                            }}
-                          >
-                            Fit: {fitScore}/100
-                          </span>
-                        </div>
-
-                        {meta.contactEmail && (
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>
-                            <strong style={{ color: '#cbd5e1' }}>Contact:</strong> {meta.contactEmail}
-                          </div>
-                        )}
-
-                        {/* Opportunity finding */}
-                        <div style={{ marginTop: '10px', background: 'rgba(0, 0, 0, 0.25)', padding: '8px 10px', borderRadius: '6px' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#f59e0b', marginBottom: '3px' }}>
-                            Identified Opportunity:
-                          </div>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#d1d5db', lineHeight: 1.4 }}>
-                            {meta.identifiedOpportunity || draft.excerpt || 'Technical modernization and high-performance web upgrade.'}
-                          </p>
-                        </div>
-
-                        {/* Pitch snippet */}
-                        <div style={{ marginTop: '10px' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '2px' }}>
-                            Proposed Pitch Subject:
-                          </div>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#ffffff', fontWeight: 600 }}>
-                            {draft.title}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* 4 Clear Actions */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          paddingTop: '10px',
-                          borderTop: '1px solid #1c1c2b',
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <button
-                          onClick={() => handleApproveAndSendFromOutreach(draft.id)}
-                          style={{
-                            flex: 1,
-                            minWidth: '120px',
-                            background: 'linear-gradient(135deg, #10b981, #059669)',
-                            border: 'none',
-                            color: '#ffffff',
-                            padding: '7px 12px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <Send size={12} />
-                          <span>Approve & Send</span>
-                        </button>
-
-                        <button
-                          onClick={() => setSelectedScoutDraft(draft)}
-                          style={{
-                            background: '#161626',
-                            border: '1px solid #2d2d48',
-                            color: '#e2e8f0',
-                            padding: '7px 10px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Edit Pitch
-                        </button>
-
-                        <button
-                          onClick={() => handleSaveForLaterFromOutreach(draft.id)}
-                          style={{
-                            background: '#161626',
-                            border: '1px solid #2d2d48',
-                            color: '#9ca3af',
-                            padding: '7px 10px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Save Later
-                        </button>
-
-                        <button
-                          onClick={() => handleRejectScoutDraft(draft.id)}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            color: '#ef4444',
-                            padding: '7px 10px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB: CONTACTS DIRECTORY */}
-      {activeTab === 'contacts' && (
-        <div
-          className="hpa-leads-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: selectedBusiness ? 'minmax(0, 1fr) 420px' : 'minmax(0, 1fr)',
-            gap: '20px',
-            minWidth: 0,
-            width: '100%',
-            alignItems: 'start',
-          }}
-        >
-          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px', minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                Discovered Business Contacts ({contacts.length})
-              </h2>
-              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>
-                Verified against MX DNS records, disposable domain blocklists, and role accounts.
-              </p>
-            </div>
-            <button
-              onClick={async () => {
-                const res = await fetch('/api/admin/outreach/contacts');
-                const data = await res.json();
-                if (data.contacts) setContacts(data.contacts);
-                showToast('Contact directory refreshed.', 'info');
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: '#161622',
-                border: '1px solid #2d2d42',
-                color: '#ffffff',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <RefreshCw size={13} /> Refresh Contacts
-            </button>
-          </div>
-
-          {contacts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#6b7280' }}>
-              <UserCheck size={36} style={{ margin: '0 auto 12px auto', opacity: 0.5 }} />
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#d1d5db', margin: '0 0 4px 0' }}>No Contacts Recorded Yet</p>
-              <p style={{ fontSize: '12px', margin: 0 }}>
-                Contacts are discovered automatically during website audits or can be added manually when inspecting any business lead.
-              </p>
-              <button
-                onClick={() => setActiveTab('leads')}
-                style={{
-                  marginTop: '16px',
-                  background: '#ff3366',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Inspect Businesses & Add Contacts
-              </button>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
-                    <th style={{ padding: '12px 10px' }}>Contact Email</th>
-                    <th style={{ padding: '12px 10px' }}>Phone / WhatsApp</th>
-                    <th style={{ padding: '12px 10px' }}>Verification Status</th>
-                    <th style={{ padding: '12px 10px' }}>Associated Business</th>
-                    <th style={{ padding: '12px 10px' }}>Location</th>
-                    <th style={{ padding: '12px 10px' }}>Type</th>
-                    <th style={{ padding: '12px 10px' }}>MX DNS</th>
-                    <th style={{ padding: '12px 10px' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contacts.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #161622' }}>
-                      <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
-                        {c.email}
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        {c.phone ? (() => {
-                          const isWa = isWhatsAppEligible(c.phone);
-                          const waUrl = getWhatsAppUrl(c.phone, c.business_name);
-                          return (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <a
-                                href={`tel:${c.phone}`}
-                                title={`Call ${c.phone}`}
-                                style={{ color: '#ffffff', fontSize: '12px', textDecoration: 'none' }}
-                              >
-                                {c.phone}
-                              </a>
-                              {isWa && waUrl ? (
-                                <a
-                                  href={waUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  title="Open WhatsApp chat"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '22px',
-                                    height: '22px',
-                                    background: 'rgba(37, 211, 102, 0.15)',
-                                    border: '1px solid rgba(37, 211, 102, 0.4)',
-                                    color: '#25d366',
-                                    borderRadius: '50%',
-                                    textDecoration: 'none',
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  <WhatsAppIcon size={12} />
-                                </a>
-                              ) : (
-                                <a
-                                  href={`tel:${c.phone}`}
-                                  title={`Call ${c.phone}`}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '22px',
-                                    height: '22px',
-                                    background: 'rgba(56, 189, 248, 0.12)',
-                                    border: '1px solid rgba(56, 189, 248, 0.35)',
-                                    color: '#38bdf8',
-                                    borderRadius: '50%',
-                                    textDecoration: 'none',
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  <Phone size={11} />
-                                </a>
-                              )}
-                            </div>
-                          );
-                        })() : (
-                          <span style={{ color: '#6b7280', fontSize: '11px' }}>None</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '10px',
-                            background:
-                              c.verification_status === 'VALID'
-                                ? 'rgba(0, 245, 160, 0.15)'
-                                : c.verification_status === 'RISKY'
-                                ? 'rgba(245, 158, 11, 0.15)'
-                                : 'rgba(239, 68, 68, 0.15)',
-                            color:
-                              c.verification_status === 'VALID'
-                                ? '#00f5a0'
-                                : c.verification_status === 'RISKY'
-                                ? '#f59e0b'
-                                : '#ef4444',
-                          }}
-                        >
-                          {c.verification_status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <div style={{ fontWeight: 600, color: '#ffffff' }}>{c.business_name}</div>
-                        {c.business_domain && (
-                          <div style={{ fontSize: '11px', color: '#38bdf8' }}>{c.business_domain}</div>
-                        )}
-                        {c.business_status && (
-                          <div style={{ marginTop: '4px' }}>
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                padding: '2px 6px',
-                                borderRadius: '6px',
-                                background: getStatusBadgeStyle(c.business_status).bg,
-                                color: getStatusBadgeStyle(c.business_status).color,
-                                border: `1px solid ${getStatusBadgeStyle(c.business_status).border}`,
-                                display: 'inline-block',
-                              }}
-                            >
-                              {getStatusBadgeStyle(c.business_status).label}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px 10px', color: '#9ca3af' }}>
-                        {c.business_city ? `${c.business_city}, ` : ''}{c.business_country}
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <span style={{ fontSize: '11px', color: c.is_role_account ? '#f59e0b' : '#9ca3af' }}>
-                          {c.is_role_account ? 'Team / Role' : 'Direct Mailbox'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <span style={{ fontSize: '11px', color: c.mx_valid ? '#00f5a0' : '#6b7280' }}>
-                          {c.mx_valid ? 'Verified' : 'Unchecked'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <button
-                            onClick={() => handleOpenBusinessById(c.business_id, c.business_name)}
-                            style={{
-                              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                              color: '#ffffff',
-                              border: 'none',
-                              padding: '6px 12px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              whiteSpace: 'nowrap',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            Inspect & CRM
-                          </button>
-                          {c.business_status !== 'CLOSED_WON' && (
-                            <button
-                              onClick={async () => {
-                                await handleUpdateBusinessStatus(c.business_id, 'CLOSED_WON');
-                                setContacts((prev) =>
-                                  prev.map((item) =>
-                                    item.business_id === c.business_id
-                                      ? { ...item, business_status: 'CLOSED_WON' }
-                                      : item
-                                  )
-                                );
-                              }}
-                              title="Mark Deal Won"
-                              style={{
-                                background: 'rgba(16, 185, 129, 0.15)',
-                                border: '1px solid rgba(16, 185, 129, 0.3)',
-                                color: '#10b981',
-                                padding: '6px 8px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              Won 🎉
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-        {renderBusinessDetailDrawer()}
-      </div>
-    )}
-
-      {/* VIEW 6: SENT & FOLLOW-UPS */}
-      {(currentView === 'sent' || activeTab === 'queue') && (
-        <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                Outbound Dispatch Queue ({messages.length})
-              </h2>
-              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>
-                Protected by SPF/DKIM verification, domain hourly rate limiting (1/hr per domain), and pre-send suppression checks.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <select
-                value={queueBatchSize}
-                onChange={(e) => setQueueBatchSize(Number(e.target.value))}
-                style={{
-                  background: '#07070d',
-                  border: '1px solid #2d2d42',
-                  color: '#ffffff',
-                  padding: '9px 12px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                }}
-              >
-                <option value={1}>Batch: 1</option>
-                <option value={5}>Batch: 5</option>
-                <option value={10}>Batch: 10</option>
-              </select>
-
-              <button
-                onClick={() => handleProcessQueueBatch(false)}
-                disabled={isProcessingQueue}
-                style={{
-                  background: '#161622',
-                  border: '1px solid #2d2d42',
-                  color: '#ffffff',
-                  borderRadius: '8px',
-                  padding: '9px 16px',
-                  fontWeight: 600,
-                  fontSize: '13px',
-                  cursor: isProcessingQueue ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Play size={14} color="#00f5a0" />
-                {isProcessingQueue ? 'Processing...' : 'Run Due Queue'}
-              </button>
-
-              <button
-                onClick={() => handleProcessQueueBatch(true)}
-                disabled={isProcessingQueue}
-                style={{
-                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '9px 18px',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  cursor: isProcessingQueue ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Send size={14} />
-                Force Dispatch All
-              </button>
-
-              <button
-                onClick={refreshQueueMessages}
-                style={{
-                  background: '#161622',
-                  border: '1px solid #2d2d42',
-                  color: '#9ca3af',
-                  borderRadius: '8px',
-                  padding: '9px 12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                title="Refresh Queue List"
-              >
-                <RefreshCw size={14} />
-              </button>
-            </div>
-          </div>
-
-          {messages.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#6b7280' }}>
-              <Mail size={36} style={{ margin: '0 auto 12px auto', opacity: 0.5 }} />
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#d1d5db', margin: '0 0 4px 0' }}>Queue is Empty</p>
-              <p style={{ fontSize: '12px', margin: 0 }}>
-                To enqueue emails, inspect any business lead in the Businesses tab, generate an AI draft, and click "Approve & Enqueue for Dispatch".
-              </p>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
-                    <th style={{ padding: '12px 10px' }}>Recipient</th>
-                    <th style={{ padding: '12px 10px' }}>Business</th>
-                    <th style={{ padding: '12px 10px' }}>Subject</th>
-                    <th style={{ padding: '12px 10px' }}>Status</th>
-                    <th style={{ padding: '12px 10px' }}>Dispatch Schedule / Note</th>
-                    <th style={{ padding: '12px 10px' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {messages.map((m) => (
-                    <tr key={m.id} style={{ borderBottom: '1px solid #161622' }}>
-                      <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
-                        {m.recipient_email}
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <div style={{ fontWeight: 600, color: '#ffffff' }}>{m.business_name || 'Business'}</div>
-                        {m.business_domain && (
-                          <div style={{ fontSize: '11px', color: '#38bdf8' }}>{m.business_domain}</div>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px 10px', color: '#d1d5db', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {m.subject}
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '10px',
-                            background:
-                              m.status === 'SENT'
-                                ? 'rgba(0, 245, 160, 0.15)'
-                                : m.status === 'QUEUED'
-                                ? 'rgba(245, 158, 11, 0.15)'
-                                : m.status === 'SENDING'
-                                ? 'rgba(56, 189, 248, 0.15)'
-                                : 'rgba(107, 114, 128, 0.15)',
-                            color:
-                              m.status === 'SENT'
-                                ? '#00f5a0'
-                                : m.status === 'QUEUED'
-                                ? '#f59e0b'
-                                : m.status === 'SENDING'
-                                ? '#38bdf8'
-                                : '#9ca3af',
-                          }}
-                        >
-                          {m.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 10px', fontSize: '12px', color: '#9ca3af' }}>
-                        {m.status === 'SENT' ? (
-                          <span style={{ color: '#00f5a0' }}>✓ Sent {new Date(m.sent_at || m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        ) : m.error_message ? (
-                          <span style={{ color: '#f59e0b' }}>{m.error_message}</span>
-                        ) : m.scheduled_for ? (
-                          <span>Scheduled: {new Date(m.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        ) : (
-                          'Ready to send'
-                        )}
-                      </td>
-                      <td style={{ padding: '12px 10px' }}>
-                        {m.status === 'QUEUED' ? (
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              onClick={() => handleSendSingle(m.id)}
-                              style={{
-                                background: '#ff3366',
-                                color: '#ffffff',
-                                border: 'none',
-                                padding: '5px 10px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Send Now
-                            </button>
-                            <button
-                              onClick={() => handleCancelMessage(m.id)}
-                              style={{
-                                background: '#161622',
-                                border: '1px solid #2d2d42',
-                                color: '#9ca3af',
-                                padding: '5px 10px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : m.status === 'SENT' ? (
-                          <span style={{ fontSize: '11px', color: '#00f5a0' }}>Dispatched</span>
-                        ) : (
-                          <span style={{ fontSize: '11px', color: '#6b7280' }}>Closed</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* COMPLIANCE & SUPPRESSION */}
-      {(currentView === 'analytics' || activeTab === 'compliance') && (
-        <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 6px 0', color: '#ffffff' }}>
-            Compliance & Global Suppression List
-          </h2>
-          <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 20px 0' }}>
-            Any address present here is permanently and irreversibly blocked from receiving outbound outreach.
-          </p>
-
-          <form onSubmit={handleAddSuppression} style={{ display: 'flex', gap: '12px', maxWidth: '600px', marginBottom: '24px' }}>
-            <input
-              type="email"
-              placeholder="Enter email to suppress..."
-              value={suppressEmail}
-              onChange={(e) => setSuppressEmail(e.target.value)}
-              required
-              style={{
-                flex: 1,
-                background: '#07070d',
-                border: '1px solid #2d2d42',
-                color: '#ffffff',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '13px',
-              }}
-            />
-            <button
-              type="submit"
-              disabled={isAddingSuppression}
-              style={{
-                background: '#ef4444',
-                color: '#ffffff',
-                border: 'none',
-                padding: '10px 18px',
-                borderRadius: '8px',
-                fontWeight: 600,
-                fontSize: '13px',
-                cursor: 'pointer',
-              }}
-            >
-              {isAddingSuppression ? 'Adding...' : 'Add Suppression'}
-            </button>
-          </form>
-
-          <div style={{ background: '#07070d', border: '1px solid #1c1c2b', borderRadius: '8px', padding: '16px' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#ffffff' }}>Jurisdiction Gate Policy Summary</h4>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: '#9ca3af', fontSize: '13px', lineHeight: 1.8 }}>
-              <li><strong>United States (CAN-SPAM):</strong> Commercial B2B permitted with physical address and one-click unsubscribe.</li>
-              <li><strong>European Union (GDPR):</strong> Corporate domains require documented Legitimate Interest Assessment. Consumer webmail strictly blocked.</li>
-              <li><strong>United Kingdom (PECR):</strong> Corporate bodies permitted with legitimate interest. Sole traders require prior consent.</li>
-              <li><strong>Canada (CASL):</strong> Requires verified conspicuous publication relevant to business duties without non-solicitation disclaimer.</li>
-              <li><strong>Rest of World / Unknown Country:</strong> Precautionary default: Sending strictly blocked.</li>
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* SAFETY SETTINGS */}
-      {(currentView === 'analytics' || activeTab === 'settings') && (
-        <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px', maxWidth: '700px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>Safety & Rate Limits</h2>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
-            <div>
-              <label style={{ display: 'block', color: '#9ca3af', marginBottom: '6px' }}>Daily Sending Cap</label>
-              <input
-                type="number"
-                value={settings.daily_send_cap}
-                disabled
-                style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '10px', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#9ca3af', marginBottom: '6px' }}>Domain Hourly Throttle Cap</label>
-              <input
-                type="number"
-                value={settings.domain_hourly_cap}
-                disabled
-                style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '10px', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#9ca3af', marginBottom: '6px' }}>Physical Company Address (for CAN-SPAM disclosure)</label>
-              <input
-                type="text"
-                value={settings.physical_address}
-                disabled
-                style={{ width: '100%', background: '#07070d', border: '1px solid #2d2d42', color: '#ffffff', padding: '10px', borderRadius: '8px' }}
-              />
             </div>
           </div>
         </div>
       )}
 
-      {/* Single Business Delete Modal */}
+      {/* Delete Modals */}
       <ConfirmModal
         isOpen={deletingBizId !== null}
         title="Delete Business Lead"
@@ -4182,7 +2397,6 @@ export default function OutreachClient({
         isLoading={deletingBizLoading}
       />
 
-      {/* Bulk Business Delete Modal */}
       <ConfirmModal
         isOpen={bulkDeleteBizOpen}
         title="Delete Selected Business Leads"
