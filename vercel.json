@@ -1,15 +1,15 @@
 {
   "crons": [
     {
-      "path": "/api/cron/daily-news/",
+      "path": "/api/cron/daily-news",
       "schedule": "30 3 * * *"
     },
     {
-      "path": "/api/cron/chief-of-staff/",
+      "path": "/api/cron/chief-of-staff",
       "schedule": "0 4 * * *"
     },
     {
-      "path": "/api/cron/lead-scout/",
+      "path": "/api/cron/lead-scout",
       "schedule": "0 5 * * *"
     }
   ]

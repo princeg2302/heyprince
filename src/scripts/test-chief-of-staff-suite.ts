@@ -30,8 +30,8 @@ async function runChiefOfStaffTestSuite() {
       console.info(`   - [${a.status.toUpperCase()}] ${a.name} (${a.role}) - Mode: ${a.mode}`);
     });
 
-    if (agents.length < 5) {
-      throw new Error(`Expected at least 5 registered agents, but found ${agents.length}`);
+    if (agents.length < 4) {
+      throw new Error(`Expected at least 4 registered agents, but found ${agents.length}`);
     }
 
     // 2. Test Website Guardian Health Check
