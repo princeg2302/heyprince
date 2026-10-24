@@ -8,7 +8,6 @@ import { runWebsiteGuardianAudit } from './agents/website-guardian';
 import { runSeoGrowthAudit } from './agents/seo-growth';
 import { runLeadScoutDiscovery } from './agents/lead-scout';
 import { runContentResearcherDiscovery } from './agents/content-researcher';
-import { processInboundLead, InboundLeadData } from './agents/inbound-responder';
 
 export interface RunAgentOptions {
   agentId: string;
@@ -99,8 +98,8 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
       }
 
       case 'inbound_responder': {
-        taskResult = await processInboundLead(payload as InboundLeadData);
-        taskSuccess = Boolean(taskResult);
+        taskResult = { message: 'Inbound leads are now consolidated and processed automatically in the unified Lead Intelligence pipeline.' };
+        taskSuccess = true;
         break;
       }
 

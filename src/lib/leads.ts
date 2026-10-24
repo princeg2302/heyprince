@@ -170,24 +170,52 @@ export async function processLeadSubmission(
     console.error('[Leads] Non-fatal email notification failure:', emailError);
   }
 
-  // 7. AI Chief of Staff: Inbound Lead Intelligence & Proposal Drafter (Non-blocking)
+  // 7. Unified Lead Intelligence: Ingest Inbound Inquiry (Non-blocking & Deduplicated)
   try {
-    const { processInboundLead } = await import('@/lib/chief-of-staff/agents/inbound-responder');
-    processInboundLead({
-      leadId: createdLeadId,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      company: data.company,
-      service: data.service || 'Frontend React / Next.js',
-      budget: cleanBudget,
-      timeline: data.timeline,
-      message: data.message,
-    }).catch((agentErr) => {
-      console.warn('[Leads] Chief of Staff Inbound Responder async background warning:', agentErr);
+    const { upsertBusiness, upsertContact } = await import('@/lib/outreach/db');
+    const { normalizeDomain, normalizeEmail } = await import('@/lib/deduplication');
+
+    // Extract potential domain from company email
+    const emailDomain = data.email.includes('@') ? data.email.split('@')[1] : null;
+    const isPublicEmail = emailDomain && /^(gmail|yahoo|hotmail|outlook|icloud|proton|live)\./i.test(emailDomain);
+    const domainCandidate = !isPublicEmail && emailDomain ? emailDomain : null;
+
+    const biz = await upsertBusiness({
+      name: data.company || data.name,
+      domain: domainCandidate,
+      normalized_domain: domainCandidate ? normalizeDomain(domainCandidate) : null,
+      country_code: 'IN',
+      source_provider: 'website_inbound_form',
+      source_provider_id: String(createdLeadId || `inbound_${Date.now()}`),
+      industry: data.service || 'Web Development',
+      status: 'DISCOVERED',
+      metadata: {
+        inboundLeadId: createdLeadId,
+        serviceRequested: data.service,
+        budget: cleanBudget,
+        timeline: data.timeline,
+        inquiryMessage: data.message,
+        phone: data.phone,
+        clientIp,
+        isInbound: true,
+      },
     });
-  } catch (chiefErr) {
-    console.warn('[Leads] Non-fatal Chief of Staff proposal generation init failure:', chiefErr);
+
+    const businessId = biz?.business?.id;
+    if (businessId && data.email) {
+      await upsertContact({
+        business_id: businessId,
+        email: normalizeEmail(data.email),
+        name: data.name,
+        phone: data.phone || null,
+        provenance: 'website_contact_form',
+        syntax_valid: true,
+        verification_status: 'VALID',
+      });
+    }
+    console.info(`[Leads] Ingested inbound lead #${createdLeadId} into unified Lead Intelligence pipeline`);
+  } catch (ingestErr) {
+    console.warn('[Leads] Non-fatal Lead Intelligence ingestion notice:', ingestErr);
   }
 
   return {

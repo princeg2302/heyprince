@@ -1,5 +1,11 @@
 import { supabase, createMediaRecord } from '@/lib/admin-db';
 import { GeneratedArticleSection } from './types';
+import {
+  checkMediaDuplicate,
+  acquireMediaGenerationLock,
+  releaseMediaGenerationLock,
+  recordMediaPromptHash,
+} from '@/lib/deduplication';
 
 export interface GeneratedBlogImage {
   type: 'cover' | 'section';
@@ -126,7 +132,8 @@ async function uploadAndRecordMedia(
   alt: string,
   caption: string,
   contentType: string,
-  fallbackExternalUrl: string
+  fallbackExternalUrl: string,
+  prompt?: string
 ): Promise<{ url: string; mediaId?: number }> {
   let publicUrl = fallbackExternalUrl;
 
@@ -165,6 +172,9 @@ async function uploadAndRecordMedia(
 
     if (mediaRecordRes.success && mediaRecordRes.media) {
       mediaId = mediaRecordRes.media.id;
+      if (prompt) {
+        await recordMediaPromptHash(mediaId, prompt);
+      }
     }
   } catch (dbErr) {
     console.warn('[image-generator] Could not create media record in database:', dbErr);
@@ -206,48 +216,126 @@ export async function generateDailyBlogImages(
   const sec2Caption = `Production Impact: Performance benchmarks, reliability metrics, and developer workflow.`;
   const sec2Filename = `blog-section2-${timestamp}-${baseSlug}.webp`;
 
-  // Parallel generation of all 3 images with graceful fault-tolerance
+  // Parallel generation of all 3 images with deduplication & concurrency locking
   const [coverRes, sec1Res, sec2Res] = await Promise.allSettled([
     (async () => {
-      const fallback = getCuratedFallback(categoryName, 0);
-      const { buffer, contentType, usedUrl } = await generateOrFetchImage(coverPrompt, fallback);
-      const { url, mediaId } = await uploadAndRecordMedia(buffer, coverFilename, coverAlt, coverCaption, contentType, usedUrl);
-      return {
-        type: 'cover' as const,
-        url,
-        alt: coverAlt,
-        caption: coverCaption,
-        filename: coverFilename,
-        mediaId,
-      };
+      // 1. Check existing media deduplication
+      const existing = await checkMediaDuplicate(coverPrompt);
+      if (existing.exists && existing.mediaUrl) {
+        return {
+          type: 'cover' as const,
+          url: existing.mediaUrl,
+          alt: coverAlt,
+          caption: coverCaption,
+          filename: coverFilename,
+          mediaId: existing.mediaId,
+        };
+      }
+
+      acquireMediaGenerationLock(coverPrompt);
+      try {
+        const fallback = getCuratedFallback(categoryName, 0);
+        const { buffer, contentType, usedUrl } = await generateOrFetchImage(coverPrompt, fallback);
+        const { url, mediaId } = await uploadAndRecordMedia(
+          buffer,
+          coverFilename,
+          coverAlt,
+          coverCaption,
+          contentType,
+          usedUrl,
+          coverPrompt
+        );
+        return {
+          type: 'cover' as const,
+          url,
+          alt: coverAlt,
+          caption: coverCaption,
+          filename: coverFilename,
+          mediaId,
+        };
+      } finally {
+        releaseMediaGenerationLock(coverPrompt);
+      }
     })(),
 
     (async () => {
-      const fallback = getCuratedFallback(categoryName, 1);
-      const { buffer, contentType, usedUrl } = await generateOrFetchImage(sec1Prompt, fallback);
-      const { url, mediaId } = await uploadAndRecordMedia(buffer, sec1Filename, sec1Alt, sec1Caption, contentType, usedUrl);
-      return {
-        type: 'section' as const,
-        url,
-        alt: sec1Alt,
-        caption: sec1Caption,
-        filename: sec1Filename,
-        mediaId,
-      };
+      // 1. Check existing media deduplication
+      const existing = await checkMediaDuplicate(sec1Prompt);
+      if (existing.exists && existing.mediaUrl) {
+        return {
+          type: 'section' as const,
+          url: existing.mediaUrl,
+          alt: sec1Alt,
+          caption: sec1Caption,
+          filename: sec1Filename,
+          mediaId: existing.mediaId,
+        };
+      }
+
+      acquireMediaGenerationLock(sec1Prompt);
+      try {
+        const fallback = getCuratedFallback(categoryName, 1);
+        const { buffer, contentType, usedUrl } = await generateOrFetchImage(sec1Prompt, fallback);
+        const { url, mediaId } = await uploadAndRecordMedia(
+          buffer,
+          sec1Filename,
+          sec1Alt,
+          sec1Caption,
+          contentType,
+          usedUrl,
+          sec1Prompt
+        );
+        return {
+          type: 'section' as const,
+          url,
+          alt: sec1Alt,
+          caption: sec1Caption,
+          filename: sec1Filename,
+          mediaId,
+        };
+      } finally {
+        releaseMediaGenerationLock(sec1Prompt);
+      }
     })(),
 
     (async () => {
-      const fallback = getCuratedFallback(categoryName, 2);
-      const { buffer, contentType, usedUrl } = await generateOrFetchImage(sec2Prompt, fallback);
-      const { url, mediaId } = await uploadAndRecordMedia(buffer, sec2Filename, sec2Alt, sec2Caption, contentType, usedUrl);
-      return {
-        type: 'section' as const,
-        url,
-        alt: sec2Alt,
-        caption: sec2Caption,
-        filename: sec2Filename,
-        mediaId,
-      };
+      // 1. Check existing media deduplication
+      const existing = await checkMediaDuplicate(sec2Prompt);
+      if (existing.exists && existing.mediaUrl) {
+        return {
+          type: 'section' as const,
+          url: existing.mediaUrl,
+          alt: sec2Alt,
+          caption: sec2Caption,
+          filename: sec2Filename,
+          mediaId: existing.mediaId,
+        };
+      }
+
+      acquireMediaGenerationLock(sec2Prompt);
+      try {
+        const fallback = getCuratedFallback(categoryName, 2);
+        const { buffer, contentType, usedUrl } = await generateOrFetchImage(sec2Prompt, fallback);
+        const { url, mediaId } = await uploadAndRecordMedia(
+          buffer,
+          sec2Filename,
+          sec2Alt,
+          sec2Caption,
+          contentType,
+          usedUrl,
+          sec2Prompt
+        );
+        return {
+          type: 'section' as const,
+          url,
+          alt: sec2Alt,
+          caption: sec2Caption,
+          filename: sec2Filename,
+          mediaId,
+        };
+      } finally {
+        releaseMediaGenerationLock(sec2Prompt);
+      }
     })(),
   ]);
 

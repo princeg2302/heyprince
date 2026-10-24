@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export interface UnifiedApprovalItem {
   id: string;
   numericId?: number;
-  sourceType: 'chief' | 'news';
+  sourceType: 'chief' | 'news' | 'outreach';
   draftType: string;
   title: string;
   excerpt: string;
@@ -27,6 +27,24 @@ export interface UnifiedApprovalItem {
   linkedinPost?: string;
   createdAt: string;
   status: string;
+  targetUrl?: string;
+  // Lead Outreach & Proposal Specific fields
+  isOutreachProposal?: boolean;
+  businessName?: string;
+  domain?: string;
+  websiteUrl?: string;
+  contactEmail?: string;
+  contactName?: string;
+  leadScore?: number;
+  confidenceLevel?: number;
+  evidence?: string[];
+  likelyNeeds?: string;
+  recommendedService?: string;
+  proposedNextAction?: string;
+  personalizedEmailSubject?: string;
+  personalizedEmailBody?: string;
+  sendStatus?: string;
+  idempotencyKey?: string;
   raw: any;
 }
 
@@ -44,46 +62,93 @@ export async function GET(request: NextRequest) {
 
     const unifiedList: UnifiedApprovalItem[] = [];
 
-    // 1. Process Chief of Staff Drafts (Only public articles / blog posts, NOT private client outreach pitches)
+    // 1. Process Chief of Staff Drafts (Both Content & Lead Proposals)
     for (const d of chiefDrafts) {
-      if (d.draft_type === 'outreach_draft') {
-        // Skip outreach pitches: these are private sales proposals for clients and belong in /admin/outreach -> Scout Proposals
-        continue;
-      }
       const meta = d.metadata || {};
-      const rawSections = meta.rawSections || [];
-      const sections =
-        rawSections.length > 0
-          ? rawSections
-          : d.content
-          ? [
-              {
-                heading: 'Draft Content',
-                paragraphs: d.content.split('\n\n').filter(Boolean),
-              },
-            ]
-          : [];
+      const isOutreach =
+        d.draft_type === 'outreach_draft' ||
+        d.draft_type === 'outreach_proposal' ||
+        d.draft_type === 'client_proposal';
 
-      unifiedList.push({
-        id: d.id,
-        sourceType: 'chief',
-        draftType: d.draft_type,
-        title: d.title,
-        excerpt: d.excerpt || '',
-        coverImage: meta.coverImage || meta.featured_image_url || '/assets/blog/photo1.webp',
-        slug: meta.slug || '',
-        readMins: meta.readMins || '5 min',
-        categoryName: meta.category || 'Technology & Engineering',
-        tags: meta.tags || [],
-        sections,
-        linkedinPost: meta.linkedinPost || meta.linkedinCopy || '',
-        createdAt: d.created_at,
-        status: d.status,
-        raw: d,
-      });
+      if (isOutreach) {
+        unifiedList.push({
+          id: d.id,
+          sourceType: 'outreach',
+          draftType: d.draft_type,
+          title: d.title,
+          excerpt: d.excerpt || '',
+          slug: meta.domain || meta.slug || '',
+          readMins: meta.readMins || '1 min review',
+          categoryName: meta.industry || 'Lead Opportunity',
+          tags: ['Client Outreach', meta.recommendedService || 'Modernization'].filter(Boolean),
+          sections: [
+            {
+              heading: 'Personalized Outreach Pitch',
+              paragraphs: d.content.split('\n\n').filter(Boolean),
+            },
+          ],
+          createdAt: d.created_at,
+          status: d.status,
+          targetUrl: d.target_url || meta.websiteUrl,
+          isOutreachProposal: true,
+          businessName: meta.companyName || meta.name || d.title,
+          domain: meta.domain,
+          websiteUrl: meta.websiteUrl || (meta.domain ? `https://${meta.domain}` : undefined),
+          contactEmail: meta.contactEmail || meta.email,
+          contactName: meta.contactName || meta.name,
+          leadScore: meta.leadScore || meta.score || 85,
+          confidenceLevel: meta.confidenceLevel || 88,
+          evidence: Array.isArray(meta.evidence)
+            ? meta.evidence
+            : Array.isArray(meta.scoreBreakdown)
+            ? meta.scoreBreakdown
+            : ['Slow server response and outdated CMS detected'],
+          likelyNeeds: meta.likelyNeeds || 'Frontend modernization and performance tuning',
+          recommendedService: meta.recommendedService || 'Next.js Frontend Architecture & Speed Optimization',
+          proposedNextAction: meta.proposedNextAction || 'Send 1-on-1 Strategy Video Pitch via Email',
+          personalizedEmailSubject: meta.personalizedEmailSubject || `Website performance ideas for ${meta.companyName || meta.domain}`,
+          personalizedEmailBody: meta.personalizedEmailBody || d.content,
+          sendStatus: meta.send_status || 'pending',
+          idempotencyKey: d.idempotency_key || meta.idempotency_key,
+          raw: d,
+        });
+      } else {
+        // Public blog / service page / website content
+        const rawSections = meta.rawSections || [];
+        const sections =
+          rawSections.length > 0
+            ? rawSections
+            : d.content
+            ? [
+                {
+                  heading: 'Draft Content',
+                  paragraphs: d.content.split('\n\n').filter(Boolean),
+                },
+              ]
+            : [];
+
+        unifiedList.push({
+          id: d.id,
+          sourceType: 'chief',
+          draftType: d.draft_type,
+          title: d.title,
+          excerpt: d.excerpt || '',
+          coverImage: meta.coverImage || meta.featured_image_url || '/assets/blog/photo1.webp',
+          slug: meta.slug || '',
+          readMins: meta.readMins || '5 min',
+          categoryName: meta.category || 'Technology & Engineering',
+          tags: meta.tags || [],
+          sections,
+          linkedinPost: meta.linkedinPost || meta.linkedinCopy || '',
+          createdAt: d.created_at,
+          status: d.status,
+          targetUrl: d.target_url,
+          raw: d,
+        });
+      }
     }
 
-    // 2. Process News Automation Draft Runs (runs with articleContent ready but not published)
+    // 2. Process News Automation Draft Runs
     for (const r of recentNewsRuns) {
       if (!r.postId && r.articleContent && r.articleTitle) {
         const content = r.articleContent || {};
@@ -126,4 +191,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

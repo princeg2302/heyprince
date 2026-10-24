@@ -51,7 +51,16 @@ export interface ChiefTask {
   updated_at: string;
 }
 
-export type DraftType = 'article' | 'linkedin_post' | 'client_proposal' | 'seo_patch' | 'site_fix' | 'outreach_draft';
+export type DraftType =
+  | 'article'
+  | 'service_page'
+  | 'website_content'
+  | 'linkedin_post'
+  | 'client_proposal'
+  | 'seo_patch'
+  | 'site_fix'
+  | 'outreach_draft'
+  | 'outreach_proposal';
 export type DraftStatus = 'pending_approval' | 'approved' | 'published' | 'rejected';
 
 export interface ChiefContentDraft {
@@ -61,6 +70,9 @@ export interface ChiefContentDraft {
   title: string;
   excerpt?: string;
   content: string;
+  content_hash?: string;
+  idempotency_key?: string;
+  target_url?: string;
   metadata: {
     slug?: string;
     category?: string;

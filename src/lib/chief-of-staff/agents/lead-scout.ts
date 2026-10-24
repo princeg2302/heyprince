@@ -1,4 +1,4 @@
-import { query } from '../../outreach/db';
+import { query, getContactsForBusiness } from '../../outreach/db';
 import {
   createContentDraft,
   logChiefActivity,
@@ -6,12 +6,19 @@ import {
   updateAgentExecutionTime,
   getAgentById,
 } from '../db';
+import {
+  normalizeDomain,
+  generateOutreachIdempotencyKey,
+  checkLeadDuplicate,
+} from '../../deduplication';
 
-export async function runLeadScoutDiscovery(): Promise<{
+export interface LeadScoutResult {
   leadsDiscovered: number;
   draftsCreated: number;
   summary: string;
-}> {
+}
+
+export async function runLeadScoutDiscovery(): Promise<LeadScoutResult> {
   const startTime = Date.now();
   const agent = await getAgentById('lead_scout');
   const mode = agent?.mode || 'prepare';
@@ -19,114 +26,147 @@ export async function runLeadScoutDiscovery(): Promise<{
   await logChiefActivity(
     'lead_scout',
     'info',
-    'Started Lead Scout opportunity evaluation',
+    'Started Lead Intelligence prospect evaluation and proposal generation',
     { mode }
   );
 
-  // Discover businesses with pending or incomplete technical audits that haven't been scouted yet
+  // 1. Discover businesses that haven't had an outreach proposal created yet
   const uncontactedBusinesses = await query<{
     id: string;
     name: string;
     domain: string | null;
+    normalized_domain: string | null;
     industry: string | null;
+    website_url: string | null;
     metadata: Record<string, any> | null;
   }>(`
-    SELECT b.id, b.name, b.domain, b.industry, b.metadata 
+    SELECT b.id, b.name, b.domain, b.normalized_domain, b.industry, b.website_url, b.metadata 
     FROM businesses b
     WHERE b.status IN ('DISCOVERED', 'AUDITED', 'ENRICHED')
       AND NOT EXISTS (
         SELECT 1 FROM chief_content_drafts d 
         WHERE d.metadata->>'businessId' = b.id::text
+           OR (b.normalized_domain IS NOT NULL AND d.metadata->>'domain' = b.normalized_domain)
            OR (b.domain IS NOT NULL AND d.metadata->>'domain' = b.domain)
       )
     ORDER BY b.created_at DESC 
-    LIMIT 5;
+    LIMIT 10;
   `);
 
   let draftsCreated = 0;
 
-  if (uncontactedBusinesses.length > 0) {
-    for (const biz of uncontactedBusinesses) {
-      const bizDomain = biz.domain || 'their website';
-      const opportunityTitle = `Outreach Draft: ${biz.name} (${bizDomain})`;
-      const opportunityExcerpt = `Technical optimization & modernization proposal for ${biz.name} (${bizDomain})`;
-      
-      // Calculate transparent objective fit score (0 - 100)
-      const meta = biz.metadata || {};
-      let calculatedScore = 70; // baseline
-      const scoreReasons: string[] = [];
+  for (const biz of uncontactedBusinesses) {
+    const rawDomain = biz.domain || biz.website_url || 'their-website.com';
+    const canonical = normalizeDomain(rawDomain);
+    const meta = biz.metadata || {};
 
-      if (meta.ttfb && Number(meta.ttfb) > 750) {
-        calculatedScore += 12;
-        scoreReasons.push(`High TTFB latency (${meta.ttfb}ms) indicates server-side caching opportunity`);
-      }
-      if (meta.techStack && (meta.techStack.includes('WordPress') || meta.techStack.includes('WooCommerce'))) {
-        calculatedScore += 10;
-        scoreReasons.push('Monolithic CMS detected; prime candidate for headless Next.js frontend');
-      }
-      if (meta.hasMobileIssues) {
-        calculatedScore += 8;
-        scoreReasons.push('Mobile viewport or layout shift detected impacting Core Web Vitals');
-      }
-      calculatedScore = Math.min(Math.max(calculatedScore, 65), 98);
+    // 2. Fetch primary contact if available
+    let primaryContactEmail: string | undefined;
+    let primaryContactName: string | undefined;
 
-      const pitchBody = `Hi ${biz.name} Team,\n\nI was analyzing high-growth web platforms in the ${biz.industry || 'digital commerce'} space and noticed ${bizDomain}.\n\nYour business has strong momentum, but I noticed a few frontend performance and TTFB bottlenecks that might be impacting customer conversion and Google Core Web Vitals rankings.\n\nI specialize in sub-second Next.js web applications and WordPress/WooCommerce speed optimization. Would you be open to a 2-minute video breakdown or a quick technical audit showing where the gains are?\n\nBest regards,\nPrince\nhttps://heyprince.in`;
-
-      await createContentDraft({
-        agentId: 'lead_scout',
-        draftType: 'outreach_draft',
-        title: opportunityTitle,
-        excerpt: opportunityExcerpt,
-        content: pitchBody,
-        metadata: {
-          businessId: biz.id,
-          companyName: biz.name,
-          domain: bizDomain,
-          industry: biz.industry,
-          score: calculatedScore,
-          scoreBreakdown: scoreReasons,
-        },
-        status: 'pending_approval',
-      });
-      draftsCreated++;
+    try {
+      const contacts = await getContactsForBusiness(biz.id);
+      if (contacts && contacts.length > 0) {
+        primaryContactEmail = contacts[0].email;
+        primaryContactName = contacts[0].name || undefined;
+      }
+    } catch (contactErr) {
+      console.warn(`[LeadScout] Note fetching contacts for biz #${biz.id}:`, contactErr);
     }
-  } else {
-    // Check if initial sample high-intent lead opportunity already exists
-    const sampleDomain = 'nordicpulse-gear.com';
-    const sampleCompany = 'NordicPulse Retail';
 
-    const existingSample = await query<any>(
-      `SELECT id FROM chief_content_drafts WHERE metadata->>'domain' = $1 LIMIT 1;`,
-      [sampleDomain]
+    // 3. Assess technical opportunity fit & evidence
+    let calculatedScore = 72; // baseline fit
+    const evidenceList: string[] = [];
+    let likelyNeeds = 'Frontend modernization and performance optimization';
+    let recommendedService = 'Next.js Frontend Architecture & Performance Tuning';
+
+    const ttfb = meta.ttfb ? Number(meta.ttfb) : null;
+    if (ttfb && ttfb > 700) {
+      calculatedScore += 12;
+      evidenceList.push(`High Server TTFB latency (${ttfb}ms) causing page lag and cart abandonment`);
+      likelyNeeds = 'Edge caching and server-side response optimization';
+      recommendedService = 'Sub-Second Next.js Speed Optimization';
+    }
+
+    const tech = meta.techStack ? String(meta.techStack).toLowerCase() : '';
+    if (tech.includes('wordpress') || tech.includes('woocommerce') || tech.includes('wp')) {
+      calculatedScore += 10;
+      evidenceList.push('Monolithic WordPress/WooCommerce stack detected with database-heavy plugin overhead');
+      likelyNeeds = 'Migration to headless architecture while preserving product catalog';
+      recommendedService = 'WooCommerce to Headless Next.js Migration';
+    } else if (tech.includes('shopify') || tech.includes('liquid')) {
+      calculatedScore += 8;
+      evidenceList.push('Shopify Liquid theme with heavy third-party app scripts impacting Core Web Vitals');
+      likelyNeeds = 'Headless Shopify Hydrogen / Next.js storefront';
+      recommendedService = 'Headless Shopify Next.js Storefront';
+    }
+
+    if (meta.hasMobileIssues || meta.mobileFriendly === false) {
+      calculatedScore += 8;
+      evidenceList.push('Mobile viewport layout shifts causing Google Core Web Vitals penalties');
+    }
+
+    if (evidenceList.length === 0) {
+      evidenceList.push('Legacy web architecture with modernization opportunities for speed and SEO rankings');
+    }
+
+    calculatedScore = Math.min(Math.max(calculatedScore, 65), 98);
+    const confidenceLevel = Math.round(calculatedScore * 0.95);
+
+    // 4. Generate high-conviction personalized outreach proposal
+    const targetRecipient = primaryContactName || biz.name;
+    const personalizedSubject = `Quick technical optimization idea for ${biz.name} (${canonical || 'your website'})`;
+    
+    let personalizedBody = `Hi ${targetRecipient} Team,\n\nI was analyzing high-growth web platforms in the ${biz.industry || 'digital business'} space and spent some time on ${canonical || 'your website'}.\n\nYour business has strong momentum, but I noticed a couple of technical bottlenecks that might be impacting customer conversion and Google Core Web Vitals rankings:\n`;
+    for (const ev of evidenceList) {
+      personalizedBody += `• ${ev}\n`;
+    }
+    personalizedBody += `\nI specialize in sub-second Next.js web applications, full-stack cloud engineering, and WordPress/WooCommerce speed optimization.\n\nWould you be open to a 2-minute video breakdown showing exactly where the performance gains are?\n\nBest regards,\nPrince\nSenior Full Stack Engineer & IT Consultant\nhttps://heyprince.in`;
+
+    // 5. Generate deterministic idempotency key to prevent duplicate sends
+    const idempotencyKey = generateOutreachIdempotencyKey(
+      biz.id,
+      `outreach_${biz.id}`,
+      primaryContactEmail
     );
 
-    if (existingSample.length === 0) {
-      const opportunityTitle = `Outreach Draft: ${sampleCompany} (${sampleDomain})`;
-      const opportunityExcerpt = `WooCommerce to Headless Next.js optimization proposal (Score: 92/100)`;
+    const opportunityTitle = `Outreach Proposal: ${biz.name} (${canonical || 'Website'})`;
+    const opportunityExcerpt = `${recommendedService} (Score: ${calculatedScore}/100 • Confidence: ${confidenceLevel}%)`;
 
-      const pitchBody = `Hi ${sampleCompany} Team,\n\nI noticed NordicPulse is running on WooCommerce with high checkout drop-off rates on mobile. We can achieve sub-second TTFB and 100% Core Web Vitals by migrating your store to a headless Next.js frontend while keeping your existing WooCommerce product catalog intact.\n\nWould you be open to a quick 10-minute technical review this week?\n\nBest,\nPrince\nSenior Full Stack Engineer\nhttps://heyprince.in`;
+    // 6. Submit complete review item to chief_content_drafts
+    await createContentDraft({
+      agentId: 'lead_scout',
+      draftType: 'outreach_proposal',
+      title: opportunityTitle,
+      excerpt: opportunityExcerpt,
+      content: personalizedBody,
+      idempotency_key: idempotencyKey,
+      target_url: biz.website_url || `https://${canonical}`,
+      metadata: {
+        businessId: biz.id,
+        companyName: biz.name,
+        domain: canonical,
+        websiteUrl: biz.website_url || `https://${canonical}`,
+        contactEmail: primaryContactEmail,
+        contactName: primaryContactName,
+        leadScore: calculatedScore,
+        confidenceLevel,
+        evidence: evidenceList,
+        likelyNeeds,
+        recommendedService,
+        proposedNextAction: 'Send 1-on-1 Strategy Video Pitch via Email',
+        personalizedEmailSubject: personalizedSubject,
+        personalizedEmailBody: personalizedBody,
+        send_status: 'pending',
+      },
+      status: 'pending_approval',
+    });
 
-      await createContentDraft({
-        agentId: 'lead_scout',
-        draftType: 'outreach_draft',
-        title: opportunityTitle,
-        excerpt: opportunityExcerpt,
-        content: pitchBody,
-        metadata: {
-          companyName: sampleCompany,
-          domain: sampleDomain,
-          industry: 'E-commerce & Apparel',
-          score: 92,
-          scoreBreakdown: ['Monolithic WooCommerce stack with mobile checkout friction'],
-        },
-        status: 'pending_approval',
-      });
-      draftsCreated++;
-    }
+    draftsCreated++;
   }
 
   const duration = Date.now() - startTime;
-  const summary = `Evaluated candidate businesses in ${duration}ms. Prepared ${draftsCreated} outreach draft(s) awaiting approval.`;
+  const summary = `Evaluated candidate businesses in ${duration}ms. Prepared ${draftsCreated} outreach proposal(s) awaiting AI approval.`;
 
   await updateAgentExecutionTime('lead_scout', new Date(), new Date(Date.now() + 24 * 3600 * 1000));
   await incrementAgentStats('lead_scout', true, draftsCreated);
@@ -134,7 +174,7 @@ export async function runLeadScoutDiscovery(): Promise<{
   await logChiefActivity(
     'lead_scout',
     'success',
-    'Completed Lead Scout discovery run',
+    'Completed Lead Intelligence evaluation run',
     { businessesEvaluated: uncontactedBusinesses.length, draftsCreated, durationMs: duration }
   );
 

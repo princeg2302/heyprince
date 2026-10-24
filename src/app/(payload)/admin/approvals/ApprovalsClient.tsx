@@ -24,6 +24,11 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
+  Briefcase,
+  Send,
+  Target,
+  XCircle,
+  Bookmark,
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
@@ -36,6 +41,7 @@ interface ApprovalItem extends ModalDraftItem {
   numericId?: number;
   status: string;
   createdAt: string;
+  metadata?: Record<string, any>;
 }
 
 function urlB64ToUint8Array(base64String: string) {
@@ -54,11 +60,12 @@ export default function ApprovalsClient() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [selectedItemForModal, setSelectedItemForModal] = useState<ApprovalItem | null>(null);
-  const [filterType, setFilterType] = useState<'all' | 'news' | 'chief'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'news' | 'chief' | 'outreach'>('all');
   const [quickPublishingId, setQuickPublishingId] = useState<string | number | null>(null);
+  const [quickSendingId, setQuickSendingId] = useState<string | number | null>(null);
 
   // Bulk selection state
-  const [selectedIds, setSelectedIds] = useState<Array<{ id: string | number; sourceType: 'news' | 'chief' }>>([]);
+  const [selectedIds, setSelectedIds] = useState<Array<{ id: string | number; sourceType: 'news' | 'chief' | 'outreach' }>>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
@@ -140,13 +147,12 @@ export default function ApprovalsClient() {
     }
   }, [items]);
 
-  const validBlogItems = items.filter((i) => i.draftType !== 'outreach_draft');
-
-  const filteredItems = validBlogItems
+  const filteredItems = items
     .filter((item) => {
       if (filterType === 'all') return true;
       if (filterType === 'news') return item.sourceType === 'news';
       if (filterType === 'chief') return item.sourceType === 'chief';
+      if (filterType === 'outreach') return item.sourceType === 'outreach';
       return true;
     })
     .sort((a, b) => {
@@ -168,7 +174,7 @@ export default function ApprovalsClient() {
       setSelectedIds([]);
     } else {
       setSelectedIds(
-        filteredItems.map((item) => ({ id: item.id, sourceType: item.sourceType as 'news' | 'chief' }))
+        filteredItems.map((item) => ({ id: item.id, sourceType: item.sourceType as 'news' | 'chief' | 'outreach' }))
       );
     }
   };
@@ -181,7 +187,7 @@ export default function ApprovalsClient() {
     } else {
       setSelectedIds((prev) => [
         ...prev,
-        { id: item.id, sourceType: item.sourceType as 'news' | 'chief' },
+        { id: item.id, sourceType: item.sourceType as 'news' | 'chief' | 'outreach' },
       ]);
     }
   };
@@ -358,6 +364,58 @@ export default function ApprovalsClient() {
     }
   };
 
+  const handleQuickSendOutreach = async (item: ApprovalItem) => {
+    setQuickSendingId(item.id);
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.id,
+          sourceType: 'outreach',
+          action: 'approve_and_send_outreach',
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast('Client outreach email dispatched successfully!', 'success');
+        fetchApprovals();
+      } else {
+        showToast(data.error || 'Failed to dispatch outreach proposal', 'error');
+      }
+    } catch {
+      showToast('Network error while dispatching outreach proposal', 'error');
+    } finally {
+      setQuickSendingId(null);
+    }
+  };
+
+  const handleRejectSingle = async (item: ApprovalItem) => {
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.id,
+          sourceType: item.sourceType,
+          action: 'reject',
+          rejectionReason: 'Rejected directly from Approvals Hub',
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast('Item rejected.', 'info');
+        fetchApprovals();
+      } else {
+        showToast(data.error || 'Failed to reject item', 'error');
+      }
+    } catch {
+      showToast('Network error while rejecting item', 'error');
+    }
+  };
+
   return (
     <div className="hpa-content">
       {/* Mobile-Friendly Header */}
@@ -379,8 +437,8 @@ export default function ApprovalsClient() {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: validBlogItems.length > 0 ? '#ff4757' : '#00ff88',
-                boxShadow: validBlogItems.length > 0 ? '0 0 10px #ff4757' : '0 0 10px #00ff88',
+                background: items.length > 0 ? '#ff4757' : '#00ff88',
+                boxShadow: items.length > 0 ? '0 0 10px #ff4757' : '0 0 10px #00ff88',
               }}
             />
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
@@ -388,7 +446,7 @@ export default function ApprovalsClient() {
             </h1>
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--hpa-text-dim)' }}>
-            Review scheduled blogs, preview articles, customize with JARVIS on your phone, and publish live.
+            Review scheduled blogs, preview articles, customize with JARVIS on your phone, and approve client outreach.
           </p>
         </div>
 
@@ -591,7 +649,7 @@ export default function ApprovalsClient() {
             whiteSpace: 'nowrap',
           }}
         >
-          All Pending ({validBlogItems.length})
+          All Pending ({items.length})
         </button>
 
         <button
@@ -609,7 +667,7 @@ export default function ApprovalsClient() {
             whiteSpace: 'nowrap',
           }}
         >
-          Scheduled AI Blogs ({validBlogItems.filter((i) => i.sourceType === 'news').length})
+          Scheduled AI Blogs ({items.filter((i) => i.sourceType === 'news').length})
         </button>
 
         <button
@@ -627,7 +685,25 @@ export default function ApprovalsClient() {
             whiteSpace: 'nowrap',
           }}
         >
-          Chief Thought Leadership Articles ({validBlogItems.filter((i) => i.sourceType === 'chief').length})
+          Thought Leadership & Pages ({items.filter((i) => i.sourceType === 'chief').length})
+        </button>
+
+        <button
+          onClick={() => setFilterType('outreach')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '20px',
+            border: 'none',
+            background: filterType === 'outreach' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+            borderBottom: filterType === 'outreach' ? '2px solid #c084fc' : '2px solid transparent',
+            color: filterType === 'outreach' ? '#c084fc' : '#94a3b8',
+            fontWeight: 700,
+            fontSize: '0.78rem',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Lead Proposals & Outreach ({items.filter((i) => i.sourceType === 'outreach').length})
         </button>
       </div>
 
@@ -764,204 +840,413 @@ export default function ApprovalsClient() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className="hpa-card"
-              style={{
-                padding: '16px',
-                background: 'rgba(19, 20, 31, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                transition: 'border-color 0.2s',
-              }}
-            >
-              {/* Card Header: Source badge & Date */}
+          {filteredItems.map((item) => {
+            const isOutreach = item.sourceType === 'outreach';
+
+            return (
               <div
+                key={item.id}
+                className="hpa-card"
                 style={{
+                  padding: '16px',
+                  background: isOutreach
+                    ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(19, 20, 31, 0.9) 100%)'
+                    : 'rgba(19, 20, 31, 0.8)',
+                  border: isOutreach
+                    ? '1px solid rgba(168, 85, 247, 0.25)'
+                    : '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '12px',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  transition: 'border-color 0.2s',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input
-                    type="checkbox"
-                    checked={isItemSelected(item)}
-                    onChange={() => handleToggleSelect(item)}
-                    style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
-                    title="Select Draft"
-                  />
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '3px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      background:
-                        item.sourceType === 'news'
+                {/* Card Header: Source badge & Date */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <input
+                      type="checkbox"
+                      checked={isItemSelected(item)}
+                      onChange={() => handleToggleSelect(item)}
+                      style={{ cursor: 'pointer', accentColor: isOutreach ? '#c084fc' : '#ff3366', width: '16px', height: '16px' }}
+                      title="Select Item"
+                    />
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        background: isOutreach
+                          ? 'rgba(168, 85, 247, 0.15)'
+                          : item.sourceType === 'news'
                           ? 'rgba(56, 189, 248, 0.15)'
                           : 'rgba(255, 71, 87, 0.15)',
-                      color: item.sourceType === 'news' ? '#38bdf8' : '#ff6b81',
-                      border:
-                        item.sourceType === 'news'
+                        color: isOutreach
+                          ? '#c084fc'
+                          : item.sourceType === 'news'
+                          ? '#38bdf8'
+                          : '#ff6b81',
+                        border: isOutreach
+                          ? '1px solid rgba(168, 85, 247, 0.35)'
+                          : item.sourceType === 'news'
                           ? '1px solid rgba(56, 189, 248, 0.3)'
                           : '1px solid rgba(255, 71, 87, 0.3)',
-                    }}
-                  >
-                    <Sparkles size={10} />
-                    <span>{item.sourceType === 'news' ? 'Scheduled Blog' : 'Chief Draft'}</span>
-                  </span>
+                      }}
+                    >
+                      {isOutreach ? <Briefcase size={11} /> : <Sparkles size={10} />}
+                      <span>
+                        {isOutreach
+                          ? 'Client Outreach Proposal'
+                          : item.sourceType === 'news'
+                          ? 'Scheduled Blog'
+                          : 'Chief Draft'}
+                      </span>
+                    </span>
 
-                  <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                    {item.readMins || '5 min read'}
+                    {isOutreach && (item.metadata?.fit_score || item.metadata?.confidence) && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          color: '#34d399',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                        }}
+                      >
+                        <Target size={11} />
+                        <span>Fit: {item.metadata?.fit_score || 85}/100</span>
+                      </span>
+                    )}
+
+                    {!isOutreach && (
+                      <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                        {item.readMins || '5 min read'}
+                      </span>
+                    )}
+                  </div>
+
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    {new Date(item.createdAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </span>
                 </div>
 
-                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                  {new Date(item.createdAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
+                {/* Card Body: Distinct Outreach vs Blog Presentation */}
+                {isOutreach ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                      <h3
+                        style={{
+                          fontSize: '1.05rem',
+                          fontWeight: 700,
+                          color: '#ffffff',
+                          margin: 0,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => setSelectedItemForModal(item)}
+                      >
+                        {item.metadata?.company_name || item.title}
+                      </h3>
 
-              {/* Title & Excerpt */}
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                {item.coverImage && (
-                  <div
-                    style={{
-                      width: '74px',
-                      height: '74px',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      flexShrink: 0,
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                    }}
-                  >
-                    <img
-                      src={item.coverImage}
-                      alt={item.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+                      {(item.metadata?.domain || item.targetUrl) && (
+                        <a
+                          href={`https://${(item.metadata?.domain || item.targetUrl || '').replace(/^https?:\/\//, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.75rem',
+                            color: '#38bdf8',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Globe size={12} />
+                          <span>{item.metadata?.domain || item.targetUrl}</span>
+                          <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '0.78rem', color: '#94a3b8' }}>
+                      {item.metadata?.contact_email && (
+                        <div>
+                          <strong style={{ color: '#cbd5e1' }}>Contact:</strong> {item.metadata.contact_email}
+                        </div>
+                      )}
+                      {item.metadata?.recommended_service && (
+                        <div>
+                          <strong style={{ color: '#cbd5e1' }}>Recommended:</strong> {item.metadata.recommended_service}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Opportunity Evidence */}
+                    {Array.isArray(item.metadata?.audit_evidence) && item.metadata.audit_evidence.length > 0 && (
+                      <div
+                        style={{
+                          padding: '8px 12px',
+                          background: 'rgba(0, 0, 0, 0.25)',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                        }}
+                      >
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          Key Opportunity Findings:
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                          {item.metadata.audit_evidence.slice(0, 2).map((ev: string, idx: number) => (
+                            <li key={idx} style={{ marginBottom: '2px' }}>
+                              {ev}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Proposed Pitch snippet */}
+                    <div style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)', lineHeight: 1.4 }}>
+                      <strong style={{ color: '#ffffff' }}>Subject:</strong> {item.title}
+                      {item.excerpt && (
+                        <p style={{ margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {item.excerpt}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                    {item.coverImage && (
+                      <div
+                        style={{
+                          width: '74px',
+                          height: '74px',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                        }}
+                      >
+                        <img
+                          src={item.coverImage}
+                          alt={item.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    )}
+
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <h3
+                        style={{
+                          fontSize: '1.05rem',
+                          fontWeight: 700,
+                          color: '#ffffff',
+                          margin: '0 0 6px 0',
+                          lineHeight: 1.3,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => setSelectedItemForModal(item)}
+                      >
+                        {item.title}
+                      </h3>
+                      {item.excerpt && (
+                        <p
+                          style={{
+                            fontSize: '0.8rem',
+                            color: 'var(--hpa-text-dim)',
+                            lineHeight: 1.4,
+                            margin: 0,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {item.excerpt}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <h3
-                    style={{
-                      fontSize: '1.05rem',
-                      fontWeight: 700,
-                      color: '#ffffff',
-                      margin: '0 0 6px 0',
-                      lineHeight: 1.3,
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => setSelectedItemForModal(item)}
-                  >
-                    {item.title}
-                  </h3>
-                  {item.excerpt && (
-                    <p
-                      style={{
-                        fontSize: '0.8rem',
-                        color: 'var(--hpa-text-dim)',
-                        lineHeight: 1.4,
-                        margin: 0,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {item.excerpt}
-                    </p>
+                {/* Action Buttons */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {isOutreach ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedItemForModal(item)}
+                        className="hpa-btn hpa-btn-primary"
+                        style={{
+                          flex: 1,
+                          minWidth: '180px',
+                          padding: '8px 12px',
+                          fontSize: '0.8rem',
+                          background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
+                          borderColor: '#a855f7',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <Eye size={14} />
+                        <span>Review Lead & Edit Pitch</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleQuickSendOutreach(item)}
+                        disabled={quickSendingId === item.id}
+                        className="hpa-btn hpa-btn-secondary"
+                        title="Approve and send outreach email to client"
+                        style={{
+                          padding: '8px 14px',
+                          fontSize: '0.8rem',
+                          color: '#00ff88',
+                          border: '1px solid rgba(0, 255, 136, 0.3)',
+                          background: 'rgba(0, 255, 136, 0.08)',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        {quickSendingId === item.id ? (
+                          <Loader2 size={13} className="hpa-spin" />
+                        ) : (
+                          <Send size={13} />
+                        )}
+                        <span>Approve & Send</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRejectSingle(item)}
+                        className="hpa-btn hpa-btn-secondary"
+                        title="Reject proposal"
+                        style={{
+                          padding: '8px 12px',
+                          fontSize: '0.8rem',
+                          color: '#f87171',
+                          borderColor: 'rgba(248, 113, 113, 0.3)',
+                        }}
+                      >
+                        <XCircle size={13} />
+                        <span>Reject</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeletingItem(item)}
+                        className="hpa-btn hpa-btn-danger"
+                        title="Delete proposal"
+                        style={{ padding: '8px 10px', fontSize: '0.8rem' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedItemForModal(item)}
+                        className="hpa-btn hpa-btn-primary"
+                        style={{
+                          flex: 1,
+                          padding: '8px 12px',
+                          fontSize: '0.8rem',
+                          background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)',
+                          borderColor: '#ff4757',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <Eye size={14} />
+                        <span>Review & Customize Popup</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleQuickPublish(item)}
+                        disabled={quickPublishingId === item.id}
+                        className="hpa-btn hpa-btn-secondary"
+                        title="Approve immediately without preview"
+                        style={{
+                          padding: '8px 12px',
+                          fontSize: '0.8rem',
+                          color: '#00ff88',
+                          border: '1px solid rgba(0, 255, 136, 0.3)',
+                          background: 'rgba(0, 255, 136, 0.08)',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        {quickPublishingId === item.id ? (
+                          <Loader2 size={13} className="hpa-spin" />
+                        ) : (
+                          <Check size={13} />
+                        )}
+                        <span>Publish</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeletingItem(item)}
+                        className="hpa-btn hpa-btn-danger"
+                        title="Delete Draft"
+                        style={{
+                          padding: '8px 10px',
+                          fontSize: '0.8rem',
+                        }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  paddingTop: '8px',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setSelectedItemForModal(item)}
-                  className="hpa-btn hpa-btn-primary"
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    fontSize: '0.8rem',
-                    background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)',
-                    borderColor: '#ff4757',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Eye size={14} />
-                  <span>Review & Customize Popup</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickPublish(item)}
-                  disabled={quickPublishingId === item.id}
-                  className="hpa-btn hpa-btn-secondary"
-                  title="Approve immediately without preview"
-                  style={{
-                    padding: '8px 12px',
-                    fontSize: '0.8rem',
-                    color: '#00ff88',
-                    border: '1px solid rgba(0, 255, 136, 0.3)',
-                    background: 'rgba(0, 255, 136, 0.08)',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                  }}
-                >
-                  {quickPublishingId === item.id ? (
-                    <Loader2 size={13} className="hpa-spin" />
-                  ) : (
-                    <Check size={13} />
-                  )}
-                  <span>Publish</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDeletingItem(item)}
-                  className="hpa-btn hpa-btn-danger"
-                  title="Delete Draft"
-                  style={{
-                    padding: '8px 10px',
-                    fontSize: '0.8rem',
-                  }}
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

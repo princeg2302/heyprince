@@ -9,7 +9,6 @@ const ALL_CHIEF_AGENTS = [
   'content_researcher',
   'website_guardian',
   'seo_growth',
-  'inbound_responder',
   'lead_scout',
 ];
 

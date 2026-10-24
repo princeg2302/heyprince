@@ -90,8 +90,33 @@ export default function OutreachClient({
 }: OutreachClientProps) {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<
-    'telemetry' | 'discovery' | 'leads' | 'scout' | 'contacts' | 'queue' | 'compliance' | 'settings'
-  >('telemetry');
+    | 'discover'
+    | 'research'
+    | 'qualified'
+    | 'proposals'
+    | 'pending_approval'
+    | 'sent'
+    | 'analytics'
+    | 'discovery'
+    | 'leads'
+    | 'scout'
+    | 'contacts'
+    | 'queue'
+    | 'compliance'
+    | 'settings'
+    | 'telemetry'
+  >('discover');
+
+  const currentView = (() => {
+    if (activeTab === 'discovery' || activeTab === 'discover') return 'discover';
+    if (activeTab === 'research') return 'research';
+    if (activeTab === 'leads' || activeTab === 'contacts' || activeTab === 'qualified') return 'qualified';
+    if (activeTab === 'scout' || activeTab === 'proposals') return 'proposals';
+    if (activeTab === 'pending_approval') return 'pending_approval';
+    if (activeTab === 'queue' || activeTab === 'sent') return 'sent';
+    if (activeTab === 'telemetry' || activeTab === 'compliance' || activeTab === 'settings' || activeTab === 'analytics') return 'analytics';
+    return 'discover';
+  })();
 
   const [settings, setSettings] = useState<OutreachSettingsEntity>(initialSettings);
   const [analytics, setAnalytics] = useState(initialAnalytics);
@@ -844,10 +869,10 @@ export default function OutreachClient({
 
   const handleRejectScoutDraft = async (draftId: string) => {
     try {
-      const res = await fetch('/api/admin/chief-of-staff/approve-draft', {
+      const res = await fetch('/api/admin/approvals/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draftId, action: 'reject' }),
+        body: JSON.stringify({ id: draftId, sourceType: 'outreach', action: 'reject' }),
       });
       const data = await res.json();
       if (data.success) {
@@ -863,6 +888,55 @@ export default function OutreachClient({
       }
     } catch {
       showToast('Network error while rejecting proposal', 'error');
+    }
+  };
+
+  const handleApproveAndSendFromOutreach = async (draftId: string) => {
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draftId,
+          sourceType: 'outreach',
+          action: 'approve_and_send_outreach',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Client outreach email dispatched successfully with send-lock protection!', 'success');
+        setScoutDrafts((prev) =>
+          prev.map((d) => (d.id === draftId ? { ...d, status: 'approved' } : d))
+        );
+        await loadScoutDrafts();
+      } else {
+        showToast(data.error || 'Failed to dispatch proposal', 'error');
+      }
+    } catch {
+      showToast('Network error while dispatching proposal', 'error');
+    }
+  };
+
+  const handleSaveForLaterFromOutreach = async (draftId: string) => {
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draftId,
+          sourceType: 'outreach',
+          action: 'save_for_later',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Proposal saved for later review.', 'info');
+        await loadScoutDrafts();
+      } else {
+        showToast(data.error || 'Failed to save for later', 'error');
+      }
+    } catch {
+      showToast('Network error saving proposal for later', 'error');
     }
   };
 
@@ -1647,17 +1721,36 @@ export default function OutreachClient({
         }}
       >
         {[
-          { key: 'telemetry', label: 'Overview & Metrics', icon: Layers },
-          { key: 'discovery', label: 'Scanner', icon: Globe },
-          { key: 'leads', label: `Businesses (${totalBusinesses})`, icon: Search },
-          { key: 'scout', label: `⚡ Lead Scout${scoutDrafts.length > 0 ? ` (${scoutDrafts.length})` : ''}`, icon: Sparkles },
-          { key: 'contacts', label: `Contacts (${contacts.length})`, icon: UserCheck },
-          { key: 'queue', label: `Outbox Queue (${queuedEmailCount})`, icon: Mail },
-          { key: 'compliance', label: 'Compliance & Suppression', icon: ShieldCheck },
-          { key: 'settings', label: 'Safety Settings', icon: Sliders },
+          { key: 'discover', label: '1. Discover Leads', icon: Globe },
+          {
+            key: 'research',
+            label: `2. Research Queue (${jobs.filter((j) => j.status === 'RUNNING' || j.status === 'PENDING').length + businesses.filter((b) => b.status === 'DISCOVERED').length})`,
+            icon: Clock,
+          },
+          {
+            key: 'qualified',
+            label: `3. Qualified Leads (${businesses.filter((b) => b.status !== 'DISQUALIFIED' && b.status !== 'DISCOVERED').length || totalBusinesses})`,
+            icon: Target,
+          },
+          {
+            key: 'proposals',
+            label: `4. Proposals & Outreach (${scoutDrafts.length})`,
+            icon: Sparkles,
+          },
+          {
+            key: 'pending_approval',
+            label: `5. Pending Approval (${scoutDrafts.filter((d) => d.status === 'pending' || !d.status).length})`,
+            icon: CheckCircle2,
+          },
+          {
+            key: 'sent',
+            label: `6. Sent & Follow-ups (${analytics.sentEmails + queuedEmailCount})`,
+            icon: Send,
+          },
+          { key: 'analytics', label: '7. History & Analytics', icon: Layers },
         ].map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
+          const isActive = currentView === tab.key;
           return (
             <button
               key={tab.key}
@@ -1686,8 +1779,8 @@ export default function OutreachClient({
         })}
       </div>
 
-      {/* TAB 1: OVERVIEW & TELEMETRY */}
-      {activeTab === 'telemetry' && (
+      {/* VIEW 7: HISTORY & ANALYTICS */}
+      {(currentView === 'analytics' || activeTab === 'telemetry') && (
         <div>
           {/* Key Metric Tiles */}
           <div
@@ -1839,8 +1932,8 @@ export default function OutreachClient({
         </div>
       )}
 
-      {/* TAB 2: DISCOVERY SCANNER */}
-      {activeTab === 'discovery' && (
+      {/* VIEW 1: DISCOVER LEADS */}
+      {(currentView === 'discover' || activeTab === 'discovery') && (
         <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 6px 0', color: '#ffffff' }}>
             Targeted Global Business Discovery
@@ -1939,8 +2032,268 @@ export default function OutreachClient({
         </div>
       )}
 
-      {/* TAB 3: BUSINESSES LEADS TABLE */}
-      {activeTab === 'leads' && (
+      {/* VIEW 2: RESEARCH QUEUE */}
+      {currentView === 'research' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(14, 14, 22, 0.95))',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+              borderRadius: '12px',
+              padding: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    background: 'rgba(56, 189, 248, 0.2)',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    color: '#38bdf8',
+                    display: 'flex',
+                  }}
+                >
+                  <Clock size={20} />
+                </div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                  Prospect Research & Technical Investigation Queue
+                </h2>
+              </div>
+              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '8px 0 0 0', maxWidth: '780px', lineHeight: 1.6 }}>
+                Active discovery jobs and freshly discovered prospects undergoing website crawling, technical audits, performance benchmarks, and contact discovery.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={() => setActiveTab('discover')}
+                style={{
+                  background: 'linear-gradient(135deg, #ff3366, #e11d48)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 18px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Plus size={15} />
+                <span>Start New Discovery</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Research Metric Counters */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '14px',
+            }}
+          >
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#38bdf8', textTransform: 'uppercase' }}>
+                Active Discovery Jobs
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#38bdf8', marginTop: '6px' }}>
+                {jobs.filter((j) => j.status === 'RUNNING' || j.status === 'PENDING').length}
+              </div>
+            </div>
+
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#fbbf24', textTransform: 'uppercase' }}>
+                Fresh / In-Investigation
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#fbbf24', marginTop: '6px' }}>
+                {businesses.filter((b) => b.status === 'DISCOVERED').length}
+              </div>
+            </div>
+
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#10b981', textTransform: 'uppercase' }}>
+                Audited & Verified
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981', marginTop: '6px' }}>
+                {businesses.filter((b) => b.status === 'AUDITED').length}
+              </div>
+            </div>
+          </div>
+
+          {/* Active Jobs Table */}
+          {jobs.length > 0 && (
+            <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
+              <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
+                Discovery Background Tasks
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {jobs.slice(0, 5).map((j) => (
+                  <div
+                    key={j.id}
+                    style={{
+                      background: '#12121a',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                    }}
+                  >
+                    <div>
+                      <strong style={{ color: '#ffffff', fontSize: '13px' }}>{j.provider.toUpperCase()} Scan:</strong>{' '}
+                      <span style={{ color: '#9ca3af', fontSize: '13px' }}>
+                        {j.city}, {j.country_code} ({j.category})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          background:
+                            j.status === 'COMPLETED'
+                              ? 'rgba(16, 185, 129, 0.2)'
+                              : j.status === 'RUNNING'
+                              ? 'rgba(56, 189, 248, 0.2)'
+                              : 'rgba(239, 68, 68, 0.2)',
+                          color:
+                            j.status === 'COMPLETED' ? '#10b981' : j.status === 'RUNNING' ? '#38bdf8' : '#ef4444',
+                        }}
+                      >
+                        {j.status}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                        {j.total_inserted ?? j.total_found ?? 0} discovered
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Prospects in Queue List */}
+          <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '20px' }}>
+            <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
+              Prospects Ready for Technical Investigation
+            </h3>
+
+            {businesses.filter((b) => b.status === 'DISCOVERED').length === 0 ? (
+              <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
+                No fresh un-investigated prospects. Run a discovery scan or check Qualified Leads.
+              </p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
+                {businesses
+                  .filter((b) => b.status === 'DISCOVERED')
+                  .slice(0, 12)
+                  .map((b) => (
+                    <div
+                      key={b.id}
+                      style={{
+                        background: '#12121a',
+                        border: '1px solid #1c1c2b',
+                        borderRadius: '10px',
+                        padding: '14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>{b.name}</h4>
+                          <span style={{ fontSize: '10px', color: '#fbbf24', background: 'rgba(251, 191, 36, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                            Fresh 📍
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                          {b.category} • {b.city || b.country_code}
+                        </div>
+                        {b.website_url && (
+                          <a
+                            href={b.website_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#38bdf8', textDecoration: 'none', marginTop: '4px' }}
+                          >
+                            <span>{b.domain || b.website_url}</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleRunAudit(b.id)}
+                          disabled={isAuditing}
+                          style={{
+                            flex: 1,
+                            background: 'rgba(56, 189, 248, 0.12)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            color: '#38bdf8',
+                            borderRadius: '6px',
+                            padding: '6px 10px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Search size={12} />
+                          <span>Run Audit</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleGenerateAi(b.id)}
+                          disabled={isGeneratingAi}
+                          style={{
+                            flex: 1,
+                            background: 'rgba(168, 85, 247, 0.12)',
+                            border: '1px solid rgba(168, 85, 247, 0.3)',
+                            color: '#c084fc',
+                            borderRadius: '6px',
+                            padding: '6px 10px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Sparkles size={12} />
+                          <span>AI Pitch</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 3: QUALIFIED LEADS */}
+      {(currentView === 'qualified' || activeTab === 'leads') && (
         <div
           className="hpa-leads-grid"
           style={{
@@ -2337,8 +2690,8 @@ export default function OutreachClient({
         </div>
       )}
 
-      {/* TAB: LEAD INTELLIGENCE SCOUT */}
-      {activeTab === 'scout' && (
+      {/* VIEW 4: PROPOSALS & OUTREACH */}
+      {(currentView === 'proposals' || activeTab === 'scout') && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Hero / Header Card */}
           <div
@@ -2944,6 +3297,268 @@ export default function OutreachClient({
         </div>
       )}
 
+      {/* VIEW 5: PENDING APPROVAL */}
+      {currentView === 'pending_approval' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Header Callout linking to central Approvals */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(14, 14, 22, 0.95))',
+              border: '1px solid rgba(168, 85, 247, 0.35)',
+              borderRadius: '12px',
+              padding: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    background: 'rgba(168, 85, 247, 0.2)',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    color: '#c084fc',
+                    display: 'flex',
+                  }}
+                >
+                  <CheckCircle2 size={20} />
+                </div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                  Proposals Awaiting Explicit Approval
+                </h2>
+              </div>
+              <p style={{ color: '#9ca3af', fontSize: '13px', margin: '8px 0 0 0', maxWidth: '780px', lineHeight: 1.6 }}>
+                Every cold outreach email and project proposal requires your explicit human authorization before dispatch. Sending acquires an atomic lock to guarantee zero duplicate emails.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Link
+                href="/admin/approvals?filter=outreach"
+                style={{
+                  background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 18px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
+                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+                }}
+              >
+                <Sparkles size={15} />
+                <span>Open in AI Approvals Hub</span>
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Pending Proposals Cards */}
+          {loadingScoutDrafts ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
+              <Loader2 size={32} className="hpa-spin" style={{ margin: '0 auto 12px', color: '#c084fc' }} />
+              <p style={{ margin: 0, fontSize: '14px' }}>Loading pending proposals...</p>
+            </div>
+          ) : scoutDrafts.filter((d) => d.status === 'pending' || !d.status).length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '60px 20px',
+                background: '#0e0e16',
+                border: '1px dashed #2d2d42',
+                borderRadius: '12px',
+                color: '#9ca3af',
+              }}
+            >
+              <CheckCircle2 size={40} style={{ color: '#10b981', margin: '0 auto 12px auto' }} />
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>
+                All Lead Proposals Reviewed
+              </h3>
+              <p style={{ fontSize: '13px', margin: 0 }}>
+                No pending proposals awaiting decision. New discoveries from Lead Scout will appear here.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '16px' }}>
+              {scoutDrafts
+                .filter((d) => d.status === 'pending' || !d.status)
+                .map((draft) => {
+                  const meta = draft.metadata || {};
+                  const fitScore = meta.fitScore || 85;
+                  const companyName = meta.companyName || draft.title || 'Prospective Business';
+                  const domain = meta.domain || '';
+
+                  return (
+                    <div
+                      key={draft.id}
+                      style={{
+                        background: '#0e0e16',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        borderRadius: '12px',
+                        padding: '18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '14px',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>
+                              {companyName}
+                            </h4>
+                            {domain && (
+                              <a
+                                href={`https://${domain.replace(/^https?:\/\//, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#38bdf8', textDecoration: 'none', marginTop: '2px' }}
+                              >
+                                <span>{domain}</span>
+                                <ExternalLink size={10} />
+                              </a>
+                            )}
+                          </div>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                            }}
+                          >
+                            Fit: {fitScore}/100
+                          </span>
+                        </div>
+
+                        {meta.contactEmail && (
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>
+                            <strong style={{ color: '#cbd5e1' }}>Contact:</strong> {meta.contactEmail}
+                          </div>
+                        )}
+
+                        {/* Opportunity finding */}
+                        <div style={{ marginTop: '10px', background: 'rgba(0, 0, 0, 0.25)', padding: '8px 10px', borderRadius: '6px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#f59e0b', marginBottom: '3px' }}>
+                            Identified Opportunity:
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#d1d5db', lineHeight: 1.4 }}>
+                            {meta.identifiedOpportunity || draft.excerpt || 'Technical modernization and high-performance web upgrade.'}
+                          </p>
+                        </div>
+
+                        {/* Pitch snippet */}
+                        <div style={{ marginTop: '10px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', marginBottom: '2px' }}>
+                            Proposed Pitch Subject:
+                          </div>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#ffffff', fontWeight: 600 }}>
+                            {draft.title}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 4 Clear Actions */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          paddingTop: '10px',
+                          borderTop: '1px solid #1c1c2b',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <button
+                          onClick={() => handleApproveAndSendFromOutreach(draft.id)}
+                          style={{
+                            flex: 1,
+                            minWidth: '120px',
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            border: 'none',
+                            color: '#ffffff',
+                            padding: '7px 12px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Send size={12} />
+                          <span>Approve & Send</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedScoutDraft(draft)}
+                          style={{
+                            background: '#161626',
+                            border: '1px solid #2d2d48',
+                            color: '#e2e8f0',
+                            padding: '7px 10px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Edit Pitch
+                        </button>
+
+                        <button
+                          onClick={() => handleSaveForLaterFromOutreach(draft.id)}
+                          style={{
+                            background: '#161626',
+                            border: '1px solid #2d2d48',
+                            color: '#9ca3af',
+                            padding: '7px 10px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Save Later
+                        </button>
+
+                        <button
+                          onClick={() => handleRejectScoutDraft(draft.id)}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            color: '#ef4444',
+                            padding: '7px 10px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* TAB: CONTACTS DIRECTORY */}
       {activeTab === 'contacts' && (
         <div
@@ -3222,8 +3837,8 @@ export default function OutreachClient({
       </div>
     )}
 
-      {/* TAB 4: QUEUE & DISPATCH */}
-      {activeTab === 'queue' && (
+      {/* VIEW 6: SENT & FOLLOW-UPS */}
+      {(currentView === 'sent' || activeTab === 'queue') && (
         <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
@@ -3437,8 +4052,8 @@ export default function OutreachClient({
         </div>
       )}
 
-      {/* TAB 5: COMPLIANCE & SUPPRESSION */}
-      {activeTab === 'compliance' && (
+      {/* COMPLIANCE & SUPPRESSION */}
+      {(currentView === 'analytics' || activeTab === 'compliance') && (
         <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 6px 0', color: '#ffffff' }}>
             Compliance & Global Suppression List
@@ -3495,8 +4110,8 @@ export default function OutreachClient({
         </div>
       )}
 
-      {/* TAB 6: SETTINGS */}
-      {activeTab === 'settings' && (
+      {/* SAFETY SETTINGS */}
+      {(currentView === 'analytics' || activeTab === 'settings') && (
         <div style={{ background: '#0e0e16', border: '1px solid #1c1c2b', borderRadius: '12px', padding: '24px', maxWidth: '700px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 16px 0', color: '#ffffff' }}>Safety & Rate Limits</h2>
           

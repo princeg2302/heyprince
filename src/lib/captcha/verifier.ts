@@ -23,17 +23,17 @@ export async function verifyAndConsumeProof(
   proofToken: string | undefined | null,
   options: VerifyProofOptions
 ): Promise<VerifyProofResult> {
+  // Development fallback if configured
+  if (process.env.NODE_ENV === 'development' && process.env.CAPTCHA_DEV_BYPASS === 'true') {
+    console.info('[Captcha] Dev bypass active: Allowing submission');
+    return { success: true };
+  }
+
   const targetPurpose = options.purpose?.trim();
   const targetSiteKey = options.siteKey?.trim() || CAPTCHA_CONFIG.defaultSiteKey;
 
   // 1. Missing Proof Token
   if (!proofToken || typeof proofToken !== 'string' || !proofToken.trim()) {
-    // Development fallback if configured
-    if (process.env.NODE_ENV === 'development' && process.env.CAPTCHA_DEV_BYPASS === 'true') {
-      console.info('[Captcha] Dev bypass active: Allowing submission');
-      return { success: true };
-    }
-
     return {
       success: false,
       error: 'Security verification proof is missing. Please complete the security check.',

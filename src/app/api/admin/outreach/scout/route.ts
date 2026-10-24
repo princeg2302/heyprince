@@ -13,7 +13,7 @@ export async function GET() {
 
   try {
     const scoutDrafts = await query<ChiefContentDraft>(
-      `SELECT * FROM chief_content_drafts WHERE draft_type = 'outreach_draft' ORDER BY created_at DESC LIMIT 50;`
+      `SELECT * FROM chief_content_drafts WHERE draft_type IN ('outreach_draft', 'outreach_proposal') ORDER BY created_at DESC LIMIT 50;`
     );
     const totalDiscovered = await query<{ count: string }>(`SELECT COUNT(*) as count FROM businesses;`);
     const totalAudited = await query<{ count: string }>(`SELECT COUNT(*) as count FROM businesses WHERE status = 'AUDITED';`);

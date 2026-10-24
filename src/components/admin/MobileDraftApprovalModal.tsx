@@ -22,6 +22,12 @@ import {
   Sliders,
   ChevronDown,
   ChevronUp,
+  Bookmark,
+  Edit3,
+  Mail,
+  ShieldCheck,
+  Building,
+  Target,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 
@@ -35,7 +41,7 @@ export interface DraftSection {
 
 export interface ModalDraftItem {
   id: string | number;
-  sourceType?: 'chief' | 'news';
+  sourceType?: 'chief' | 'news' | 'outreach';
   draftType?: string;
   title: string;
   excerpt?: string;
@@ -46,6 +52,24 @@ export interface ModalDraftItem {
   tags?: string[];
   sections?: DraftSection[];
   linkedinPost?: string;
+  targetUrl?: string;
+  // Outreach fields
+  isOutreachProposal?: boolean;
+  businessName?: string;
+  domain?: string;
+  websiteUrl?: string;
+  contactEmail?: string;
+  contactName?: string;
+  leadScore?: number;
+  confidenceLevel?: number;
+  evidence?: string[];
+  likelyNeeds?: string;
+  recommendedService?: string;
+  proposedNextAction?: string;
+  personalizedEmailSubject?: string;
+  personalizedEmailBody?: string;
+  sendStatus?: string;
+  idempotencyKey?: string;
   raw?: any;
 }
 
@@ -89,18 +113,39 @@ export function MobileDraftApprovalModal({
   const [rejectionReason, setRejectionReason] = useState('');
   const [copiedLinkedIn, setCopiedLinkedIn] = useState(false);
 
+  // Outreach Editing & Sending States
+  const isOutreach =
+    currentDraft.sourceType === 'outreach' ||
+    Boolean(currentDraft.isOutreachProposal) ||
+    currentDraft.draftType === 'outreach_draft' ||
+    currentDraft.draftType === 'outreach_proposal' ||
+    currentDraft.draftType === 'client_proposal';
+
+  const [isEditingProposal, setIsEditingProposal] = useState(false);
+  const [editSubject, setEditSubject] = useState(
+    currentDraft.personalizedEmailSubject || currentDraft.title
+  );
+  const [editBody, setEditBody] = useState(
+    currentDraft.personalizedEmailBody || currentDraft.raw?.content || currentDraft.excerpt || ''
+  );
+  const [editRecipientEmail, setEditRecipientEmail] = useState(currentDraft.contactEmail || '');
+  const [isSendingOutreach, setIsSendingOutreach] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
   // Sync draft if prop changes
   React.useEffect(() => {
     setCurrentDraft(initialDraft);
     setPublishedResult(null);
     setSummaryOfChanges(null);
+    setEditSubject(initialDraft.personalizedEmailSubject || initialDraft.title);
+    setEditBody(initialDraft.personalizedEmailBody || initialDraft.raw?.content || initialDraft.excerpt || '');
+    setEditRecipientEmail(initialDraft.contactEmail || '');
+    setIsEditingProposal(false);
   }, [initialDraft]);
 
   if (!isOpen) return null;
 
-  const isOutreachDraft = currentDraft.draftType === 'outreach_draft';
-
-  // Handle AI Refinement
+  // Handle AI Refinement for Articles
   const handleRefineDraft = async (promptToUse?: string) => {
     const prompt = (promptToUse || customInstructions).trim();
     if (!prompt) {
@@ -122,7 +167,6 @@ export function MobileDraftApprovalModal({
 
       const data = await res.json();
       if (data.success && data.draft) {
-        // Update local state with refined draft
         setCurrentDraft((prev) => ({
           ...prev,
           title: data.draft.title || prev.title,
@@ -135,8 +179,8 @@ export function MobileDraftApprovalModal({
 
         setSummaryOfChanges(data.summaryOfChanges || 'Article revised based on your instructions.');
         setCustomInstructions('');
-        setActiveTab('article'); // Show updated article
-        showToast('Draft refined by JARVIS! Check the updated preview.', 'success');
+        setActiveTab('article');
+        showToast('Draft refined by JARVIS! Check the preview.', 'success');
       } else {
         showToast(data.error || 'Failed to refine draft with AI', 'error');
       }
@@ -147,7 +191,7 @@ export function MobileDraftApprovalModal({
     }
   };
 
-  // Handle Live Publish
+  // Handle Live Publish for Blogs
   const handleApproveAndPublish = async () => {
     setIsPublishing(true);
     try {
@@ -169,16 +213,115 @@ export function MobileDraftApprovalModal({
           linkedInUrl: data.linkedInUrl,
         });
         showToast('Article published live to HeyPrince.in!', 'success');
-        if (onSuccessPublished) {
-          onSuccessPublished(data.publishedUrl);
-        }
+        if (onSuccessPublished) onSuccessPublished(data.publishedUrl);
       } else {
-        showToast(data.error || 'Failed to publish draft', 'error');
+        showToast(data.error || 'Publish failed', 'error');
       }
     } catch (err: any) {
       showToast(err?.message || 'Network error while publishing', 'error');
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  // Handle Approve & Send Outreach Proposal (With Idempotency)
+  const handleApproveAndSendOutreach = async () => {
+    if (!editRecipientEmail || !editRecipientEmail.includes('@')) {
+      showToast('Please enter a valid recipient email address first.', 'error');
+      setIsEditingProposal(true);
+      return;
+    }
+
+    setIsSendingOutreach(true);
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentDraft.id,
+          sourceType: 'outreach',
+          action: 'approve_and_send_outreach',
+          customSubject: editSubject,
+          customBody: editBody,
+          recipientEmail: editRecipientEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || 'Outreach pitch approved and sent successfully!', 'success');
+        onClose();
+        if (onSuccessPublished) onSuccessPublished();
+      } else {
+        showToast(data.error || 'Outreach send failed.', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Network error while dispatching outreach.', 'error');
+    } finally {
+      setIsSendingOutreach(false);
+    }
+  };
+
+  // Handle Save Edited Draft Inline
+  const handleSaveEditedDraft = async () => {
+    setIsSavingDraft(true);
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentDraft.id,
+          sourceType: currentDraft.sourceType,
+          action: 'edit_draft',
+          title: editSubject,
+          content: editBody,
+          subject: editSubject,
+          bodyText: editBody,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast('Draft changes saved successfully.', 'success');
+        setIsEditingProposal(false);
+        setCurrentDraft((prev) => ({
+          ...prev,
+          title: editSubject,
+          personalizedEmailSubject: editSubject,
+          personalizedEmailBody: editBody,
+        }));
+      } else {
+        showToast(data.error || 'Failed to save draft changes.', 'error');
+      }
+    } catch {
+      showToast('Network error saving draft.', 'error');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  // Handle Save for Later
+  const handleSaveForLater = async () => {
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentDraft.id,
+          sourceType: currentDraft.sourceType,
+          action: 'save_for_later',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Proposal saved for later review.', 'info');
+        onClose();
+        if (onSuccessPublished) onSuccessPublished();
+      } else {
+        showToast(data.error || 'Failed to save for later.', 'error');
+      }
+    } catch {
+      showToast('Network error saving for later.', 'error');
     }
   };
 
@@ -274,14 +417,14 @@ export function MobileDraftApprovalModal({
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 textTransform: 'uppercase',
-                background: isOutreachDraft ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 71, 87, 0.15)',
-                color: isOutreachDraft ? '#c084fc' : '#ff6b81',
-                border: isOutreachDraft ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255, 71, 87, 0.3)',
+                background: isOutreach ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 71, 87, 0.15)',
+                color: isOutreach ? '#c084fc' : '#ff6b81',
+                border: isOutreach ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255, 71, 87, 0.3)',
                 flexShrink: 0,
               }}
             >
               <Sparkles size={11} />
-              <span>{isOutreachDraft ? 'Client Outreach Proposal' : currentDraft.draftType?.replace(/_/g, ' ') || 'Blog Draft'}</span>
+              <span>{isOutreach ? 'Client Outreach Proposal' : currentDraft.draftType?.replace(/_/g, ' ') || 'Blog Draft'}</span>
             </span>
 
             <span
@@ -294,7 +437,9 @@ export function MobileDraftApprovalModal({
                 textOverflow: 'ellipsis',
               }}
             >
-              {isOutreachDraft ? 'Lead Intelligence Scout' : currentDraft.readMins || '5 min read'}
+              {isOutreach
+                ? currentDraft.businessName || currentDraft.domain || 'Lead Proposal'
+                : currentDraft.readMins || '5 min read'}
             </span>
           </div>
 
@@ -317,62 +462,62 @@ export function MobileDraftApprovalModal({
           </button>
         </header>
 
-        {/* Tab Switcher */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            background: 'rgba(14, 15, 24, 0.85)',
-            padding: '4px 12px',
-            gap: '6px',
-            flexShrink: 0,
-          }}
-        >
-          <button
-            onClick={() => setActiveTab('article')}
+        {/* Tab Switcher (For Articles only) */}
+        {!isOutreach && (
+          <div
             style={{
-              flex: 1,
-              padding: '8px 10px',
-              borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'article' ? 'rgba(255, 71, 87, 0.2)' : 'transparent',
-              color: activeTab === 'article' ? '#ffffff' : '#94a3b8',
-              fontWeight: activeTab === 'article' ? 700 : 500,
-              fontSize: '0.8rem',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(14, 15, 24, 0.85)',
+              padding: '4px 12px',
               gap: '6px',
-              cursor: 'pointer',
+              flexShrink: 0,
             }}
           >
-            <FileText size={14} />
-            <span>{isOutreachDraft ? 'Pitch Preview' : 'Article Preview'}</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('article')}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                background: activeTab === 'article' ? 'rgba(255, 71, 87, 0.2)' : 'transparent',
+                color: activeTab === 'article' ? '#ffffff' : '#94a3b8',
+                fontWeight: activeTab === 'article' ? 700 : 500,
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              <FileText size={14} />
+              <span>Article Preview</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('customize')}
-            style={{
-              flex: 1,
-              padding: '8px 10px',
-              borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'customize' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
-              color: activeTab === 'customize' ? '#38bdf8' : '#94a3b8',
-              fontWeight: activeTab === 'customize' ? 700 : 500,
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-            }}
-          >
-            <Sparkles size={14} />
-            <span>⚡ AI Customize</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('customize')}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                background: activeTab === 'customize' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                color: activeTab === 'customize' ? '#38bdf8' : '#94a3b8',
+                fontWeight: activeTab === 'customize' ? 700 : 500,
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              <Sparkles size={14} />
+              <span>⚡ AI Customize</span>
+            </button>
 
-          {!isOutreachDraft && (
             <button
               onClick={() => setActiveTab('social')}
               style={{
@@ -394,35 +539,10 @@ export function MobileDraftApprovalModal({
               <Share2 size={14} />
               <span>LinkedIn & SEO</span>
             </button>
-          )}
-        </div>
-
-        {/* Refinement Banner if recently changed */}
-        {summaryOfChanges && (
-          <div
-            style={{
-              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(56, 189, 248, 0.15) 100%)',
-              borderBottom: '1px solid rgba(16, 185, 129, 0.3)',
-              padding: '8px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              flexShrink: 0,
-            }}
-          >
-            <Sparkles size={16} color="#34d399" style={{ flexShrink: 0 }} />
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.78rem', color: '#ffffff', fontWeight: 600, display: 'block' }}>
-                Refined by JARVIS:
-              </span>
-              <span style={{ fontSize: '0.74rem', color: '#94a3b8', display: 'block', wordBreak: 'break-word' }}>
-                {summaryOfChanges}
-              </span>
-            </div>
           </div>
         )}
 
-        {/* Scrollable Modal Content */}
+        {/* Scrollable Modal Body */}
         <div
           style={{
             flex: 1,
@@ -431,601 +551,501 @@ export function MobileDraftApprovalModal({
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          {/* TAB 1: ARTICLE PREVIEW */}
-          {activeTab === 'article' && (
+          {/* ================================================================ */}
+          {/* OUTREACH PROPOSAL VIEW                                            */}
+          {/* ================================================================ */}
+          {isOutreach ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {isOutreachDraft && (
-                <div
-                  style={{
-                    padding: '14px 16px',
-                    borderRadius: '10px',
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    color: '#e2e8f0',
-                    fontSize: '0.84rem',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  <strong style={{ color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                    💼 Prospective Client Outreach Proposal (Private)
-                  </strong>
-                  This cold outreach email pitch was prepared by the <strong>Lead Intelligence Scout</strong> for 1-on-1 client acquisition. It is a private sales proposal and will <strong>NOT</strong> be published to the public blog.
-                </div>
-              )}
-
-              {/* Cover Image (Only for public blogs) */}
-              {!isOutreachDraft && currentDraft.coverImage && (
-                <div
-                  style={{
-                    borderRadius: '10px',
-                    overflow: 'hidden',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    maxHeight: '220px',
-                    position: 'relative',
-                  }}
-                >
-                  <img
-                    src={currentDraft.coverImage}
-                    alt={currentDraft.title}
-                    style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '8px',
-                      left: '8px',
-                      background: 'rgba(0,0,0,0.75)',
-                      padding: '3px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.68rem',
-                      color: '#ffffff',
-                    }}
-                  >
-                    {currentDraft.categoryName || 'Technology & Engineering'}
-                  </div>
-                </div>
-              )}
-
-              {/* Title */}
-              <div>
-                <h1
-                  style={{
-                    fontSize: '1.35rem',
-                    fontWeight: 800,
-                    color: '#ffffff',
-                    lineHeight: 1.3,
-                    margin: '0 0 6px 0',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {currentDraft.title}
-                </h1>
-                {currentDraft.slug && (
-                  <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                    URL: https://heyprince.in/insights/{currentDraft.slug}/
-                  </span>
-                )}
-              </div>
-
-              {/* Executive Summary Callout */}
-              {currentDraft.excerpt && (
-                <div
-                  style={{
-                    background: 'rgba(255, 71, 87, 0.08)',
-                    borderLeft: '4px solid #ff4757',
-                    padding: '12px 14px',
-                    borderRadius: '0 8px 8px 0',
-                    fontSize: '0.86rem',
-                    color: '#f8fafc',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  <strong style={{ color: '#ff6b81' }}>Executive Summary: </strong>
-                  {currentDraft.excerpt}
-                </div>
-              )}
-
-              {/* Sections */}
-              {Array.isArray(currentDraft.sections) && currentDraft.sections.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  {currentDraft.sections.map((sec, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.02)',
-                        border: '1px solid rgba(255, 255, 255, 0.06)',
-                        borderRadius: '10px',
-                        padding: '14px',
-                      }}
-                    >
-                      <h3
+              {/* Prospect Dossier Card */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(19, 20, 31, 0.9) 100%)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: '0 0 4px' }}>
+                      {currentDraft.businessName || currentDraft.title}
+                    </h2>
+                    {currentDraft.websiteUrl && (
+                      <a
+                        href={currentDraft.websiteUrl}
+                        target="_blank"
+                        rel="noreferrer"
                         style={{
-                          fontSize: '1.05rem',
-                          fontWeight: 700,
+                          fontSize: '0.82rem',
                           color: '#38bdf8',
-                          margin: '0 0 10px 0',
-                          lineHeight: 1.3,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          textDecoration: 'none',
                         }}
                       >
-                        {sec.heading}
-                      </h3>
+                        <span>{currentDraft.domain || currentDraft.websiteUrl}</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </div>
 
-                      {sec.quote && (
-                        <blockquote
-                          style={{
-                            margin: '0 0 10px 0',
-                            padding: '8px 12px',
-                            background: 'rgba(0, 0, 0, 0.3)',
-                            borderLeft: '3px solid #38bdf8',
-                            fontStyle: 'italic',
-                            color: '#94a3b8',
-                            fontSize: '0.82rem',
-                          }}
-                        >
-                          "{sec.quote}"
-                        </blockquote>
-                      )}
-
-                      {Array.isArray(sec.paragraphs) &&
-                        sec.paragraphs.map((p, pIdx) => (
-                          <p
-                            key={pIdx}
-                            style={{
-                              fontSize: '0.86rem',
-                              color: '#cbd5e1',
-                              lineHeight: 1.6,
-                              margin: '0 0 10px 0',
-                            }}
-                          >
-                            {p}
-                          </p>
-                        ))}
-
-                      {Array.isArray(sec.bulletPoints) && sec.bulletPoints.length > 0 && (
-                        <ul
-                          style={{
-                            margin: '8px 0 0 0',
-                            paddingLeft: '18px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '5px',
-                          }}
-                        >
-                          {sec.bulletPoints.map((b, bIdx) => (
-                            <li
-                              key={bIdx}
-                              style={{ fontSize: '0.84rem', color: '#cbd5e1', lineHeight: 1.5 }}
-                            >
-                              {b}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      {sec.proTip && (
-                        <div
-                          style={{
-                            marginTop: '10px',
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            border: '1px solid rgba(16, 185, 129, 0.3)',
-                            borderRadius: '6px',
-                            padding: '8px 12px',
-                            fontSize: '0.8rem',
-                            color: '#34d399',
-                          }}
-                        >
-                          <strong>Pro Tip: </strong>
-                          {sec.proTip}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : currentDraft.raw?.content ? (
-                <div
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '8px',
-                    padding: '14px',
-                    fontSize: '0.86rem',
-                    color: '#e2e8f0',
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {currentDraft.raw.content}
-                </div>
-              ) : (
-                <div style={{ color: '#94a3b8', fontSize: '0.86rem', textAlign: 'center', padding: '20px' }}>
-                  No article content available to preview.
-                </div>
-              )}
-
-              {/* Tags */}
-              {Array.isArray(currentDraft.tags) && currentDraft.tags.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {currentDraft.tags.map((tag, tIdx) => (
+                  <div style={{ display: 'flex', gap: '8px' }}>
                     <span
-                      key={tIdx}
                       style={{
-                        fontSize: '0.72rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        color: '#94a3b8',
-                      }}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Quick Jump to Customization */}
-              <div
-                style={{
-                  background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%)',
-                  border: '1px solid rgba(56, 189, 248, 0.25)',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                  marginTop: '10px',
-                }}
-              >
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#ffffff', fontWeight: 700 }}>
-                    Want to tweak something?
-                  </h4>
-                  <p style={{ margin: '2px 0 0', fontSize: '0.76rem', color: '#94a3b8' }}>
-                    Send instructions to JARVIS and preview updates instantly.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('customize')}
-                  className="hpa-btn hpa-btn-primary"
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '0.76rem',
-                    background: '#38bdf8',
-                    borderColor: '#38bdf8',
-                    color: '#000000',
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  <Sparkles size={13} />
-                  <span>Customize</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: AI CUSTOMIZATION */}
-          {activeTab === 'customize' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div
-                style={{
-                  background: 'rgba(56, 189, 248, 0.08)',
-                  border: '1px solid rgba(56, 189, 248, 0.2)',
-                  borderRadius: '10px',
-                  padding: '14px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <Sparkles size={18} color="#38bdf8" />
-                  <h3 style={{ margin: 0, fontSize: '1rem', color: '#ffffff', fontWeight: 700 }}>
-                    Refine with JARVIS AI
-                  </h3>
-                </div>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5 }}>
-                  Tell JARVIS exactly how you'd like to adjust this article. JARVIS will rewrite the draft and re-render the preview for your approval.
-                </p>
-              </div>
-
-              {/* Quick Prompt Pills */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#64748b',
-                    marginBottom: '8px',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Quick One-Tap Customizations:
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {QUICK_PROMPTS.map((prompt, pIdx) => (
-                    <button
-                      key={pIdx}
-                      type="button"
-                      onClick={() => {
-                        setCustomInstructions(prompt);
-                        handleRefineDraft(prompt);
-                      }}
-                      disabled={isRefining}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        padding: '4px 10px',
                         borderRadius: '20px',
-                        padding: '6px 12px',
-                        fontSize: '0.76rem',
-                        color: '#f1f5f9',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease',
+                        background: 'rgba(16, 185, 129, 0.2)',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        color: '#34d399',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
                       }}
                     >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Instructions Input */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label
-                  htmlFor="custom-instructions"
-                  style={{
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#64748b',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Or Enter Your Specific Customization:
-                </label>
-                <textarea
-                  id="custom-instructions"
-                  value={customInstructions}
-                  onChange={(e) => setCustomInstructions(e.target.value)}
-                  placeholder="e.g. Make the intro punchier, add a paragraph about HeyPrince.in's autonomous AI swarms, and shorten the conclusion..."
-                  rows={4}
-                  disabled={isRefining}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    fontSize: '0.86rem',
-                    color: '#ffffff',
-                    resize: 'vertical',
-                    outline: 'none',
-                    lineHeight: 1.5,
-                  }}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => handleRefineDraft()}
-                  disabled={isRefining || !customInstructions.trim()}
-                  className="hpa-btn hpa-btn-primary"
-                  style={{
-                    background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
-                    borderColor: '#38bdf8',
-                    color: '#000000',
-                    fontWeight: 700,
-                    padding: '12px',
-                    fontSize: '0.86rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  {isRefining ? (
-                    <>
-                      <Loader2 size={16} className="hpa-spin" />
-                      <span>JARVIS is refining draft...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send size={15} />
-                      <span>Apply Customization & Update Popup</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: SOCIAL & SEO */}
-          {activeTab === 'social' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {/* LinkedIn Preview Card */}
-              <div
-                style={{
-                  background: 'rgba(10, 102, 194, 0.08)',
-                  border: '1px solid rgba(10, 102, 194, 0.25)',
-                  borderRadius: '10px',
-                  padding: '16px',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div
+                      Fit Score: {currentDraft.leadScore || 85}/100
+                    </span>
+                    <span
                       style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        background: '#0a66c2',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#ffffff',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        background: 'rgba(56, 189, 248, 0.2)',
+                        border: '1px solid rgba(56, 189, 248, 0.4)',
+                        color: '#38bdf8',
+                        fontSize: '0.74rem',
                         fontWeight: 800,
+                      }}
+                    >
+                      Confidence: {currentDraft.confidenceLevel || 88}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Evidence & Opportunity Details */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px', marginTop: '4px' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.4)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '2px' }}>
+                      Recommended Service
+                    </span>
+                    <strong style={{ fontSize: '0.84rem', color: '#ffffff' }}>
+                      {currentDraft.recommendedService || 'Next.js Frontend Architecture & Speed Optimization'}
+                    </strong>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.4)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '2px' }}>
+                      Likely Needs & Pain Point
+                    </span>
+                    <strong style={{ fontSize: '0.84rem', color: '#cbd5e1' }}>
+                      {currentDraft.likelyNeeds || 'Sub-second mobile speed optimization & modern UX'}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Technical Evidence Bullets */}
+                {Array.isArray(currentDraft.evidence) && currentDraft.evidence.length > 0 && (
+                  <div style={{ background: 'rgba(0,0,0,0.4)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                      Audit Evidence Supporting Opportunity
+                    </span>
+                    <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                      {currentDraft.evidence.map((ev, i) => (
+                        <li key={i}>{ev}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Contact Email Field */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: '8px' }}>
+                  <Mail size={14} color="#a855f7" />
+                  <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Recipient Email:</span>
+                  {isEditingProposal ? (
+                    <input
+                      type="email"
+                      value={editRecipientEmail}
+                      onChange={(e) => setEditRecipientEmail(e.target.value)}
+                      placeholder="e.g. contact@business.com"
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        borderRadius: '4px',
+                        color: '#ffffff',
+                        padding: '4px 8px',
                         fontSize: '0.8rem',
                       }}
-                    >
-                      in
-                    </div>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#ffffff' }}>
-                        Prince (HeyPrince.in)
-                      </h4>
-                      <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                        Autonomous AI Chief of Staff Post
-                      </span>
-                    </div>
+                    />
+                  ) : (
+                    <strong style={{ fontSize: '0.82rem', color: editRecipientEmail ? '#ffffff' : '#f43f5e' }}>
+                      {editRecipientEmail || '⚠️ No email specified — Click "Edit Pitch" to enter'}
+                    </strong>
+                  )}
+                </div>
+              </div>
+
+              {/* Personalized Pitch Card (Preview or Editable) */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'rgba(19, 20, 31, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Edit3 size={15} color="#c084fc" />
+                    <h3 style={{ margin: 0, fontSize: '0.94rem', fontWeight: 700, color: '#ffffff' }}>
+                      Personalized Cold Email Pitch
+                    </h3>
                   </div>
 
                   <button
-                    onClick={handleCopyLinkedIn}
-                    className="hpa-btn hpa-btn-secondary hpa-btn-sm"
-                    style={{ fontSize: '0.74rem' }}
+                    type="button"
+                    onClick={() => setIsEditingProposal(!isEditingProposal)}
+                    style={{
+                      background: isEditingProposal ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: isEditingProposal ? '#38bdf8' : '#cbd5e1',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '0.74rem',
+                      cursor: 'pointer',
+                    }}
                   >
-                    {copiedLinkedIn ? <Check size={12} color="#00ff88" /> : <Copy size={12} />}
-                    <span>{copiedLinkedIn ? 'Copied' : 'Copy Post'}</span>
+                    {isEditingProposal ? 'Cancel Editing' : '✏️ Edit Pitch Before Approval'}
                   </button>
                 </div>
 
-                <div
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '8px',
-                    padding: '14px',
-                    fontSize: '0.84rem',
-                    color: '#e2e8f0',
-                    lineHeight: 1.6,
-                    whiteSpace: 'pre-wrap',
-                    maxHeight: '260px',
-                    overflowY: 'auto',
-                  }}
-                >
-                  {currentDraft.linkedinPost || 'No LinkedIn copy generated yet.'}
-                </div>
-              </div>
+                {isEditingProposal ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
+                        Email Subject Line:
+                      </label>
+                      <input
+                        type="text"
+                        value={editSubject}
+                        onChange={(e) => setEditSubject(e.target.value)}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(0,0,0,0.6)',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          borderRadius: '6px',
+                          color: '#ffffff',
+                          padding: '8px 10px',
+                          fontSize: '0.84rem',
+                        }}
+                      />
+                    </div>
 
-              {/* Google Search Snippet Preview */}
-              <div
-                style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '10px',
-                  padding: '16px',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#64748b',
-                    display: 'block',
-                    marginBottom: '8px',
-                  }}
-                >
-                  Google Search Snippet Preview:
-                </span>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '2px' }}>
-                  https://heyprince.in › insights › {currentDraft.slug || 'slug'}
-                </div>
-                <h4
-                  style={{
-                    margin: '0 0 4px 0',
-                    fontSize: '1rem',
-                    color: '#8ab4f8',
-                    fontWeight: 600,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {currentDraft.title}
-                </h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#bdc1c6', lineHeight: 1.4 }}>
-                  {currentDraft.excerpt || 'Read the latest technical analysis and insights.'}
-                </p>
+                    <div>
+                      <label style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
+                        Email Body:
+                      </label>
+                      <textarea
+                        rows={8}
+                        value={editBody}
+                        onChange={(e) => setEditBody(e.target.value)}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(0,0,0,0.6)',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          borderRadius: '6px',
+                          color: '#ffffff',
+                          padding: '10px',
+                          fontSize: '0.84rem',
+                          lineHeight: 1.5,
+                          fontFamily: 'monospace',
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveEditedDraft}
+                      disabled={isSavingDraft}
+                      className="hpa-btn hpa-btn-primary"
+                      style={{ alignSelf: 'flex-start', padding: '6px 14px', fontSize: '0.78rem' }}
+                    >
+                      {isSavingDraft ? <Loader2 size={13} className="hpa-spin" /> : <Check size={13} />}
+                      <span>Save Draft Changes</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '6px', marginBottom: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Subject:</span>
+                      <strong style={{ fontSize: '0.86rem', color: '#ffffff' }}>{editSubject}</strong>
+                    </div>
+
+                    <pre
+                      style={{
+                        background: 'rgba(0,0,0,0.4)',
+                        padding: '14px',
+                        borderRadius: '8px',
+                        color: '#cbd5e1',
+                        fontSize: '0.82rem',
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        margin: 0,
+                      }}
+                    >
+                      {editBody}
+                    </pre>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          ) : (
+            /* ================================================================ */
+            /* BLOG / SERVICE PAGE / CONTENT DRAFT VIEW                         */
+            /* ================================================================ */
+            <>
+              {/* TAB 1: ARTICLE PREVIEW */}
+              {activeTab === 'article' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Cover Image */}
+                  {currentDraft.coverImage && (
+                    <div
+                      style={{
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        maxHeight: '220px',
+                        position: 'relative',
+                      }}
+                    >
+                      <img
+                        src={currentDraft.coverImage}
+                        alt={currentDraft.title}
+                        style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: '8px',
+                          left: '8px',
+                          background: 'rgba(0,0,0,0.75)',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.68rem',
+                          color: '#ffffff',
+                        }}
+                      >
+                        {currentDraft.categoryName || 'Technology & Engineering'}
+                      </div>
+                    </div>
+                  )}
 
-          {/* Published Celebration View */}
-          {publishedResult && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'rgba(10, 12, 20, 0.98)',
-                zIndex: 20,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '24px',
-                textAlign: 'center',
-              }}
-            >
-              <CheckCircle2 size={56} color="#00ff88" style={{ marginBottom: '16px' }} />
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: '0 0 8px 0' }}>
-                Article Published Live!
-              </h2>
-              <p
-                style={{
-                  fontSize: '0.86rem',
-                  color: '#94a3b8',
-                  maxWidth: '380px',
-                  lineHeight: 1.5,
-                  margin: '0 0 20px 0',
-                }}
-              >
-                Your approved article is now live on HeyPrince.in. Anyone worldwide can read it.
-              </p>
+                  {/* Title */}
+                  <div>
+                    <h1
+                      style={{
+                        fontSize: '1.35rem',
+                        fontWeight: 800,
+                        color: '#ffffff',
+                        margin: '0 0 6px',
+                        lineHeight: 1.3,
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      {currentDraft.title}
+                    </h1>
+                    <p style={{ fontSize: '0.86rem', color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>
+                      {currentDraft.excerpt}
+                    </p>
+                  </div>
 
-              {publishedResult.publishedUrl && (
-                <a
-                  href={publishedResult.publishedUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hpa-btn hpa-btn-primary"
-                  style={{
-                    background: '#00ff88',
-                    borderColor: '#00ff88',
-                    color: '#000000',
-                    fontWeight: 700,
-                    padding: '12px 20px',
-                    fontSize: '0.9rem',
-                    marginBottom: '12px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  <span>Open Live Article</span>
-                  <ExternalLink size={16} />
-                </a>
+                  {/* Sections Preview */}
+                  {currentDraft.sections && currentDraft.sections.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {currentDraft.sections.map((sec, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            padding: '14px',
+                            background: 'rgba(255, 255, 255, 0.02)',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                          }}
+                        >
+                          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#38bdf8', margin: '0 0 8px' }}>
+                            {sec.heading}
+                          </h3>
+                          {sec.quote && (
+                            <blockquote
+                              style={{
+                                margin: '0 0 10px',
+                                paddingLeft: '12px',
+                                borderLeft: '3px solid #ff4757',
+                                color: '#e2e8f0',
+                                fontStyle: 'italic',
+                                fontSize: '0.82rem',
+                              }}
+                            >
+                              &quot;{sec.quote}&quot;
+                            </blockquote>
+                          )}
+                          {sec.paragraphs?.map((p, pIdx) => (
+                            <p key={pIdx} style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.55, margin: '0 0 8px' }}>
+                              {p}
+                            </p>
+                          ))}
+                          {sec.proTip && (
+                            <div
+                              style={{
+                                padding: '8px 10px',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                borderLeft: '3px solid #10b981',
+                                borderRadius: '4px',
+                                fontSize: '0.76rem',
+                                color: '#6ee7b7',
+                              }}
+                            >
+                              <strong>Pro-Tip:</strong> {sec.proTip}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
-              {publishedResult.linkedInUrl && (
-                <span style={{ fontSize: '0.78rem', color: '#38bdf8', display: 'block', marginBottom: '16px' }}>
-                  Shared to LinkedIn Profile
-                </span>
+              {/* TAB 2: AI CUSTOMIZATION */}
+              {activeTab === 'customize' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div
+                    style={{
+                      padding: '12px 14px',
+                      background: 'rgba(56, 189, 248, 0.08)',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(56, 189, 248, 0.2)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', fontWeight: 700, fontSize: '0.84rem' }}>
+                      <Sparkles size={16} />
+                      <span>Live Voice & Text AI Directives</span>
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#cbd5e1' }}>
+                      Instruct JARVIS on how to revise this draft. Changes apply instantly without republishing.
+                    </p>
+                  </div>
+
+                  {/* Quick Preset Buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                      One-Tap Refinement Presets:
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {QUICK_PROMPTS.map((promptText, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleRefineDraft(promptText)}
+                          disabled={isRefining}
+                          style={{
+                            padding: '6px 10px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '20px',
+                            color: '#e2e8f0',
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {promptText}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Custom Prompt Text Area */}
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
+                      Custom Directive for JARVIS:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={customInstructions}
+                      onChange={(e) => setCustomInstructions(e.target.value)}
+                      placeholder="e.g. Expand on the Supabase Edge Functions part and add a comparison table..."
+                      style={{
+                        width: '100%',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '8px',
+                        color: '#ffffff',
+                        padding: '10px',
+                        fontSize: '0.82rem',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRefineDraft()}
+                      disabled={isRefining || !customInstructions.trim()}
+                      className="hpa-btn hpa-btn-primary"
+                      style={{ marginTop: '8px', padding: '8px 14px', fontSize: '0.8rem' }}
+                    >
+                      {isRefining ? <Loader2 size={13} className="hpa-spin" /> : <Send size={13} />}
+                      <span>Execute AI Refinement</span>
+                    </button>
+                  </div>
+                </div>
               )}
 
-              <button
-                onClick={onClose}
-                className="hpa-btn hpa-btn-secondary"
-                style={{ padding: '8px 16px', fontSize: '0.84rem' }}
-              >
-                Done / Close
-              </button>
-            </div>
+              {/* TAB 3: SOCIAL & SEO */}
+              {activeTab === 'social' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#34d399' }}>
+                        LinkedIn Companion Post Copy
+                      </span>
+                      <button
+                        onClick={handleCopyLinkedIn}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#34d399',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.74rem',
+                        }}
+                      >
+                        {copiedLinkedIn ? <Check size={12} /> : <Copy size={12} />}
+                        <span>{copiedLinkedIn ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <pre
+                      style={{
+                        margin: 0,
+                        padding: '10px',
+                        background: 'rgba(0,0,0,0.5)',
+                        borderRadius: '6px',
+                        color: '#cbd5e1',
+                        fontSize: '0.78rem',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {currentDraft.linkedinPost || 'No companion post generated.'}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -1042,8 +1062,8 @@ export function MobileDraftApprovalModal({
               flexShrink: 0,
             }}
           >
-            {/* LinkedIn Toggle */}
-            {!isOutreachDraft && (
+            {/* LinkedIn Toggle for Blogs */}
+            {!isOutreach && (
               <label
                 style={{
                   display: 'flex',
@@ -1064,7 +1084,7 @@ export function MobileDraftApprovalModal({
               </label>
             )}
 
-            {/* Rejection Prompt Box if open */}
+            {/* Rejection Prompt Box */}
             {rejectionPromptOpen && (
               <div
                 style={{
@@ -1118,7 +1138,7 @@ export function MobileDraftApprovalModal({
             )}
 
             {/* Action Buttons Row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {!rejectionPromptOpen && (
                 <button
                   type="button"
@@ -1136,30 +1156,51 @@ export function MobileDraftApprovalModal({
                 </button>
               )}
 
-              {isOutreachDraft ? (
-                <a
-                  href="/admin/outreach"
-                  className="hpa-btn hpa-btn-primary"
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                    borderColor: '#8b5cf6',
-                    color: '#ffffff',
-                    fontWeight: 800,
-                    fontSize: '0.88rem',
-                    padding: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    textDecoration: 'none',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 18px rgba(139, 92, 246, 0.35)',
-                  }}
-                >
-                  <ExternalLink size={16} />
-                  <span>Review Pitch in Lead Scout</span>
-                </a>
+              {isOutreach ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSaveForLater}
+                    className="hpa-btn hpa-btn-secondary"
+                    style={{ fontSize: '0.8rem', padding: '10px 12px' }}
+                  >
+                    <Bookmark size={14} />
+                    <span>Save for Later</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleApproveAndSendOutreach}
+                    disabled={isSendingOutreach}
+                    className="hpa-btn hpa-btn-primary"
+                    style={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderColor: '#10b981',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: '0.88rem',
+                      padding: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 18px rgba(16, 185, 129, 0.35)',
+                    }}
+                  >
+                    {isSendingOutreach ? (
+                      <>
+                        <Loader2 size={16} className="hpa-spin" />
+                        <span>Sending Outreach...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        <span>Approve & Send Proposal</span>
+                      </>
+                    )}
+                  </button>
+                </>
               ) : (
                 <button
                   type="button"
@@ -1201,4 +1242,3 @@ export function MobileDraftApprovalModal({
     </div>
   );
 }
-

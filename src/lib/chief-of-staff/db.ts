@@ -20,14 +20,15 @@ import {
 
 export async function getAllAgents(): Promise<ChiefAgent[]> {
   const rows = await query<ChiefAgent>(`
-    SELECT * FROM chief_agents ORDER BY 
+    SELECT * FROM chief_agents 
+    WHERE id != 'inbound_responder'
+    ORDER BY 
       CASE id 
         WHEN 'content_researcher' THEN 1
         WHEN 'website_guardian' THEN 2
         WHEN 'seo_growth' THEN 3
-        WHEN 'inbound_responder' THEN 4
-        WHEN 'lead_scout' THEN 5
-        ELSE 6
+        WHEN 'lead_scout' THEN 4
+        ELSE 5
       END ASC;
   `);
   return rows || [];
@@ -182,12 +183,15 @@ export async function createContentDraft(params: {
   content: string;
   metadata?: Record<string, any>;
   status?: DraftStatus;
+  content_hash?: string;
+  idempotency_key?: string;
+  target_url?: string;
 }): Promise<string> {
   const draftId = `draft_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
   await query(
     `INSERT INTO chief_content_drafts 
-      (id, agent_id, draft_type, title, excerpt, content, metadata, status, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW());`,
+      (id, agent_id, draft_type, title, excerpt, content, metadata, status, content_hash, idempotency_key, target_url, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW());`,
     [
       draftId,
       params.agentId,
@@ -197,6 +201,9 @@ export async function createContentDraft(params: {
       params.content,
       JSON.stringify(params.metadata || {}),
       params.status || 'pending_approval',
+      params.content_hash || null,
+      params.idempotency_key || null,
+      params.target_url || null,
     ]
   );
   return draftId;

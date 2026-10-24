@@ -2,7 +2,7 @@ import { JarvisTool, ToolResult } from './types';
 import { executeAgentTask } from '../../chief-of-staff/orchestrator';
 
 interface AgentDispatcherInput {
-  agentId: 'website_guardian' | 'content_researcher' | 'lead_scout' | 'seo_growth' | 'inbound_responder';
+  agentId: 'website_guardian' | 'content_researcher' | 'lead_scout' | 'seo_growth';
   customTopic?: string;
 }
 
@@ -10,7 +10,7 @@ export const agentDispatcherTool: JarvisTool<AgentDispatcherInput, any> = {
   name: 'agent_dispatcher',
   label: 'Chief of Staff Agent Runner',
   description:
-    'Dispatches one of the 5 autonomous specialist agents (Content Researcher, Website Guardian, Lead Scout, SEO Growth, Inbound Responder) to execute an end-to-end mission.',
+    'Dispatches one of the autonomous specialist agents (Content Researcher, Website Guardian, Lead Scout, SEO Growth) to execute an end-to-end mission.',
   permissionLevel: 'prepare_draft',
   parameters: {
     type: 'object',
@@ -18,7 +18,7 @@ export const agentDispatcherTool: JarvisTool<AgentDispatcherInput, any> = {
       agentId: {
         type: 'string',
         description: 'The specialist agent to run.',
-        enum: ['website_guardian', 'content_researcher', 'lead_scout', 'seo_growth', 'inbound_responder'],
+        enum: ['website_guardian', 'content_researcher', 'lead_scout', 'seo_growth'],
       },
       customTopic: {
         type: 'string',
