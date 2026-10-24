@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get('status');
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '50', 10);
 
-    let sql = `SELECT m.*, b.name as business_name, b.domain as business_domain, b.phone as business_phone, b.country_code as business_country, b.city as business_city, b.metadata as business_metadata 
+    let sql = `SELECT m.*, b.name as business_name, b.domain as business_domain, (b.metadata->>'phone') as business_phone, b.country_code as business_country, b.city as business_city, b.metadata as business_metadata 
                FROM email_messages m 
                LEFT JOIN businesses b ON m.business_id = b.id`;
     const params: any[] = [];
