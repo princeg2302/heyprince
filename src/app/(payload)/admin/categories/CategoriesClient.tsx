@@ -37,14 +37,68 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const filtered = categories.filter((c) => {
-    return (
-      search === '' ||
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.slug.toLowerCase().includes(search.toLowerCase()) ||
-      (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+
+  const filtered = categories
+    .filter((c) => {
+      return (
+        search === '' ||
+        c.title.toLowerCase().includes(search.toLowerCase()) ||
+        c.slug.toLowerCase().includes(search.toLowerCase()) ||
+        (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
+      );
+    })
+    .sort((a, b) => {
+      const timeA = (a as any).created_at ? new Date((a as any).created_at).getTime() : 0;
+      const timeB = (b as any).created_at ? new Date((b as any).created_at).getTime() : 0;
+      return (timeB || b.id) - (timeA || a.id);
+    });
+
+  const allSelected = filtered.length > 0 && filtered.every((c) => selectedIds.includes(c.id));
+  const someSelected = filtered.some((c) => selectedIds.includes(c.id)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map((c) => c.id));
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+    try {
+      const res = await fetch('/api/admin/categories', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected categories.', 'error');
+        setBulkDeleteLoading(false);
+        return;
+      }
+      setCategories((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
+      showToast(`Successfully deleted ${selectedIds.length} categor${selectedIds.length > 1 ? 'ies' : 'y'}.`, 'success');
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+    } catch {
+      showToast('Network error while deleting selected categories.', 'error');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
 
   const openCreateModal = () => {
     setEditingCategory(null);
@@ -184,11 +238,61 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
           </div>
         </div>
 
+        {/* Bulk Action Floating Bar */}
+        {selectedIds.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'rgba(255, 51, 102, 0.08)',
+              borderBottom: '1px solid rgba(255, 51, 102, 0.25)',
+              color: '#ffffff',
+              fontSize: '0.85rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? 'category' : 'categories'} selected
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+              >
+                Deselect All
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeleteOpen(true)}
+                className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                style={{ gap: '6px' }}
+              >
+                <Trash2 size={13} />
+                <span>Delete Selected ({selectedIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {filtered.length > 0 ? (
           <div className="hpa-table-wrap">
             <table className="hpa-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      onChange={handleSelectAll}
+                      style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                      title="Select All"
+                    />
+                  </th>
                   <th>Category Title</th>
                   <th>URL Slug</th>
                   <th>Description</th>
@@ -198,6 +302,14 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
               <tbody>
                 {filtered.map((cat) => (
                   <tr key={cat.id}>
+                    <td style={{ width: '40px' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(cat.id)}
+                        onChange={() => handleToggleSelect(cat.id)}
+                        style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                      />
+                    </td>
                     <td>
                       <div style={{ fontWeight: 700, color: '#ffffff' }}>{cat.title}</div>
                     </td>
@@ -335,6 +447,17 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
         isLoading={deleteLoading}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        title="Delete Selected Categories"
+        message={`Are you sure you want to permanently delete these ${selectedIds.length} selected category records? Any posts or services referencing them will remain intact.`}
+        confirmLabel={bulkDeleteLoading ? 'Deleting...' : `Delete ${selectedIds.length} Categories`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={bulkDeleteLoading}
       />
     </div>
   );

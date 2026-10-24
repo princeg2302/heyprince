@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAdmin, getLeadsList } from '@/lib/admin-db';
+import { getCurrentAdmin, getLeadsList, deleteLeadsBulk } from '@/lib/admin-db';
 
 export async function GET(request: NextRequest) {
   const user = await getCurrentAdmin();
@@ -13,4 +13,26 @@ export async function GET(request: NextRequest) {
 
   const result = await getLeadsList({ search, status, page, limit });
   return NextResponse.json(result);
+}
+
+export async function DELETE(request: NextRequest) {
+  const user = await getCurrentAdmin();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const ids: number[] = Array.isArray(body.ids) ? body.ids : [];
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'ids array is required.' }, { status: 400 });
+    }
+
+    const result = await deleteLeadsBulk(ids);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, count: result.count });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }

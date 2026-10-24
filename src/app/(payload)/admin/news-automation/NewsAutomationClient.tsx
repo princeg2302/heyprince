@@ -33,6 +33,7 @@ import {
   Filter,
   MapPin,
 } from 'lucide-react';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 import { MobileDraftApprovalModal } from '@/components/admin/MobileDraftApprovalModal';
 import {
@@ -94,6 +95,18 @@ export default function NewsAutomationClient() {
   const [previewingCustom, setPreviewingCustom] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<{ id: number; name: string } | null>(null);
 
+  // Runs Selection & Bulk Delete State
+  const [selectedRunIds, setSelectedRunIds] = useState<number[]>([]);
+  const [bulkDeleteRunsOpen, setBulkDeleteRunsOpen] = useState(false);
+  const [bulkDeleteRunsLoading, setBulkDeleteRunsLoading] = useState(false);
+  const [deletingRunId, setDeletingRunId] = useState<number | null>(null);
+  const [deletingRunLoading, setDeletingRunLoading] = useState(false);
+
+  // Sources Selection & Bulk Delete State
+  const [selectedSourceIds, setSelectedSourceIds] = useState<number[]>([]);
+  const [bulkDeleteSourcesOpen, setBulkDeleteSourcesOpen] = useState(false);
+  const [bulkDeleteSourcesLoading, setBulkDeleteSourcesLoading] = useState(false);
+
   // Global RSS Filters
   const [regionFilter, setRegionFilter] = useState<string>('all');
   const [topicFilter, setTopicFilter] = useState<string>('all');
@@ -139,6 +152,110 @@ export default function NewsAutomationClient() {
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  // Runs Handlers & Selection
+  const sortedRuns = [...recentRuns].sort((a, b) => {
+    const timeA = a.startedAt ? new Date(a.startedAt).getTime() : 0;
+    const timeB = b.startedAt ? new Date(b.startedAt).getTime() : 0;
+    return (timeB || b.id) - (timeA || a.id);
+  });
+
+  const allRunsSelected =
+    sortedRuns.length > 0 && sortedRuns.every((r) => selectedRunIds.includes(r.id));
+  const someRunsSelected =
+    sortedRuns.some((r) => selectedRunIds.includes(r.id)) && !allRunsSelected;
+
+  const handleSelectAllRuns = () => {
+    if (allRunsSelected) {
+      setSelectedRunIds([]);
+    } else {
+      setSelectedRunIds(sortedRuns.map((r) => r.id));
+    }
+  };
+
+  const handleToggleSelectRun = (id: number) => {
+    setSelectedRunIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteRuns = async () => {
+    if (selectedRunIds.length === 0) return;
+    setBulkDeleteRunsLoading(true);
+    try {
+      const res = await fetch('/api/admin/news-automation/runs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedRunIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected runs.', 'error');
+        setBulkDeleteRunsLoading(false);
+        return;
+      }
+      setRecentRuns((prev) => prev.filter((r) => !selectedRunIds.includes(r.id)));
+      showToast(`Successfully deleted ${selectedRunIds.length} execution run${selectedRunIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedRunIds([]);
+      setBulkDeleteRunsOpen(false);
+    } catch {
+      showToast('Error deleting selected runs.', 'error');
+    } finally {
+      setBulkDeleteRunsLoading(false);
+    }
+  };
+
+  const handleDeleteSingleRun = async () => {
+    if (!deletingRunId) return;
+    setDeletingRunLoading(true);
+    try {
+      const res = await fetch('/api/admin/news-automation/runs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [deletingRunId] }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete execution run.', 'error');
+        setDeletingRunLoading(false);
+        return;
+      }
+      setRecentRuns((prev) => prev.filter((r) => r.id !== deletingRunId));
+      showToast('Execution run deleted.', 'success');
+      setDeletingRunId(null);
+    } catch {
+      showToast('Error deleting execution run.', 'error');
+    } finally {
+      setDeletingRunLoading(false);
+    }
+  };
+
+  // Sources Handlers & Selection
+  const handleBulkDeleteSources = async () => {
+    if (selectedSourceIds.length === 0) return;
+    setBulkDeleteSourcesLoading(true);
+    try {
+      const res = await fetch('/api/admin/news-automation/sources', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedSourceIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected sources.', 'error');
+        setBulkDeleteSourcesLoading(false);
+        return;
+      }
+      setSources((prev) => prev.filter((s) => !selectedSourceIds.includes(s.id)));
+      showToast(`Successfully deleted ${selectedSourceIds.length} source${selectedSourceIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedSourceIds([]);
+      setBulkDeleteSourcesOpen(false);
+    } catch {
+      showToast('Error deleting selected sources.', 'error');
+    } finally {
+      setBulkDeleteSourcesLoading(false);
+    }
+  };
 
   // Quick toggle helper
   const handleToggle = async (key: keyof DailyNewsSettings, val: any) => {
@@ -1384,10 +1501,10 @@ export default function NewsAutomationClient() {
           </div>
 
           <div className="hpa-card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                Recent Daily News Executions
+                Recent Daily News Executions ({sortedRuns.length})
               </h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
                 Every run is tracked with separate stages for discovery, content generation, website post, and LinkedIn share.
@@ -1399,7 +1516,47 @@ export default function NewsAutomationClient() {
             </button>
           </div>
 
-          {recentRuns.length === 0 ? (
+          {/* Bulk Action Floating Bar */}
+          {selectedRunIds.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 16px',
+                background: 'rgba(255, 51, 102, 0.08)',
+                border: '1px solid rgba(255, 51, 102, 0.25)',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                color: '#ffffff',
+                fontSize: '0.85rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <strong>{selectedRunIds.length}</strong> {selectedRunIds.length === 1 ? 'run' : 'runs'} selected
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRunIds([])}
+                  className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                >
+                  Deselect All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkDeleteRunsOpen(true)}
+                  className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                  style={{ gap: '6px' }}
+                >
+                  <Trash2 size={13} />
+                  <span>Delete Selected ({selectedRunIds.length})</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {sortedRuns.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--hpa-text-dim)' }}>
               <Newspaper size={32} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
               <p style={{ fontSize: '0.88rem' }}>No daily runs recorded yet.</p>
@@ -1410,6 +1567,18 @@ export default function NewsAutomationClient() {
               <table className="hpa-table" style={{ width: '100%', fontSize: '0.82rem' }}>
                 <thead>
                   <tr>
+                    <th style={{ width: '36px' }}>
+                      <input
+                        type="checkbox"
+                        checked={allRunsSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someRunsSelected;
+                        }}
+                        onChange={handleSelectAllRuns}
+                        style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                        title="Select All"
+                      />
+                    </th>
                     <th>Date / Time</th>
                     <th>Trigger</th>
                     <th>Stories Discovered</th>
@@ -1420,9 +1589,17 @@ export default function NewsAutomationClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentRuns.map((r) => {
+                  {sortedRuns.map((r) => {
                     return (
                       <tr key={r.id}>
+                        <td style={{ width: '36px' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedRunIds.includes(r.id)}
+                            onChange={() => handleToggleSelectRun(r.id)}
+                            style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                          />
+                        </td>
                         <td>
                           <div style={{ fontWeight: 600, color: '#ffffff' }}>{r.runDate}</div>
                           <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)' }}>
@@ -1605,6 +1782,17 @@ export default function NewsAutomationClient() {
                                 <span>{retryingId === r.id ? 'Sharing...' : 'Share IN'}</span>
                               </button>
                             )}
+
+                            {/* Delete single execution run */}
+                            <button
+                              type="button"
+                              onClick={() => setDeletingRunId(r.id)}
+                              className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                              title="Delete execution run record"
+                              style={{ padding: '3px 6px' }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
                           </div>
                           {r.errorDetails && (
                             <div
@@ -1636,11 +1824,37 @@ export default function NewsAutomationClient() {
 
       {/* TAB 2: WORLDWIDE RSS SOURCES */}
       {activeTab === 'sources' && (() => {
-        const filteredSources = sources.filter((src) => {
-          if (regionFilter !== 'all' && src.region !== regionFilter) return false;
-          if (topicFilter !== 'all' && src.topic !== topicFilter) return false;
-          return true;
-        });
+        const sortedFilteredSources = sources
+          .filter((src) => {
+            if (regionFilter !== 'all' && src.region !== regionFilter) return false;
+            if (topicFilter !== 'all' && src.topic !== topicFilter) return false;
+            return true;
+          })
+          .sort((a, b) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return (timeB || b.id) - (timeA || a.id);
+          });
+
+        const allSourcesSelected =
+          sortedFilteredSources.length > 0 &&
+          sortedFilteredSources.every((s) => selectedSourceIds.includes(s.id));
+        const someSourcesSelected =
+          sortedFilteredSources.some((s) => selectedSourceIds.includes(s.id)) && !allSourcesSelected;
+
+        const handleSelectAllSources = () => {
+          if (allSourcesSelected) {
+            setSelectedSourceIds([]);
+          } else {
+            setSelectedSourceIds(sortedFilteredSources.map((s) => s.id));
+          }
+        };
+
+        const handleToggleSelectSource = (id: number) => {
+          setSelectedSourceIds((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+          );
+        };
 
         const getRegionFlag = (reg?: string) => {
           switch (reg) {
@@ -1675,7 +1889,7 @@ export default function NewsAutomationClient() {
             >
               <div>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                  Worldwide RSS &amp; Verified Primary Feeds ({filteredSources.length} of {sources.length})
+                  Worldwide RSS &amp; Verified Primary Feeds ({sortedFilteredSources.length} of {sources.length})
                 </h3>
                 <p style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', margin: 0 }}>
                   Active coverage across India, USA, UK, Australia, Germany &amp; Europe, DeepMind, OpenAI, and Elon Musk enterprises.
@@ -1718,10 +1932,62 @@ export default function NewsAutomationClient() {
               ))}
             </div>
 
+            {/* Bulk Action Floating Bar for Sources */}
+            {selectedSourceIds.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 16px',
+                  background: 'rgba(255, 51, 102, 0.08)',
+                  border: '1px solid rgba(255, 51, 102, 0.25)',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  color: '#ffffff',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <strong>{selectedSourceIds.length}</strong> {selectedSourceIds.length === 1 ? 'feed source' : 'feed sources'} selected
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSourceIds([])}
+                    className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                  >
+                    Deselect All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkDeleteSourcesOpen(true)}
+                    className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                    style={{ gap: '6px' }}
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete Selected ({selectedSourceIds.length})</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div style={{ overflowX: 'auto' }}>
               <table className="hpa-table" style={{ width: '100%', fontSize: '0.82rem' }}>
                 <thead>
                   <tr>
+                    <th style={{ width: '36px' }}>
+                      <input
+                        type="checkbox"
+                        checked={allSourcesSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someSourcesSelected;
+                        }}
+                        onChange={handleSelectAllSources}
+                        style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                        title="Select All"
+                      />
+                    </th>
                     <th>Feed Name</th>
                     <th>Region &amp; Language</th>
                     <th>Category</th>
@@ -1733,8 +1999,16 @@ export default function NewsAutomationClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSources.map((src) => (
+                  {sortedFilteredSources.map((src) => (
                     <tr key={src.id}>
+                      <td style={{ width: '36px' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedSourceIds.includes(src.id)}
+                          onChange={() => handleToggleSelectSource(src.id)}
+                          style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                        />
+                      </td>
                       <td>
                         <div style={{ fontWeight: 600, color: '#ffffff' }}>{src.name}</div>
                         {src.topic && (
@@ -2679,6 +2953,39 @@ export default function NewsAutomationClient() {
           </div>
         </div>
       )}
+
+      {/* Delete Single Run Modal */}
+      <ConfirmModal
+        isOpen={deletingRunId !== null}
+        title="Delete Automation Execution Run"
+        message="Are you sure you want to delete this news execution record? This action cannot be undone."
+        confirmLabel="Yes, Delete Run"
+        onConfirm={handleDeleteSingleRun}
+        onCancel={() => setDeletingRunId(null)}
+        isLoading={deletingRunLoading}
+      />
+
+      {/* Bulk Delete Runs Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteRunsOpen}
+        title="Delete Selected Execution Runs"
+        message={`Are you sure you want to permanently delete these ${selectedRunIds.length} execution run records? This action cannot be undone.`}
+        confirmLabel={bulkDeleteRunsLoading ? 'Deleting...' : `Delete ${selectedRunIds.length} Runs`}
+        onConfirm={handleBulkDeleteRuns}
+        onCancel={() => setBulkDeleteRunsOpen(false)}
+        isLoading={bulkDeleteRunsLoading}
+      />
+
+      {/* Bulk Delete Sources Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteSourcesOpen}
+        title="Delete Selected RSS Feed Sources"
+        message={`Are you sure you want to permanently remove these ${selectedSourceIds.length} selected RSS sources? Previously discovered articles will remain intact.`}
+        confirmLabel={bulkDeleteSourcesLoading ? 'Deleting...' : `Delete ${selectedSourceIds.length} Sources`}
+        onConfirm={handleBulkDeleteSources}
+        onCancel={() => setBulkDeleteSourcesOpen(false)}
+        isLoading={bulkDeleteSourcesLoading}
+      />
     </div>
   );
 }

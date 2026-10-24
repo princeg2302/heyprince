@@ -40,14 +40,71 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const filtered = mediaList.filter((m) => {
-    return (
-      search === '' ||
-      m.filename.toLowerCase().includes(search.toLowerCase()) ||
-      m.alt.toLowerCase().includes(search.toLowerCase()) ||
-      (m.url && m.url.toLowerCase().includes(search.toLowerCase()))
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+
+  const filtered = mediaList
+    .filter((m) => {
+      return (
+        search === '' ||
+        m.filename.toLowerCase().includes(search.toLowerCase()) ||
+        m.alt.toLowerCase().includes(search.toLowerCase()) ||
+        (m.url && m.url.toLowerCase().includes(search.toLowerCase()))
+      );
+    })
+    .sort((a, b) => {
+      const timeA = (a as any).created_at ? new Date((a as any).created_at).getTime() : 0;
+      const timeB = (b as any).created_at ? new Date((b as any).created_at).getTime() : 0;
+      return (timeB || b.id) - (timeA || a.id);
+    });
+
+  const allSelected = filtered.length > 0 && filtered.every((m) => selectedIds.includes(m.id));
+  const someSelected = filtered.some((m) => selectedIds.includes(m.id)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map((m) => m.id));
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/media', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected media assets.', 'error');
+        setBulkDeleteLoading(false);
+        return;
+      }
+
+      setMediaList((prev) => prev.filter((m) => !selectedIds.includes(m.id)));
+      showToast(`Successfully deleted ${selectedIds.length} media asset${selectedIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+    } catch {
+      showToast('Error deleting media records.', 'error');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
 
   const handleCopyUrl = (m: MediaRecord) => {
     const fullUrl = m.url?.startsWith('http') ? m.url : `https://heyprince.in${m.url}`;
@@ -164,12 +221,73 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.82rem',
+                color: 'var(--hpa-text-muted)',
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={allSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = someSelected;
+                }}
+                onChange={handleSelectAll}
+                style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+              />
+              <span>Select All</span>
+            </label>
           </div>
 
           <div style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
             Total <strong>{filtered.length}</strong> assets
           </div>
         </div>
+
+        {/* Bulk Action Floating Bar */}
+        {selectedIds.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'rgba(255, 51, 102, 0.08)',
+              borderBottom: '1px solid rgba(255, 51, 102, 0.25)',
+              color: '#ffffff',
+              fontSize: '0.85rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? 'asset' : 'assets'} selected
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+              >
+                Deselect All
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeleteOpen(true)}
+                className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                style={{ gap: '6px' }}
+              >
+                <Trash2 size={13} />
+                <span>Delete Selected ({selectedIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {filtered.length > 0 ? (
           <div
@@ -185,12 +303,13 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                 key={item.id}
                 style={{
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--hpa-border)',
+                  border: selectedIds.includes(item.id) ? '1px solid var(--hpa-primary)' : '1px solid var(--hpa-border)',
                   borderRadius: '10px',
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
                   transition: 'transform 0.2s ease, border-color 0.2s ease',
+                  position: 'relative',
                 }}
               >
                 <div
@@ -204,6 +323,29 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                     position: 'relative',
                   }}
                 >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      zIndex: 2,
+                      background: 'rgba(10, 10, 16, 0.8)',
+                      borderRadius: '6px',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backdropFilter: 'blur(4px)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item.id)}
+                      onChange={() => handleToggleSelect(item.id)}
+                      style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                    />
+                  </div>
                   <img
                     src={item.url || '/favicon.svg'}
                     alt={item.alt || item.filename}
@@ -366,6 +508,17 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
         isLoading={deleteLoading}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        title="Delete Selected Media Assets"
+        message={`Are you sure you want to permanently delete these ${selectedIds.length} selected media assets? Any references to them will lose their media relation.`}
+        confirmLabel={bulkDeleteLoading ? 'Deleting...' : `Delete ${selectedIds.length} Assets`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={bulkDeleteLoading}
       />
     </div>
   );

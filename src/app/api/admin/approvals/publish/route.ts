@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-db';
 import { approveAndPublishDraft } from '@/lib/chief-of-staff/agents/content-researcher';
-import { updateDraftStatus, logChiefActivity } from '@/lib/chief-of-staff/db';
+import { updateDraftStatus, logChiefActivity, deleteDraftsBulk } from '@/lib/chief-of-staff/db';
 import { publishDraftRun } from '@/lib/daily-news/orchestrator';
-import { updateDailyRun } from '@/lib/daily-news/db';
+import { updateDailyRun, deleteDailyRunsBulk } from '@/lib/daily-news/db';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -16,11 +16,47 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, sourceType, action, publishToLinkedIn, rejectionReason } = body;
+    const { id, sourceType, action, publishToLinkedIn, rejectionReason, items } = body;
+
+    // Handle Bulk Action if items array is provided
+    if (Array.isArray(items) && items.length > 0) {
+      if (action === 'delete') {
+        const chiefIds = items
+          .filter((i) => i.sourceType === 'chief' || String(i.id).startsWith('draft_'))
+          .map((i) => String(i.id));
+        const newsIds = items
+          .filter((i) => i.sourceType === 'news' && !isNaN(Number(i.id)))
+          .map((i) => Number(i.id));
+
+        if (chiefIds.length > 0) await deleteDraftsBulk(chiefIds);
+        if (newsIds.length > 0) await deleteDailyRunsBulk(newsIds);
+
+        return NextResponse.json({ success: true, count: items.length });
+      }
+
+      if (action === 'reject') {
+        for (const it of items) {
+          const isNews = it.sourceType === 'news' || !String(it.id).startsWith('draft_');
+          if (isNews) {
+            await updateDailyRun(Number(it.id), {
+              status: 'failed',
+              errorDetails: {
+                stage: 'bulk_rejection',
+                message: rejectionReason || 'Bulk rejected by Admin',
+                timestamp: new Date().toISOString(),
+              },
+            });
+          } else {
+            await updateDraftStatus(String(it.id), 'rejected', rejectionReason || 'Bulk rejected by Admin');
+          }
+        }
+        return NextResponse.json({ success: true, count: items.length });
+      }
+    }
 
     if (!id || !action) {
       return NextResponse.json(
-        { success: false, error: 'id and action ("publish", "reject") are required.' },
+        { success: false, error: 'id and action ("publish", "reject", "delete") are required.' },
         { status: 400 }
       );
     }
@@ -29,6 +65,15 @@ export async function POST(request: NextRequest) {
       sourceType === 'news' ||
       (typeof id === 'number' && !isNaN(id)) ||
       (!String(id).startsWith('draft_') && !isNaN(Number(id)));
+
+    if (action === 'delete') {
+      if (isNews) {
+        await deleteDailyRunsBulk([Number(id)]);
+      } else {
+        await deleteDraftsBulk([String(id)]);
+      }
+      return NextResponse.json({ success: true, message: 'Item deleted.' });
+    }
 
     if (action === 'publish' || action === 'approve') {
       if (isNews) {
@@ -92,4 +137,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

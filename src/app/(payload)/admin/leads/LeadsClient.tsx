@@ -68,8 +68,17 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Ensure unique list by ID
-  const uniqueLeads = Array.from(new Map(leads.map((l) => [l.id, l])).values());
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+
+  // Ensure unique list by ID and sort newest first (latest on top)
+  const uniqueLeads = Array.from(new Map(leads.map((l) => [l.id, l])).values()).sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return (timeB || b.id) - (timeA || a.id);
+  });
 
   const filtered = uniqueLeads.filter((l) => {
     const matchesSearch =
@@ -139,6 +148,52 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
       showToast('Network error while deleting lead.', 'error');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const allSelected = filtered.length > 0 && filtered.every((l) => selectedIds.includes(l.id));
+  const someSelected = filtered.some((l) => selectedIds.includes(l.id)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map((l) => l.id));
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+    try {
+      const res = await fetch('/api/admin/leads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected leads.', 'error');
+        setBulkDeleteLoading(false);
+        return;
+      }
+      setLeads((prev) => prev.filter((l) => !selectedIds.includes(l.id)));
+      if (selectedLead && selectedIds.includes(selectedLead.id)) {
+        setSelectedLead(null);
+      }
+      showToast(`Successfully deleted ${selectedIds.length} lead${selectedIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+    } catch {
+      showToast('Network error while deleting selected leads.', 'error');
+    } finally {
+      setBulkDeleteLoading(false);
     }
   };
 
@@ -328,11 +383,61 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
           </div>
         </div>
 
+        {/* Bulk Action Floating Bar */}
+        {selectedIds.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'rgba(255, 51, 102, 0.08)',
+              borderBottom: '1px solid rgba(255, 51, 102, 0.25)',
+              color: '#ffffff',
+              fontSize: '0.85rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? 'lead' : 'leads'} selected
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+              >
+                Deselect All
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeleteOpen(true)}
+                className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                style={{ gap: '6px' }}
+              >
+                <Trash2 size={13} />
+                <span>Delete Selected ({selectedIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {filtered.length > 0 ? (
           <div className="hpa-table-wrap">
             <table className="hpa-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      onChange={handleSelectAll}
+                      style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                      title="Select All"
+                    />
+                  </th>
                   <th>Client</th>
                   <th>Requested Service</th>
                   <th>Budget & Timeline</th>
@@ -353,6 +458,14 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
 
                   return (
                     <tr key={lead.id}>
+                      <td style={{ width: '40px' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(lead.id)}
+                          onChange={() => handleToggleSelect(lead.id)}
+                          style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                        />
+                      </td>
                       <td>
                         <div>
                           <button
@@ -622,6 +735,17 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
         isLoading={deleteLoading}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        title="Delete Selected Inquiries"
+        message={`Are you sure you want to permanently delete these ${selectedIds.length} selected inquiry records? This action cannot be undone.`}
+        confirmLabel={bulkDeleteLoading ? 'Deleting...' : `Delete ${selectedIds.length} Inquiries`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={bulkDeleteLoading}
       />
     </div>
   );

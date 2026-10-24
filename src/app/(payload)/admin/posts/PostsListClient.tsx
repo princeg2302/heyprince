@@ -40,29 +40,58 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [publishingPost, setPublishingPost] = useState<PostRecord | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
   const [page, setPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Filter posts
-  const filtered = posts.filter((post) => {
-    const matchesSearch =
-      search === '' ||
-      post.title.toLowerCase().includes(search.toLowerCase()) ||
-      post.slug.toLowerCase().includes(search.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(search.toLowerCase());
+  // Filter posts with latest on top
+  const filtered = posts
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.created_at || b.published_at || 0).getTime() -
+          new Date(a.created_at || a.published_at || 0).getTime() || b.id - a.id
+    )
+    .filter((post) => {
+      const matchesSearch =
+        search === '' ||
+        post.title.toLowerCase().includes(search.toLowerCase()) ||
+        post.slug.toLowerCase().includes(search.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(search.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === 'all' || post.status === statusFilter;
+      const matchesStatus =
+        statusFilter === 'all' || post.status === statusFilter;
 
-    const matchesCategory =
-      categoryFilter === 'all' ||
-      String(post.category_id) === categoryFilter;
+      const matchesCategory =
+        categoryFilter === 'all' ||
+        String(post.category_id) === categoryFilter;
 
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+      return matchesSearch && matchesStatus && matchesCategory;
+    });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+  // Selection handlers
+  const allOnPageSelected =
+    paginated.length > 0 && paginated.every((p) => selectedIds.includes(p.id));
+
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !paginated.some((p) => p.id === id)));
+    } else {
+      const newIds = new Set([...selectedIds, ...paginated.map((p) => p.id)]);
+      setSelectedIds(Array.from(newIds));
+    }
+  };
+
+  const toggleSelectRow = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   const handleDelete = async () => {
     if (!deletingId) return;
@@ -81,12 +110,42 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
       }
 
       setPosts((prev) => prev.filter((p) => p.id !== deletingId));
+      setSelectedIds((prev) => prev.filter((id) => id !== deletingId));
       showToast('Article deleted successfully.', 'success');
       setDeletingId(null);
     } catch {
       showToast('Error connecting to server.', 'error');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/posts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected articles.', 'error');
+        setBulkDeleteLoading(false);
+        return;
+      }
+
+      setPosts((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+      showToast(`${selectedIds.length} article(s) deleted successfully.`, 'success');
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+    } catch {
+      showToast('Error connecting to server.', 'error');
+    } finally {
+      setBulkDeleteLoading(false);
     }
   };
 
@@ -169,12 +228,69 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
           </div>
         </div>
 
+        {/* Bulk Action Bar */}
+        {selectedIds.length > 0 && (
+          <div
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderBottom: '1px solid rgba(239, 68, 68, 0.25)',
+              padding: '10px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.84rem', color: '#ffffff' }}>
+              <span>
+                <strong>{selectedIds.length}</strong> article(s) selected
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+              >
+                Clear Selection
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeleteOpen(true)}
+                className="hpa-btn hpa-btn-sm"
+                style={{
+                  background: '#ef4444',
+                  borderColor: '#ef4444',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <Trash2 size={13} />
+                <span>Delete Selected ({selectedIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         {paginated.length > 0 ? (
           <div className="hpa-table-wrap">
             <table className="hpa-table">
               <thead>
                 <tr>
+                  <th style={{ width: '38px', textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={allOnPageSelected}
+                      onChange={toggleSelectAll}
+                      title="Select all on this page"
+                      style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
+                    />
+                  </th>
                   <th>Article</th>
                   <th>Category</th>
                   <th>Author</th>
@@ -192,9 +308,23 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         year: 'numeric',
                       })
                     : 'Draft';
+                  const isChecked = selectedIds.includes(post.id);
 
                   return (
-                    <tr key={post.id}>
+                    <tr
+                      key={post.id}
+                      style={{
+                        background: isChecked ? 'rgba(255, 71, 87, 0.06)' : undefined,
+                      }}
+                    >
+                      <td style={{ width: '38px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSelectRow(post.id)}
+                          style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
+                        />
+                      </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <img
@@ -242,54 +372,78 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
 
                       <td>
                         <span
-                          className={`hpa-pill ${
-                            post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'
+                          className={`hpa-status-badge ${
+                            post.status === 'published' ? 'published' : 'draft'
                           }`}
                         >
-                          {post.status}
+                          {post.status === 'published' ? (
+                            <CheckCircle2 size={12} />
+                          ) : (
+                            <AlertCircle size={12} />
+                          )}
+                          <span>{post.status.toUpperCase()}</span>
                         </span>
                       </td>
 
-                      <td style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
-                        {dateStr}
+                      <td>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '0.82rem',
+                            color: 'var(--hpa-text-dim)',
+                          }}
+                        >
+                          <Calendar size={13} />
+                          <span>{dateStr}</span>
+                        </div>
                       </td>
 
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <Link
-                            href={`/admin/posts/${post.id}`}
-                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
-                            title="View Full Post"
-                          >
-                            <Eye size={14} />
-                          </Link>
-                          <Link
-                            href={`/admin/posts/${post.id}/edit`}
-                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
-                            title="Edit Post"
-                          >
-                            <Edit2 size={14} />
-                          </Link>
-                          <a
-                            href={`https://heyprince.in/insights/${post.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
-                            title="Open on Live Website"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
+                      <td>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-end',
+                            gap: '6px',
+                          }}
+                        >
                           <button
+                            type="button"
                             onClick={() => setPublishingPost(post)}
-                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
-                            title="Publish to LinkedIn Profile"
-                            style={{ color: '#0a66c2' }}
+                            className="hpa-table-action-btn"
+                            title="Publish / Share to LinkedIn"
+                            style={{
+                              color: '#0a66c2',
+                              background: 'rgba(10, 102, 194, 0.1)',
+                              borderColor: 'rgba(10, 102, 194, 0.25)',
+                            }}
                           >
                             <Share2 size={14} />
                           </button>
+
+                          <Link
+                            href={`/insights/${post.slug}`}
+                            target="_blank"
+                            className="hpa-table-action-btn"
+                            title="View on Live Site"
+                          >
+                            <ExternalLink size={14} />
+                          </Link>
+
+                          <Link
+                            href={`/admin/posts/${post.id}/edit`}
+                            className="hpa-table-action-btn"
+                            title="Edit Article"
+                          >
+                            <Edit2 size={14} />
+                          </Link>
+
                           <button
+                            type="button"
                             onClick={() => setDeletingId(post.id)}
-                            className="hpa-btn hpa-btn-danger hpa-btn-icon"
+                            className="hpa-table-action-btn danger"
                             title="Delete Article"
                           >
                             <Trash2 size={14} />
@@ -344,7 +498,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
         )}
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal - Single Delete */}
       <ConfirmModal
         isOpen={deletingId !== null}
         title="Delete Insight Article"
@@ -353,6 +507,17 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
         isLoading={deleteLoading}
+      />
+
+      {/* Confirmation Modal - Bulk Delete */}
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        title={`Delete ${selectedIds.length} Article(s)`}
+        message={`Are you sure you want to delete ${selectedIds.length} selected article(s)? This will permanently remove them and all their sections from the database.`}
+        confirmLabel={`Yes, Delete ${selectedIds.length} Articles`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={bulkDeleteLoading}
       />
 
       {/* LinkedIn Publish Modal */}

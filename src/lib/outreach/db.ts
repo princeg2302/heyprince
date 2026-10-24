@@ -326,6 +326,23 @@ export async function getBusinessById(id: string): Promise<BusinessEntity | null
   return rows[0] || null;
 }
 
+export async function deleteBusinessesBulk(
+  ids: string[]
+): Promise<{ success: boolean; count: number; error?: string }> {
+  if (!ids || ids.length === 0) return { success: true, count: 0 };
+  try {
+    await query(`DELETE FROM contacts WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    await query(`DELETE FROM website_audits WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    await query(`DELETE FROM ai_analyses WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    await query(`DELETE FROM queue_emails WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    await query(`DELETE FROM businesses WHERE id = ANY($1::uuid[]);`, [ids]);
+    return { success: true, count: ids.length };
+  } catch (err: any) {
+    console.error('[deleteBusinessesBulk] Error:', err);
+    return { success: false, count: 0, error: err?.message || 'Error deleting businesses' };
+  }
+}
+
 export async function updateBusinessStatus(
   id: string,
   status: BusinessStatus,

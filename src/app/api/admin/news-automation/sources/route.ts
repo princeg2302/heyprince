@@ -5,6 +5,7 @@ import {
   addDailyNewsSource,
   updateDailyNewsSource,
   deleteDailyNewsSource,
+  deleteDailyNewsSourcesBulk,
 } from '@/lib/daily-news/db';
 import { fetchFeed } from '@/lib/daily-news/rss-collector';
 
@@ -120,10 +121,16 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
+    const body = await request.json().catch(() => ({}));
+    if (Array.isArray(body.ids) && body.ids.length > 0) {
+      await deleteDailyNewsSourcesBulk(body.ids);
+      return NextResponse.json({ success: true, count: body.ids.length });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const id = parseInt(searchParams.get('id') || '', 10);
     if (isNaN(id)) {
-      return NextResponse.json({ success: false, error: 'Valid id is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Valid id or ids array is required' }, { status: 400 });
     }
 
     await deleteDailyNewsSource(id);

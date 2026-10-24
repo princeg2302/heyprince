@@ -23,7 +23,9 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from 'lucide-react';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 import {
   MobileDraftApprovalModal,
@@ -54,6 +56,15 @@ export default function ApprovalsClient() {
   const [selectedItemForModal, setSelectedItemForModal] = useState<ApprovalItem | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'news' | 'chief'>('all');
   const [quickPublishingId, setQuickPublishingId] = useState<string | number | null>(null);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Array<{ id: string | number; sourceType: 'news' | 'chief' }>>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+
+  // Single delete state
+  const [deletingItem, setDeletingItem] = useState<ApprovalItem | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Push Notification States
   const [pushSupported, setPushSupported] = useState(false);
@@ -129,12 +140,110 @@ export default function ApprovalsClient() {
     }
   }, [items]);
 
-  const filteredItems = items.filter((item) => {
-    if (filterType === 'all') return true;
-    if (filterType === 'news') return item.sourceType === 'news';
-    if (filterType === 'chief') return item.sourceType === 'chief';
-    return true;
-  });
+  const filteredItems = items
+    .filter((item) => {
+      if (filterType === 'all') return true;
+      if (filterType === 'news') return item.sourceType === 'news';
+      if (filterType === 'chief') return item.sourceType === 'chief';
+      return true;
+    })
+    .sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return (timeB || Number(b.id) || 0) - (timeA || Number(a.id) || 0);
+    });
+
+  const isItemSelected = (item: ApprovalItem) =>
+    selectedIds.some((s) => String(s.id) === String(item.id) && s.sourceType === item.sourceType);
+
+  const allSelected =
+    filteredItems.length > 0 && filteredItems.every((item) => isItemSelected(item));
+  const someSelected =
+    filteredItems.some((item) => isItemSelected(item)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(
+        filteredItems.map((item) => ({ id: item.id, sourceType: item.sourceType as 'news' | 'chief' }))
+      );
+    }
+  };
+
+  const handleToggleSelect = (item: ApprovalItem) => {
+    if (isItemSelected(item)) {
+      setSelectedIds((prev) =>
+        prev.filter((s) => !(String(s.id) === String(item.id) && s.sourceType === item.sourceType))
+      );
+    } else {
+      setSelectedIds((prev) => [
+        ...prev,
+        { id: item.id, sourceType: item.sourceType as 'news' | 'chief' },
+      ]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete',
+          items: selectedIds,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected drafts.', 'error');
+        setBulkDeleteLoading(false);
+        return;
+      }
+
+      showToast(`Successfully deleted ${selectedIds.length} draft${selectedIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+      fetchApprovals();
+    } catch {
+      showToast('Error deleting selected approval drafts.', 'error');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteSingle = async () => {
+    if (!deletingItem) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch('/api/admin/approvals/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete',
+          id: deletingItem.id,
+          sourceType: deletingItem.sourceType,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete draft.', 'error');
+        setDeleteLoading(false);
+        return;
+      }
+      showToast('Draft deleted successfully.', 'success');
+      setDeletingItem(null);
+      fetchApprovals();
+    } catch {
+      showToast('Error deleting draft.', 'error');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   const handleEnablePush = async () => {
     if (!pushSupported) {
@@ -520,6 +629,87 @@ export default function ApprovalsClient() {
         </button>
       </div>
 
+      {/* Select All & Summary Bar */}
+      {filteredItems.length > 0 && !loading && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '12px',
+            flexWrap: 'wrap',
+            gap: '8px',
+            padding: '4px 2px',
+          }}
+        >
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.82rem',
+              color: 'var(--hpa-text-muted)',
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={allSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someSelected;
+              }}
+              onChange={handleSelectAll}
+              style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+            />
+            <span>Select All ({filteredItems.length})</span>
+          </label>
+          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+            Latest pending items on top
+          </span>
+        </div>
+      )}
+
+      {/* Bulk Action Floating Bar */}
+      {selectedIds.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 16px',
+            background: 'rgba(255, 51, 102, 0.08)',
+            border: '1px solid rgba(255, 51, 102, 0.25)',
+            borderRadius: '10px',
+            marginBottom: '16px',
+            color: '#ffffff',
+            fontSize: '0.85rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? 'draft' : 'drafts'} selected
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setSelectedIds([])}
+              className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+            >
+              Deselect All
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkDeleteOpen(true)}
+              className="hpa-btn hpa-btn-danger hpa-btn-sm"
+              style={{ gap: '6px' }}
+            >
+              <Trash2 size={13} />
+              <span>Delete Selected ({selectedIds.length})</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content List */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
@@ -596,7 +786,14 @@ export default function ApprovalsClient() {
                   gap: '8px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={isItemSelected(item)}
+                    onChange={() => handleToggleSelect(item)}
+                    style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                    title="Select Draft"
+                  />
                   <span
                     style={{
                       display: 'inline-flex',
@@ -747,6 +944,19 @@ export default function ApprovalsClient() {
                   )}
                   <span>Publish</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDeletingItem(item)}
+                  className="hpa-btn hpa-btn-danger"
+                  title="Delete Draft"
+                  style={{
+                    padding: '8px 10px',
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  <Trash2 size={13} />
+                </button>
               </div>
             </div>
           ))}
@@ -772,6 +982,28 @@ export default function ApprovalsClient() {
           }}
         />
       )}
+
+      {/* Single Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deletingItem !== null}
+        title="Delete Draft"
+        message="Are you sure you want to delete and reject this draft proposal? This action cannot be undone."
+        confirmLabel="Yes, Delete Draft"
+        onConfirm={handleDeleteSingle}
+        onCancel={() => setDeletingItem(null)}
+        isLoading={deleteLoading}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        title="Delete Selected Drafts"
+        message={`Are you sure you want to permanently delete these ${selectedIds.length} selected draft proposals? This action cannot be undone.`}
+        confirmLabel={bulkDeleteLoading ? 'Deleting...' : `Delete ${selectedIds.length} Drafts`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={bulkDeleteLoading}
+      />
     </div>
   );
 }

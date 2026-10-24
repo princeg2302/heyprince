@@ -31,7 +31,9 @@ import {
   X,
   Target,
   ArrowRight,
+  Trash2,
 } from 'lucide-react';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 import {
   BusinessEntity,
@@ -139,6 +141,13 @@ export default function OutreachClient({
   const [pipelineFilter, setPipelineFilter] = useState('ALL');
   const [crmNotesInput, setCrmNotesInput] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Business Selection & Deletion State
+  const [selectedBusinessIds, setSelectedBusinessIds] = useState<string[]>([]);
+  const [bulkDeleteBizOpen, setBulkDeleteBizOpen] = useState(false);
+  const [bulkDeleteBizLoading, setBulkDeleteBizLoading] = useState(false);
+  const [deletingBizId, setDeletingBizId] = useState<string | null>(null);
+  const [deletingBizLoading, setDeletingBizLoading] = useState(false);
 
   const getStatusBadgeStyle = (status?: string) => {
     switch (status) {
@@ -399,6 +408,93 @@ export default function OutreachClient({
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+
+  const handleDeleteSingleBiz = async () => {
+    if (!deletingBizId) return;
+    setDeletingBizLoading(true);
+    try {
+      const res = await fetch('/api/admin/outreach/businesses', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [deletingBizId] }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete business.', 'error');
+        setDeletingBizLoading(false);
+        return;
+      }
+      setBusinesses((prev) => prev.filter((b) => b.id !== deletingBizId));
+      if (selectedBusiness?.id === deletingBizId) {
+        setSelectedBusiness(null);
+        setBusinessDetail(null);
+      }
+      showToast('Business record deleted.', 'success');
+      setDeletingBizId(null);
+    } catch {
+      showToast('Error deleting business.', 'error');
+    } finally {
+      setDeletingBizLoading(false);
+    }
+  };
+
+  const handleBulkDeleteBiz = async () => {
+    if (selectedBusinessIds.length === 0) return;
+    setBulkDeleteBizLoading(true);
+    try {
+      const res = await fetch('/api/admin/outreach/businesses', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedBusinessIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected businesses.', 'error');
+        setBulkDeleteBizLoading(false);
+        return;
+      }
+      setBusinesses((prev) => prev.filter((b) => !selectedBusinessIds.includes(b.id)));
+      if (selectedBusiness && selectedBusinessIds.includes(selectedBusiness.id)) {
+        setSelectedBusiness(null);
+        setBusinessDetail(null);
+      }
+      showToast(`Successfully deleted ${selectedBusinessIds.length} business lead${selectedBusinessIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedBusinessIds([]);
+      setBulkDeleteBizOpen(false);
+    } catch {
+      showToast('Error deleting selected businesses.', 'error');
+    } finally {
+      setBulkDeleteBizLoading(false);
+    }
+  };
+
+  const filteredBusinesses = businesses
+    .filter((b) => pipelineFilter === 'ALL' || b.status === pipelineFilter)
+    .sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeB - timeA;
+    });
+
+  const allBizSelected =
+    filteredBusinesses.length > 0 &&
+    filteredBusinesses.every((b) => selectedBusinessIds.includes(b.id));
+  const someBizSelected =
+    filteredBusinesses.some((b) => selectedBusinessIds.includes(b.id)) && !allBizSelected;
+
+  const handleSelectAllBiz = () => {
+    if (allBizSelected) {
+      setSelectedBusinessIds([]);
+    } else {
+      setSelectedBusinessIds(filteredBusinesses.map((b) => b.id));
+    }
+  };
+
+  const handleToggleSelectBiz = (id: string) => {
+    setSelectedBusinessIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   // Trigger Website Audit & Deep Multi-Page Crawl
@@ -1953,6 +2049,66 @@ export default function OutreachClient({
               </div>
             </div>
 
+            {/* Bulk Action Floating Bar */}
+            {selectedBusinessIds.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 16px',
+                  background: 'rgba(255, 51, 102, 0.08)',
+                  border: '1px solid rgba(255, 51, 102, 0.25)',
+                  borderRadius: '10px',
+                  marginBottom: '16px',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <strong>{selectedBusinessIds.length}</strong> {selectedBusinessIds.length === 1 ? 'business' : 'businesses'} selected
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBusinessIds([])}
+                    style={{
+                      background: '#161622',
+                      border: '1px solid #2d2d42',
+                      color: '#cbd5e1',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Deselect All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkDeleteBizOpen(true)}
+                    style={{
+                      background: '#ef4444',
+                      border: '1px solid #ef4444',
+                      color: '#ffffff',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete Selected ({selectedBusinessIds.length})</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {businesses.length === 0 ? (
               <p style={{ color: '#6b7280', fontSize: '13px' }}>No businesses in database yet. Run a discovery scan above!</p>
             ) : (
@@ -1960,6 +2116,18 @@ export default function OutreachClient({
                 <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #1c1c2b', color: '#9ca3af' }}>
+                      <th style={{ width: '36px', padding: '10px' }}>
+                        <input
+                          type="checkbox"
+                          checked={allBizSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = someBizSelected;
+                          }}
+                          onChange={handleSelectAllBiz}
+                          style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                          title="Select All"
+                        />
+                      </th>
                       <th style={{ padding: '10px' }}>Business</th>
                       <th style={{ padding: '10px' }}>Location</th>
                       <th style={{ padding: '10px' }}>Category</th>
@@ -1969,19 +2137,26 @@ export default function OutreachClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {businesses
-                      .filter((b) => pipelineFilter === 'ALL' || b.status === pipelineFilter)
-                      .map((b) => {
-                        const badge = getStatusBadgeStyle(b.status);
-                        return (
-                          <tr
-                            key={b.id}
-                            style={{
-                              borderBottom: '1px solid #161622',
-                              background: selectedBusiness?.id === b.id ? 'rgba(255, 51, 102, 0.08)' : 'transparent',
-                            }}
-                          >
-                            <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
+                    {filteredBusinesses.map((b) => {
+                      const badge = getStatusBadgeStyle(b.status);
+                      const isSelected = selectedBusinessIds.includes(b.id);
+                      return (
+                        <tr
+                          key={b.id}
+                          style={{
+                            borderBottom: '1px solid #161622',
+                            background: selectedBusiness?.id === b.id ? 'rgba(255, 51, 102, 0.08)' : isSelected ? 'rgba(255, 51, 102, 0.04)' : 'transparent',
+                          }}
+                        >
+                          <td style={{ width: '36px', padding: '12px 10px' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectBiz(b.id)}
+                              style={{ cursor: 'pointer', accentColor: '#ff3366', width: '15px', height: '15px' }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px 10px', fontWeight: 600, color: '#ffffff' }}>
                               <div>{b.name}</div>
                               {(() => {
                                 const phone = (b.metadata as any)?.phone;
@@ -2124,6 +2299,28 @@ export default function OutreachClient({
                                     Won 🎉
                                   </button>
                                 )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingBizId(b.id);
+                                  }}
+                                  title="Delete Lead"
+                                  style={{
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#ef4444',
+                                    padding: '6px 8px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -3334,6 +3531,28 @@ export default function OutreachClient({
           </div>
         </div>
       )}
+
+      {/* Single Business Delete Modal */}
+      <ConfirmModal
+        isOpen={deletingBizId !== null}
+        title="Delete Business Lead"
+        message="Are you sure you want to delete this business record? All associated audit data, analyses, and queued outreach will be removed."
+        confirmLabel="Yes, Delete Business"
+        onConfirm={handleDeleteSingleBiz}
+        onCancel={() => setDeletingBizId(null)}
+        isLoading={deletingBizLoading}
+      />
+
+      {/* Bulk Business Delete Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteBizOpen}
+        title="Delete Selected Business Leads"
+        message={`Are you sure you want to permanently delete these ${selectedBusinessIds.length} selected business records and their associated data? This action cannot be undone.`}
+        confirmLabel={bulkDeleteBizLoading ? 'Deleting...' : `Delete ${selectedBusinessIds.length} Leads`}
+        onConfirm={handleBulkDeleteBiz}
+        onCancel={() => setBulkDeleteBizOpen(false)}
+        isLoading={bulkDeleteBizLoading}
+      />
     </div>
   );
 }

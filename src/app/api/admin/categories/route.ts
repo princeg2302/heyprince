@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAdmin, getCategoriesList, createCategory } from '@/lib/admin-db';
+import { getCurrentAdmin, getCategoriesList, createCategory, deleteCategoriesBulk } from '@/lib/admin-db';
 
 export async function GET() {
   const user = await getCurrentAdmin();
@@ -36,6 +36,28 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, category: result.category });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const user = await getCurrentAdmin();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const ids: number[] = Array.isArray(body.ids) ? body.ids : [];
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'ids array is required.' }, { status: 400 });
+    }
+
+    const result = await deleteCategoriesBulk(ids);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, count: result.count });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAdmin, getMediaList, createMediaRecord, supabase } from '@/lib/admin-db';
+import { getCurrentAdmin, getMediaList, createMediaRecord, deleteMediaBulk, supabase } from '@/lib/admin-db';
 import fs from 'fs';
 import path from 'path';
 
@@ -97,6 +97,28 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, media: result.media });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const user = await getCurrentAdmin();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const ids: number[] = Array.isArray(body.ids) ? body.ids : [];
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'ids array is required.' }, { status: 400 });
+    }
+
+    const result = await deleteMediaBulk(ids);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, count: result.count });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

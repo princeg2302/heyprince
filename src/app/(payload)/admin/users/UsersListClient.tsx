@@ -29,15 +29,72 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
   const [search, setSearch] = useState('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
-  const filtered = users.filter((u) => {
-    return (
-      search === '' ||
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.role.toLowerCase().includes(search.toLowerCase())
+  const filtered = users
+    .filter((u) => {
+      return (
+        search === '' ||
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase()) ||
+        u.role.toLowerCase().includes(search.toLowerCase())
+      );
+    })
+    .sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return (timeB || b.id) - (timeA || a.id);
+    });
+
+  const selectableUsers = filtered.filter((u) => u.id !== currentAdminId);
+  const allSelected = selectableUsers.length > 0 && selectableUsers.every((u) => selectedIds.includes(u.id));
+  const someSelected = selectableUsers.some((u) => selectedIds.includes(u.id)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(selectableUsers.map((u) => u.id));
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    if (id === currentAdminId) return;
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete users.', 'error');
+        setBulkDeleteLoading(false);
+        return;
+      }
+
+      setUsers((prev) => prev.filter((u) => !selectedIds.includes(u.id)));
+      showToast(`Successfully deleted ${selectedIds.length} user account${selectedIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+    } catch {
+      showToast('Error connecting to server.', 'error');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!deletingId) return;
@@ -99,11 +156,61 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
           </div>
         </div>
 
+        {/* Bulk Action Floating Bar */}
+        {selectedIds.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'rgba(255, 51, 102, 0.08)',
+              borderBottom: '1px solid rgba(255, 51, 102, 0.25)',
+              color: '#ffffff',
+              fontSize: '0.85rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? 'user' : 'users'} selected
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+              >
+                Deselect All
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeleteOpen(true)}
+                className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                style={{ gap: '6px' }}
+              >
+                <Trash2 size={13} />
+                <span>Delete Selected ({selectedIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {filtered.length > 0 ? (
           <div className="hpa-table-wrap">
             <table className="hpa-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      onChange={handleSelectAll}
+                      style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                      title="Select All"
+                    />
+                  </th>
                   <th>User Profile</th>
                   <th>Email</th>
                   <th>System Role</th>
@@ -124,6 +231,22 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
 
                   return (
                     <tr key={user.id}>
+                      <td style={{ width: '40px' }}>
+                        <input
+                          type="checkbox"
+                          disabled={isCurrent}
+                          checked={selectedIds.includes(user.id)}
+                          onChange={() => handleToggleSelect(user.id)}
+                          title={isCurrent ? 'Cannot delete your own account' : 'Select user'}
+                          style={{
+                            cursor: isCurrent ? 'not-allowed' : 'pointer',
+                            accentColor: '#ff3366',
+                            width: '16px',
+                            height: '16px',
+                            opacity: isCurrent ? 0.3 : 1,
+                          }}
+                        />
+                      </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div
@@ -237,6 +360,17 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
         isLoading={deleteLoading}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        title="Revoke Access for Selected Users"
+        message={`Are you sure you want to permanently delete these ${selectedIds.length} selected admin user accounts? Their administrative login permissions will be immediately revoked.`}
+        confirmLabel={bulkDeleteLoading ? 'Revoking Access...' : `Delete ${selectedIds.length} Accounts`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={bulkDeleteLoading}
       />
     </div>
   );

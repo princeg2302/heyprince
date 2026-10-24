@@ -593,6 +593,15 @@ export async function deletePost(id: number): Promise<{ success: boolean; error?
   }
 }
 
+export async function deletePostsBulk(ids: number[]): Promise<{ success: boolean; error?: string; count?: number }> {
+  let count = 0;
+  for (const id of ids) {
+    const res = await deletePost(id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
+}
+
 // ==============================================================================
 // SERVICES CRUD
 // ==============================================================================
@@ -866,6 +875,15 @@ export async function deleteService(id: number): Promise<{ success: boolean; err
   }
 }
 
+export async function deleteServicesBulk(ids: number[]): Promise<{ success: boolean; error?: string; count?: number }> {
+  let count = 0;
+  for (const id of ids) {
+    const res = await deleteService(id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
+}
+
 // ==============================================================================
 // USERS CRUD
 // ==============================================================================
@@ -1017,6 +1035,19 @@ export async function deleteUser(id: number): Promise<{ success: boolean; error?
   }
 }
 
+export async function deleteUsersBulk(
+  ids: number[],
+  excludeId?: number
+): Promise<{ success: boolean; error?: string; count?: number }> {
+  let count = 0;
+  for (const id of ids) {
+    if (excludeId && id === excludeId) continue;
+    const res = await deleteUser(id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
+}
+
 // ==============================================================================
 // CATEGORIES CRUD
 // ==============================================================================
@@ -1032,8 +1063,11 @@ export interface CategoryRecord {
 
 export async function getCategoriesList(): Promise<CategoryRecord[]> {
   try {
-    const { data, error } = await supabase.from('categories').select('*').order('title');
-    if (error) return [];
+    const { data, error } = await supabase.from('categories').select('*').order('created_at', { ascending: false });
+    if (error) {
+      const { data: fallbackData } = await supabase.from('categories').select('*').order('id', { ascending: false });
+      return (fallbackData || []) as CategoryRecord[];
+    }
     return (data || []) as CategoryRecord[];
   } catch {
     return [];
@@ -1137,6 +1171,15 @@ export async function deleteCategory(id: number): Promise<{ success: boolean; er
   }
 }
 
+export async function deleteCategoriesBulk(ids: number[]): Promise<{ success: boolean; error?: string; count?: number }> {
+  let count = 0;
+  for (const id of ids) {
+    const res = await deleteCategory(id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
+}
+
 // ==============================================================================
 // LEADS CRM CRUD
 // ==============================================================================
@@ -1221,6 +1264,15 @@ export async function deleteLead(id: number): Promise<{ success: boolean; error?
   }
 }
 
+export async function deleteLeadsBulk(ids: number[]): Promise<{ success: boolean; error?: string; count?: number }> {
+  let count = 0;
+  for (const id of ids) {
+    const res = await deleteLead(id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
+}
+
 // ==============================================================================
 // MEDIA ASSETS CRUD
 // ==============================================================================
@@ -1294,4 +1346,13 @@ export async function deleteMediaRecord(id: number): Promise<{ success: boolean;
   } catch (err: any) {
     return { success: false, error: err?.message || 'Error deleting media' };
   }
+}
+
+export async function deleteMediaBulk(ids: number[]): Promise<{ success: boolean; error?: string; count?: number }> {
+  let count = 0;
+  for (const id of ids) {
+    const res = await deleteMediaRecord(id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
 }

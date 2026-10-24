@@ -311,6 +311,18 @@ export async function deleteDailyNewsSource(id: number): Promise<boolean> {
   return true;
 }
 
+export async function deleteDailyNewsSourcesBulk(ids: number[]): Promise<boolean> {
+  if (ids.length === 0) return true;
+  await query(`DELETE FROM daily_news_sources WHERE id = ANY($1::int[]);`, [ids]);
+  return true;
+}
+
+export async function deleteDailyRunsBulk(ids: number[]): Promise<boolean> {
+  if (ids.length === 0) return true;
+  await query(`DELETE FROM daily_news_runs WHERE id = ANY($1::int[]);`, [ids]);
+  return true;
+}
+
 // ============================================================================
 // 3. News Items & Canonical Deduplication
 // ============================================================================

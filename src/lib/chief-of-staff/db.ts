@@ -283,6 +283,12 @@ export async function updateDraftStatus(
   return true;
 }
 
+export async function deleteDraftsBulk(ids: string[]): Promise<boolean> {
+  if (ids.length === 0) return true;
+  await query(`DELETE FROM chief_content_drafts WHERE id = ANY($1::text[]);`, [ids]);
+  return true;
+}
+
 // ============================================================================
 // 4. Website Health Audits Operations
 // ============================================================================

@@ -32,29 +32,82 @@ export default function ServicesListClient({ initialServices, categories }: Serv
   const [publishedFilter, setPublishedFilter] = useState('all');
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
   const [page, setPage] = useState(1);
   const itemsPerPage = 8;
 
-  const filtered = services.filter((s) => {
-    const matchesSearch =
-      search === '' ||
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.slug.toLowerCase().includes(search.toLowerCase()) ||
-      (s.tagline && s.tagline.toLowerCase().includes(search.toLowerCase())) ||
-      (s.short_description && s.short_description.toLowerCase().includes(search.toLowerCase()));
+  const filtered = services
+    .filter((s) => {
+      const matchesSearch =
+        search === '' ||
+        s.title.toLowerCase().includes(search.toLowerCase()) ||
+        s.slug.toLowerCase().includes(search.toLowerCase()) ||
+        (s.tagline && s.tagline.toLowerCase().includes(search.toLowerCase())) ||
+        (s.short_description && s.short_description.toLowerCase().includes(search.toLowerCase()));
 
-    const matchesCat =
-      categoryFilter === 'all' || String(s.category_id) === categoryFilter;
+      const matchesCat =
+        categoryFilter === 'all' || String(s.category_id) === categoryFilter;
 
-    const matchesPublished =
-      publishedFilter === 'all' ||
-      (publishedFilter === 'published' ? s.published : !s.published);
+      const matchesPublished =
+        publishedFilter === 'all' ||
+        (publishedFilter === 'published' ? s.published : !s.published);
 
-    return matchesSearch && matchesCat && matchesPublished;
-  });
+      return matchesSearch && matchesCat && matchesPublished;
+    })
+    .sort((a, b) => {
+      const timeA = (a as any).created_at ? new Date((a as any).created_at).getTime() : 0;
+      const timeB = (b as any).created_at ? new Date((b as any).created_at).getTime() : 0;
+      return (timeB || b.id) - (timeA || a.id);
+    });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+  const allSelected = paginated.length > 0 && paginated.every((s) => selectedIds.includes(s.id));
+  const someSelected = paginated.some((s) => selectedIds.includes(s.id)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !paginated.some((s) => s.id === id)));
+    } else {
+      const newIds = new Set([...selectedIds, ...paginated.map((s) => s.id)]);
+      setSelectedIds(Array.from(newIds));
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setBulkDeleteLoading(true);
+    try {
+      const res = await fetch('/api/admin/services', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete selected services.', 'error');
+        setBulkDeleteLoading(false);
+        return;
+      }
+      setServices((prev) => prev.filter((s) => !selectedIds.includes(s.id)));
+      showToast(`Successfully deleted ${selectedIds.length} service${selectedIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+    } catch {
+      showToast('Network error while deleting selected services.', 'error');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!deletingId) return;
@@ -149,12 +202,62 @@ export default function ServicesListClient({ initialServices, categories }: Serv
           </div>
         </div>
 
+        {/* Bulk Action Floating Bar */}
+        {selectedIds.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'rgba(255, 51, 102, 0.08)',
+              borderBottom: '1px solid rgba(255, 51, 102, 0.25)',
+              color: '#ffffff',
+              fontSize: '0.85rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? 'service' : 'services'} selected
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+              >
+                Deselect All
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkDeleteOpen(true)}
+                className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                style={{ gap: '6px' }}
+              >
+                <Trash2 size={13} />
+                <span>Delete Selected ({selectedIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         {paginated.length > 0 ? (
           <div className="hpa-table-wrap">
             <table className="hpa-table">
               <thead>
                 <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      onChange={handleSelectAll}
+                      style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                      title="Select All"
+                    />
+                  </th>
                   <th>Service Offering</th>
                   <th>Category</th>
                   <th>Theme & Badge</th>
@@ -166,6 +269,14 @@ export default function ServicesListClient({ initialServices, categories }: Serv
               <tbody>
                 {paginated.map((srv) => (
                   <tr key={srv.id}>
+                    <td style={{ width: '40px' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(srv.id)}
+                        onChange={() => handleToggleSelect(srv.id)}
+                        style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                      />
+                    </td>
                     <td>
                       <div>
                         <Link
@@ -329,6 +440,17 @@ export default function ServicesListClient({ initialServices, categories }: Serv
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
         isLoading={deleteLoading}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteOpen}
+        title="Delete Selected Services"
+        message={`Are you sure you want to permanently delete these ${selectedIds.length} selected service(s)? All deliverables, process steps, and FAQs associated with them will be removed permanently.`}
+        confirmLabel={bulkDeleteLoading ? 'Deleting...' : `Delete ${selectedIds.length} Services`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={bulkDeleteLoading}
       />
     </div>
   );

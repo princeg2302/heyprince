@@ -32,7 +32,9 @@ import {
   Globe,
   Radio,
   Pause,
+  Trash2,
 } from 'lucide-react';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 import { MobileDraftApprovalModal } from '@/components/admin/MobileDraftApprovalModal';
 import {
@@ -124,6 +126,13 @@ export default function ChiefOfStaffClient() {
   const [approvingDraftId, setApprovingDraftId] = useState<string | null>(null);
   const [selectedDraftForModal, setSelectedDraftForModal] = useState<ChiefContentDraft | null>(null);
   const [shareToLinkedIn, setShareToLinkedIn] = useState(true);
+
+  // Bulk Draft Selection & Deletion State
+  const [selectedDraftIds, setSelectedDraftIds] = useState<string[]>([]);
+  const [bulkDeleteDraftsOpen, setBulkDeleteDraftsOpen] = useState(false);
+  const [bulkDeleteDraftsLoading, setBulkDeleteDraftsLoading] = useState(false);
+  const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
+  const [deletingDraftLoading, setDeletingDraftLoading] = useState(false);
 
   // Fetch Full Status
   const fetchStatus = async () => {
@@ -271,7 +280,81 @@ export default function ChiefOfStaffClient() {
   };
 
   const agents = data?.agents || [];
-  const drafts = data?.recentDrafts || [];
+  const drafts = (data?.recentDrafts || []).slice().sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  const allDraftsSelected =
+    drafts.length > 0 && drafts.every((d) => selectedDraftIds.includes(d.id));
+  const someDraftsSelected =
+    drafts.some((d) => selectedDraftIds.includes(d.id)) && !allDraftsSelected;
+
+  const handleSelectAllDrafts = () => {
+    if (allDraftsSelected) {
+      setSelectedDraftIds([]);
+    } else {
+      setSelectedDraftIds(drafts.map((d) => d.id));
+    }
+  };
+
+  const handleToggleSelectDraft = (id: string) => {
+    setSelectedDraftIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteDrafts = async () => {
+    if (selectedDraftIds.length === 0) return;
+    setBulkDeleteDraftsLoading(true);
+    try {
+      const res = await fetch('/api/admin/chief-of-staff/approve-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', draftIds: selectedDraftIds }),
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        showToast(resData.error || 'Failed to delete selected drafts.', 'error');
+        setBulkDeleteDraftsLoading(false);
+        return;
+      }
+      showToast(`Successfully deleted ${selectedDraftIds.length} draft proposal${selectedDraftIds.length > 1 ? 's' : ''}.`, 'success');
+      setSelectedDraftIds([]);
+      setBulkDeleteDraftsOpen(false);
+      fetchStatus();
+    } catch {
+      showToast('Error deleting selected drafts.', 'error');
+    } finally {
+      setBulkDeleteDraftsLoading(false);
+    }
+  };
+
+  const handleDeleteSingleDraft = async () => {
+    if (!deletingDraftId) return;
+    setDeletingDraftLoading(true);
+    try {
+      const res = await fetch('/api/admin/chief-of-staff/approve-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', draftId: deletingDraftId }),
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        showToast(resData.error || 'Failed to delete draft.', 'error');
+        setDeletingDraftLoading(false);
+        return;
+      }
+      showToast('Draft proposal deleted.', 'success');
+      setDeletingDraftId(null);
+      fetchStatus();
+    } catch {
+      showToast('Error deleting draft.', 'error');
+    } finally {
+      setDeletingDraftLoading(false);
+    }
+  };
   const health = data?.latestHealthAudit;
   const seoItems = data?.recentSeoRecommendations || [];
   const logs = data?.recentLogs || [];
@@ -1038,6 +1121,87 @@ export default function ChiefOfStaffClient() {
       {/* TAB 2: APPROVALS QUEUE */}
       {activeTab === 'approvals' && (
         <div>
+          {/* Select All & Actions Bar */}
+          {drafts.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '14px',
+                flexWrap: 'wrap',
+                gap: '8px',
+                padding: '4px 2px',
+              }}
+            >
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.82rem',
+                  color: 'var(--hpa-text-muted)',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={allDraftsSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someDraftsSelected;
+                  }}
+                  onChange={handleSelectAllDrafts}
+                  style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
+                />
+                <span>Select All ({drafts.length})</span>
+              </label>
+              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                Latest drafts on top
+              </span>
+            </div>
+          )}
+
+          {/* Bulk Action Floating Bar */}
+          {selectedDraftIds.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 16px',
+                background: 'rgba(255, 51, 102, 0.08)',
+                border: '1px solid rgba(255, 51, 102, 0.25)',
+                borderRadius: '10px',
+                marginBottom: '16px',
+                color: '#ffffff',
+                fontSize: '0.85rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <strong>{selectedDraftIds.length}</strong> {selectedDraftIds.length === 1 ? 'draft' : 'drafts'} selected
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDraftIds([])}
+                  className="hpa-btn hpa-btn-secondary hpa-btn-sm"
+                >
+                  Deselect All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkDeleteDraftsOpen(true)}
+                  className="hpa-btn hpa-btn-danger hpa-btn-sm"
+                  style={{ gap: '6px' }}
+                >
+                  <Trash2 size={13} />
+                  <span>Delete Selected ({selectedDraftIds.length})</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {drafts.length === 0 ? (
             <div className="hpa-card" style={{ padding: '60px 20px', textAlign: 'center' }}>
               <CheckCircle2 size={42} color="#00ff88" style={{ margin: '0 auto 14px' }} />
@@ -1050,6 +1214,7 @@ export default function ChiefOfStaffClient() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {drafts.map((draft) => {
                 const isPending = draft.status === 'pending_approval';
+                const isSelected = selectedDraftIds.includes(draft.id);
                 return (
                   <div
                     key={draft.id}
@@ -1062,39 +1227,49 @@ export default function ChiefOfStaffClient() {
                       flexWrap: 'wrap',
                       gap: '16px',
                       borderLeft: isPending ? '4px solid #ffaa00' : '4px solid #00ff88',
+                      background: isSelected ? 'rgba(255, 51, 102, 0.05)' : undefined,
                     }}
                   >
-                    <div style={{ flex: '1 1 500px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                        <span
-                          className="hpa-pill"
-                          style={{
-                            fontSize: '0.7rem',
-                            textTransform: 'uppercase',
-                            background: 'rgba(255, 71, 87, 0.15)',
-                            color: '#ff4757',
-                            border: '1px solid rgba(255, 71, 87, 0.3)',
-                          }}
-                        >
-                          {draft.draft_type.replace(/_/g, ' ')}
-                        </span>
-                        <span
-                          className={`hpa-pill ${isPending ? 'hpa-pill-draft' : 'hpa-pill-published'}`}
-                          style={{ fontSize: '0.7rem' }}
-                        >
-                          {draft.status.replace(/_/g, ' ')}
-                        </span>
-                        <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
-                          {new Date(draft.created_at).toLocaleString()}
-                        </span>
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: '1 1 500px' }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelectDraft(draft.id)}
+                        style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px', marginTop: '4px' }}
+                        title="Select Draft"
+                      />
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                          <span
+                            className="hpa-pill"
+                            style={{
+                              fontSize: '0.7rem',
+                              textTransform: 'uppercase',
+                              background: 'rgba(255, 71, 87, 0.15)',
+                              color: '#ff4757',
+                              border: '1px solid rgba(255, 71, 87, 0.3)',
+                            }}
+                          >
+                            {draft.draft_type.replace(/_/g, ' ')}
+                          </span>
+                          <span
+                            className={`hpa-pill ${isPending ? 'hpa-pill-draft' : 'hpa-pill-published'}`}
+                            style={{ fontSize: '0.7rem' }}
+                          >
+                            {draft.status.replace(/_/g, ' ')}
+                          </span>
+                          <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
+                            {new Date(draft.created_at).toLocaleString()}
+                          </span>
+                        </div>
 
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: '0 0 6px' }}>
-                        {draft.title}
-                      </h3>
-                      <p style={{ fontSize: '0.86rem', color: 'var(--hpa-text-dim)', margin: 0, lineHeight: 1.5 }}>
-                        {draft.excerpt || draft.content.slice(0, 180)}...
-                      </p>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: '0 0 6px' }}>
+                          {draft.title}
+                        </h3>
+                        <p style={{ fontSize: '0.86rem', color: 'var(--hpa-text-dim)', margin: 0, lineHeight: 1.5 }}>
+                          {draft.excerpt || draft.content.slice(0, 180)}...
+                        </p>
+                      </div>
                     </div>
 
                     {/* Actions */}
@@ -1135,6 +1310,16 @@ export default function ChiefOfStaffClient() {
                           </button>
                         </>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => setDeletingDraftId(draft.id)}
+                        className="hpa-btn hpa-btn-danger"
+                        style={{ fontSize: '0.8rem', padding: '7px 10px' }}
+                        title="Delete Draft"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
                   </div>
                 );
@@ -1431,6 +1616,28 @@ export default function ChiefOfStaffClient() {
           }}
         />
       )}
+
+      {/* Delete Single Draft Modal */}
+      <ConfirmModal
+        isOpen={deletingDraftId !== null}
+        title="Delete Draft Proposal"
+        message="Are you sure you want to permanently delete this draft proposal? This action cannot be undone."
+        confirmLabel="Yes, Delete Draft"
+        onConfirm={handleDeleteSingleDraft}
+        onCancel={() => setDeletingDraftId(null)}
+        isLoading={deletingDraftLoading}
+      />
+
+      {/* Bulk Delete Drafts Modal */}
+      <ConfirmModal
+        isOpen={bulkDeleteDraftsOpen}
+        title="Delete Selected Draft Proposals"
+        message={`Are you sure you want to permanently delete these ${selectedDraftIds.length} selected draft proposals? This action cannot be undone.`}
+        confirmLabel={bulkDeleteDraftsLoading ? 'Deleting...' : `Delete ${selectedDraftIds.length} Drafts`}
+        onConfirm={handleBulkDeleteDrafts}
+        onCancel={() => setBulkDeleteDraftsOpen(false)}
+        isLoading={bulkDeleteDraftsLoading}
+      />
     </div>
   );
 }
