@@ -98,6 +98,8 @@ export function MobileDraftApprovalModal({
 
   if (!isOpen) return null;
 
+  const isOutreachDraft = currentDraft.draftType === 'outreach_draft';
+
   // Handle AI Refinement
   const handleRefineDraft = async (promptToUse?: string) => {
     const prompt = (promptToUse || customInstructions).trim();
@@ -272,14 +274,14 @@ export function MobileDraftApprovalModal({
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 textTransform: 'uppercase',
-                background: 'rgba(255, 71, 87, 0.15)',
-                color: '#ff6b81',
-                border: '1px solid rgba(255, 71, 87, 0.3)',
+                background: isOutreachDraft ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255, 71, 87, 0.15)',
+                color: isOutreachDraft ? '#c084fc' : '#ff6b81',
+                border: isOutreachDraft ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255, 71, 87, 0.3)',
                 flexShrink: 0,
               }}
             >
               <Sparkles size={11} />
-              <span>{currentDraft.draftType?.replace(/_/g, ' ') || 'Blog Draft'}</span>
+              <span>{isOutreachDraft ? 'Client Outreach Proposal' : currentDraft.draftType?.replace(/_/g, ' ') || 'Blog Draft'}</span>
             </span>
 
             <span
@@ -292,7 +294,7 @@ export function MobileDraftApprovalModal({
                 textOverflow: 'ellipsis',
               }}
             >
-              {currentDraft.readMins || '5 min read'}
+              {isOutreachDraft ? 'Lead Intelligence Scout' : currentDraft.readMins || '5 min read'}
             </span>
           </div>
 
@@ -345,7 +347,7 @@ export function MobileDraftApprovalModal({
             }}
           >
             <FileText size={14} />
-            <span>Article Preview</span>
+            <span>{isOutreachDraft ? 'Pitch Preview' : 'Article Preview'}</span>
           </button>
 
           <button
@@ -370,27 +372,29 @@ export function MobileDraftApprovalModal({
             <span>⚡ AI Customize</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('social')}
-            style={{
-              flex: 1,
-              padding: '8px 10px',
-              borderRadius: '6px',
-              border: 'none',
-              background: activeTab === 'social' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
-              color: activeTab === 'social' ? '#34d399' : '#94a3b8',
-              fontWeight: activeTab === 'social' ? 700 : 500,
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-            }}
-          >
-            <Share2 size={14} />
-            <span>LinkedIn & SEO</span>
-          </button>
+          {!isOutreachDraft && (
+            <button
+              onClick={() => setActiveTab('social')}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                background: activeTab === 'social' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                color: activeTab === 'social' ? '#34d399' : '#94a3b8',
+                fontWeight: activeTab === 'social' ? 700 : 500,
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              <Share2 size={14} />
+              <span>LinkedIn & SEO</span>
+            </button>
+          )}
         </div>
 
         {/* Refinement Banner if recently changed */}
@@ -430,8 +434,27 @@ export function MobileDraftApprovalModal({
           {/* TAB 1: ARTICLE PREVIEW */}
           {activeTab === 'article' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Cover Image */}
-              {currentDraft.coverImage && (
+              {isOutreachDraft && (
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: '10px',
+                    background: 'rgba(139, 92, 246, 0.1)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    color: '#e2e8f0',
+                    fontSize: '0.84rem',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <strong style={{ color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    💼 Prospective Client Outreach Proposal (Private)
+                  </strong>
+                  This cold outreach email pitch was prepared by the <strong>Lead Intelligence Scout</strong> for 1-on-1 client acquisition. It is a private sales proposal and will <strong>NOT</strong> be published to the public blog.
+                </div>
+              )}
+
+              {/* Cover Image (Only for public blogs) */}
+              {!isOutreachDraft && currentDraft.coverImage && (
                 <div
                   style={{
                     borderRadius: '10px',
@@ -1020,24 +1043,26 @@ export function MobileDraftApprovalModal({
             }}
           >
             {/* LinkedIn Toggle */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                fontSize: '0.78rem',
-                color: '#cbd5e1',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={shareToLinkedIn}
-                onChange={(e) => setShareToLinkedIn(e.target.checked)}
-                style={{ accentColor: '#ff4757', width: '15px', height: '15px' }}
-              />
-              <span>Also publish social companion post to LinkedIn</span>
-            </label>
+            {!isOutreachDraft && (
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.78rem',
+                  color: '#cbd5e1',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={shareToLinkedIn}
+                  onChange={(e) => setShareToLinkedIn(e.target.checked)}
+                  style={{ accentColor: '#ff4757', width: '15px', height: '15px' }}
+                />
+                <span>Also publish social companion post to LinkedIn</span>
+              </label>
+            )}
 
             {/* Rejection Prompt Box if open */}
             {rejectionPromptOpen && (
@@ -1111,38 +1136,64 @@ export function MobileDraftApprovalModal({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={handleApproveAndPublish}
-                disabled={isPublishing || isRefining}
-                className="hpa-btn hpa-btn-primary"
-                style={{
-                  flex: 1,
-                  background: 'linear-gradient(135deg, #00ff88 0%, #00b894 100%)',
-                  borderColor: '#00ff88',
-                  color: '#000000',
-                  fontWeight: 800,
-                  fontSize: '0.88rem',
-                  padding: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 18px rgba(0, 255, 136, 0.35)',
-                }}
-              >
-                {isPublishing ? (
-                  <>
-                    <Loader2 size={16} className="hpa-spin" />
-                    <span>Publishing Live...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    <span>Approve & Publish to Live Site</span>
-                  </>
-                )}
-              </button>
+              {isOutreachDraft ? (
+                <a
+                  href="/admin/outreach"
+                  className="hpa-btn hpa-btn-primary"
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                    borderColor: '#8b5cf6',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.88rem',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    textDecoration: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 18px rgba(139, 92, 246, 0.35)',
+                  }}
+                >
+                  <ExternalLink size={16} />
+                  <span>Review Pitch in Lead Scout</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleApproveAndPublish}
+                  disabled={isPublishing || isRefining}
+                  className="hpa-btn hpa-btn-primary"
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #00ff88 0%, #00b894 100%)',
+                    borderColor: '#00ff88',
+                    color: '#000000',
+                    fontWeight: 800,
+                    fontSize: '0.88rem',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 18px rgba(0, 255, 136, 0.35)',
+                  }}
+                >
+                  {isPublishing ? (
+                    <>
+                      <Loader2 size={16} className="hpa-spin" />
+                      <span>Publishing Live...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      <span>Approve & Publish to Live Site</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </footer>
         )}

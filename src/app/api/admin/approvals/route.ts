@@ -44,8 +44,12 @@ export async function GET(request: NextRequest) {
 
     const unifiedList: UnifiedApprovalItem[] = [];
 
-    // 1. Process Chief of Staff Drafts
+    // 1. Process Chief of Staff Drafts (Only public articles / blog posts, NOT private client outreach pitches)
     for (const d of chiefDrafts) {
+      if (d.draft_type === 'outreach_draft') {
+        // Skip outreach pitches: these are private sales proposals for clients and belong in /admin/outreach -> Scout Proposals
+        continue;
+      }
       const meta = d.metadata || {};
       const rawSections = meta.rawSections || [];
       const sections =

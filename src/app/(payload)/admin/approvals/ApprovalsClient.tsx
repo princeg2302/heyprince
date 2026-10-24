@@ -140,7 +140,9 @@ export default function ApprovalsClient() {
     }
   }, [items]);
 
-  const filteredItems = items
+  const validBlogItems = items.filter((i) => i.draftType !== 'outreach_draft');
+
+  const filteredItems = validBlogItems
     .filter((item) => {
       if (filterType === 'all') return true;
       if (filterType === 'news') return item.sourceType === 'news';
@@ -377,8 +379,8 @@ export default function ApprovalsClient() {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: items.length > 0 ? '#ff4757' : '#00ff88',
-                boxShadow: items.length > 0 ? '0 0 10px #ff4757' : '0 0 10px #00ff88',
+                background: validBlogItems.length > 0 ? '#ff4757' : '#00ff88',
+                boxShadow: validBlogItems.length > 0 ? '0 0 10px #ff4757' : '0 0 10px #00ff88',
               }}
             />
             <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
@@ -589,7 +591,7 @@ export default function ApprovalsClient() {
             whiteSpace: 'nowrap',
           }}
         >
-          All Pending ({items.length})
+          All Pending ({validBlogItems.length})
         </button>
 
         <button
@@ -607,7 +609,7 @@ export default function ApprovalsClient() {
             whiteSpace: 'nowrap',
           }}
         >
-          Scheduled AI Blogs ({items.filter((i) => i.sourceType === 'news').length})
+          Scheduled AI Blogs ({validBlogItems.filter((i) => i.sourceType === 'news').length})
         </button>
 
         <button
@@ -625,7 +627,7 @@ export default function ApprovalsClient() {
             whiteSpace: 'nowrap',
           }}
         >
-          Chief of Staff Drafts ({items.filter((i) => i.sourceType === 'chief').length})
+          Chief Thought Leadership Articles ({validBlogItems.filter((i) => i.sourceType === 'chief').length})
         </button>
       </div>
 

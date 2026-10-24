@@ -1240,18 +1240,33 @@ export default function ChiefOfStaffClient() {
                       />
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                          <span
-                            className="hpa-pill"
-                            style={{
-                              fontSize: '0.7rem',
-                              textTransform: 'uppercase',
-                              background: 'rgba(255, 71, 87, 0.15)',
-                              color: '#ff4757',
-                              border: '1px solid rgba(255, 71, 87, 0.3)',
-                            }}
-                          >
-                            {draft.draft_type.replace(/_/g, ' ')}
-                          </span>
+                          {draft.draft_type === 'outreach_draft' ? (
+                            <span
+                              className="hpa-pill"
+                              style={{
+                                fontSize: '0.7rem',
+                                textTransform: 'uppercase',
+                                background: 'rgba(139, 92, 246, 0.2)',
+                                color: '#c084fc',
+                                border: '1px solid rgba(139, 92, 246, 0.4)',
+                              }}
+                            >
+                              💼 Client Outreach Proposal
+                            </span>
+                          ) : (
+                            <span
+                              className="hpa-pill"
+                              style={{
+                                fontSize: '0.7rem',
+                                textTransform: 'uppercase',
+                                background: 'rgba(255, 71, 87, 0.15)',
+                                color: '#ff4757',
+                                border: '1px solid rgba(255, 71, 87, 0.3)',
+                              }}
+                            >
+                              {draft.draft_type.replace(/_/g, ' ')}
+                            </span>
+                          )}
                           <span
                             className={`hpa-pill ${isPending ? 'hpa-pill-draft' : 'hpa-pill-published'}`}
                             style={{ fontSize: '0.7rem' }}
@@ -1285,19 +1300,40 @@ export default function ChiefOfStaffClient() {
 
                       {isPending && (
                         <>
-                          <button
-                            onClick={() => handleApproveDraft(draft.id, 'publish')}
-                            disabled={approvingDraftId === draft.id}
-                            className="hpa-btn hpa-btn-primary"
-                            style={{ fontSize: '0.8rem', background: '#00ff88', borderColor: '#00ff88', color: '#000000', fontWeight: 700 }}
-                          >
-                            {approvingDraftId === draft.id ? (
-                              <Loader2 size={14} className="hpa-spin" />
-                            ) : (
-                              <Check size={14} />
-                            )}
-                            <span>Approve & Publish</span>
-                          </button>
+                          {draft.draft_type === 'outreach_draft' ? (
+                            <Link
+                              href="/admin/outreach"
+                              className="hpa-btn hpa-btn-primary"
+                              style={{
+                                fontSize: '0.8rem',
+                                background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                borderColor: '#8b5cf6',
+                                color: '#ffffff',
+                                fontWeight: 700,
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}
+                            >
+                              <ExternalLink size={14} />
+                              <span>Review in Lead Scout</span>
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => handleApproveDraft(draft.id, 'publish')}
+                              disabled={approvingDraftId === draft.id}
+                              className="hpa-btn hpa-btn-primary"
+                              style={{ fontSize: '0.8rem', background: '#00ff88', borderColor: '#00ff88', color: '#000000', fontWeight: 700 }}
+                            >
+                              {approvingDraftId === draft.id ? (
+                                <Loader2 size={14} className="hpa-spin" />
+                              ) : (
+                                <Check size={14} />
+                              )}
+                              <span>Approve & Publish</span>
+                            </button>
+                          )}
 
                           <button
                             onClick={() => handleApproveDraft(draft.id, 'reject')}
