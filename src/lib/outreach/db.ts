@@ -331,10 +331,17 @@ export async function deleteBusinessesBulk(
 ): Promise<{ success: boolean; count: number; error?: string }> {
   if (!ids || ids.length === 0) return { success: true, count: 0 };
   try {
-    await query(`DELETE FROM contacts WHERE business_id = ANY($1::uuid[]);`, [ids]);
-    await query(`DELETE FROM website_audits WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    // 1. Delete dependent email messages first (avoids FK constraint errors)
+    await query(`DELETE FROM email_messages WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    // 2. Delete compliance evidence
+    await query(`DELETE FROM compliance_evidence WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    // 3. Delete AI analyses
     await query(`DELETE FROM ai_analyses WHERE business_id = ANY($1::uuid[]);`, [ids]);
-    await query(`DELETE FROM queue_emails WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    // 4. Delete website audits
+    await query(`DELETE FROM website_audits WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    // 5. Delete contacts
+    await query(`DELETE FROM contacts WHERE business_id = ANY($1::uuid[]);`, [ids]);
+    // 6. Delete businesses
     await query(`DELETE FROM businesses WHERE id = ANY($1::uuid[]);`, [ids]);
     return { success: true, count: ids.length };
   } catch (err: any) {

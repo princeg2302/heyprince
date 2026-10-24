@@ -494,8 +494,25 @@ export default function OutreachClient({
     }
   };
 
+  const qualifiedCount = businesses.filter(
+    (b) => b.status !== 'DISQUALIFIED' && b.status !== 'DISCOVERED'
+  ).length;
+  const freshCount = businesses.filter((b) => b.status === 'DISCOVERED').length;
+  const enrichedCount = businesses.filter((b) => b.status === 'ENRICHED').length;
+  const auditedCount = businesses.filter((b) => b.status === 'AUDITED').length;
+  const contactedCount = businesses.filter((b) => b.status === 'CONTACTED').length;
+  const talkingCount = businesses.filter((b) => b.status === 'IN_DISCUSSION').length;
+  const wonCount = businesses.filter((b) => b.status === 'CLOSED_WON').length;
+  const lostCount = businesses.filter((b) => b.status === 'CLOSED_LOST').length;
+
   const filteredBusinesses = businesses
-    .filter((b) => pipelineFilter === 'ALL' || b.status === pipelineFilter)
+    .filter((b) => {
+      if (pipelineFilter === 'ALL') return true;
+      if (pipelineFilter === 'QUALIFIED') {
+        return b.status !== 'DISQUALIFIED' && b.status !== 'DISCOVERED';
+      }
+      return b.status === pipelineFilter;
+    })
     .sort((a, b) => {
       const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
       const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -1729,7 +1746,7 @@ export default function OutreachClient({
           },
           {
             key: 'qualified',
-            label: `3. Qualified Leads (${businesses.filter((b) => b.status !== 'DISQUALIFIED' && b.status !== 'DISCOVERED').length || totalBusinesses})`,
+            label: `3. Qualified Leads (${qualifiedCount} / ${businesses.length})`,
             icon: Target,
           },
           {
@@ -2318,10 +2335,14 @@ export default function OutreachClient({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#ffffff' }}>
-                  Discovered Business Records ({businesses.length})
+                  {pipelineFilter === 'QUALIFIED'
+                    ? `Qualified Opportunities (${filteredBusinesses.length})`
+                    : pipelineFilter === 'ALL'
+                    ? `All Discovered Records & CRM (${businesses.length})`
+                    : `${pipelineFilter} Leads (${filteredBusinesses.length})`}
                 </h2>
                 <p style={{ color: '#9ca3af', fontSize: '12px', margin: '4px 0 0 0' }}>
-                  Track contacts and lead stages from discovery through closed deals.
+                  {qualifiedCount} qualified/enriched lead ready for outreach • {freshCount} fresh prospects awaiting research in Queue
                 </p>
               </div>
 
@@ -2330,12 +2351,15 @@ export default function OutreachClient({
                 <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
                   {[
                     { id: 'ALL', label: `All (${businesses.length})` },
-                  { id: 'DISCOVERED', label: `Fresh (${businesses.filter((b) => b.status === 'DISCOVERED').length})` },
-                  { id: 'CONTACTED', label: `Contacted (${businesses.filter((b) => b.status === 'CONTACTED').length})` },
-                  { id: 'IN_DISCUSSION', label: `Talking (${businesses.filter((b) => b.status === 'IN_DISCUSSION').length})` },
-                  { id: 'CLOSED_WON', label: `Won 🎉 (${businesses.filter((b) => b.status === 'CLOSED_WON').length})` },
-                  { id: 'CLOSED_LOST', label: `Lost (${businesses.filter((b) => b.status === 'CLOSED_LOST').length})` },
-                ].map((pill) => (
+                    { id: 'QUALIFIED', label: `Qualified 🎯 (${qualifiedCount})` },
+                    { id: 'DISCOVERED', label: `Fresh (${freshCount})` },
+                    { id: 'ENRICHED', label: `Enriched ⚡ (${enrichedCount})` },
+                    ...(auditedCount > 0 ? [{ id: 'AUDITED', label: `Audited 🔍 (${auditedCount})` }] : []),
+                    { id: 'CONTACTED', label: `Contacted (${contactedCount})` },
+                    { id: 'IN_DISCUSSION', label: `Talking (${talkingCount})` },
+                    { id: 'CLOSED_WON', label: `Won 🎉 (${wonCount})` },
+                    { id: 'CLOSED_LOST', label: `Lost (${lostCount})` },
+                  ].map((pill) => (
                   <button
                     key={pill.id}
                     onClick={() => setPipelineFilter(pill.id)}
