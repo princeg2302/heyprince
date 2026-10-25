@@ -254,7 +254,9 @@ async function runTestSuite() {
     const vercelContent = JSON.parse(fs.readFileSync(vercelJsonPath, 'utf8'));
     assert.ok(Array.isArray(vercelContent.crons), 'vercel.json must specify crons array');
 
-    const dailyCron = vercelContent.crons.find((c: any) => c.path === '/api/cron/daily-news');
+    const dailyCron = vercelContent.crons.find(
+      (c: any) => c.path === '/api/cron/daily-news/' || c.path === '/api/cron/daily-news'
+    );
     assert.ok(dailyCron, 'Daily news cron job must be defined in vercel.json');
     assert.strictEqual(dailyCron.schedule, '30 3 * * *', 'Schedule must be nominal 9:00 AM IST (30 3 * * *)');
 
