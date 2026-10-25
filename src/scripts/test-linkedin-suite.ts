@@ -112,6 +112,10 @@ async function runTestSuite() {
 
   // Test 4: Supabase Connection Persistence & Active Session Handling
   try {
+    // Remember existing active connection to restore after testing
+    const existingActive = await query<any>(`SELECT id FROM linkedin_connections WHERE is_active = true ORDER BY id DESC LIMIT 1;`);
+    const restoreId = existingActive[0]?.id;
+
     // Save mock test connection
     const testUrn = 'urn:li:person:TEST_MEMBER_9999';
     await saveLinkedInConnection({
@@ -169,6 +173,9 @@ async function runTestSuite() {
     const afterDisconnect = await getActiveLinkedInConnection();
     assert.strictEqual(afterDisconnect, null, 'Connection should be inactive after disconnect');
     await query(`DELETE FROM linkedin_connections WHERE person_urn = '${testUrn}';`);
+    if (restoreId) {
+      await query(`UPDATE linkedin_connections SET is_active = true WHERE id = $1;`, [restoreId]);
+    }
 
     pass('Supabase Persistence: Stores, activates, logs shares, and disconnects securely');
   } catch (err) {
