@@ -378,40 +378,97 @@ export function computePromptHash(prompt: string): string {
 }
 
 /**
- * Checks whether an image for this exact prompt has already been generated and saved.
+ * Computes a cryptographic SHA-256 hash of an image's raw binary buffer.
+ */
+export function computeBufferHash(buffer: Buffer): string {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+/**
+ * Strictly checks whether an image (by binary content hash or candidate URL)
+ * has ever been used before in the media table or as a post cover image.
+ * Guarantees zero duplicate images across blog posts and social channels.
+ */
+export async function isImageContentDuplicate(
+  contentHash: string,
+  candidateUrl?: string
+): Promise<{
+  isDuplicate: boolean;
+  reason?: string;
+  existingId?: number;
+}> {
+  try {
+    // 1. Check by binary content hash in media table
+    if (contentHash && contentHash.trim()) {
+      const match = await query<{ id: number; url: string }>(
+        `SELECT id, url FROM media WHERE content_hash = $1 LIMIT 1;`,
+        [contentHash.trim()]
+      );
+
+      if (match.length > 0) {
+        return {
+          isDuplicate: true,
+          reason: `Image content hash (${contentHash.slice(0, 12)}...) matches existing Media #${match[0].id}`,
+          existingId: match[0].id,
+        };
+      }
+    }
+
+    // 2. Check if candidate URL has already been used as a post's cover_image
+    if (candidateUrl && candidateUrl.trim()) {
+      const cleanUrl = candidateUrl.trim();
+      const postMatch = await query<{ id: number; title: string }>(
+        `SELECT id, title FROM posts WHERE cover_image = $1 LIMIT 1;`,
+        [cleanUrl]
+      );
+
+      if (postMatch.length > 0) {
+        return {
+          isDuplicate: true,
+          reason: `Image URL is already used as the cover of Post #${postMatch[0].id} ("${postMatch[0].title}")`,
+          existingId: postMatch[0].id,
+        };
+      }
+
+      // Check if URL already recorded in media table
+      const mediaMatch = await query<{ id: number }>(
+        `SELECT id FROM media WHERE url = $1 LIMIT 1;`,
+        [cleanUrl]
+      );
+
+      if (mediaMatch.length > 0) {
+        return {
+          isDuplicate: true,
+          reason: `Image URL is already recorded in Media #${mediaMatch[0].id}`,
+          existingId: mediaMatch[0].id,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[isImageContentDuplicate] Check warning:', err);
+  }
+
+  return { isDuplicate: false };
+}
+
+/**
+ * Checks in-flight generation locks to prevent concurrent runs on the same prompt.
  */
 export async function checkMediaDuplicate(prompt: string): Promise<{
   exists: boolean;
   mediaUrl?: string;
   mediaId?: number;
+  reason?: string;
 }> {
   const hash = computePromptHash(prompt);
 
-  // 1. Check Postgres media table
-  try {
-    const match = await query<{ id: number; url: string }>(
-      `SELECT id, url FROM media WHERE prompt_hash = $1 LIMIT 1;`,
-      [hash]
-    );
-
-    if (match.length > 0 && match[0].url) {
-      return {
-        exists: true,
-        mediaUrl: match[0].url,
-        mediaId: match[0].id,
-      };
-    }
-  } catch (err) {
-    console.warn('[checkMediaDuplicate] Media table query warning:', err);
-  }
-
-  // 2. Also check active in-flight locks to prevent concurrent runs
+  // Check active in-flight locks to prevent concurrent duplicate generation runs
   const activeUntil = activeMediaLocks.get(hash);
   if (activeUntil && activeUntil > Date.now()) {
     return {
       exists: true,
       reason: 'Concurrent image generation for this prompt is already in progress.',
-    } as any;
+    };
   }
 
   return { exists: false };
@@ -441,6 +498,25 @@ export async function recordMediaPromptHash(mediaId: number, prompt: string): Pr
     await query(`UPDATE media SET prompt_hash = $1 WHERE id = $2;`, [hash, mediaId]);
   } catch (err) {
     console.warn('[recordMediaPromptHash] Failed to record prompt_hash:', err);
+  }
+}
+
+/**
+ * Persists the binary content hash and prompt hash into the media table
+ */
+export async function recordMediaContentHash(
+  mediaId: number,
+  contentHash: string,
+  prompt?: string
+): Promise<void> {
+  const pHash = prompt ? computePromptHash(prompt) : null;
+  try {
+    await query(
+      `UPDATE media SET content_hash = $1, prompt_hash = COALESCE($2, prompt_hash) WHERE id = $3;`,
+      [contentHash, pHash, mediaId]
+    );
+  } catch (err) {
+    console.warn('[recordMediaContentHash] Failed to record content_hash in media table:', err);
   }
 }
 

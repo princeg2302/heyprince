@@ -16,7 +16,7 @@ import {
 } from './db';
 import { collectDailyNews } from './rss-collector';
 import { generateDailyPost, generateCustomTopicPost } from './content-generator';
-import { generateDailyBlogImages } from './image-generator';
+import { generateDailyBlogImages, generateDynamicEditorialImageFallback } from './image-generator';
 import { generateOfficeHumourMeme } from './meme-generator';
 import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
@@ -373,7 +373,7 @@ export async function executeDailyNewsAutomation(params?: {
     }
 
     // 5.5 Stage 2.5: Generate 3 Visual Assets (1 Cover + 2 Section Illustrations) & Catalog in Media Vault
-    let coverImageUrl = '/assets/blog/photo1.webp';
+    let coverImageUrl = '';
     let generatedSectionImages: any[] = [];
     try {
       const blogImages = await generateDailyBlogImages(
@@ -387,6 +387,20 @@ export async function executeDailyNewsAutomation(params?: {
       generatedSectionImages = blogImages?.sectionImages || [];
     } catch (imgErr) {
       console.warn('[orchestrator] Blog image generation warning:', imgErr);
+    }
+
+    // Zero-Duplicate Guarantee: If coverImageUrl is empty or placeholder, generate dynamic editorial SVG
+    if (!coverImageUrl || coverImageUrl === '/assets/blog/photo1.webp') {
+      try {
+        const fallbackCard = await generateDynamicEditorialImageFallback(
+          generated.title,
+          generated.categoryName,
+          'cover'
+        );
+        coverImageUrl = fallbackCard.url;
+      } catch (fbErr) {
+        console.warn('[orchestrator] Fallback editorial card generation notice:', fbErr);
+      }
     }
 
     // Format section paragraphs to include section illustrations
@@ -707,6 +721,20 @@ export async function publishDraftRun(runId: number): Promise<{
     bullet_points: s.bulletPoints ? s.bulletPoints.map((b) => ({ point: b })) : undefined,
   }));
 
+  let directCoverImage = (content as any).coverImage;
+  if (!directCoverImage || directCoverImage === '/assets/blog/photo1.webp') {
+    try {
+      const fallbackCard = await generateDynamicEditorialImageFallback(
+        content.title,
+        content.categoryName || 'Artificial Intelligence',
+        'cover'
+      );
+      directCoverImage = fallbackCard.url;
+    } catch {
+      directCoverImage = undefined;
+    }
+  }
+
   const postCreateResult = await createPost({
     title: content.title,
     slug: content.slug,
@@ -715,7 +743,7 @@ export async function publishDraftRun(runId: number): Promise<{
     category_name: content.categoryName || 'Artificial Intelligence',
     status: 'published',
     published_at: new Date().toISOString(),
-    cover_image: (content as any).coverImage || '/assets/blog/photo1.webp',
+    cover_image: directCoverImage,
     seo_title: content.seoTitle || content.title,
     seo_description: content.seoDescription || content.excerpt,
     canonical: `https://heyprince.in/insights/${content.slug}/`,

@@ -1,4 +1,5 @@
 import { executeDailyNewsAutomation } from '../../daily-news/orchestrator';
+import { generateDynamicEditorialImageFallback } from '../../daily-news/image-generator';
 import { createPost, createService } from '../../admin-db';
 import { publishArticleToLinkedIn } from '../../linkedin/client';
 import { sendPushToAllAdmins } from '../../push/push-service';
@@ -441,6 +442,20 @@ export async function approveAndPublishDraft(
       bullet_points: s.bulletPoints ? s.bulletPoints.map((b: string) => ({ point: b })) : undefined,
     }));
 
+    let postCoverImage = meta.coverImage;
+    if (!postCoverImage || postCoverImage === '/assets/blog/photo1.webp') {
+      try {
+        const fallbackCard = await generateDynamicEditorialImageFallback(
+          draft.title,
+          meta.category || 'Technology & Engineering',
+          'cover'
+        );
+        postCoverImage = fallbackCard.url;
+      } catch {
+        postCoverImage = undefined;
+      }
+    }
+
     const postRes = await createPost({
       title: draft.title,
       slug: meta.slug || `insight-${Date.now()}`,
@@ -449,7 +464,7 @@ export async function approveAndPublishDraft(
       category_name: meta.category || 'Technology & Engineering',
       status: 'published',
       published_at: new Date().toISOString(),
-      cover_image: meta.coverImage || '/assets/blog/photo1.webp',
+      cover_image: postCoverImage,
       seo_title: meta.seoTitle || draft.title,
       seo_description: meta.seoDescription || draft.excerpt || '',
       canonical: `https://heyprince.in/insights/${meta.slug}/`,

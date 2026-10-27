@@ -14,6 +14,7 @@
     "test:outreach": "npx tsx src/scripts/test-outreach-suite.ts",
     "test:linkedin": "npx tsx src/scripts/test-linkedin-suite.ts",
     "test:news": "npx tsx src/scripts/test-daily-news-suite.ts",
+    "test:images": "npx tsx src/scripts/test-image-uniqueness.ts",
     "migrate:captcha": "npx tsx src/scripts/migrate-captcha.ts",
     "test:captcha": "npx tsx src/scripts/test-captcha-suite.ts"
   },

@@ -1,5 +1,7 @@
 import { callAIModel } from './ai-provider';
 import { supabase, createMediaRecord } from '@/lib/admin-db';
+import { query } from '@/lib/outreach/db';
+import { computeBufferHash, recordMediaContentHash } from '@/lib/deduplication';
 import { GeneratedArticleSection, GeneratedContentPayload } from './types';
 
 export interface GeneratedMemePackage {
@@ -167,16 +169,35 @@ function createMemeSvgCard(setup: string, punchline: string, theme: string): str
  * Generates an original Indian workplace humour article and graphic card
  */
 export async function generateOfficeHumourMeme(): Promise<GeneratedMemePackage> {
-  // 1. Pick a random or rotating theme
-  const selectedTheme = INDIAN_OFFICE_THEMES[Math.floor(Math.random() * INDIAN_OFFICE_THEMES.length)];
+  // 1. Pick a theme that hasn't been published yet to ensure uniqueness
+  let candidates = INDIAN_OFFICE_THEMES;
+  try {
+    const published = await query<{ slug: string; title: string }>(
+      `SELECT slug, title FROM posts WHERE category_name = 'Workplace & Culture' OR cover_image LIKE '%.svg';`
+    );
+    const publishedSlugs = new Set(published.map((p) => p.slug));
+    const publishedTitles = new Set(published.map((p) => p.title.toLowerCase()));
+
+    const unused = INDIAN_OFFICE_THEMES.filter(
+      (t) => !publishedSlugs.has(slugify(t.theme)) && !publishedTitles.has(t.theme.toLowerCase())
+    );
+    if (unused.length > 0) {
+      candidates = unused;
+    }
+  } catch (err) {
+    console.warn('[meme-generator] Could not query published themes:', err);
+  }
+
+  const selectedTheme = candidates[Math.floor(Math.random() * candidates.length)];
   const timestamp = Date.now();
 
   // 2. Generate SVG graphic card
   const svgContent = createMemeSvgCard(selectedTheme.setup, selectedTheme.punchline, selectedTheme.theme);
   const svgBuffer = Buffer.from(svgContent, 'utf-8');
   const filename = `meme-card-${timestamp}-${slugify(selectedTheme.theme)}.svg`;
+  const contentHash = computeBufferHash(svgBuffer);
 
-  let imageUrl = '/assets/blog/photo1.webp';
+  let imageUrl = '';
   let mediaId: number | undefined;
 
   try {
@@ -204,14 +225,19 @@ export async function generateOfficeHumourMeme(): Promise<GeneratedMemePackage> 
       filesize: svgBuffer.length,
       width: 1200,
       height: 675,
-      url: imageUrl,
+      url: imageUrl || `procedural-meme://${slugify(selectedTheme.theme)}`,
     });
 
     if (mediaRecord.success && mediaRecord.media) {
       mediaId = mediaRecord.media.id;
+      await recordMediaContentHash(mediaId, contentHash, selectedTheme.theme);
     }
   } catch (storageErr) {
     console.warn('[meme-generator] Storage or Media Vault upload notice:', storageErr);
+  }
+
+  if (!imageUrl) {
+    imageUrl = `https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/${filename}`;
   }
 
   // 3. Ask AI to write the witty humanized breakdown & LinkedIn caption

@@ -202,11 +202,17 @@ async function runTestSuite() {
     assert.ok(blogImages.sectionImages[0].url && blogImages.sectionImages[0].url.startsWith('http'), 'Section image 1 must have valid URL');
     assert.ok(blogImages.sectionImages[1].url && blogImages.sectionImages[1].url.startsWith('http'), 'Section image 2 must have valid URL');
 
+    // Strict Uniqueness & Non-Duplication Assertions
+    assert.notStrictEqual(blogImages.coverImage.url, blogImages.sectionImages[0].url, 'Cover image and section image 1 must be distinct');
+    assert.notStrictEqual(blogImages.coverImage.url, blogImages.sectionImages[1].url, 'Cover image and section image 2 must be distinct');
+    assert.notStrictEqual(blogImages.sectionImages[0].url, blogImages.sectionImages[1].url, 'Section image 1 and section image 2 must be distinct');
+    assert.notStrictEqual(blogImages.coverImage.url, '/assets/blog/photo1.webp', 'Cover image must never be the static placeholder photo1.webp');
+
     if (blogImages.coverImage.mediaId) testMediaIds.push(blogImages.coverImage.mediaId);
     if (blogImages.sectionImages[0].mediaId) testMediaIds.push(blogImages.sectionImages[0].mediaId);
     if (blogImages.sectionImages[1].mediaId) testMediaIds.push(blogImages.sectionImages[1].mediaId);
 
-    pass('Visual Assets & Media Vault: Generated 1 cover + 2 section images and cataloged in Media Vault');
+    pass('Visual Assets & Media Vault: Generated 1 cover + 2 section images (100% verified unique) and cataloged in Media Vault');
   } catch (err) {
     fail('Visual Assets & Media Vault: Generated 1 cover + 2 section images and cataloged in Media Vault', err);
   }

@@ -899,7 +899,20 @@ export async function publishArticleToLinkedIn(params: {
 
   const post = postRows[0];
   const articleUrl = `https://heyprince.in/insights/${post.slug}/`;
-  const postImageUrl = params.imageUrl || post.cover_image;
+  let postImageUrl = params.imageUrl || post.cover_image;
+
+  // Zero-Duplicate Image Guarantee: If cover image is missing or a static placeholder,
+  // generate a unique dynamic visual for this article and update database before dispatching
+  if (!postImageUrl || postImageUrl === '/assets/blog/photo1.webp') {
+    try {
+      const { generateDynamicEditorialImageFallback } = await import('../daily-news/image-generator');
+      const fallback = await generateDynamicEditorialImageFallback(post.title, 'Technology', 'cover');
+      postImageUrl = fallback.url;
+      await query(`UPDATE posts SET cover_image = $1 WHERE id = $2;`, [postImageUrl, post.id]);
+    } catch (fallbackErr) {
+      console.warn('[publishArticleToLinkedIn] Fallback cover image generation notice:', fallbackErr);
+    }
+  }
 
   // Build clean commentary
   const commentaryText =
