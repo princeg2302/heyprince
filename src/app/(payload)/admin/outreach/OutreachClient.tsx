@@ -248,23 +248,39 @@ export default function OutreachClient({
 
   // Evaluate lead qualification across all businesses
   const getLeadEval = (biz: BusinessEntity) => {
+    if (!biz) {
+      return {
+        isQualified: false,
+        hasWebsite: false,
+        hasEmail: false,
+        hasPhone: false,
+        isWhatsAppEligible: false,
+        bestChannel: 'none' as const,
+        emailStatus: 'none' as const,
+        whatsappUrl: null,
+        phoneDigits: null,
+      };
+    }
+    const safeContacts = Array.isArray(contacts) ? contacts : [];
     return evaluateLeadContactChannels({
       website_url: biz.website_url,
       domain: biz.domain,
       phone: (biz.metadata as any)?.phone,
       metadata: biz.metadata,
-      contacts: contacts.filter((c) => c.business_id === biz.id),
+      contacts: safeContacts.filter((c) => c && c.business_id === biz.id),
     });
   };
 
-  const qualifiedBusinesses = businesses.filter((b) => getLeadEval(b).isQualified);
+  const safeBusinesses = Array.isArray(businesses) ? businesses : [];
+  const qualifiedBusinesses = safeBusinesses.filter((b) => b && getLeadEval(b).isQualified);
 
   // Discover Leads Display Filter
-  const displayedDiscoverBusinesses = businesses
+  const displayedDiscoverBusinesses = safeBusinesses
     .filter((b) => {
+      if (!b) return false;
       if (discoverSearch.trim()) {
         const q = discoverSearch.toLowerCase();
-        const matchName = b.name.toLowerCase().includes(q);
+        const matchName = (b.name || '').toLowerCase().includes(q);
         const matchDomain = (b.domain || b.website_url || '').toLowerCase().includes(q);
         const matchCity = (b.city || '').toLowerCase().includes(q);
         const matchCategory = (b.category || '').toLowerCase().includes(q);
@@ -284,20 +300,21 @@ export default function OutreachClient({
       return true;
     })
     .sort((a, b) => {
-      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const timeA = a?.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b?.created_at ? new Date(b.created_at).getTime() : 0;
       return timeB - timeA;
     });
 
   // Qualified Leads CRM Filter
   const displayedQualifiedBusinesses = qualifiedBusinesses
     .filter((b) => {
+      if (!b) return false;
       if (pipelineFilter === 'ALL') return true;
       return b.status === pipelineFilter;
     })
     .sort((a, b) => {
-      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const timeA = a?.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b?.created_at ? new Date(b.created_at).getTime() : 0;
       return timeB - timeA;
     });
 
@@ -2440,14 +2457,17 @@ heyprince.in`
       {/* 3. SENT & FOLLOW-UPS (Outbound Dispatch Queue & Timeline)                 */}
       {/* ========================================================================= */}
       {activeTab === 'sent' && (() => {
-        const sentMessagesCount = messages.filter((m) => m.status === 'SENT' || m.status === 'DELIVERED').length;
-        const dueFollowUpCount = messages.filter((m) => {
+        const safeMessages = Array.isArray(messages) ? messages : [];
+        const sentMessagesCount = safeMessages.filter((m) => m && (m.status === 'SENT' || m.status === 'DELIVERED')).length;
+        const dueFollowUpCount = safeMessages.filter((m) => {
+          if (!m) return false;
           const sentDate = m.sent_at || m.created_at;
           const daysSince = Math.floor((Date.now() - new Date(sentDate).getTime()) / (1000 * 60 * 60 * 24));
           return (m.status === 'SENT' || m.status === 'DELIVERED') && daysSince >= 3;
         }).length;
 
-        const filteredMessages = messages.filter((m) => {
+        const filteredMessages = safeMessages.filter((m) => {
+          if (!m) return false;
           if (sentSearch.trim()) {
             const q = sentSearch.toLowerCase();
             const match =

@@ -379,10 +379,11 @@ export const PhysicsPills: React.FC<PhysicsPillsProps> = ({ items, count }) => {
             src={pill.image}
             alt={`${pill.name} - Technology Stack Expertise`}
             draggable={false}
-            loading="lazy"
+            loading="eager"
+            fetchPriority={index === 0 ? 'high' : 'auto'}
             decoding="async"
             width="120"
-            height="40"
+            height="44"
           />
         </a>
       ))}

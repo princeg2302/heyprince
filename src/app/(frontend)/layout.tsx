@@ -236,6 +236,7 @@ export default function RootLayout({
         <meta name="google-site-verification" content="DTYZ06bg-WLMAH8U5dWbZvr6XRzTFVv_pOidUPq9UQU" />
         <link rel="preload" href="/fonts/arboria/Arboria-Book.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/futuru/Futuru-VariableVF.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/assets/techs/python.webp" as="image" type="image/webp" fetchPriority="high" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdData) }}
