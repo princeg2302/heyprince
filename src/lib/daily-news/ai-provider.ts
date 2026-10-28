@@ -20,7 +20,7 @@ export function getAIProviderConfig(): AIProviderConfig {
   if (geminiKey) {
     return {
       provider: 'gemini',
-      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gemini-3.5-flash',
+      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gemini-3.8-flash',
       apiKey: geminiKey,
     };
   }
@@ -43,7 +43,7 @@ export function getAIProviderConfig(): AIProviderConfig {
 
   return {
     provider: 'gemini',
-    model: 'gemini-3.5-flash',
+    model: 'gemini-3.8-flash',
     apiKey: undefined,
   };
 }
@@ -67,8 +67,8 @@ export async function callAIModel(
   }
 
   let modelName = preferredModel || config.model;
-  if (modelName === 'gemini-2.5-flash' || modelName === 'gemini-3.8-flash' || !modelName) {
-    modelName = 'gemini-3.5-flash';
+  if (modelName === 'gemini-2.5-flash' || !modelName) {
+    modelName = 'gemini-3.8-flash';
   }
 
   // 1. Google Gemini Provider
@@ -76,15 +76,18 @@ export async function callAIModel(
     const candidateModels = Array.from(
       new Set([
         modelName,
-        'gemini-3.5-flash-lite',
+        'gemini-3.8-flash',
+        'gemini-flash-latest',
         'gemini-3.5-flash',
-        'gemini-3-flash-preview',
-        'gemini-3.6-flash',
-        'gemini-3.7-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-flash-lite-latest',
+        'gemini-3.5-flash-lite',
       ])
     );
 
     let lastError: Error | null = null;
+    let attemptIndex = 0;
+
     for (const activeModel of candidateModels) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${config.apiKey}`;
@@ -105,14 +108,17 @@ export async function callAIModel(
               maxOutputTokens: 8192,
             },
           }),
-          signal: AbortSignal.timeout(9000),
+          signal: AbortSignal.timeout(35000),
         });
 
         if (!res.ok) {
           const errBody = await res.text();
           if (res.status === 503 || res.status === 429 || res.status === 404) {
-            console.warn(`[Gemini] Model ${activeModel} returned HTTP ${res.status}, falling back to next available model...`);
+            console.warn(`[Gemini] Model ${activeModel} returned HTTP ${res.status}, waiting before attempting fallback model...`);
             lastError = new Error(`Google Gemini API error (HTTP ${res.status}): ${errBody}`);
+            attemptIndex++;
+            // Jittered backoff to clear demand spikes on upstream Google clusters
+            await new Promise((resolve) => setTimeout(resolve, Math.min(attemptIndex * 1500, 4000)));
             continue;
           }
           throw new Error(`Google Gemini API error (HTTP ${res.status}): ${errBody}`);
@@ -133,7 +139,9 @@ export async function callAIModel(
         };
       } catch (callErr: any) {
         lastError = callErr;
+        attemptIndex++;
         console.warn(`[Gemini] Attempt with ${activeModel} failed: ${callErr?.message || callErr}`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
@@ -184,4 +192,3 @@ export async function callAIModel(
 
   throw new Error(`Unsupported AI provider: ${config.provider}`);
 }
-

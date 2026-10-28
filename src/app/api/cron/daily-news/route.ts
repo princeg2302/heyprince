@@ -71,9 +71,18 @@ async function handleCronTrigger(request: NextRequest) {
   console.info('[Cron Daily News] Initiating scheduled daily tech news automation run...');
 
   try {
-    const result = await executeDailyNewsAutomation({
+    let result = await executeDailyNewsAutomation({
       triggerType: 'scheduled',
     });
+
+    if (result.status === 'failed') {
+      console.warn('[Cron Daily News] Scheduled run initially failed. Waiting 5s and executing self-healing retry...');
+      await new Promise((r) => setTimeout(r, 5000));
+      result = await executeDailyNewsAutomation({
+        triggerType: 'scheduled',
+        forceRunToday: true,
+      });
+    }
 
     console.info(
       `[Cron Daily News] Scheduled run finished with status: ${result.status} (Website: ${result.websiteStatus}, LinkedIn: ${result.linkedinStatus})`
