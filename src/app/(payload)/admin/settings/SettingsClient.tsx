@@ -357,3 +357,4 @@ export function SettingsClient({ user, supabaseUrl }: SettingsClientProps) {
     </div>
   );
 }
+

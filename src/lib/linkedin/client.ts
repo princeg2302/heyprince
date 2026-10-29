@@ -1,3 +1,4 @@
+import { sanitizeEmDashes } from '../ai-content-sanitizer';
 import crypto from 'crypto';
 import { query } from '../outreach/db';
 import {
@@ -915,9 +916,10 @@ export async function publishArticleToLinkedIn(params: {
   }
 
   // Build clean commentary
-  const commentaryText =
+  const commentaryText = sanitizeEmDashes(
     params.customCommentary?.trim() ||
-    `${post.title}\n\n${post.excerpt || post.seo_description || ''}\n\nRead the full engineering insight on HeyPrince:\n${articleUrl}`.trim();
+    `${post.title}\n\n${post.excerpt || post.seo_description || ''}\n\nRead the full engineering insight on HeyPrince:\n${articleUrl}`.trim()
+  );
 
   // Active LinkedIn API Version
   const activeVersion = process.env.LINKEDIN_API_VERSION || '202601';

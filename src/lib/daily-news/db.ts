@@ -1,3 +1,4 @@
+import { sanitizeAiContent, sanitizeEmDashes } from '../ai-content-sanitizer';
 import crypto from 'crypto';
 import { query } from '../outreach/db';
 import {
@@ -593,7 +594,7 @@ export async function updateDailyRun(
   }
   if (updates.articleTitle !== undefined) {
     fields.push(`article_title = $${pIdx++}`);
-    params.push(updates.articleTitle);
+    params.push(sanitizeEmDashes(updates.articleTitle));
   }
   if (updates.articleSlug !== undefined) {
     fields.push(`article_slug = $${pIdx++}`);
@@ -601,15 +602,15 @@ export async function updateDailyRun(
   }
   if (updates.articleExcerpt !== undefined) {
     fields.push(`article_excerpt = $${pIdx++}`);
-    params.push(updates.articleExcerpt);
+    params.push(sanitizeEmDashes(updates.articleExcerpt));
   }
   if (updates.articleContent !== undefined) {
     fields.push(`article_content = $${pIdx++}`);
-    params.push(JSON.stringify(updates.articleContent));
+    params.push(JSON.stringify(sanitizeAiContent(updates.articleContent)));
   }
   if (updates.linkedinCommentary !== undefined) {
     fields.push(`linkedin_commentary = $${pIdx++}`);
-    params.push(updates.linkedinCommentary);
+    params.push(sanitizeEmDashes(updates.linkedinCommentary));
   }
   if (updates.postId !== undefined) {
     fields.push(`post_id = $${pIdx++}`);

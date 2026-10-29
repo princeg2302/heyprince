@@ -1,3 +1,4 @@
+import { sanitizeAiContent } from '../ai-content-sanitizer';
 import { callAIModel } from './ai-provider';
 import { supabase, createMediaRecord } from '@/lib/admin-db';
 import { query } from '@/lib/outreach/db';
@@ -288,7 +289,7 @@ Generate a JSON object with this exact structure:
     const cleanedText = aiResponse.text.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
     const parsed = JSON.parse(cleanedText);
 
-    return {
+    return sanitizeAiContent({
       title: parsed.title || selectedTheme.theme,
       slug: parsed.slug || `${slugify(selectedTheme.theme)}-${timestamp}`,
       excerpt: parsed.excerpt || selectedTheme.context,
@@ -308,7 +309,7 @@ Generate a JSON object with this exact structure:
       linkedinPost: parsed.linkedinPost || `${selectedTheme.theme}\n\n${selectedTheme.setup}\n\n${selectedTheme.punchline}\n\nRead more relatable tech chronicles on HeyPrince:\nhttps://heyprince.in/insights/`,
       seoTitle: parsed.seoTitle || `${selectedTheme.theme} | HeyPrince`,
       seoDescription: parsed.seoDescription || selectedTheme.context,
-    };
+    });
   } catch (aiErr) {
     console.warn('[meme-generator] AI generation fallback:', aiErr);
 

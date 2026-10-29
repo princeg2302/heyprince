@@ -1,3 +1,4 @@
+import { sanitizeAiContent } from '../../ai-content-sanitizer';
 import { AIModelProvider, AIAnalysisInput, AIAnalysisResult } from './types';
 import { AIAnalysisPayload, AIAnalysisSchema } from '../types';
 
@@ -115,7 +116,7 @@ To stop receiving updates, unsubscribe here:
     return {
       provider: 'deterministic',
       modelName: 'rule-engine-v1',
-      analysis: validated,
+      analysis: sanitizeAiContent(validated),
       promptTokens: 0,
       completionTokens: 0,
       estimatedCostUsd: 0,

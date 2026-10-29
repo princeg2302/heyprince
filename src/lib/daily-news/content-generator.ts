@@ -4,6 +4,7 @@ import {
   GeneratedArticleSection,
 } from './types';
 import { callAIModel } from './ai-provider';
+import { sanitizeAiContent, NO_EM_DASH_INSTRUCTION } from '../ai-content-sanitizer';
 
 function slugify(text: string): string {
   return text
@@ -179,7 +180,7 @@ Respond ONLY with JSON matching this structure:
     linkedinText = `${linkedinText.trim()}\n\nRead the full engineering breakdown on HeyPrince:\n${articleUrl}`;
   }
 
-  return {
+  return sanitizeAiContent({
     title: parsed.title.trim(),
     slug: uniqueSlug,
     excerpt: parsed.excerpt?.trim() || `${parsed.title}. Read the full analysis on HeyPrince.`,
@@ -208,7 +209,7 @@ Respond ONLY with JSON matching this structure:
     seoDescription: parsed.seoDescription || parsed.excerpt || '',
     linkedinPost: linkedinText.trim(),
     rationale: parsed.rationale || 'Top development of the day.',
-  };
+  });
 }
 
 export async function generateCustomTopicPost(
@@ -301,7 +302,7 @@ Respond ONLY with JSON matching this structure:
     linkedinText = `${linkedinText.trim()}\n\nRead the full engineering breakdown on HeyPrince:\n${articleUrl}`;
   }
 
-  return {
+  return sanitizeAiContent({
     title: parsed.title.trim(),
     slug: uniqueSlug,
     excerpt: parsed.excerpt?.trim() || `${parsed.title}. Read the full analysis on HeyPrince.`,
@@ -320,6 +321,6 @@ Respond ONLY with JSON matching this structure:
     seoDescription: parsed.seoDescription || parsed.excerpt || '',
     linkedinPost: linkedinText.trim(),
     rationale: parsed.rationale || `Custom prompt: ${customPrompt.slice(0, 80)}`,
-  };
+  });
 }
 

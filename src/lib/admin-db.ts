@@ -1,3 +1,4 @@
+import { sanitizeAiContent, sanitizeEmDashes } from './ai-content-sanitizer';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
@@ -469,7 +470,7 @@ export async function getPostById(id: number): Promise<PostRecord | null> {
 export async function createPost(data: Partial<PostRecord>): Promise<{ success: boolean; post?: PostRecord; error?: string }> {
   try {
     const now = new Date().toISOString();
-    const insertPayload = {
+    const insertPayload = sanitizeAiContent({
       title: data.title,
       slug: data.slug,
       excerpt: data.excerpt || '',
@@ -482,12 +483,12 @@ export async function createPost(data: Partial<PostRecord>): Promise<{ success: 
       cover_image: data.cover_image || '/assets/blog/photo1.webp',
       status: data.status || 'published',
       published_at: data.published_at || (data.status === 'published' ? now : null),
-      seo_title: data.seo_title || `${data.title} | Prince — Tech Partner`,
+      seo_title: data.seo_title || `${data.title} | Prince - Tech Partner`,
       seo_description: data.seo_description || data.excerpt || '',
       canonical: data.canonical || `https://heyprince.in/insights/${data.slug}/`,
       created_at: now,
       updated_at: now,
-    };
+    });
 
     const { data: created, error } = await supabase.from('posts').insert([insertPayload]).select().single();
     if (error || !created) {
@@ -804,7 +805,7 @@ export async function getServiceById(id: number): Promise<ServiceRecord | null> 
 export async function createService(data: Partial<ServiceRecord>): Promise<{ success: boolean; service?: ServiceRecord; error?: string }> {
   try {
     const now = new Date().toISOString();
-    const insertPayload = {
+    const insertPayload = sanitizeAiContent({
       title: data.title,
       slug: data.slug,
       short_title: data.short_title || data.title,
@@ -827,7 +828,7 @@ export async function createService(data: Partial<ServiceRecord>): Promise<{ suc
       seo_description: data.seo_description || data.short_description || '',
       created_at: now,
       updated_at: now,
-    };
+    });
 
     const { data: created, error } = await supabase.from('services').insert([insertPayload]).select().single();
     if (error || !created) {
@@ -1028,7 +1029,7 @@ export async function createUser(data: {
     const { salt, hash } = hashPassword(plainPassword);
     const now = new Date().toISOString();
 
-    const insertPayload = {
+    const insertPayload = sanitizeAiContent({
       name: data.name.trim(),
       email: normalizedEmail,
       role: data.role || 'admin',
@@ -1037,7 +1038,7 @@ export async function createUser(data: {
       hash,
       created_at: now,
       updated_at: now,
-    };
+    });
 
     const { data: created, error } = await supabase
       .from('users')
@@ -1405,7 +1406,7 @@ export async function createMediaRecord(data: {
 }): Promise<{ success: boolean; media?: MediaRecord; error?: string }> {
   try {
     const now = new Date().toISOString();
-    const insertPayload = {
+    const insertPayload = sanitizeAiContent({
       alt: data.alt,
       caption: data.caption || '',
       filename: data.filename,
@@ -1416,7 +1417,7 @@ export async function createMediaRecord(data: {
       url: data.url,
       created_at: now,
       updated_at: now,
-    };
+    });
 
     const { data: created, error } = await supabase.from('media').insert([insertPayload]).select().single();
     if (error || !created) return { success: false, error: error?.message || 'Failed to create media record' };

@@ -1,3 +1,4 @@
+import { sanitizeAiContent, sanitizeEmDashes } from '../ai-content-sanitizer';
 import crypto from 'crypto';
 import { query } from '../outreach/db';
 import {
@@ -196,10 +197,10 @@ export async function createContentDraft(params: {
       draftId,
       params.agentId,
       params.draftType,
-      params.title,
-      params.excerpt || '',
-      params.content,
-      JSON.stringify(params.metadata || {}),
+      sanitizeEmDashes(params.title),
+      params.excerpt ? sanitizeEmDashes(params.excerpt) : "",
+      sanitizeEmDashes(params.content),
+      JSON.stringify(sanitizeAiContent(params.metadata || {})),
       params.status || 'pending_approval',
       params.content_hash || null,
       params.idempotency_key || null,

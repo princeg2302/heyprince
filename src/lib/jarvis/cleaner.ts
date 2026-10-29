@@ -1,3 +1,4 @@
+import { sanitizeEmDashes } from '../ai-content-sanitizer';
 /**
  * JARVIS Text & Speech Sanitizer
  * Strips raw JSON formatting, speaker keys, markdown fences, and metadata
@@ -67,6 +68,6 @@ export function extractCleanSpokenText(raw: string | undefined | null): string {
     .replace(/\s+/g, ' ')
     .trim();
 
-  return str;
+  return sanitizeEmDashes(str);
 }
 

@@ -1,3 +1,4 @@
+import { sanitizeAiContent, NO_EM_DASH_INSTRUCTION } from '../../ai-content-sanitizer';
 import { AIModelProvider, AIAnalysisInput, AIAnalysisResult } from './types';
 import { AIAnalysisPayload, AIAnalysisSchema } from '../types';
 
@@ -95,7 +96,7 @@ Respond with JSON adhering to:
         return {
           provider: 'gemini',
           modelName: model,
-          analysis: validated,
+          analysis: sanitizeAiContent(validated),
           promptTokens: data.usageMetadata?.promptTokenCount || 0,
           completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
           estimatedCostUsd: 0.0001,

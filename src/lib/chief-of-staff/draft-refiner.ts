@@ -1,3 +1,4 @@
+import { sanitizeAiContent, NO_EM_DASH_INSTRUCTION } from '../ai-content-sanitizer';
 import { callAIModel } from '../daily-news/ai-provider';
 import { getDraftById, updateDraftContent, logChiefActivity } from './db';
 import { getDailyRunById, updateDailyRun } from '../daily-news/db';
@@ -149,7 +150,7 @@ Refine the draft now. Output valid JSON only.`;
     try {
       // Clean possible markdown code fences
       const cleanJson = aiRes.text.replace(/```json\s*/i, '').replace(/```\s*$/i, '').trim();
-      parsed = JSON.parse(cleanJson);
+      parsed = sanitizeAiContent(JSON.parse(cleanJson));
     } catch (parseErr) {
       console.error('[refineDraftWithAI] JSON parse failed, text:', aiRes.text);
       throw new Error('AI produced invalid JSON output. Please retry.');

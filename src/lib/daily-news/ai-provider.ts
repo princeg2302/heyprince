@@ -1,3 +1,5 @@
+import { sanitizeEmDashes, NO_EM_DASH_INSTRUCTION } from '../ai-content-sanitizer';
+
 export interface LLMResponse {
   text: string;
   provider: string;
@@ -71,6 +73,10 @@ export async function callAIModel(
     modelName = 'gemini-3.8-flash';
   }
 
+  const effectiveSystemPrompt = systemPrompt
+    ? `${systemPrompt}\n\n${NO_EM_DASH_INSTRUCTION}`
+    : NO_EM_DASH_INSTRUCTION;
+
   // 1. Google Gemini Provider
   if (config.provider === 'gemini') {
     const candidateModels = Array.from(
@@ -99,7 +105,7 @@ export async function callAIModel(
             contents: [
               {
                 role: 'user',
-                parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+                parts: [{ text: `${effectiveSystemPrompt}\n\n${userPrompt}` }],
               },
             ],
             generationConfig: {
@@ -131,7 +137,7 @@ export async function callAIModel(
         }
 
         return {
-          text: candidateText,
+          text: sanitizeEmDashes(candidateText),
           provider: 'gemini',
           model: activeModel,
           promptTokens: data.usageMetadata?.promptTokenCount,
@@ -161,7 +167,7 @@ export async function callAIModel(
       body: JSON.stringify({
         model: modelName,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: effectiveSystemPrompt },
           { role: 'user', content: userPrompt },
         ],
         response_format: { type: 'json_object' },
@@ -182,7 +188,7 @@ export async function callAIModel(
     }
 
     return {
-      text: content,
+      text: sanitizeEmDashes(content),
       provider: 'openai',
       model: modelName,
       promptTokens: data.usage?.prompt_tokens,
