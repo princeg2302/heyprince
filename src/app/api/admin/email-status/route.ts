@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { getCurrentAdmin } from '@/lib/admin-db';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -11,6 +12,12 @@ function cleanEnv(val?: string): string | undefined {
 }
 
 export async function GET(request: NextRequest) {
+  // Enforce server-side admin authentication to prevent sensitive infrastructure leaks
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized: Admin access required.' }, { status: 401 });
+  }
+
   const hasResend = Boolean(cleanEnv(process.env.RESEND_API_KEY));
   const smtpHost = cleanEnv(process.env.SMTP_HOST);
   const smtpPort = Number(cleanEnv(process.env.SMTP_PORT)) || 465;
@@ -79,4 +86,3 @@ export async function GET(request: NextRequest) {
     });
   }
 }
-
