@@ -60,3 +60,4 @@ export async function updateMultipleSocialLinks(links: { platform: string; url: 
   }
   return true;
 }
+

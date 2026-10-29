@@ -160,7 +160,7 @@ export function MfaSettingsCard() {
   };
 
   return (
-    <div className="hpa-card" style={{ padding: '24px', marginBottom: 0 }}>
+    <div className="hpa-card" style={{ padding: '24px', marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -391,3 +391,4 @@ export function MfaSettingsCard() {
     </div>
   );
 }
+

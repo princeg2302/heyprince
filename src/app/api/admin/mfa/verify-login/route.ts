@@ -77,3 +77,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: err?.message || 'Server authentication error' }, { status: 500 });
   }
 }
+

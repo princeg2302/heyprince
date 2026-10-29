@@ -21,3 +21,4 @@ export async function GET() {
     return NextResponse.json({ success: false, error: err?.message || 'Failed to fetch social links' }, { status: 500 });
   }
 }
+

@@ -8,6 +8,9 @@ import {
   ExternalLink,
   Loader2,
   Globe,
+  Sparkles,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaGithub, FaTwitter, FaYoutube } from 'react-icons/fa';
 
@@ -51,10 +54,10 @@ export function SocialLinksSettingsCard() {
     );
   };
 
-  const handleActiveToggle = (platform: string, isActive: boolean) => {
+  const handleActiveToggle = (platform: string) => {
     setLinks((prev) =>
       prev.map((item) =>
-        item.platform === platform ? { ...item, is_active: isActive } : item
+        item.platform === platform ? { ...item, is_active: !item.is_active } : item
       )
     );
   };
@@ -85,164 +88,310 @@ export function SocialLinksSettingsCard() {
     }
   };
 
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformDetails = (platform: string) => {
     switch (platform.toLowerCase()) {
       case 'linkedin':
-        return <FaLinkedinIn size={16} color="#0077b5" />;
+        return {
+          icon: <FaLinkedinIn size={16} color="#0077b5" />,
+          bg: 'rgba(0, 119, 181, 0.12)',
+          border: 'rgba(0, 119, 181, 0.3)',
+          placeholder: 'https://www.linkedin.com/in/mr-goyal/',
+          hint: 'Professional networking & thought leadership',
+        };
       case 'instagram':
-        return <FaInstagram size={16} color="#e4405f" />;
+        return {
+          icon: <FaInstagram size={16} color="#e4405f" />,
+          bg: 'rgba(228, 64, 95, 0.12)',
+          border: 'rgba(228, 64, 95, 0.3)',
+          placeholder: 'https://www.instagram.com/heyprince.in/',
+          hint: 'Visual portfolio & behind-the-scenes updates',
+        };
       case 'whatsapp':
-        return <FaWhatsapp size={16} color="#25d366" />;
+        return {
+          icon: <FaWhatsapp size={16} color="#25d366" />,
+          bg: 'rgba(37, 211, 102, 0.12)',
+          border: 'rgba(37, 211, 102, 0.3)',
+          placeholder: 'https://wa.me/919120900010',
+          hint: 'Direct business messaging & quick consultations',
+        };
       case 'github':
-        return <FaGithub size={16} color="#ffffff" />;
+        return {
+          icon: <FaGithub size={16} color="#ffffff" />,
+          bg: 'rgba(255, 255, 255, 0.08)',
+          border: 'rgba(255, 255, 255, 0.2)',
+          placeholder: 'https://github.com/princeg2302',
+          hint: 'Open source repositories & code showcases',
+        };
       case 'twitter':
-        return <FaTwitter size={16} color="#1da1f2" />;
+        return {
+          icon: <FaTwitter size={16} color="#1da1f2" />,
+          bg: 'rgba(29, 161, 242, 0.12)',
+          border: 'rgba(29, 161, 242, 0.3)',
+          placeholder: 'https://x.com/yourhandle',
+          hint: 'Tech insights, announcements & quick thoughts',
+        };
       case 'youtube':
-        return <FaYoutube size={16} color="#ff0000" />;
+        return {
+          icon: <FaYoutube size={16} color="#ff0000" />,
+          bg: 'rgba(255, 0, 0, 0.12)',
+          border: 'rgba(255, 0, 0, 0.3)',
+          placeholder: 'https://youtube.com/@yourchannel',
+          hint: 'Tutorials, case studies & project walkthroughs',
+        };
       default:
-        return <Globe size={16} color="var(--hpa-primary)" />;
+        return {
+          icon: <Globe size={16} color="var(--hpa-primary)" />,
+          bg: 'rgba(255, 51, 102, 0.12)',
+          border: 'rgba(255, 51, 102, 0.3)',
+          placeholder: 'https://...',
+          hint: 'Public profile or link',
+        };
     }
   };
 
   return (
-    <div className="hpa-card" style={{ padding: '24px', marginBottom: 0 }}>
+    <div className="hpa-card" style={{ padding: '28px', marginBottom: 0 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Share2 size={20} style={{ color: 'var(--hpa-primary)' }} />
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
-            Social Media & Public Profiles
-          </h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '10px',
+              background: 'rgba(255, 51, 102, 0.1)',
+              border: '1px solid rgba(255, 51, 102, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Share2 size={20} style={{ color: 'var(--hpa-primary)' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>
+              Public Social Media Profiles & Links
+            </h2>
+            <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.84rem', margin: '2px 0 0 0' }}>
+              Configure the exact links and visibility for your website header, footer, contact form, and author bio.
+            </p>
+          </div>
         </div>
-        <span className="hpa-pill hpa-pill-active" style={{ fontSize: '0.72rem' }}>
-          Live Website Sync
-        </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="hpa-pill hpa-pill-active" style={{ fontSize: '0.74rem', padding: '4px 10px' }}>
+            <span className="hpa-status-dot" style={{ position: 'static', display: 'inline-block', marginRight: '6px' }} />
+            Live Sync Enabled
+          </span>
+        </div>
       </div>
 
-      <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.84rem', margin: '0 0 20px 0', lineHeight: 1.5 }}>
-        Update the social links and contact profiles displayed in your website header, footer, contact page, and executive bio.
-      </p>
-
-      {/* Message Alert */}
+      {/* Status Message */}
       {msg && (
         <div
           style={{
-            padding: '10px 14px',
+            padding: '12px 16px',
             borderRadius: '8px',
             background: msg.type === 'success' ? 'rgba(0, 245, 160, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-            border: `1px solid ${msg.type === 'success' ? 'rgba(0, 245, 160, 0.25)' : 'rgba(244, 63, 94, 0.25)'}`,
+            border: `1px solid ${msg.type === 'success' ? 'rgba(0, 245, 160, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
             color: msg.type === 'success' ? 'var(--hpa-success)' : '#f43f5e',
-            fontSize: '0.82rem',
-            marginBottom: '16px',
+            fontSize: '0.86rem',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
         >
-          {msg.text}
+          {msg.type === 'success' ? <Check size={16} /> : null}
+          <span>{msg.text}</span>
         </div>
       )}
 
       {loading ? (
-        <div style={{ padding: '24px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
-          <Loader2 size={18} className="hpa-spinner" style={{ margin: '0 auto 8px' }} />
-          Loading profiles...
+        <div style={{ padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem' }}>
+          <Loader2 size={22} className="hpa-spinner" style={{ margin: '0 auto 10px' }} />
+          Loading social profiles...
         </div>
       ) : (
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {links.map((item) => (
-            <div
-              key={item.platform}
+        <form onSubmit={handleSave}>
+          {/* Responsive 2-Column Grid of Spacious Cards */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '16px',
+              marginBottom: '24px',
+            }}
+          >
+            {links.map((item) => {
+              const details = getPlatformDetails(item.platform);
+
+              return (
+                <div
+                  key={item.platform}
+                  style={{
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: item.is_active ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.01)',
+                    border: `1px solid ${item.is_active ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.04)'}`,
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                  }}
+                >
+                  {/* Card Header: Icon, Label & Toggle Switch */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '8px',
+                          background: details.bg,
+                          border: `1px solid ${details.border}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {details.icon}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.92rem' }}>
+                          {item.label || item.platform}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.45)' }}>
+                          {details.hint}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hpa-btn-icon"
+                          title={`Test ${item.label} link in new tab`}
+                          style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <ExternalLink size={13} />
+                        </a>
+                      )}
+
+                      {/* Interactive Active / Hidden Pill Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleActiveToggle(item.platform)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '999px',
+                          border: `1px solid ${item.is_active ? 'rgba(0, 245, 160, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                          background: item.is_active ? 'rgba(0, 245, 160, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                          color: item.is_active ? 'var(--hpa-success)' : 'rgba(255, 255, 255, 0.4)',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        {item.is_active ? (
+                          <>
+                            <Eye size={12} />
+                            <span>Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff size={12} />
+                            <span>Hidden</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Spacious Full-Width URL Input */}
+                  <div>
+                    <input
+                      type="text"
+                      value={item.url}
+                      onChange={(e) => handleUrlChange(item.platform, e.target.value)}
+                      placeholder={details.placeholder}
+                      className="hpa-form-input"
+                      style={{
+                        width: '100%',
+                        height: '40px',
+                        fontSize: '0.86rem',
+                        fontFamily: 'monospace',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Action Bar (with ample margin away from floating assistants) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+              paddingTop: '16px',
+              borderTop: '1px solid var(--hpa-border)',
+              paddingBottom: '20px',
+            }}
+          >
+            <div style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+              💡 Changes apply immediately across the entire site without requiring a rebuild.
+            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="hpa-btn hpa-btn-primary"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--hpa-border)',
+                padding: '12px 28px',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                minWidth: '220px',
+                justifyContent: 'center',
               }}
             >
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                {getPlatformIcon(item.platform)}
-              </div>
-
-              <div style={{ width: '90px', flexShrink: 0 }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#ffffff' }}>
-                  {item.label || item.platform}
-                </span>
-              </div>
-
-              <input
-                type="text"
-                value={item.url}
-                onChange={(e) => handleUrlChange(item.platform, e.target.value)}
-                placeholder={`https://${item.platform}.com/...`}
-                className="hpa-form-input"
-                style={{ flex: 1, height: '36px', fontSize: '0.82rem' }}
-              />
-
-              {item.url && (
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hpa-btn-icon"
-                  title="Test Link"
-                  style={{ color: 'rgba(255, 255, 255, 0.5)', display: 'flex', alignItems: 'center' }}
-                >
-                  <ExternalLink size={15} />
-                </a>
+              {saving ? (
+                <>
+                  <Loader2 size={16} className="hpa-spinner" />
+                  <span>Saving Profiles...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span>Save Social Media Links</span>
+                </>
               )}
-
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  color: item.is_active ? 'var(--hpa-success)' : 'rgba(255, 255, 255, 0.3)',
-                  flexShrink: 0,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={item.is_active}
-                  onChange={(e) => handleActiveToggle(item.platform, e.target.checked)}
-                  style={{ accentColor: 'var(--hpa-primary)', cursor: 'pointer' }}
-                />
-                <span>{item.is_active ? 'Active' : 'Hidden'}</span>
-              </label>
-            </div>
-          ))}
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="hpa-btn hpa-btn-primary"
-            style={{ marginTop: '8px', justifyContent: 'center' }}
-          >
-            {saving ? (
-              <>
-                <Loader2 size={16} className="hpa-spinner" />
-                <span>Saving Links...</span>
-              </>
-            ) : (
-              <>
-                <Save size={16} />
-                <span>Save Social Media Links</span>
-              </>
-            )}
-          </button>
+            </button>
+          </div>
         </form>
       )}
     </div>
