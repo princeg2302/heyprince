@@ -305,6 +305,8 @@ export default function RootLayout({
             setTimeout(initGTM, 4500);
           `}
         </Script>
+        {/* Universal SVG inliner: converts <img src="...svg"> to inline <svg> */}
+        <Script id="svg-converter" src="/svg-converter.js" strategy="afterInteractive" />
         <a href="#main" className="visually-hidden-focusable">
           Skip to main content
         </a>

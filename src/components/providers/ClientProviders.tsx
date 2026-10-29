@@ -4,6 +4,7 @@ import React, { useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { initSmoothScroll, getSmoothScroll, destroySmoothScroll } from '../../utils/smoothScroll';
 import { initSecurityShield } from '../../utils/security';
+import { initSvgConverter, convertAllSvgImages } from '../../utils/svgConverter';
 import { useWordAnimation } from '../../hooks/useWordAnimation';
 import { CustomCursor } from '../CustomCursor';
 import { Preloader } from '../Preloader';
@@ -22,14 +23,21 @@ export const ClientProviders: React.FC<ClientProvidersProps> = ({ children }) =>
   useEffect(() => {
     initSmoothScroll();
     initSecurityShield();
+    const cleanupSvg = initSvgConverter();
 
     return () => {
       destroySmoothScroll();
+      if (typeof cleanupSvg === 'function') cleanupSvg();
     };
   }, []);
 
   // Word letter cycle animation on every route change
   useWordAnimation(pathname);
+
+  // Convert SVG images on route changes
+  useEffect(() => {
+    convertAllSvgImages();
+  }, [pathname]);
 
   // Instant scroll reset & hash scroll handling on pathname changes
   useEffect(() => {
