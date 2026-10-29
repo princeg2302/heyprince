@@ -14,10 +14,12 @@ import {
 import { getCurrentAdmin } from '@/lib/admin-db';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { LinkedInSettingsCard } from '@/components/admin/LinkedInSettingsCard';
+import { MfaSettingsCard } from '@/components/admin/MfaSettingsCard';
+import { SocialLinksSettingsCard } from '@/components/admin/SocialLinksSettingsCard';
 
 export const metadata = {
   title: 'Settings — HeyPrince Admin',
-  description: 'System configuration, profile, and infrastructure security.',
+  description: 'System configuration, profile, two-factor authentication, and social media links.',
 };
 
 export default async function SettingsPage() {
@@ -34,7 +36,7 @@ export default async function SettingsPage() {
         <div>
           <h1 className="hpa-page-title">Platform & System Settings</h1>
           <p className="hpa-page-desc">
-            Environment specifications, security keys, and administrator profile.
+            Administrator profile, Multi-Factor Authentication (MFA), social media links, and cloud infrastructure.
           </p>
         </div>
       </div>
@@ -95,20 +97,29 @@ export default async function SettingsPage() {
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--hpa-text-dim)' }}>Session Duration</span>
-              <span style={{ color: '#ffffff' }}>7 Days (HTTP-only)</span>
+              <span style={{ color: 'var(--hpa-text-dim)' }}>Session Security</span>
+              <span style={{ color: '#ffffff' }}>HMAC-SHA256 Signed (7 Days)</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--hpa-text-dim)' }}>Encryption</span>
+              <span style={{ color: 'var(--hpa-text-dim)' }}>Password Encryption</span>
               <span style={{ color: 'var(--hpa-success)' }}>PBKDF2-SHA256 (600k)</span>
             </div>
           </div>
 
           <Link href={`/admin/users/${user.id}/edit`} className="hpa-btn hpa-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
             <Key size={14} />
-            <span>Change Profile Picture & Password</span>
+            <span>Edit Profile & Password</span>
           </Link>
         </div>
+
+        {/* Multi-Factor Authentication (MFA / 2FA) */}
+        <MfaSettingsCard />
+
+        {/* Social Media & Public Profiles */}
+        <SocialLinksSettingsCard />
+
+        {/* LinkedIn Integration */}
+        <LinkedInSettingsCard />
 
         {/* Database & Supabase */}
         <div className="hpa-card" style={{ padding: '24px', marginBottom: 0 }}>
@@ -159,9 +170,6 @@ export default async function SettingsPage() {
             <ExternalLink size={14} />
           </a>
         </div>
-
-        {/* LinkedIn Integration */}
-        <LinkedInSettingsCard />
 
         {/* Runtime Engine */}
         <div className="hpa-card" style={{ padding: '24px', gridColumn: 'span 2', marginBottom: 0 }}>

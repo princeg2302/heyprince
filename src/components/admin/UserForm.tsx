@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Save, ArrowLeft, Lock, Mail, User as UserIcon, Shield, Upload, Trash2, Camera, Loader2 } from 'lucide-react';
+import { Save, ArrowLeft, Lock, Mail, User as UserIcon, Shield, Upload, Trash2, Camera, Loader2, Share2, ShieldCheck } from 'lucide-react';
 import { AdminUser } from '@/lib/admin-db';
 import { useToast } from '@/components/admin/Toast';
 
@@ -333,6 +333,24 @@ export function UserForm({ initialData, isEdit = false }: UserFormProps) {
                 required
               />
             </div>
+          </div>
+        )}
+
+        {isEdit && (
+          <div style={{ marginTop: '20px', padding: '16px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--hpa-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
+            <div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck size={16} color="var(--hpa-success)" />
+                <span>2FA / MFA & Public Social Profiles</span>
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--hpa-text-dim)', marginTop: '2px' }}>
+                Configure Authenticator 2FA and update public LinkedIn, Instagram, WhatsApp, and GitHub links.
+              </div>
+            </div>
+            <Link href="/admin/settings/" className="hpa-btn hpa-btn-secondary hpa-btn-sm" style={{ flexShrink: 0 }}>
+              <Share2 size={13} />
+              <span>Open Settings</span>
+            </Link>
           </div>
         )}
       </div>

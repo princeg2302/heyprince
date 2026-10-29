@@ -46,19 +46,104 @@ export interface AdminUser {
   updated_at: string;
 }
 
+function getSessionSigningSecret(): string {
+  return (
+    process.env.ADMIN_SESSION_SECRET ||
+    process.env.PAYLOAD_SECRET ||
+    'heyprince-cryptographic-admin-session-secret-2026'
+  );
+}
+
+export function signAdminSessionToken(payload: object): string {
+  const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', getSessionSigningSecret())
+    .update(payloadBase64)
+    .digest('hex');
+  return `${payloadBase64}.${signature}`;
+}
+
+export function verifyAdminSessionToken(token: string): any | null {
+  if (!token || typeof token !== 'string') return null;
+
+  if (token.includes('.')) {
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+
+    const [payloadBase64, signature] = parts;
+    const expectedSig = crypto
+      .createHmac('sha256', getSessionSigningSecret())
+      .update(payloadBase64)
+      .digest('hex');
+
+    const sigBuf = Buffer.from(signature, 'hex');
+    const expBuf = Buffer.from(expectedSig, 'hex');
+
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return null;
+    }
+
+    try {
+      const json = Buffer.from(payloadBase64, 'base64url').toString('utf8');
+      const parsed = JSON.parse(json);
+      if (parsed && parsed.id && parsed.email && parsed.exp && parsed.exp > Date.now()) {
+        return parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    const json = Buffer.from(token, 'base64').toString('utf8');
+    const parsed = JSON.parse(json);
+    if (parsed && parsed.id && parsed.email && parsed.exp && parsed.exp > Date.now()) {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export async function issueAdminSessionCookie(user: {
+  id: number;
+  email: string;
+  role: string;
+  name?: string;
+  avatar_url?: string | null;
+}): Promise<void> {
+  const cookieStore = await cookies();
+  const sessionData = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    name: user.name,
+    avatar_url: user.avatar_url || null,
+    exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    issued_at: Date.now(),
+  };
+
+  const sessionToken = signAdminSessionToken(sessionData);
+
+  cookieStore.set('hp_admin_session', sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60,
+  });
+}
+
 export async function getCurrentAdmin(): Promise<AdminUser | null> {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('hp_admin_session')?.value;
     if (!sessionCookie) return null;
 
-    let payload: { id: number; email: string; name?: string; role?: string; avatar_url?: string | null; exp: number };
-    try {
-      payload = JSON.parse(Buffer.from(sessionCookie, 'base64').toString('utf8'));
-    } catch {
-      return null;
-    }
-
+    const payload = verifyAdminSessionToken(sessionCookie);
     if (!payload || !payload.id || !payload.email) {
       return null;
     }
@@ -67,7 +152,6 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
       return null;
     }
 
-    // Try fetching fresh profile data from Supabase
     try {
       const { data: user, error } = await supabase
         .from('users')
@@ -82,7 +166,6 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
       console.warn('[getCurrentAdmin] Live profile check error:', dbErr);
     }
 
-    // Fall back to valid session payload so transient connection errors do not kick the user out
     return {
       id: payload.id,
       name: payload.name || payload.email.split('@')[0],
@@ -97,7 +180,16 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
   }
 }
 
-export async function authenticateAdmin(email: string, password: string): Promise<{ success: boolean; user?: AdminUser; error?: string }> {
+export async function authenticateAdmin(
+  email: string,
+  password: string
+): Promise<{
+  success: boolean;
+  user?: AdminUser;
+  requireMfa?: boolean;
+  mfaPendingToken?: string;
+  error?: string;
+}> {
   try {
     const normalizedEmail = email.trim().toLowerCase();
     const { data: user, error } = await supabase
@@ -115,27 +207,27 @@ export async function authenticateAdmin(email: string, password: string): Promis
       return { success: false, error: 'Invalid email or password.' };
     }
 
-    const cookieStore = await cookies();
-    const sessionData = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.name,
-      avatar_url: user.avatar_url || null,
-      exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
-    const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+    try {
+      const { getAdminMfaState, createMfaPendingToken } = await import('@/lib/mfa');
+      const mfa = await getAdminMfaState(user.id);
 
-    cookieStore.set('hp_admin_session', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60,
-    });
+      if (mfa && mfa.mfa_enabled) {
+        const mfaPendingToken = createMfaPendingToken(user.id, user.email);
+        return {
+          success: true,
+          requireMfa: true,
+          mfaPendingToken,
+        };
+      }
+    } catch (mfaErr) {
+      console.warn('[authenticateAdmin] MFA check warning:', mfaErr);
+    }
+
+    await issueAdminSessionCookie(user);
 
     return {
       success: true,
+      requireMfa: false,
       user: {
         id: user.id,
         name: user.name,

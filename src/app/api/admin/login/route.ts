@@ -21,8 +21,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // If Multi-Factor Authentication is enabled, require the 2FA challenge step
+    if (result.requireMfa) {
+      return NextResponse.json({
+        success: true,
+        requireMfa: true,
+        mfaPendingToken: result.mfaPendingToken,
+      });
+    }
+
     return NextResponse.json({
       success: true,
+      requireMfa: false,
       user: result.user,
     });
   } catch (error: any) {
