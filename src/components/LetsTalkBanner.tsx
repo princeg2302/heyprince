@@ -1,7 +1,28 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export const LetsTalkBanner: React.FC = () => {
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/site-settings/visibility')
+      .then((r) => r.json())
+      .then((d) => {
+        if (isMounted && d && typeof d.services_and_contact_enabled === 'boolean') {
+          setEnabled(d.services_and_contact_enabled);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (!enabled) return null;
+
   return (
     <section className="lets-talk" aria-label="Let's Talk Section">
       <div className="container">

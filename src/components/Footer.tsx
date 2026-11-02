@@ -19,10 +19,20 @@ export const Footer: React.FC<FooterProps> = ({
   const router = useRouter();
   const [services, setServices] = useState<ServiceData[]>(servicesList);
   const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
+  const [servicesVisible, setServicesVisible] = useState<boolean>(true);
 
-  // Fetch live published services from Supabase via /api/services
+  // Fetch visibility settings and live published services from Supabase
   useEffect(() => {
     let isMounted = true;
+    fetch('/api/site-settings/visibility')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data && typeof data.services_and_contact_enabled === 'boolean') {
+          setServicesVisible(data.services_and_contact_enabled);
+        }
+      })
+      .catch(() => {});
+
     const fetchServices = async () => {
       try {
         const res = await fetch('/api/services', { cache: 'no-store' });
@@ -72,7 +82,8 @@ export const Footer: React.FC<FooterProps> = ({
             contact@heyprince.in
           </a>
           <div className="footer-row justify-content-end row">
-            <div className="col-md-8">
+            {servicesVisible && (
+              <div className="col-md-8">
               <div className="cards-indicator d-none d-md-inline-flex align-items-center gap-2">
                 <span className="cards-indicator-dot" />
                 <span>Hover cards to explore</span>
@@ -173,6 +184,7 @@ export const Footer: React.FC<FooterProps> = ({
                 })}
               </div>
             </div>
+            )}
 
             <div className="col-lg-3 col-md-4 footer-col-social">
               <div className="social-links">

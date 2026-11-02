@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getServices } from '@/lib/cms';
+import { getSiteVisibilitySettings } from '@/lib/site-settings';
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -78,6 +80,11 @@ function renderServiceIcon(iconName: string) {
 }
 
 export default async function ServicesListingPage() {
+  const settings = await getSiteVisibilitySettings();
+  if (!settings.services_and_contact_enabled) {
+    redirect('/');
+  }
+
   const services = await getServices();
 
   const servicesSchema = {

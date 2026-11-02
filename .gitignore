@@ -32,3 +32,7 @@ dist/dev/
 *.sw?
 
 lighthouse*.json
+
+# Independent Trading Bot
+trading-bot/
+

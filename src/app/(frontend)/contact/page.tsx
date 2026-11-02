@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import React from 'react';
+import { redirect } from 'next/navigation';
 import { ContactPage } from '@/components';
+import { getSiteVisibilitySettings } from '@/lib/site-settings';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Contact Prince — Senior IT Consultant & Full Stack Web Engineer | HeyPrince',
@@ -34,7 +39,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ContactRoute() {
+export default async function ContactRoute() {
+  const settings = await getSiteVisibilitySettings();
+  if (!settings.services_and_contact_enabled) {
+    redirect('/');
+  }
+
   return (
     <div className="page-view-wrapper">
       <ContactPage />

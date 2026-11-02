@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { getCurrentAdmin, getDashboardStats } from '@/lib/admin-db';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { VisibilityToggleCard } from '@/components/admin/VisibilityToggleCard';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -300,6 +301,11 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* 6 Metric KPI Cards */}
+      {/* Website Live Visibility Toggle */}
+      <div style={{ marginBottom: '24px' }}>
+        <VisibilityToggleCard />
+      </div>
+
       <div className="hpa-stats-grid">
         {metrics.map((m, idx) => {
           const Icon = m.icon;

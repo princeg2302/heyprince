@@ -13,11 +13,13 @@ import {
   Layers,
   Sparkles,
   Lock,
+  Eye,
 } from 'lucide-react';
 import { AdminUser } from '@/lib/admin-db';
 import { LinkedInSettingsCard } from '@/components/admin/LinkedInSettingsCard';
 import { MfaSettingsCard } from '@/components/admin/MfaSettingsCard';
 import { SocialLinksSettingsCard } from '@/components/admin/SocialLinksSettingsCard';
+import { VisibilityToggleCard } from '@/components/admin/VisibilityToggleCard';
 
 interface SettingsClientProps {
   user: AdminUser;
@@ -25,10 +27,11 @@ interface SettingsClientProps {
 }
 
 export function SettingsClient({ user, supabaseUrl }: SettingsClientProps) {
-  const [activeTab, setActiveTab] = useState<'security' | 'social' | 'linkedin' | 'system' | 'all'>('all');
+  const [activeTab, setActiveTab] = useState<'visibility' | 'security' | 'social' | 'linkedin' | 'system' | 'all'>('all');
 
   const tabs = [
     { id: 'all', label: 'Overview & All', icon: Layers },
+    { id: 'visibility', label: 'Feature Visibility', icon: Eye },
     { id: 'security', label: 'Security & Profile', icon: ShieldCheck },
     { id: 'social', label: 'Social Media Links', icon: Share2 },
     { id: 'linkedin', label: 'LinkedIn Integration', icon: Sparkles },
@@ -90,6 +93,19 @@ export function SettingsClient({ user, supabaseUrl }: SettingsClientProps) {
       </div>
 
       {/* TAB CONTENT */}
+
+      {/* SECTION 0: WEBSITE VISIBILITY CONTROLS */}
+      {(activeTab === 'all' || activeTab === 'visibility') && (
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <Eye size={18} style={{ color: 'var(--hpa-primary)' }} />
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Public Website Visibility &amp; Feature Flags
+            </h2>
+          </div>
+          <VisibilityToggleCard />
+        </div>
+      )}
 
       {/* SECTION 1: ACCOUNT & SECURITY */}
       {(activeTab === 'all' || activeTab === 'security') && (

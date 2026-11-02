@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getServices, getServiceBySlug } from '@/lib/cms';
+import { getSiteVisibilitySettings } from '@/lib/site-settings';
 import { SingleServicePage } from '@/components';
 
 interface ServicePageProps {
@@ -48,6 +49,11 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
 }
 
 export default async function ServiceRoute({ params }: ServicePageProps) {
+  const settings = await getSiteVisibilitySettings();
+  if (!settings.services_and_contact_enabled) {
+    redirect('/');
+  }
+
   const { slug } = await params;
   const service = await getServiceBySlug(slug);
 

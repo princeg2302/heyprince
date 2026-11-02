@@ -15,7 +15,23 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [servicesAndContactEnabled, setServicesAndContactEnabled] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/site-settings/visibility')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data && typeof data.services_and_contact_enabled === 'boolean') {
+          setServicesAndContactEnabled(data.services_and_contact_enabled);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const logoSrc = typeof heyprinceLogo === 'object' && heyprinceLogo !== null && 'src' in heyprinceLogo
     ? (heyprinceLogo as { src: string }).src
@@ -191,19 +207,21 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                       <div className="col-lg-7">
                         <div className="main-menu-wrap">
                           <ul className="navbar-menu" id="menu-main">
-                            <li className="menu-item">
-                              <a
-                                href="/services"
-                                className="nav-link"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setMenuOpen(false);
-                                  router.push('/services');
-                                }}
-                              >
-                                Services
-                              </a>
-                            </li>
+                            {servicesAndContactEnabled && (
+                              <li className="menu-item">
+                                <a
+                                  href="/services"
+                                  className="nav-link"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setMenuOpen(false);
+                                    router.push('/services');
+                                  }}
+                                >
+                                  Services
+                                </a>
+                              </li>
+                            )}
                             <li className="menu-item">
                               <a
                                 href="/about"
@@ -280,18 +298,20 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                                 Memories
                               </a>
                             </li>
-                            <li className="menu-item">
-                              <a
-                                href="/contact"
-                                className="nav-link"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleContactClick();
-                                }}
-                              >
-                                Contact
-                              </a>
-                            </li>
+                            {servicesAndContactEnabled && (
+                              <li className="menu-item">
+                                <a
+                                  href="/contact"
+                                  className="nav-link"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleContactClick();
+                                  }}
+                                >
+                                  Contact
+                                </a>
+                              </li>
+                            )}
                           </ul>
                         </div>
                       </div>
@@ -380,28 +400,30 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               </svg>
             </button>
 
-            <a
-              className="portal-btn header-contact-btn"
-              href="/contact/"
-              onClick={(e) => {
-                e.preventDefault();
-                handleContactClick();
-              }}
-            >
-              <span className="mr-right">
-                <span className="btn-text-full">Let's Build Something</span>
-                <span className="btn-text-short">Let's Talk</span>
-              </span>
-              <span className="arrow">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="20" cy="20" r="20" fill="white" />
-                  <path
-                    d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                    fill="#000"
-                  />
-                </svg>
-              </span>
-            </a>
+            {servicesAndContactEnabled && (
+              <a
+                className="portal-btn header-contact-btn"
+                href="/contact/"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleContactClick();
+                }}
+              >
+                <span className="mr-right">
+                  <span className="btn-text-full">Let's Build Something</span>
+                  <span className="btn-text-short">Let's Talk</span>
+                </span>
+                <span className="arrow">
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="20" fill="white" />
+                    <path
+                      d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
+                      fill="#000"
+                    />
+                  </svg>
+                </span>
+              </a>
+            )}
           </div>
         </div>
       </div>
