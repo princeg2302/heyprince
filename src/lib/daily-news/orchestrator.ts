@@ -51,20 +51,34 @@ export async function executeDailyNewsAutomation(params?: {
   // 2. Enforce strict idempotency: check if today's run already exists
   if (triggerType === 'scheduled' && !params?.forceRunToday) {
     const existingRun = await getDailyRunByDate(todayStr);
-    if (existingRun && (existingRun.status === 'success' || existingRun.status === 'running')) {
-      return {
-        success: true,
-        runId: existingRun.id,
-        runDate: todayStr,
-        status: 'skipped',
-        websiteStatus: existingRun.websiteStatus,
-        linkedinStatus: existingRun.linkedinStatus,
-        postId: existingRun.postId,
-        sourcesChecked: existingRun.sourcesChecked,
-        itemsDiscovered: existingRun.itemsDiscovered,
-        duplicatesSkipped: existingRun.duplicatesSkipped,
-        warnings: [`Run for ${todayStr} has already executed with status '${existingRun.status}'.`],
-      };
+    if (existingRun) {
+      const isStaleRunning =
+        existingRun.status === 'running' &&
+        existingRun.startedAt &&
+        Date.now() - new Date(existingRun.startedAt).getTime() > 10 * 60 * 1000;
+
+      if (isStaleRunning) {
+        console.warn(`[Daily News] Found stale running run #${existingRun.id} from ${existingRun.startedAt}. Marking failed to allow self-healing retry.`);
+        await updateDailyRun(existingRun.id, {
+          status: 'failed',
+          errorDetails: { stage: 'timeout', message: 'Vercel serverless function timed out or process terminated.', timestamp: new Date().toISOString() },
+          completedAt: new Date().toISOString(),
+        });
+      } else if (existingRun.status === 'success' || existingRun.status === 'running') {
+        return {
+          success: true,
+          runId: existingRun.id,
+          runDate: todayStr,
+          status: 'skipped',
+          websiteStatus: existingRun.websiteStatus,
+          linkedinStatus: existingRun.linkedinStatus,
+          postId: existingRun.postId,
+          sourcesChecked: existingRun.sourcesChecked,
+          itemsDiscovered: existingRun.itemsDiscovered,
+          duplicatesSkipped: existingRun.duplicatesSkipped,
+          warnings: [`Run for ${todayStr} has already executed with status '${existingRun.status}'.`],
+        };
+      }
     }
   }
 
