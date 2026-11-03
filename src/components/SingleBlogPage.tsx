@@ -109,6 +109,37 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
     };
   }, []);
 
+  // Live dynamic social links hydration from /api/social-links
+  const [socialLinks, setSocialLinks] = useState<{
+    linkedin?: string;
+    instagram?: string;
+    whatsapp?: string;
+    github?: string;
+  }>({
+    linkedin: 'https://www.linkedin.com/in/mr-goyal/',
+    instagram: 'https://www.instagram.com/heyprince.in/',
+    whatsapp: 'https://wa.me/919120900010',
+    github: 'https://github.com/princeg2302',
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/social-links', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data?.success && data.socialLinks) {
+          setSocialLinks((prev) => ({
+            ...prev,
+            ...data.socialLinks,
+          }));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Real-time dynamic blog likes backed by Supabase PostgreSQL
   const [likes, setLikes] = useState<number>(initialLikes ?? 0);
   const [hasLiked, setHasLiked] = useState<boolean>(false);
@@ -748,7 +779,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                   </span>
                   <a
                     className="share-btn instagram"
-                    href="https://www.instagram.com/heyprince.in/"
+                    href={socialLinks.instagram || 'https://www.instagram.com/heyprince.in/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram @heyprince.in"
@@ -851,36 +882,46 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
                 {/* Quick Author Social Connections */}
                 <div className="author-sidebar-socials">
-                  <a
-                    href="https://www.linkedin.com/in/heyprincein/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="author-social-link"
-                    title="Connect on LinkedIn"
-                    aria-label="LinkedIn"
-                  >
-                    <FaLinkedinIn size={13} />
-                  </a>
-                  <a
-                    href="https://www.instagram.com/heyprince.in/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="author-social-link"
-                    title="Follow on Instagram"
-                    aria-label="Instagram"
-                  >
-                    <FaInstagram size={13} />
-                  </a>
-                  <a
-                    href="https://wa.me/919999999999"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="author-social-link"
-                    title="Chat on WhatsApp"
-                    aria-label="WhatsApp"
-                  >
-                    <FaWhatsapp size={13} />
-                  </a>
+                  {socialLinks.linkedin && (
+                    <a
+                      href={socialLinks.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="author-social-link"
+                      title="Connect on LinkedIn"
+                      aria-label="LinkedIn"
+                    >
+                      <FaLinkedinIn size={13} />
+                    </a>
+                  )}
+                  {socialLinks.instagram && (
+                    <a
+                      href={socialLinks.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="author-social-link"
+                      title="Follow on Instagram"
+                      aria-label="Instagram"
+                    >
+                      <FaInstagram size={13} />
+                    </a>
+                  )}
+                  {socialLinks.whatsapp && (
+                    <a
+                      href={
+                        socialLinks.whatsapp.startsWith('http')
+                          ? socialLinks.whatsapp
+                          : `https://wa.me/${socialLinks.whatsapp.replace(/[^0-9]/g, '')}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="author-social-link"
+                      title="Chat on WhatsApp"
+                      aria-label="WhatsApp"
+                    >
+                      <FaWhatsapp size={13} />
+                    </a>
+                  )}
                 </div>
               </div>
 
