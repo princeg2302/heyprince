@@ -18,6 +18,7 @@ import {
   FaLightbulb,
   FaBookmark,
 } from 'react-icons/fa6';
+import { DiscussionSection } from './discussions/DiscussionSection';
 
 export interface SingleBlogPageProps {
   slug: string;
@@ -99,18 +100,26 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
     };
   }, []);
 
-  // Persistent dynamic likes with localStorage (Hydration safe)
-  const storageKey = `heyprince_likes_${article.slug}`;
-  const [likes, setLikes] = useState<number>(42);
+  // Real-time dynamic blog likes backed by Supabase PostgreSQL
+  const [likes, setLikes] = useState<number>(0);
   const [hasLiked, setHasLiked] = useState<boolean>(false);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) setLikes(parseInt(saved, 10));
-      setHasLiked(localStorage.getItem(`${storageKey}_user`) === 'true');
-    } catch {}
-  }, [storageKey]);
+    let isMounted = true;
+    fetch(`/api/blog/likes?slug=${encodeURIComponent(article.slug)}`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success) {
+          setLikes(data.count ?? 0);
+          setHasLiked(Boolean(data.hasLiked));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [article.slug]);
 
   const [copied, setCopied] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -156,23 +165,28 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
     };
   }, [slug]);
 
-  const handleLike = () => {
-    if (hasLiked) {
-      const newCount = likes - 1;
-      setLikes(newCount);
-      setHasLiked(false);
-      try {
-        localStorage.setItem(storageKey, newCount.toString());
-        localStorage.setItem(`${storageKey}_user`, 'false');
-      } catch {}
-    } else {
-      const newCount = likes + 1;
-      setLikes(newCount);
-      setHasLiked(true);
-      try {
-        localStorage.setItem(storageKey, newCount.toString());
-        localStorage.setItem(`${storageKey}_user`, 'true');
-      } catch {}
+  const handleLike = async () => {
+    // Optimistic UI toggle
+    const nextState = !hasLiked;
+    const nextCount = nextState ? likes + 1 : Math.max(0, likes - 1);
+    setHasLiked(nextState);
+    setLikes(nextCount);
+
+    try {
+      const res = await fetch('/api/blog/likes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: article.slug }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLikes(data.count);
+        setHasLiked(data.hasLiked);
+      }
+    } catch {
+      // Rollback on network failure
+      setHasLiked(!nextState);
+      setLikes(likes);
     }
   };
 
@@ -647,6 +661,9 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                 </p>
               </div>
             </aside>
+
+            {/* Live Discussion & Threaded Community Replies Component */}
+            <DiscussionSection slug={article.slug} postTitle={article.title} />
           </div>
         </div>
 
