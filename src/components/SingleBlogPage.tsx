@@ -19,7 +19,6 @@ import {
   FaListUl,
   FaCircleCheck,
   FaFolderOpen,
-  FaRocket,
   FaRegComments,
 } from 'react-icons/fa6';
 import { DiscussionSection, CommentItem } from './discussions/DiscussionSection';
@@ -907,32 +906,6 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                       </button>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Article Quick Facts Widget */}
-              <div className="sidebar-widget stats-sidebar-widget">
-                <div className="widget-header">
-                  <FaRocket className="widget-icon" />
-                  <h4 className="widget-title">Article Snapshot</h4>
-                </div>
-                <div className="stats-list">
-                  <div className="stat-row">
-                    <span className="stat-label">Read Time</span>
-                    <span className="stat-val">{article.readMins || '5 min'}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">Published</span>
-                    <span className="stat-val">{article.date || '2026 Edition'}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">Community Likes</span>
-                    <span className="stat-val">{likes}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">Discussion</span>
-                    <span className="stat-val">{totalCommentCount} comments</span>
-                  </div>
                 </div>
               </div>
             </div>

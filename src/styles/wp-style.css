@@ -3216,12 +3216,13 @@ p.foot-copyright a {
 /* Global boundary protections against unwanted horizontal shift */
 html,
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
 }
 
 #wrapper {
-  overflow-x: hidden;
+  overflow: visible !important;
+  overflow-x: clip !important;
   width: 100%;
   position: relative;
 }
@@ -10741,38 +10742,21 @@ body {
 
 .blog-sidebar-left,
 .blog-sidebar-right {
-  position: relative;
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 100px !important;
+  align-self: start;
+  height: fit-content;
+  z-index: 25;
   width: 100%;
 }
 
 .sticky-rail-box {
-  position: sticky;
-  top: 96px;
   display: flex;
   flex-direction: column;
   gap: 22px;
-  max-height: calc(100vh - 110px);
-  overflow-y: auto;
-  padding-right: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 0, 39, 0.3) transparent;
-}
-
-.sticky-rail-box::-webkit-scrollbar {
-  width: 4px;
-}
-
-.sticky-rail-box::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sticky-rail-box::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-}
-
-.sticky-rail-box::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 0, 39, 0.5);
+  width: 100%;
+  overflow: visible !important;
 }
 
 /* Sidebar Widgets Generic Styling */
@@ -11206,40 +11190,6 @@ body {
   color: #ffffff;
 }
 
-/* Article Stats Widget */
-.stats-sidebar-widget {
-  padding: 20px;
-}
-
-.stats-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.stat-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12.5px;
-  padding-bottom: 7px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.stat-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.stat-label {
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.stat-val {
-  color: #ffffff;
-  font-weight: 700;
-}
-
 /* --------------------------------------------------------------------------
    RESPONSIVE MEDIA QUERIES FOR 3-COLUMN BLOG LAYOUT
    -------------------------------------------------------------------------- */
@@ -11270,6 +11220,7 @@ body {
   .blog-sidebar-left {
     display: block;
     order: 2;
+    position: static !important;
   }
 
   .blog-main-content {
@@ -11278,12 +11229,12 @@ body {
 
   .blog-sidebar-right {
     order: 3;
+    position: static !important;
   }
 
   .sticky-rail-box {
     position: static;
-    max-height: none;
-    overflow-y: visible;
+    overflow: visible !important;
     padding-right: 0;
   }
 }
