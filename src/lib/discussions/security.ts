@@ -91,3 +91,4 @@ export function generateAvatarUrl(email: string, name: string): string {
   // Uses Gravatar with dicebear/ui-avatars fallback
   return `https://www.gravatar.com/avatar/${md5Hash}?d=https%3A%2F%2Fui-avatars.com%2Fapi%2F${encodedName}%2F128%2F12141e%2F00d09c%2F2%2F0.4%2Ftrue&s=128`;
 }
+

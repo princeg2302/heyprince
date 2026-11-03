@@ -26,15 +26,24 @@ export interface CommentItem {
   replies?: CommentItem[];
 }
 
-interface DiscussionSectionProps {
+export interface DiscussionSectionProps {
   slug: string;
   postTitle?: string;
+  initialComments?: CommentItem[];
+  initialCount?: number;
 }
 
-export const DiscussionSection: React.FC<DiscussionSectionProps> = ({ slug }) => {
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
+export const DiscussionSection: React.FC<DiscussionSectionProps> = ({
+  slug,
+  postTitle,
+  initialComments = [],
+  initialCount,
+}) => {
+  const [comments, setComments] = useState<CommentItem[]>(initialComments);
+  const [totalCount, setTotalCount] = useState<number>(
+    initialCount ?? (initialComments.length > 0 ? initialComments.length : 0)
+  );
+  const [loading, setLoading] = useState<boolean>(initialComments.length === 0);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -113,8 +122,13 @@ export const DiscussionSection: React.FC<DiscussionSectionProps> = ({ slug }) =>
   );
 
   useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+    // If SSR provided initial comments, refresh silently in the background to hydrate client hasLiked state
+    if (initialComments.length > 0) {
+      fetchComments(true);
+    } else {
+      fetchComments(false);
+    }
+  }, [fetchComments, initialComments.length]);
 
   // Format relative timestamp
   const formatTimeAgo = (dateStr: string) => {
@@ -690,3 +704,4 @@ const CommentCard: React.FC<CommentCardProps> = ({
 };
 
 export default DiscussionSection;
+

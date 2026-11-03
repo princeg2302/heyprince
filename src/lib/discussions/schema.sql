@@ -57,3 +57,4 @@ CREATE TABLE IF NOT EXISTS discussion_rate_limits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_discussion_rate_limits ON discussion_rate_limits(ip_hash, action_type, created_at DESC);
+

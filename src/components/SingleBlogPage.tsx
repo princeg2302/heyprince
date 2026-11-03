@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { articlesList, Article } from '../data/siteContent';
 import {
@@ -8,7 +8,6 @@ import {
   FaArrowRight,
   FaClock,
   FaCalendarDays,
-  FaUser,
   FaHeart,
   FaShareNodes,
   FaLinkedinIn,
@@ -17,12 +16,20 @@ import {
   FaCheck,
   FaLightbulb,
   FaBookmark,
+  FaListUl,
+  FaCircleCheck,
+  FaFolderOpen,
+  FaRocket,
+  FaRegComments,
 } from 'react-icons/fa6';
-import { DiscussionSection } from './discussions/DiscussionSection';
+import { DiscussionSection, CommentItem } from './discussions/DiscussionSection';
 
 export interface SingleBlogPageProps {
   slug: string;
   post?: Article;
+  initialComments?: CommentItem[];
+  initialCommentCount?: number;
+  initialLikes?: number;
   onNavigateHome?: () => void;
   onNavigateArticles?: () => void;
   onSelectArticle?: (slug: string) => void;
@@ -32,6 +39,9 @@ export interface SingleBlogPageProps {
 export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   slug,
   post,
+  initialComments = [],
+  initialCommentCount,
+  initialLikes,
   onNavigateHome,
   onNavigateArticles,
   onSelectArticle,
@@ -101,7 +111,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   }, []);
 
   // Real-time dynamic blog likes backed by Supabase PostgreSQL
-  const [likes, setLikes] = useState<number>(0);
+  const [likes, setLikes] = useState<number>(initialLikes ?? 0);
   const [hasLiked, setHasLiked] = useState<boolean>(false);
 
   useEffect(() => {
@@ -122,10 +132,36 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   }, [article.slug]);
 
   const [copied, setCopied] = useState(false);
+  const [readProgressPct, setReadProgressPct] = useState(0);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   // Filter dynamic related articles (excluding current article)
   const relatedArticles = articlesList.filter((a) => a.slug !== article.slug).slice(0, 3);
+
+  // Derive Table of Contents from structured sections
+  const sectionsList = useMemo(() => {
+    if (!article.sections || article.sections.length === 0) return [];
+    return article.sections.map((sec, idx) => ({
+      id: `section-${idx + 1}`,
+      rawHeading: sec.heading,
+      title: sec.heading.replace(/^\d+[\.\)]\s*/, '').trim(),
+    }));
+  }, [article.sections]);
+
+  // Scroll-Spy for Table of Contents
+  const [activeSection, setActiveSection] = useState<string>(
+    sectionsList.length > 0 ? sectionsList[0].id : ''
+  );
+
+  // Extract distinct categories and counts from all published articles
+  const categoriesMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    articlesList.forEach((a) => {
+      const cat = a.category || (a.tags && a.tags[0]) || 'Tech Insights';
+      map[cat] = (map[cat] || 0) + 1;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }, []);
 
   // Scroll immediately to top on mount before paint and whenever slug changes
   useEffect(() => {
@@ -134,7 +170,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
     document.body.scrollTop = 0;
   }, [slug]);
 
-  // High-performance GPU-accelerated scroll reading progress indicator
+  // High-performance GPU-accelerated scroll reading progress & TOC tracking
   useEffect(() => {
     let ticking = false;
 
@@ -142,9 +178,25 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
       const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
       const progress = totalHeight > 0 ? window.scrollY / totalHeight : 0;
       const clamped = Math.min(1, Math.max(0, progress));
+      setReadProgressPct(clamped * 100);
+
       if (progressBarRef.current) {
         progressBarRef.current.style.transform = `scaleX(${clamped})`;
       }
+
+      // Track active section for TOC scroll-spy
+      if (sectionsList.length > 0) {
+        const scrollPos = window.scrollY + 180;
+        let current = sectionsList[0].id;
+        for (const sec of sectionsList) {
+          const el = document.getElementById(sec.id);
+          if (el && el.offsetTop <= scrollPos) {
+            current = sec.id;
+          }
+        }
+        setActiveSection(current);
+      }
+
       ticking = false;
     };
 
@@ -163,7 +215,26 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [slug]);
+  }, [slug, sectionsList]);
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const navOffset = 110;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - navOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const handleCategoryClick = (categoryName: string) => {
+    router.push(`/insights?category=${encodeURIComponent(categoryName)}`);
+  };
 
   const handleLike = async () => {
     // Optimistic UI toggle
@@ -191,12 +262,18 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
   };
 
   const handleCopyLink = () => {
-    const urlToCopy = typeof window !== 'undefined' ? window.location.href : `https://heyprince.in/insights/${article.slug}/`;
+    const urlToCopy =
+      typeof window !== 'undefined'
+        ? window.location.href
+        : `https://heyprince.in/insights/${article.slug}/`;
     if (navigator?.clipboard) {
-      navigator.clipboard.writeText(urlToCopy).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }).catch(() => {});
+      navigator.clipboard
+        .writeText(urlToCopy)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(() => {});
     }
   };
 
@@ -321,6 +398,9 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
     return parts.length > 0 ? parts : text;
   };
 
+  const totalCommentCount =
+    initialCommentCount ?? (initialComments ? initialComments.length : 0);
+
   return (
     <article className="single-blog-page">
       {/* Top Reading Progress Bar */}
@@ -330,7 +410,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
         aria-hidden="true"
       />
 
-      <div className="container">
+      <div className="container blog-page-container">
         {/* Navigation & Breadcrumbs */}
         <div className="blog-header-nav">
           <button
@@ -364,7 +444,9 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               Insights
             </a>
             <span className="breadcrumb-sep">/</span>
-            <span className="breadcrumb-current" title={article.title}>{article.title}</span>
+            <span className="breadcrumb-current" title={article.title}>
+              {article.title}
+            </span>
           </nav>
         </div>
 
@@ -387,8 +469,8 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                   }
                 }}
                 style={{
-                  width: '20px',
-                  height: '20px',
+                  width: '22px',
+                  height: '22px',
                   borderRadius: '50%',
                   objectFit: 'cover',
                   display: 'inline-block',
@@ -424,111 +506,186 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
           />
         </div>
 
-        {/* Article Body Content */}
-        <div className="blog-content-layout">
-          <div className="blog-main-body">
+        {/* ===================================================================== */}
+        {/* 3-COLUMN RESPONSIVE LAYOUT GRID: Left TOC | Center Main | Right Author */}
+        {/* ===================================================================== */}
+        <div className="blog-layout-grid">
+          {/* 1. LEFT STICKY SIDEBAR: Table of Contents & Progress */}
+          <aside className="blog-sidebar-left" aria-label="Table of Contents">
+            <div className="sticky-rail-box">
+              {sectionsList.length > 0 && (
+                <div className="sidebar-widget toc-sidebar-widget">
+                  <div className="widget-header">
+                    <FaListUl className="widget-icon" />
+                    <h4 className="widget-title">Table of Contents</h4>
+                  </div>
+
+                  <nav className="toc-nav" aria-label="Article sections">
+                    <ul className="toc-list">
+                      {sectionsList.map((sec, idx) => (
+                        <li
+                          key={sec.id}
+                          className={`toc-item ${activeSection === sec.id ? 'active' : ''}`}
+                        >
+                          <a
+                            href={`#${sec.id}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              scrollToSection(sec.id);
+                            }}
+                            className="toc-link"
+                          >
+                            <span className="toc-step">{idx + 1}</span>
+                            <span className="toc-title">{sec.title}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+
+                  {/* Reading Progress Gauge */}
+                  <div className="toc-reading-progress">
+                    <div className="toc-progress-labels">
+                      <span>Reading Progress</span>
+                      <span className="toc-progress-pct">{Math.round(readProgressPct)}%</span>
+                    </div>
+                    <div className="toc-progress-bar-bg">
+                      <div
+                        className="toc-progress-bar-fill"
+                        style={{ width: `${Math.round(readProgressPct)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick Jump to Community Comments */}
+                  <a
+                    href="#discussion-section"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToSection('discussion-section');
+                    }}
+                    className="toc-discuss-jump-btn"
+                  >
+                    <FaRegComments size={14} />
+                    <span>Join Discussion</span>
+                    <span className="discuss-count-badge">{totalCommentCount}</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          </aside>
+
+          {/* 2. CENTER MAIN COLUMN: Article Content & Live Discussion */}
+          <main className="blog-main-content">
             {/* Intro Lead */}
-            <p
-              className="lead-paragraph"
-              style={{
-                fontSize: '20px',
-                lineHeight: 1.75,
-                color: '#e2e2e8',
-                marginBottom: '36px',
-                fontWeight: 400,
-              }}
-            >
+            <p className="lead-paragraph">
               {article.description}
             </p>
 
             {/* Dynamic Structured Sections */}
             {article.sections && article.sections.length > 0 ? (
-              article.sections.map((section, idx) => (
-                <section className="blog-section-block" key={idx}>
-                  <h2 className="blog-section-heading">{section.heading}</h2>
+              article.sections.map((section, idx) => {
+                const secId = `section-${idx + 1}`;
+                return (
+                  <section className="blog-section-block" id={secId} key={idx}>
+                    <h2 className="blog-section-heading">
+                      <a
+                        href={`#${secId}`}
+                        className="heading-anchor-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          scrollToSection(secId);
+                        }}
+                      >
+                        {section.heading}
+                      </a>
+                    </h2>
 
-                  {section.paragraphs &&
-                    section.paragraphs.map((p, pIdx) => {
-                      const trimmed = p.trim();
-                      const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)"\s]+)(?:\s+"([^"]*)")?\)$/);
-                      if (imgMatch) {
-                        const altText = imgMatch[1];
-                        const srcUrl = imgMatch[2];
-                        const captionText = imgMatch[3] || altText;
+                    {section.paragraphs &&
+                      section.paragraphs.map((p, pIdx) => {
+                        const trimmed = p.trim();
+                        const imgMatch = trimmed.match(
+                          /^!\[([^\]]*)\]\(([^)"\s]+)(?:\s+"([^"]*)")?\)$/
+                        );
+                        if (imgMatch) {
+                          const altText = imgMatch[1];
+                          const srcUrl = imgMatch[2];
+                          const captionText = imgMatch[3] || altText;
 
-                        // Defensive deduplication: if this image matches the top featured cover image, skip it
-                        if (
-                          article.image &&
-                          (srcUrl.trim().toLowerCase() === article.image.trim().toLowerCase() ||
-                            srcUrl.split('?')[0] === article.image.split('?')[0])
-                        ) {
-                          return null;
+                          // Defensive deduplication
+                          if (
+                            article.image &&
+                            (srcUrl.trim().toLowerCase() === article.image.trim().toLowerCase() ||
+                              srcUrl.split('?')[0] === article.image.split('?')[0])
+                          ) {
+                            return null;
+                          }
+
+                          return (
+                            <figure className="blog-content-image-wrap" key={pIdx}>
+                              <img
+                                src={srcUrl}
+                                alt={altText || article.title}
+                                className="blog-content-image"
+                                loading="lazy"
+                                decoding="async"
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                              {captionText && (
+                                <figcaption className="blog-content-image-caption">
+                                  <span>✦</span> {captionText}
+                                </figcaption>
+                              )}
+                            </figure>
+                          );
                         }
 
                         return (
-                          <figure className="blog-content-image-wrap" key={pIdx}>
-                            <img
-                              src={srcUrl}
-                              alt={altText || article.title}
-                              className="blog-content-image"
-                              loading="lazy"
-                              decoding="async"
-                              onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.style.display = 'none';
-                              }}
-                            />
-                            {captionText && (
-                              <figcaption className="blog-content-image-caption">
-                                <span>✦</span> {captionText}
-                              </figcaption>
-                            )}
-                          </figure>
+                          <p className="blog-paragraph" key={pIdx}>
+                            {renderFormattedText(p)}
+                          </p>
                         );
-                      }
+                      })}
 
-                      return (
-                        <p className="blog-paragraph" key={pIdx}>
-                          {renderFormattedText(p)}
-                        </p>
-                      );
-                    })}
+                    {/* Bullet Highlights */}
+                    {section.bulletPoints && section.bulletPoints.length > 0 && (
+                      <ul className="blog-key-points-list">
+                        {section.bulletPoints.map((pt, ptIdx) => (
+                          <li key={ptIdx}>
+                            <span className="point-bullet">
+                              <FaCheck />
+                            </span>
+                            <span className="point-text">{renderFormattedText(pt)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
-                  {/* Bullet Highlights */}
-                  {section.bulletPoints && section.bulletPoints.length > 0 && (
-                    <ul className="blog-key-points-list">
-                      {section.bulletPoints.map((pt, ptIdx) => (
-                        <li key={ptIdx}>
-                          <span className="point-bullet">
-                            <FaCheck />
-                          </span>
-                          <span className="point-text">{renderFormattedText(pt)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                    {/* Pull Quote */}
+                    {section.quote && (
+                      <blockquote className="blog-pullquote">
+                        &ldquo;{section.quote}&rdquo;
+                      </blockquote>
+                    )}
 
-                  {/* Pull Quote */}
-                  {section.quote && (
-                    <blockquote className="blog-pullquote">
-                      &ldquo;{section.quote}&rdquo;
-                    </blockquote>
-                  )}
-
-                  {/* Pro Tip Callout Box */}
-                  {section.proTip && (
-                    <aside className="blog-pro-tip">
-                      <div className="tip-icon">
-                        <FaLightbulb />
-                      </div>
-                      <div className="tip-content">
-                        <strong>PRO TIP: </strong>
-                        {renderFormattedText(section.proTip)}
-                      </div>
-                    </aside>
-                  )}
-                </section>
-              ))
+                    {/* Pro Tip Callout Box */}
+                    {section.proTip && (
+                      <aside className="blog-pro-tip">
+                        <div className="tip-icon">
+                          <FaLightbulb />
+                        </div>
+                        <div className="tip-content">
+                          <strong>PRO TIP: </strong>
+                          {renderFormattedText(section.proTip)}
+                        </div>
+                      </aside>
+                    )}
+                  </section>
+                );
+              })
             ) : (
               <section className="blog-section-block">
                 <h2 className="blog-section-heading">Architectural Overview</h2>
@@ -632,39 +789,154 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               </div>
             </footer>
 
-            {/* Dynamic Author Bio Box */}
-            <aside className="author-bio-card">
-              <img
-                src={authorAvatar}
-                alt={`${authorName} - ${authorRole}`}
-                className="author-avatar"
-                loading="lazy"
-                decoding="async"
-                width="96"
-                height="96"
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  if (target.src !== DEFAULT_AUTHOR_AVATAR) {
-                    target.src = DEFAULT_AUTHOR_AVATAR;
-                  }
-                }}
-              />
-              <div className="author-info">
-                <h4>{authorName}</h4>
-                <p className="author-title">
-                  {authorRole}
-                </p>
-                <p className="author-bio">
+            {/* Live Discussion & Threaded Community Replies Component */}
+            <DiscussionSection
+              slug={article.slug}
+              postTitle={article.title}
+              initialComments={initialComments}
+              initialCount={initialCommentCount}
+            />
+          </main>
+
+          {/* 3. RIGHT STICKY SIDEBAR: Relocated Author Details + Categories */}
+          <aside className="blog-sidebar-right" aria-label="Author and Categories">
+            <div className="sticky-rail-box">
+              {/* Relocated & Redesigned Author Component */}
+              <div className="sidebar-widget author-sidebar-widget">
+                <div className="author-sidebar-header">
+                  <div className="author-avatar-container">
+                    <img
+                      src={authorAvatar}
+                      alt={`${authorName} - ${authorRole}`}
+                      className="author-sidebar-avatar"
+                      loading="lazy"
+                      decoding="async"
+                      width="76"
+                      height="76"
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (target.src !== DEFAULT_AUTHOR_AVATAR) {
+                          target.src = DEFAULT_AUTHOR_AVATAR;
+                        }
+                      }}
+                    />
+                    <span className="author-online-indicator" title="Available for advisory" />
+                  </div>
+                  <div className="author-identity">
+                    <div className="author-name-row">
+                      <h4 className="author-sidebar-name">{authorName}</h4>
+                      <FaCircleCheck className="author-verified-icon" title="Verified Tech Partner" />
+                    </div>
+                    <p className="author-sidebar-role">{authorRole}</p>
+                    <span className="author-badge-pill">✦ Verified Tech Partner</span>
+                  </div>
+                </div>
+
+                <p className="author-sidebar-bio">
                   I design and engineer lightning-fast digital products with clean code, modern UX, and
                   robust architectures. Dedicated to building scalable web applications and sharing practical
                   engineering discoveries.
                 </p>
-              </div>
-            </aside>
 
-            {/* Live Discussion & Threaded Community Replies Component */}
-            <DiscussionSection slug={article.slug} postTitle={article.title} />
-          </div>
+                <a
+                  href="/contact"
+                  className="author-sidebar-cta"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleContact();
+                  }}
+                >
+                  <span>Work With Prince</span>
+                  <FaArrowRight size={13} />
+                </a>
+
+                {/* Quick Author Social Connections */}
+                <div className="author-sidebar-socials">
+                  <a
+                    href="https://www.linkedin.com/in/heyprincein/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="author-social-link"
+                    title="Connect on LinkedIn"
+                    aria-label="LinkedIn"
+                  >
+                    <FaLinkedinIn size={13} />
+                  </a>
+                  <a
+                    href="https://www.instagram.com/heyprince.in/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="author-social-link"
+                    title="Follow on Instagram"
+                    aria-label="Instagram"
+                  >
+                    <FaInstagram size={13} />
+                  </a>
+                  <a
+                    href="https://wa.me/919999999999"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="author-social-link"
+                    title="Chat on WhatsApp"
+                    aria-label="WhatsApp"
+                  >
+                    <FaWhatsapp size={13} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Categories Widget */}
+              <div className="sidebar-widget categories-sidebar-widget">
+                <div className="widget-header">
+                  <FaFolderOpen className="widget-icon" />
+                  <h4 className="widget-title">Explore Categories</h4>
+                </div>
+                <p className="widget-subtitle">Discover curated engineering topics & architectural insights</p>
+                <div className="categories-list">
+                  {categoriesMap.map(([catName, count]) => {
+                    const isSelected = article.category === catName;
+                    return (
+                      <button
+                        key={catName}
+                        type="button"
+                        className={`category-item-btn ${isSelected ? 'active' : ''}`}
+                        onClick={() => handleCategoryClick(catName)}
+                      >
+                        <span className="cat-name">{catName}</span>
+                        <span className="cat-count">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Article Quick Facts Widget */}
+              <div className="sidebar-widget stats-sidebar-widget">
+                <div className="widget-header">
+                  <FaRocket className="widget-icon" />
+                  <h4 className="widget-title">Article Snapshot</h4>
+                </div>
+                <div className="stats-list">
+                  <div className="stat-row">
+                    <span className="stat-label">Read Time</span>
+                    <span className="stat-val">{article.readMins || '5 min'}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Published</span>
+                    <span className="stat-val">{article.date || '2026 Edition'}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Community Likes</span>
+                    <span className="stat-val">{likes}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Discussion</span>
+                    <span className="stat-val">{totalCommentCount} comments</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
 
         {/* Dynamic Related Posts Section */}

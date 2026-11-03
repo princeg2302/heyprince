@@ -3,6 +3,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { getPostBySlug, getPosts } from '@/lib/cms';
 import { SingleBlogPage } from '@/components';
+import { getCommentsTree, getBlogLikes, CommentNode } from '@/lib/discussions/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -71,11 +72,20 @@ export default async function InsightRoute({ params }: InsightPageProps) {
     notFound();
   }
 
+  // Fetch SSR discussions & likes so comments are 100% Google crawlable & indexed in initial HTML
+  const [commentsData, likesData] = await Promise.all([
+    getCommentsTree(slug).catch((err) => {
+      console.warn('Failed to load SSR comments for slug:', slug, err);
+      return { count: 0, comments: [] as CommentNode[] };
+    }),
+    getBlogLikes(slug).catch(() => ({ count: 0, hasLiked: false })),
+  ]);
+
   const absoluteImage = post.image.startsWith('http')
     ? post.image
     : `https://heyprince.in${post.image.startsWith('/') ? '' : '/'}${post.image}`;
 
-  const blogSchema = {
+  const blogSchema: Record<string, any> = {
     '@type': 'BlogPosting',
     '@id': `https://heyprince.in/insights/${post.slug}/#article`,
     headline: post.title,
@@ -104,6 +114,30 @@ export default async function InsightRoute({ params }: InsightPageProps) {
       '@type': 'WebPage',
       '@id': `https://heyprince.in/insights/${post.slug}/`,
     },
+    commentCount: commentsData.count,
+    comment: commentsData.comments.slice(0, 30).map((c) => ({
+      '@type': 'Comment',
+      text: c.content,
+      dateCreated: c.createdAt,
+      author: {
+        '@type': 'Person',
+        name: c.authorName,
+        image: c.authorAvatar,
+      },
+      upvoteCount: c.likesCount,
+    })),
+    interactionStatistic: [
+      {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/LikeAction',
+        userInteractionCount: likesData.count,
+      },
+      {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/CommentAction',
+        userInteractionCount: commentsData.count,
+      },
+    ],
   };
 
   const breadcrumbSchema = {
@@ -141,7 +175,13 @@ export default async function InsightRoute({ params }: InsightPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaGraph) }}
       />
-      <SingleBlogPage slug={post.slug} post={post} />
+      <SingleBlogPage
+        slug={post.slug}
+        post={post}
+        initialComments={commentsData.comments}
+        initialCommentCount={commentsData.count}
+        initialLikes={likesData.count}
+      />
     </div>
   );
 }
