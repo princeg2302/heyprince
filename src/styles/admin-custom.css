@@ -508,7 +508,8 @@ code, pre, kbd, samp, .hpa-code {
   border-radius: var(--hpa-radius-sm);
 }
 
-.hpa-btn-icon {
+.hpa-btn-icon,
+.hpa-table-action-btn {
   width: 32px;
   height: 32px;
   padding: 0;
@@ -516,6 +517,37 @@ code, pre, kbd, samp, .hpa-code {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--hpa-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.hpa-btn-icon:hover,
+.hpa-table-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--hpa-border-hover);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.hpa-btn-icon.danger,
+.hpa-table-action-btn.danger {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.25);
+  color: var(--hpa-danger);
+}
+
+.hpa-btn-icon.danger:hover,
+.hpa-table-action-btn.danger:hover {
+  background: var(--hpa-danger);
+  border-color: var(--hpa-danger);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+  transform: translateY(-1px);
 }
 
 /* KPI Cards */
@@ -598,6 +630,26 @@ code, pre, kbd, samp, .hpa-code {
   border-radius: var(--hpa-radius-lg);
   overflow: hidden;
   margin-bottom: 24px;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Responsive Post View Grid */
+.hpa-post-view-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+  .hpa-post-view-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .hpa-card-header {

@@ -414,11 +414,6 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             onClick={() => setPublishingPost(post)}
                             className="hpa-table-action-btn"
                             title="Publish / Share to LinkedIn"
-                            style={{
-                              color: '#0a66c2',
-                              background: 'rgba(10, 102, 194, 0.1)',
-                              borderColor: 'rgba(10, 102, 194, 0.25)',
-                            }}
                           >
                             <Share2 size={14} />
                           </button>

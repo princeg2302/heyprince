@@ -86,8 +86,8 @@ EDITORIAL PRINCIPLES & VOICE:
    - Do NOT invent personal claims or pretend you tested something in a lab if you didn't.
    - Do NOT fabricate benchmark numbers or quotes not present in the reported facts.
    - Do NOT copy verbatim paragraphs from the sources. Paraphrase accurately and provide original analysis.
-5. Dual Output:
-   - Format A (Website Article): Typically 400-650 words (never padded). Well-structured sections with headings, concise paragraphs, actionable takeaways, and a "Sources and Further Reading" section.
+5. Dual Output & SEO Minimum Word Rule:
+   - Format A (Website Article): Strictly adhere to the Google SEO minimum word rule for authoritative technical publications: MINIMUM 1,200 to 1,800+ words. Never generate thin content (<1,000 words). Structure into 5-6 comprehensive sections with detailed technical breakdowns, architectural trade-offs, actionable bullet points, pro-tips, and verified sources.
    - Format B (LinkedIn Post): 140-230 words. Engaging opening hook, the core development, why it matters, an engineer's takeaway, a link placeholder "{{ARTICLE_URL}}", and 3-4 tasteful hashtags.
 
 You MUST respond strictly with valid JSON conforming to the schema.`;
@@ -110,7 +110,8 @@ ${candidatesSummary}
 
 TASK:
 1. Identify the single most significant and impactful development among these stories (or a synthesis of closely related developments).
-2. Generate an original, humanized engineering article for the website AND a separate high-engagement LinkedIn post.
+2. Generate an in-depth, authoritative, humanized engineering article for the website meeting the SEO minimum word count rule (1,200 to 1,800+ words) across 5 to 6 structured sections.
+3. Generate a separate high-engagement LinkedIn post.
 
 Respond ONLY with JSON matching this structure:
 {
@@ -121,19 +122,57 @@ Respond ONLY with JSON matching this structure:
   "tags": ["3 to 5 relevant technical tags"],
   "sections": [
     {
-      "heading": "string (Section 1: The Core Development)",
-      "paragraphs": ["string (2-3 informative paragraphs explaining what happened)"],
+      "heading": "string (Section 1: The Core Development & Architectural Context)",
+      "paragraphs": [
+        "string (Paragraph 1: Detailed background, what shifted in the industry, and the core news)",
+        "string (Paragraph 2: Contextual technical analysis and historical precursor)",
+        "string (Paragraph 3: Key technical entities, systems, or architectures involved)",
+        "string (Paragraph 4: Initial scope of impact across software organizations)"
+      ],
       "quote": "string or null",
       "proTip": "string or null"
     },
     {
-      "heading": "string (Section 2: Why This Matters to Engineers & Tech Teams)",
-      "paragraphs": ["string (2-3 paragraphs analyzing architecture, performance, or business impact)"],
-      "bulletPoints": ["3 to 4 concise bullet points summarizing practical takeaways"]
+      "heading": "string (Section 2: Deep Dive: Technical Mechanics & System Vulnerabilities)",
+      "paragraphs": [
+        "string (Paragraph 1: In-depth technical breakdown of how this functions under the hood)",
+        "string (Paragraph 2: Architectural failure modes, systemic bottlenecks, or trade-offs)",
+        "string (Paragraph 3: Comparative analysis between legacy vs modern approaches)",
+        "string (Paragraph 4: Practical system telemetry, edge cases, and runtime realities)"
+      ],
+      "proTip": "string or null"
     },
     {
-      "heading": "string (Section 3: What to Watch Next)",
-      "paragraphs": ["string (1-2 forward-looking paragraphs on what tech teams should prepare for)"]
+      "heading": "string (Section 3: Production Impact & Engineering Realities)",
+      "paragraphs": [
+        "string (Paragraph 1: Immediate fallout and operational challenges tech teams face)",
+        "string (Paragraph 2: Infrastructure cost, cloud spend, and resource allocation impact)",
+        "string (Paragraph 3: Security, governance, or compliance implications in production)"
+      ],
+      "bulletPoints": [
+        "string (Actionable technical insight #1)",
+        "string (Actionable technical insight #2)",
+        "string (Actionable technical insight #3)",
+        "string (Actionable technical insight #4)",
+        "string (Actionable technical insight #5)"
+      ]
+    },
+    {
+      "heading": "string (Section 4: Implementation Blueprint & Engineering Strategies)",
+      "paragraphs": [
+        "string (Paragraph 1: Concrete, step-by-step mitigation and implementation roadmap)",
+        "string (Paragraph 2: Architecture best practices, CI/CD validation loops, and tooling)",
+        "string (Paragraph 3: Concrete code patterns, observability strategies, and safeguards)"
+      ],
+      "quote": "string or null",
+      "proTip": "string (Actionable, high-value pro-tip for senior engineers and architects)"
+    },
+    {
+      "heading": "string (Section 5: Strategic Industry Outlook & The Path Forward)",
+      "paragraphs": [
+        "string (Paragraph 1: 12-24 month industry trajectory and where the ecosystem is heading)",
+        "string (Paragraph 2: Final strategic verdict on how tech leaders should position their stacks)"
+      ]
     },
     {
       "heading": "Sources & Further Reading",
@@ -232,8 +271,8 @@ EDITORIAL PRINCIPLES & VOICE:
    - If the thoughts relate to technical architecture, system design, or engineering practices: provide hands-on depth, trade-off analysis, and concrete architectural patterns.
    - If the thoughts relate to culture, philosophy, or events: weave those themes seamlessly with software engineering realities, technical craftsmanship, and human leadership.
    - If the thoughts relate to engineering culture, team dynamics, or career growth: offer actionable frameworks, practical lessons, and clear takeaways.
-4. Dual Output:
-   - Format A (Website Article): Around 450-700 words. Well-structured sections with headings, concise paragraphs, actionable takeaways, and memorable quotes or pro-tips.
+4. Dual Output & SEO Minimum Word Rule:
+   - Format A (Website Article): Strictly adhere to the Google SEO minimum word rule for high-ranking technical guides: MINIMUM 1,200 to 1,800+ words. Structure into 4-5 deep, comprehensive sections with detailed technical breakdowns, architectural patterns, actionable bullet points, pro-tips, and concrete implementation advice.
    - Format B (LinkedIn Post): 140-230 words. Engaging opening hook, key insights, practical engineer's takeaway, {{ARTICLE_URL}} placeholder, and 4-5 relevant hashtags (e.g. #SoftwareEngineering #Architecture #TechLeadership #HeyPrince).
 
 You MUST respond strictly with valid JSON conforming to the schema.`;
@@ -242,7 +281,7 @@ You MUST respond strictly with valid JSON conforming to the schema.`;
 "${customPrompt.trim()}"
 
 TASK:
-1. Transform and expand the admin's thoughts into an original, engaging, high-value article for the website. Deep-dive into the subject matter with structured sections and clear takeaways.
+1. Transform and expand the admin's thoughts into an in-depth, authoritative, high-value technical article for the website meeting the SEO minimum word count rule (1,200 to 1,800+ words) across 4 to 5 structured sections.
 2. Generate a separate high-engagement LinkedIn post tailored for tech professionals.
 
 Respond ONLY with JSON matching this structure:
@@ -254,19 +293,46 @@ Respond ONLY with JSON matching this structure:
   "tags": ["3 to 5 relevant technical or conceptual tags"],
   "sections": [
     {
-      "heading": "string (Section 1: The Core Thesis / Foundation)",
-      "paragraphs": ["string (2-3 paragraphs)"],
+      "heading": "string (Section 1: The Core Thesis & Foundations)",
+      "paragraphs": [
+        "string (Paragraph 1: Background, motivation, and industry context)",
+        "string (Paragraph 2: Detailed explanation of the underlying problem)",
+        "string (Paragraph 3: Key concepts and foundational principles)"
+      ],
       "quote": "string or null",
       "proTip": "string or null"
     },
     {
-      "heading": "string (Section 2: Deep Dive, Trade-offs & Practical Realities)",
-      "paragraphs": ["string (2-3 paragraphs)"],
-      "bulletPoints": ["3 to 5 actionable bullet points"]
+      "heading": "string (Section 2: Deep Dive: Architectural Mechanics & Trade-offs)",
+      "paragraphs": [
+        "string (Paragraph 1: In-depth technical breakdown and design patterns)",
+        "string (Paragraph 2: Critical trade-offs, pitfalls, and failure modes)",
+        "string (Paragraph 3: Practical edge cases and scalability considerations)"
+      ],
+      "proTip": "string or null"
     },
     {
-      "heading": "string (Section 3: Key Takeaways & The Path Forward)",
-      "paragraphs": ["string (1-2 forward-looking paragraphs)"]
+      "heading": "string (Section 3: Practical Implementation & Production Lessons)",
+      "paragraphs": [
+        "string (Paragraph 1: Concrete implementation framework and steps)",
+        "string (Paragraph 2: Developer workflow and operational safeguards)"
+      ],
+      "bulletPoints": [
+        "string (Actionable takeaway #1)",
+        "string (Actionable takeaway #2)",
+        "string (Actionable takeaway #3)",
+        "string (Actionable takeaway #4)",
+        "string (Actionable takeaway #5)"
+      ]
+    },
+    {
+      "heading": "string (Section 4: Strategic Outlook & The Path Forward)",
+      "paragraphs": [
+        "string (Paragraph 1: Long-term implications for engineering teams)",
+        "string (Paragraph 2: Final actionable summary for technical leaders)"
+      ],
+      "quote": "string or null",
+      "proTip": "string or null"
     }
   ],
   "sourcesUsed": [],

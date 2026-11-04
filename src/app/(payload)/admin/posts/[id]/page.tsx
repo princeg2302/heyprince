@@ -89,9 +89,9 @@ export default async function ViewPostPage({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
+      <div className="hpa-post-view-grid">
         {/* Main Content Preview */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
           {/* Cover & Excerpt Card */}
           <div className="hpa-card" style={{ padding: '24px' }}>
             {post.cover_image && (
@@ -100,7 +100,8 @@ export default async function ViewPostPage({
                 alt={post.title}
                 style={{
                   width: '100%',
-                  maxHeight: '380px',
+                  maxHeight: '420px',
+                  aspectRatio: '16 / 9',
                   objectFit: 'cover',
                   borderRadius: '10px',
                   marginBottom: '20px',

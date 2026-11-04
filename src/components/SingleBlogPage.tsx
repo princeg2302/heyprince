@@ -532,7 +532,8 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
             fetchPriority="high"
             decoding="async"
             width="1200"
-            height="630"
+            height="675"
+            style={{ objectFit: 'cover', width: '100%', height: '100%', aspectRatio: '16 / 9' }}
           />
         </div>
 
@@ -659,6 +660,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                                 className="blog-content-image"
                                 loading="lazy"
                                 decoding="async"
+                                style={{ objectFit: 'cover', width: '100%', height: '100%', aspectRatio: '16 / 9' }}
                                 onError={(e) => {
                                   const target = e.currentTarget as HTMLImageElement;
                                   target.style.display = 'none';

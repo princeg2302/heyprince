@@ -50,10 +50,15 @@ const CURATED_TECH_PHOTO_POOL: Record<string, string[]> = {
     'photo-1682687220063-4742bd7fd538',
     'photo-1634017839464-5c339ebe3cb4',
     'photo-1618172193763-c511deb635ca',
-    'photo-1618005182384-a83a8bd57fbe',
     'photo-1639762681485-074b7f938ba0',
     'photo-1644088379091-d574269d422f',
     'photo-1673187733470-a39396781298',
+    'photo-1534972195531-a756b112697c',
+    'photo-1507146426996-ef05306b995a',
+    'photo-1531746790731-6c087fecd65a',
+    'photo-1614741118887-7a4ee193a5fa',
+    'photo-1617791160505-6f008e1e07dc',
+    'photo-1527474305487-b87b222841cc',
   ],
   cloud: [
     'photo-1451187580459-43490279c0fa',
@@ -66,6 +71,11 @@ const CURATED_TECH_PHOTO_POOL: Record<string, string[]> = {
     'photo-1518770660439-4636190af475',
     'photo-1542751371-adc38448a05e',
     'photo-1510511459019-5dda7724fd87',
+    'photo-1520869562399-e772f042f422',
+    'photo-1590494165264-1ebe3602eb80',
+    'photo-1600132806370-bf17e65e942f',
+    'photo-1544652478-6653e09f18a2',
+    'photo-1484417895558-257a44742751',
   ],
   security: [
     'photo-1563986768609-322da13575f3',
@@ -78,6 +88,8 @@ const CURATED_TECH_PHOTO_POOL: Record<string, string[]> = {
     'photo-1508739773434-c26b3d09e071',
     'photo-1517048676732-d65bc937f952',
     'photo-1607799279861-4dd421887fb3',
+    'photo-1533750349088-cd871a92f312',
+    'photo-1563206767-5b18f218e8de',
   ],
   code: [
     'photo-1555066931-4365d14bab8c',
@@ -90,6 +102,8 @@ const CURATED_TECH_PHOTO_POOL: Record<string, string[]> = {
     'photo-1571171637578-41bc2dd41cd2',
     'photo-1587620962725-abab7fe55159',
     'photo-1516321318423-f06f85e504b3',
+    'photo-1488590528505-98d2b5aba04b',
+    'photo-1504384308090-c894fdcc538d',
   ],
   hardware: [
     'photo-1518770660439-4636190af475',
@@ -99,6 +113,7 @@ const CURATED_TECH_PHOTO_POOL: Record<string, string[]> = {
     'photo-1581091226825-a6a2a5aee158',
     'photo-1531403009284-440f080d1e12',
     'photo-1519389950473-47ba0277781c',
+    'photo-1588508065123-287b28e013da',
   ],
   general: [
     'photo-1518770660439-4636190af475',
@@ -108,6 +123,8 @@ const CURATED_TECH_PHOTO_POOL: Record<string, string[]> = {
     'photo-1451187580459-43490279c0fa',
     'photo-1526374965328-7f61d4dc18c5',
     'photo-1531482615713-2afd69097998',
+    'photo-1504384764586-bb4cdc1707b0',
+    'photo-1516321318423-f06f85e504b3',
   ],
 };
 
@@ -151,6 +168,10 @@ async function getUnusedCuratedFallback(category: string): Promise<string | null
       // Pick randomly from the remaining untouched candidates
       const chosenPhotoId = unusedCandidates[Math.floor(Math.random() * unusedCandidates.length)];
       return `https://images.unsplash.com/${chosenPhotoId}?auto=format&fit=crop&w=1200&h=675&q=85`;
+    } else if (pool.length > 0) {
+      // When all initial pool candidates have appeared once, pick least recent with unique signature
+      const fallbackPhotoId = pool[Math.floor(Math.random() * pool.length)];
+      return `https://images.unsplash.com/${fallbackPhotoId}?auto=format&fit=crop&w=1200&h=675&q=85&sig=${Date.now()}`;
     }
   } catch (err) {
     console.warn('[getUnusedCuratedFallback] Query warning:', err);
@@ -175,149 +196,92 @@ export function generateDynamicEditorialSvg(params: {
   heading?: string;
 }): { svg: string; buffer: Buffer } {
   const { title, category, role, heading } = params;
-  const hashSeed = crypto.createHash('md5').update(`${title}-${role}-${Date.now()}`).digest('hex');
-  const shortHash = hashSeed.slice(0, 8).toUpperCase();
+  const hashSeed = crypto.createHash('sha256').update(`${title}-${role}-${heading || ''}-${Date.now()}`).digest('hex');
+  const cat = (category || 'ai').toLowerCase();
 
   // Color schemes based on category
-  const cat = category.toLowerCase();
-  let accent1 = '#38bdf8'; // Sky blue
-  let accent2 = '#818cf8'; // Indigo
-  let accentGlow = '#0284c7';
-  if (cat.includes('ai') || cat.includes('intelligence')) {
-    accent1 = '#a855f7'; // Purple
-    accent2 = '#ec4899'; // Pink
-    accentGlow = '#9333ea';
-  } else if (cat.includes('security') || cat.includes('governance')) {
-    accent1 = '#10b981'; // Emerald
-    accent2 = '#06b6d4'; // Cyan
-    accentGlow = '#059669';
-  } else if (cat.includes('cloud') || cat.includes('infra')) {
-    accent1 = '#f59e0b'; // Amber
-    accent2 = '#f43f5e'; // Rose
-    accentGlow = '#d97706';
+  let c1 = '#8b5cf6', c2 = '#ec4899', glow = 'rgba(139, 92, 246, 0.35)'; // AI: Purple -> Pink
+  if (cat.includes('sec') || cat.includes('cyber') || cat.includes('auth')) {
+    c1 = '#10b981'; c2 = '#06b6d4'; glow = 'rgba(16, 185, 129, 0.35)'; // Cyber: Emerald -> Cyan
+  } else if (cat.includes('cloud') || cat.includes('infra') || cat.includes('arch')) {
+    c1 = '#38bdf8'; c2 = '#6366f1'; glow = 'rgba(56, 189, 248, 0.35)'; // Cloud: Sky -> Indigo
+  } else if (cat.includes('code') || cat.includes('web') || cat.includes('dev')) {
+    c1 = '#f59e0b'; c2 = '#ef4444'; glow = 'rgba(245, 158, 11, 0.35)'; // Dev: Amber -> Rose
   }
 
-  // Split title into 2-3 readable lines
-  const words = (heading || title).split(/\s+/);
-  const lines: string[] = [];
-  let currentLine = '';
-  for (const word of words) {
-    if ((currentLine + ' ' + word).trim().length > 38 && currentLine.length > 0) {
-      lines.push(currentLine.trim());
-      currentLine = word;
-    } else {
-      currentLine = (currentLine + ' ' + word).trim();
-    }
-  }
-  if (currentLine) lines.push(currentLine.trim());
-  const displayLines = lines.slice(0, 3);
-
-  // Generate 8-12 deterministic procedural circuit node coordinates
-  const nodes: { x: number; y: number; r: number }[] = [];
-  for (let i = 0; i < 10; i++) {
-    const charCode = hashSeed.charCodeAt(i % hashSeed.length);
-    const x = 700 + ((charCode * 47 + i * 39) % 440);
-    const y = 140 + ((charCode * 29 + i * 53) % 400);
-    const r = 3 + (charCode % 4);
-    nodes.push({ x, y, r });
+  // Generate dynamic isometric architectural nodes based on hash
+  const seedNum = parseInt(hashSeed.slice(0, 8), 16);
+  const cubeCount = 6 + (seedNum % 5);
+  const cubes: { cx: number; cy: number; size: number; opacity: number }[] = [];
+  for (let i = 0; i < cubeCount; i++) {
+    const cx = 320 + ((seedNum * (i + 1) * 37) % 560);
+    const cy = 180 + ((seedNum * (i + 1) * 59) % 320);
+    const size = 36 + ((seedNum * (i + 1)) % 36);
+    cubes.push({ cx, cy, size, opacity: 0.75 + (i % 3) * 0.1 });
   }
 
-  // SVG lines connecting adjacent nodes
-  const paths = nodes.slice(0, nodes.length - 1).map((n, i) => {
-    const next = nodes[i + 1];
-    return `<line x1="${n.x}" y1="${n.y}" x2="${next.x}" y2="${next.y}" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" stroke-dasharray="4,4" />`;
-  }).join('\n    ');
+  const lines = [120, 240, 360, 480, 600, 720, 840, 960, 1080]
+    .map((x) => `<line x1="${x}" y1="0" x2="${x}" y2="675"/>`)
+    .join('');
+  const hLines = [100, 200, 300, 400, 500, 600]
+    .map((y) => `<line x1="0" y1="${y}" x2="1200" y2="${y}"/>`)
+    .join('');
 
-  const nodeElements = nodes.map((n, i) => {
-    const isSpecial = i % 3 === 0;
-    const fill = isSpecial ? accent1 : '#94a3b8';
-    return `<circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="${fill}" />
-    <circle cx="${n.x}" cy="${n.y}" r="${n.r * 2.5}" fill="none" stroke="${fill}" stroke-opacity="0.3" stroke-width="1" />`;
-  }).join('\n    ');
+  const connectors = cubes
+    .slice(0, cubes.length - 1)
+    .map((c, i) => `<line x1="${c.cx}" y1="${c.cy}" x2="${cubes[i + 1].cx}" y2="${cubes[i + 1].cy}"/>`)
+    .join('');
 
-  const titleSvgText = displayLines.map((line, idx) => {
-    const cleanLine = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const yPos = 310 + idx * 46;
-    return `<text x="80" y="${yPos}" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="800" letter-spacing="-0.5">${cleanLine}</text>`;
-  }).join('\n    ');
-
-  const roleLabel = role === 'cover' ? 'FEATURE COVERTITLE' : role === 'section1' ? 'ARCHITECTURAL SCHEMATIC' : 'ENGINEERING IMPACT ANALYSIS';
+  const nodeElements = cubes
+    .map(
+      (c, i) => `
+    <g transform="translate(${c.cx}, ${c.cy})" opacity="${c.opacity}">
+      <polygon points="0,${-c.size / 2} ${c.size},0 0,${c.size / 2} ${-c.size},0" fill="${i % 2 === 0 ? 'url(#grad1)' : 'rgba(255,255,255,0.08)'}" stroke="rgba(255,255,255,0.25)" stroke-width="1.2"/>
+      <polygon points="0,${c.size / 2} ${c.size},0 ${c.size},${c.size} 0,${c.size * 1.5}" fill="rgba(0,0,0,0.4)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+      <polygon points="0,${c.size / 2} ${-c.size},0 ${-c.size},${c.size} 0,${c.size * 1.5}" fill="rgba(0,0,0,0.6)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    </g>`
+    )
+    .join('');
 
   const svg = `<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#07080d" />
-      <stop offset="60%" stop-color="#0d0f18" />
-      <stop offset="100%" stop-color="#121624" />
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07080e"/>
+      <stop offset="50%" stop-color="#0b0e17"/>
+      <stop offset="100%" stop-color="#111625"/>
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="${accent1}" />
-      <stop offset="100%" stop-color="${accent2}" />
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${c1}"/>
+      <stop offset="100%" stop-color="${c2}"/>
     </linearGradient>
-    <radialGradient id="radialGlow" cx="80%" cy="30%" r="50%">
-      <stop offset="0%" stop-color="${accentGlow}" stop-opacity="0.25" />
-      <stop offset="100%" stop-color="#07080d" stop-opacity="0" />
+    <radialGradient id="glow" cx="60%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="${glow}"/>
+      <stop offset="100%" stop-color="transparent"/>
     </radialGradient>
   </defs>
 
-  <!-- Deep Obsidian Background -->
-  <rect width="1200" height="675" fill="url(#bgGrad)" />
-  <rect width="1200" height="675" fill="url(#radialGlow)" />
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
 
-  <!-- Subtle Perspective Grid -->
-  <g stroke="rgba(255, 255, 255, 0.03)" stroke-width="1">
-    <line x1="0" y1="135" x2="1200" y2="135" />
-    <line x1="0" y1="270" x2="1200" y2="270" />
-    <line x1="0" y1="405" x2="1200" y2="405" />
-    <line x1="0" y1="540" x2="1200" y2="540" />
-    <line x1="240" y1="0" x2="240" y2="675" />
-    <line x1="480" y1="0" x2="480" y2="675" />
-    <line x1="720" y1="0" x2="720" y2="675" />
-    <line x1="960" y1="0" x2="960" y2="675" />
+  <!-- Blueprint Vector Grid -->
+  <g stroke="rgba(255,255,255,0.035)" stroke-width="1">
+    ${lines}
+    ${hLines}
   </g>
 
-  <!-- Procedural Cybernetic Network on Right Panel -->
-  <g id="circuit-layer">
-    ${paths}
-    ${nodeElements}
+  <!-- Flow Lines -->
+  <g stroke="url(#grad1)" stroke-width="1.8" stroke-dasharray="6 4" opacity="0.55">
+    ${connectors}
   </g>
 
-  <!-- Left Content Container -->
-  <!-- Top Badge: Category & Verification -->
-  <rect x="80" y="80" width="280" height="34" rx="17" fill="rgba(255, 255, 255, 0.05)" stroke="url(#accentGrad)" stroke-width="1.2" />
-  <circle cx="102" cy="97" r="5" fill="${accent1}" />
-  <text x="120" y="103" fill="#e2e8f0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" letter-spacing="1">
-    ${category.toUpperCase().slice(0, 26)} // VERIFIED
-  </text>
+  <!-- Architectural Nodes -->
+  ${nodeElements}
 
-  <!-- Sub-Badge / Edition -->
-  <text x="80" y="240" fill="${accent1}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" letter-spacing="2">
-    HEYPRINCE DAILY INTELLIGENCE • ${roleLabel}
-  </text>
-
-  <!-- Article Headline -->
-  <g id="title-group">
-    ${titleSvgText}
-  </g>
-
-  <!-- Telemetry Bar -->
-  <g transform="translate(80, 480)">
-    <rect width="520" height="54" rx="10" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.07)" stroke-width="1" />
-    <text x="24" y="32" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">
-      SYSTEM PROTOCOL: <tspan fill="#f1f5f9">AI ARCHITECTURE</tspan>
-    </text>
-    <text x="270" y="32" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">
-      STATUS: <tspan fill="${accent1}">PRODUCTION READY</tspan>
-    </text>
-  </g>
-
-  <!-- Footer Watermark & Unique System Stamp -->
-  <line x1="80" y1="585" x2="1120" y2="585" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
-  <text x="80" y="620" fill="#64748b" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">
-    heyprince.in/insights • Senior Full-Stack Engineering &amp; AI Systems Architecture
-  </text>
-  <text x="1120" y="620" text-anchor="end" fill="${accent1}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" letter-spacing="1">
-    HASH #${shortHash} • ${new Date().toISOString().slice(0, 10)}
+  <!-- Discrete Minimal Badge -->
+  <rect x="50" y="45" width="200" height="28" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="68" cy="59" r="4" fill="${c1}"/>
+  <text x="82" y="63" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="600" letter-spacing="1.5">
+    ${category.toUpperCase().slice(0, 20)}
   </text>
 </svg>`;
 
@@ -393,7 +357,7 @@ function buildDynamicVisualPrompt(
 // ============================================================================
 // 4. IMAGE BUFFER DOWNLOADER & ZERO-DUPLICATE DISPATCHER
 // ============================================================================
-async function fetchImageBuffer(url: string, timeoutMs = 18000): Promise<{ buffer: Buffer; contentType: string } | null> {
+async function fetchImageBuffer(url: string, timeoutMs = 22000): Promise<{ buffer: Buffer; contentType: string } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -401,7 +365,8 @@ async function fetchImageBuffer(url: string, timeoutMs = 18000): Promise<{ buffe
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'HeyPrince-DailyNews-Bot/2.0 (+https://heyprince.in)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
     });
     clearTimeout(timer);
@@ -419,7 +384,7 @@ async function fetchImageBuffer(url: string, timeoutMs = 18000): Promise<{ buffe
 
 /**
  * Multi-tier zero-duplicate visual engine:
- * 1. AI Generation (Pollinations Flux) with 18s timeout & unique high-entropy prompt.
+ * 1. AI Generation (Pollinations AI) with clean prompt & standard headers.
  * 2. Unused Curated Photography Pool (strictly checked against all existing posts).
  * 3. Procedural Technical Editorial SVG (mathematically guaranteed zero-duplicate fallback).
  */
@@ -438,14 +403,14 @@ async function generateOrFetchUniqueImage(params: {
   const { title, category, role, heading } = params;
 
   // --------------------------------------------------------------------------
-  // Tier 1: Real AI Generation (Pollinations Flux)
+  // Tier 1: Real AI Generation (Pollinations AI)
   // --------------------------------------------------------------------------
   try {
-    const { prompt, seed } = buildDynamicVisualPrompt(title, category, role, heading);
+    const { prompt } = buildDynamicVisualPrompt(title, category, role, heading);
     const cleanPrompt = encodeURIComponent(prompt);
-    const aiImageUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1200&height=675&model=flux&nologo=true&seed=${seed}`;
+    const aiImageUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?nologo=true`;
 
-    const aiResult = await fetchImageBuffer(aiImageUrl, 18000);
+    const aiResult = await fetchImageBuffer(aiImageUrl, 22000);
     if (aiResult && aiResult.buffer.length > 8000) {
       const contentHash = computeBufferHash(aiResult.buffer);
       const dupCheck = await isImageContentDuplicate(contentHash);
@@ -462,7 +427,7 @@ async function generateOrFetchUniqueImage(params: {
       console.warn('[image-generator] AI generation returned duplicate hash; continuing to Tier 2.');
     }
   } catch (aiErr) {
-    console.warn('[image-generator] Tier 1 Pollinations Flux attempt exception:', aiErr);
+    console.warn('[image-generator] Tier 1 Pollinations attempt exception:', aiErr);
   }
 
   // --------------------------------------------------------------------------
