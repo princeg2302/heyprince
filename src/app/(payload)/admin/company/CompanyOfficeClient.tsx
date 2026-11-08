@@ -1281,7 +1281,7 @@ export default function CompanyOfficeClient() {
                         />
                         <div className="truncate">
                           <div className="font-semibold truncate text-[11px]">{emp.name}</div>
-                          <div className="text-[9px] text-zinc-400 truncate">{emp.title}</div>
+                          <div className="text-[9px] text-zinc-400 truncate">{emp.display_title}</div>
                         </div>
                       </button>
                     );
