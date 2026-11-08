@@ -318,14 +318,16 @@ code, pre, kbd, samp, .hpa-code {
 
 /* Main Content Area */
 .hpa-main-wrapper {
-  flex: 1;
+  flex: 1 1 0%;
   margin-left: var(--hpa-sidebar-width);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  width: calc(100% - var(--hpa-sidebar-width));
+  max-width: calc(100% - var(--hpa-sidebar-width));
+  box-sizing: border-box;
   overflow-x: hidden;
-  max-width: calc(100vw - var(--hpa-sidebar-width));
 }
 
 /* Header */
@@ -739,7 +741,7 @@ code, pre, kbd, samp, .hpa-code {
 
 .hpa-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 1080px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -754,7 +756,7 @@ code, pre, kbd, samp, .hpa-code {
   border-bottom: 1px solid var(--hpa-border);
   background: rgba(255, 255, 255, 0.02);
   white-space: nowrap !important;
-  word-break: normal !important;
+  word-break: keep-all !important;
   overflow-wrap: normal !important;
 }
 
@@ -764,13 +766,13 @@ code, pre, kbd, samp, .hpa-code {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   vertical-align: middle;
   white-space: nowrap !important;
-  word-break: normal !important;
+  word-break: keep-all !important;
   overflow-wrap: normal !important;
 }
 
 .hpa-table td *,
 .hpa-table th * {
-  word-break: normal !important;
+  word-break: keep-all !important;
   overflow-wrap: normal !important;
   white-space: nowrap !important;
 }

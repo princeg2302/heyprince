@@ -10828,11 +10828,20 @@ body {
 .blog-sidebar-right {
   position: -webkit-sticky !important;
   position: sticky !important;
-  top: 92px !important;
+  top: 95px !important;
   align-self: start;
   height: fit-content;
   z-index: 25;
   width: 100%;
+}
+
+/* Ensure no images in single blog stretch or distort */
+.single-blog-page img,
+.blog-featured-img-wrap img,
+.blog-content-image-wrap img,
+.blog-main-content img {
+  object-fit: cover !important;
+  max-width: 100%;
 }
 
 .sticky-rail-box {

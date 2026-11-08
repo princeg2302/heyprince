@@ -279,10 +279,10 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
         {/* Table */}
         {paginated.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table" style={{ minWidth: '960px' }}>
+            <table className="hpa-table" style={{ minWidth: '1080px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '42px', minWidth: '42px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <th style={{ width: '44px', minWidth: '44px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                     <input
                       type="checkbox"
                       checked={allOnPageSelected}
@@ -291,12 +291,12 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                       style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
                     />
                   </th>
-                  <th style={{ width: '280px', minWidth: '240px', maxWidth: '300px', whiteSpace: 'nowrap' }}>Article</th>
-                  <th style={{ width: '150px', minWidth: '130px', whiteSpace: 'nowrap' }}>Category</th>
-                  <th style={{ width: '110px', minWidth: '100px', whiteSpace: 'nowrap' }}>Author</th>
-                  <th style={{ width: '130px', minWidth: '120px', whiteSpace: 'nowrap' }}>Status</th>
-                  <th style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>Published Date</th>
-                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                  <th style={{ width: '280px', minWidth: '260px', maxWidth: '320px', whiteSpace: 'nowrap' }}>Article</th>
+                  <th style={{ width: '170px', minWidth: '160px', whiteSpace: 'nowrap' }}>Category</th>
+                  <th style={{ width: '130px', minWidth: '120px', whiteSpace: 'nowrap' }}>Author</th>
+                  <th style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ width: '150px', minWidth: '140px', whiteSpace: 'nowrap' }}>Published Date</th>
+                  <th style={{ width: '170px', minWidth: '170px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -415,7 +415,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                           <button
                             type="button"
                             onClick={() => setPublishingPost(post)}
-                            className="hpa-table-action-btn"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="Publish / Share to LinkedIn"
                           >
                             <Share2 size={14} />
@@ -424,7 +424,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                           <Link
                             href={`/insights/${post.slug}`}
                             target="_blank"
-                            className="hpa-table-action-btn"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="View on Live Site"
                           >
                             <ExternalLink size={14} />
@@ -432,7 +432,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
 
                           <Link
                             href={`/admin/posts/${post.id}/edit`}
-                            className="hpa-table-action-btn"
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
                             title="Edit Article"
                           >
                             <Edit2 size={14} />
@@ -441,7 +441,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                           <button
                             type="button"
                             onClick={() => setDeletingId(post.id)}
-                            className="hpa-table-action-btn danger"
+                            className="hpa-btn hpa-btn-danger hpa-btn-icon"
                             title="Delete Article"
                           >
                             <Trash2 size={14} />

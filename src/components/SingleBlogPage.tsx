@@ -20,6 +20,8 @@ import {
   FaCircleCheck,
   FaFolderOpen,
   FaRegComments,
+  FaGithub,
+  FaXTwitter,
 } from 'react-icons/fa6';
 import { DiscussionSection, CommentItem } from './discussions/DiscussionSection';
 
@@ -922,6 +924,18 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                       aria-label="WhatsApp"
                     >
                       <FaWhatsapp size={13} />
+                    </a>
+                  )}
+                  {socialLinks.github && (
+                    <a
+                      href={socialLinks.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="author-social-link"
+                      title="Explore GitHub"
+                      aria-label="GitHub"
+                    >
+                      <FaGithub size={13} />
                     </a>
                   )}
                 </div>

@@ -423,7 +423,7 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
 
         {filtered.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table" style={{ minWidth: '960px' }}>
+            <table className="hpa-table" style={{ minWidth: '1080px' }}>
               <thead>
                 <tr>
                   <th style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
