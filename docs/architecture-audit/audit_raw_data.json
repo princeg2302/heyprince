@@ -1,0 +1,2003 @@
+{
+  "summary": {},
+  "frontend_routes": [
+    {
+      "route": "/",
+      "raw_dir": "(frontend)",
+      "file": "src/app/(frontend)/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/about",
+      "raw_dir": "(frontend)/about",
+      "file": "src/app/(frontend)/about/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/blog",
+      "raw_dir": "(frontend)/blog",
+      "file": "src/app/(frontend)/blog/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/blog/[slug]",
+      "raw_dir": "(frontend)/blog/[slug]",
+      "file": "src/app/(frontend)/blog/[slug]/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/contact",
+      "raw_dir": "(frontend)/contact",
+      "file": "src/app/(frontend)/contact/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/gaming-zone",
+      "raw_dir": "(frontend)/gaming-zone",
+      "file": "src/app/(frontend)/gaming-zone/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/insights",
+      "raw_dir": "(frontend)/insights",
+      "file": "src/app/(frontend)/insights/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/insights/[slug]",
+      "raw_dir": "(frontend)/insights/[slug]",
+      "file": "src/app/(frontend)/insights/[slug]/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/privacy-policy",
+      "raw_dir": "(frontend)/privacy-policy",
+      "file": "src/app/(frontend)/privacy-policy/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/services",
+      "raw_dir": "(frontend)/services",
+      "file": "src/app/(frontend)/services/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/services/[slug]",
+      "raw_dir": "(frontend)/services/[slug]",
+      "file": "src/app/(frontend)/services/[slug]/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/todos",
+      "raw_dir": "(frontend)/todos",
+      "file": "src/app/(frontend)/todos/page.tsx",
+      "is_admin": false,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin",
+      "raw_dir": "(payload)/admin",
+      "file": "src/app/(payload)/admin/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/approvals",
+      "raw_dir": "(payload)/admin/approvals",
+      "file": "src/app/(payload)/admin/approvals/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/categories",
+      "raw_dir": "(payload)/admin/categories",
+      "file": "src/app/(payload)/admin/categories/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/chief-of-staff",
+      "raw_dir": "(payload)/admin/chief-of-staff",
+      "file": "src/app/(payload)/admin/chief-of-staff/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/collections/[...slug]",
+      "raw_dir": "(payload)/admin/collections/[...slug]",
+      "file": "src/app/(payload)/admin/collections/[...slug]/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/leads",
+      "raw_dir": "(payload)/admin/leads",
+      "file": "src/app/(payload)/admin/leads/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/login",
+      "raw_dir": "(payload)/admin/login",
+      "file": "src/app/(payload)/admin/login/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/media",
+      "raw_dir": "(payload)/admin/media",
+      "file": "src/app/(payload)/admin/media/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/news-automation",
+      "raw_dir": "(payload)/admin/news-automation",
+      "file": "src/app/(payload)/admin/news-automation/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/outreach",
+      "raw_dir": "(payload)/admin/outreach",
+      "file": "src/app/(payload)/admin/outreach/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/posts",
+      "raw_dir": "(payload)/admin/posts",
+      "file": "src/app/(payload)/admin/posts/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/posts/new",
+      "raw_dir": "(payload)/admin/posts/new",
+      "file": "src/app/(payload)/admin/posts/new/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/posts/[id]",
+      "raw_dir": "(payload)/admin/posts/[id]",
+      "file": "src/app/(payload)/admin/posts/[id]/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/posts/[id]/edit",
+      "raw_dir": "(payload)/admin/posts/[id]/edit",
+      "file": "src/app/(payload)/admin/posts/[id]/edit/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/services",
+      "raw_dir": "(payload)/admin/services",
+      "file": "src/app/(payload)/admin/services/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/services/new",
+      "raw_dir": "(payload)/admin/services/new",
+      "file": "src/app/(payload)/admin/services/new/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/services/[id]",
+      "raw_dir": "(payload)/admin/services/[id]",
+      "file": "src/app/(payload)/admin/services/[id]/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/services/[id]/edit",
+      "raw_dir": "(payload)/admin/services/[id]/edit",
+      "file": "src/app/(payload)/admin/services/[id]/edit/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/settings",
+      "raw_dir": "(payload)/admin/settings",
+      "file": "src/app/(payload)/admin/settings/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/users",
+      "raw_dir": "(payload)/admin/users",
+      "file": "src/app/(payload)/admin/users/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/users/new",
+      "raw_dir": "(payload)/admin/users/new",
+      "file": "src/app/(payload)/admin/users/new/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/users/[id]",
+      "raw_dir": "(payload)/admin/users/[id]",
+      "file": "src/app/(payload)/admin/users/[id]/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    },
+    {
+      "route": "/admin/users/[id]/edit",
+      "raw_dir": "(payload)/admin/users/[id]/edit",
+      "file": "src/app/(payload)/admin/users/[id]/edit/page.tsx",
+      "is_admin": true,
+      "is_client_component": false
+    }
+  ],
+  "api_endpoints": [
+    {
+      "endpoint": "/api/admin/approvals",
+      "file": "src/app/api/admin/approvals/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API",
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/approvals/publish",
+      "file": "src/app/api/admin/approvals/publish/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "chief_content_drafts"
+      ],
+      "external_calls": [
+        "LinkedIn API",
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/approvals/refine",
+      "file": "src/app/api/admin/approvals/refine/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/categories",
+      "file": "src/app/api/admin/categories/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "categories"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/categories/[id]",
+      "file": "src/app/api/admin/categories/[id]/route.ts",
+      "methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/chief-of-staff/agent-toggle",
+      "file": "src/app/api/admin/chief-of-staff/agent-toggle/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/chief-of-staff/approve-draft",
+      "file": "src/app/api/admin/chief-of-staff/approve-draft/route.ts",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API",
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/chief-of-staff/refine-draft",
+      "file": "src/app/api/admin/chief-of-staff/refine-draft/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/chief-of-staff/resolve-seo",
+      "file": "src/app/api/admin/chief-of-staff/resolve-seo/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/chief-of-staff/run-task",
+      "file": "src/app/api/admin/chief-of-staff/run-task/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/chief-of-staff/status",
+      "file": "src/app/api/admin/chief-of-staff/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/email-status",
+      "file": "src/app/api/admin/email-status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/jarvis",
+      "file": "src/app/api/admin/jarvis/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "users",
+        "categories",
+        "media",
+        "posts"
+      ],
+      "external_calls": [
+        "LinkedIn API",
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/jarvis/global-intelligence",
+      "file": "src/app/api/admin/jarvis/global-intelligence/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/jarvis/memory",
+      "file": "src/app/api/admin/jarvis/memory/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/leads",
+      "file": "src/app/api/admin/leads/route.ts",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/leads/[id]",
+      "file": "src/app/api/admin/leads/[id]/route.ts",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/linkedin/connect",
+      "file": "src/app/api/admin/linkedin/connect/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API",
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/linkedin/disconnect",
+      "file": "src/app/api/admin/linkedin/disconnect/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/linkedin/publish",
+      "file": "src/app/api/admin/linkedin/publish/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/linkedin/status",
+      "file": "src/app/api/admin/linkedin/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "posts"
+      ],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/linkedin/update-urn",
+      "file": "src/app/api/admin/linkedin/update-urn/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/login",
+      "file": "src/app/api/admin/login/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/logout",
+      "file": "src/app/api/admin/logout/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/media",
+      "file": "src/app/api/admin/media/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "media"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/media/[id]",
+      "file": "src/app/api/admin/media/[id]/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/mfa/disable",
+      "file": "src/app/api/admin/mfa/disable/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "users"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/mfa/send-email-otp",
+      "file": "src/app/api/admin/mfa/send-email-otp/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/mfa/setup",
+      "file": "src/app/api/admin/mfa/setup/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/mfa/status",
+      "file": "src/app/api/admin/mfa/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/mfa/verify-login",
+      "file": "src/app/api/admin/mfa/verify-login/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/mfa/verify-setup",
+      "file": "src/app/api/admin/mfa/verify-setup/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/news-automation/preview",
+      "file": "src/app/api/admin/news-automation/preview/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/news-automation/publish-draft",
+      "file": "src/app/api/admin/news-automation/publish-draft/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/news-automation/retry-linkedin",
+      "file": "src/app/api/admin/news-automation/retry-linkedin/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/news-automation/run",
+      "file": "src/app/api/admin/news-automation/run/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/news-automation/runs",
+      "file": "src/app/api/admin/news-automation/runs/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/news-automation/settings",
+      "file": "src/app/api/admin/news-automation/settings/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/news-automation/sources",
+      "file": "src/app/api/admin/news-automation/sources/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/news-automation/status",
+      "file": "src/app/api/admin/news-automation/status/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "daily_news_runs"
+      ],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/outreach/ai-analyze",
+      "file": "src/app/api/admin/outreach/ai-analyze/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/outreach/audit",
+      "file": "src/app/api/admin/outreach/audit/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/outreach/businesses",
+      "file": "src/app/api/admin/outreach/businesses/route.ts",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/outreach/businesses/[id]",
+      "file": "src/app/api/admin/outreach/businesses/[id]/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/outreach/contacts",
+      "file": "src/app/api/admin/outreach/contacts/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/outreach/discovery",
+      "file": "src/app/api/admin/outreach/discovery/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/outreach/queue",
+      "file": "src/app/api/admin/outreach/queue/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/outreach/scout",
+      "file": "src/app/api/admin/outreach/scout/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "chief_content_drafts"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/outreach/settings",
+      "file": "src/app/api/admin/outreach/settings/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Google Gemini",
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/outreach/suppressions",
+      "file": "src/app/api/admin/outreach/suppressions/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/posts",
+      "file": "src/app/api/admin/posts/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/posts/[id]",
+      "file": "src/app/api/admin/posts/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/push/subscribe",
+      "file": "src/app/api/admin/push/subscribe/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/push/test",
+      "file": "src/app/api/admin/push/test/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/push/vapid-public-key",
+      "file": "src/app/api/admin/push/vapid-public-key/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/services",
+      "file": "src/app/api/admin/services/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/services/[id]",
+      "file": "src/app/api/admin/services/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/settings/social-links",
+      "file": "src/app/api/admin/settings/social-links/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "media"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/settings/visibility",
+      "file": "src/app/api/admin/settings/visibility/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/admin/users",
+      "file": "src/app/api/admin/users/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "users"
+      ],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/admin/users/[id]",
+      "file": "src/app/api/admin/users/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/author",
+      "file": "src/app/api/author/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "media",
+        "users"
+      ],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/blog/comments",
+      "file": "src/app/api/blog/comments/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "discussions"
+      ],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/blog/comments/like",
+      "file": "src/app/api/blog/comments/like/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [
+        "discussions"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/blog/likes",
+      "file": "src/app/api/blog/likes/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [
+        "discussions"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/captcha/challenge",
+      "file": "src/app/api/captcha/challenge/route.ts",
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/captcha/verify",
+      "file": "src/app/api/captcha/verify/route.ts",
+      "methods": [
+        "POST",
+        "OPTIONS"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/cron/chief-of-staff",
+      "file": "src/app/api/cron/chief-of-staff/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/cron/daily-news",
+      "file": "src/app/api/cron/daily-news/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/cron/lead-scout",
+      "file": "src/app/api/cron/lead-scout/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/leads",
+      "file": "src/app/api/leads/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/linkedin/callback",
+      "file": "src/app/api/linkedin/callback/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [],
+      "external_calls": [
+        "LinkedIn API"
+      ]
+    },
+    {
+      "endpoint": "/api/outreach/unsubscribe",
+      "file": "src/app/api/outreach/unsubscribe/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [
+        "media"
+      ],
+      "external_calls": [
+        "Email/SMTP/Resend"
+      ]
+    },
+    {
+      "endpoint": "/api/seasonal/current",
+      "file": "src/app/api/seasonal/current/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/services",
+      "file": "src/app/api/services/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [
+        "categories"
+      ],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/site-settings/visibility",
+      "file": "src/app/api/site-settings/visibility/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "/api/social-links",
+      "file": "src/app/api/social-links/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [],
+      "external_calls": []
+    },
+    {
+      "endpoint": "[Python] /api/v1/chief/run-agent",
+      "file": "heyprince-ai-backend/app/api/v1/chief.py",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "Supabase PostgreSQL Pool"
+      ],
+      "external_calls": [
+        "Ollama PC",
+        "Gemini Cloud",
+        "Pollinations AI"
+      ]
+    },
+    {
+      "endpoint": "[Python] /api/v1/health",
+      "file": "heyprince-ai-backend/app/api/v1/health.py",
+      "methods": [
+        "GET"
+      ],
+      "is_admin_protected": false,
+      "db_dependencies": [
+        "Supabase PostgreSQL Pool"
+      ],
+      "external_calls": [
+        "Ollama PC",
+        "Gemini Cloud",
+        "Pollinations AI"
+      ]
+    },
+    {
+      "endpoint": "[Python] /api/v1/news/generate",
+      "file": "heyprince-ai-backend/app/api/v1/news.py",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "Supabase PostgreSQL Pool"
+      ],
+      "external_calls": [
+        "Ollama PC",
+        "Gemini Cloud",
+        "Pollinations AI"
+      ]
+    },
+    {
+      "endpoint": "[Python] /api/v1/news/preview",
+      "file": "heyprince-ai-backend/app/api/v1/news.py",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "Supabase PostgreSQL Pool"
+      ],
+      "external_calls": [
+        "Ollama PC",
+        "Gemini Cloud",
+        "Pollinations AI"
+      ]
+    },
+    {
+      "endpoint": "[Python] /api/v1/outreach/generate-proposal",
+      "file": "heyprince-ai-backend/app/api/v1/outreach.py",
+      "methods": [
+        "POST"
+      ],
+      "is_admin_protected": true,
+      "db_dependencies": [
+        "Supabase PostgreSQL Pool"
+      ],
+      "external_calls": [
+        "Ollama PC",
+        "Gemini Cloud",
+        "Pollinations AI"
+      ]
+    }
+  ],
+  "database_tables": {
+    "captcha_sites": {
+      "source_file": "supabase/migrations/20261020_custom_captcha.sql",
+      "columns": [
+        {
+          "name": "site_key",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "allowed_origins",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "max_challenges_per_minute",
+          "type": "INT"
+        },
+        {
+          "name": "challenge_ttl_seconds",
+          "type": "INT"
+        },
+        {
+          "name": "proof_ttl_seconds",
+          "type": "INT"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMPTZ"
+        },
+        {
+          "name": "updated_at",
+          "type": "TIMESTAMPTZ"
+        }
+      ]
+    },
+    "captcha_challenges": {
+      "source_file": "supabase/migrations/20261020_custom_captcha.sql",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID"
+        },
+        {
+          "name": "site_key",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "purpose",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "challenge_type",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "question",
+          "type": "TEXT"
+        },
+        {
+          "name": "answer_hash",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "client_ip_hash",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "difficulty",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "expires_at",
+          "type": "TIMESTAMPTZ"
+        },
+        {
+          "name": "consumed_at",
+          "type": "TIMESTAMPTZ"
+        },
+        {
+          "name": "attempts",
+          "type": "INT"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMPTZ"
+        }
+      ]
+    },
+    "captcha_proofs": {
+      "source_file": "supabase/migrations/20261020_custom_captcha.sql",
+      "columns": [
+        {
+          "name": "id",
+          "type": "UUID"
+        },
+        {
+          "name": "proof_token_hash",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "site_key",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "purpose",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "client_ip_hash",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "expires_at",
+          "type": "TIMESTAMPTZ"
+        },
+        {
+          "name": "consumed_at",
+          "type": "TIMESTAMPTZ"
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMPTZ"
+        }
+      ]
+    },
+    "captcha_rate_limits": {
+      "source_file": "supabase/migrations/20261020_custom_captcha.sql",
+      "columns": [
+        {
+          "name": "key",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "count",
+          "type": "INT"
+        },
+        {
+          "name": "reset_at",
+          "type": "TIMESTAMPTZ"
+        }
+      ]
+    },
+    "daily_news_settings": {
+      "source_file": "src/scripts/migrate-daily-news.ts",
+      "columns": []
+    },
+    "daily_news_sources": {
+      "source_file": "src/scripts/migrate-daily-news.ts",
+      "columns": []
+    },
+    "daily_news_items": {
+      "source_file": "src/scripts/migrate-daily-news.ts",
+      "columns": []
+    },
+    "daily_news_runs": {
+      "source_file": "src/scripts/migrate-daily-news.ts",
+      "columns": []
+    },
+    "linkedin_connections": {
+      "source_file": "src/scripts/migrate-linkedin.ts",
+      "columns": []
+    },
+    "linkedin_post_shares": {
+      "source_file": "src/scripts/migrate-linkedin.ts",
+      "columns": []
+    },
+    "admin_mfa": {
+      "source_file": "src/scripts/migrate-mfa-and-social.ts",
+      "columns": []
+    },
+    "site_social_links": {
+      "source_file": "src/scripts/migrate-mfa-and-social.ts",
+      "columns": []
+    }
+  },
+  "ai_modules": [
+    {
+      "file": "src/lib/daily-news/ai-provider.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/daily-news/content-generator.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/daily-news/db.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/daily-news/image-generator.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/daily-news/meme-generator.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/daily-news/orchestrator.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/daily-news/rss-collector.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/daily-news/types.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/chief-of-staff/db.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/chief-of-staff/draft-refiner.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/chief-of-staff/orchestrator.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/chief-of-staff/types.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/chief-of-staff/agents/content-researcher.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/chief-of-staff/agents/inbound-responder.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/chief-of-staff/agents/lead-scout.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/chief-of-staff/agents/seo-growth.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/chief-of-staff/agents/website-guardian.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/db-migrate.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/db.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/email-template.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/proposal-generator.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/outreach/qualification.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/types.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/ai/deterministic-adapter.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/ai/gemini-adapter.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/outreach/ai/service.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/outreach/ai/types.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/auditor/ssrf-guard.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/auditor/website-auditor.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/compliance/compliance-engine.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/compliance/tokens.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/outreach/discovery/mock-adapter.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "src/lib/outreach/discovery/osm-adapter.ts",
+      "framework": "TypeScript",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/discovery/service.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/discovery/types.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/queue/queue-worker.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/queue/sender-adapter.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "src/lib/outreach/verifier/contact-verifier.ts",
+      "framework": "TypeScript",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/main.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/agents/base.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/agents/content_researcher.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/agents/lead_scout.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/agents/seo_growth.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/agents/website_guardian.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/api/v1/chief.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/api/v1/health.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/api/v1/news.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/api/v1/outreach.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/core/config.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/core/database.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/core/security.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/llm/gemini_client.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/llm/memory.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": false
+    },
+    {
+      "file": "heyprince-ai-backend/app/llm/ollama_client.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/llm/router.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/llm/sanitizer.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/pipeline/content_generator.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/pipeline/image_generator.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/pipeline/proposal_engine.py",
+      "framework": "Python",
+      "contains_agents": false,
+      "contains_llm": true
+    },
+    {
+      "file": "heyprince-ai-backend/app/scheduler/jobs.py",
+      "framework": "Python",
+      "contains_agents": true,
+      "contains_llm": false
+    }
+  ],
+  "external_integrations": [
+    {
+      "name": "Supabase PostgreSQL & Auth",
+      "env_vars": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_DATABASE_URL"
+      ],
+      "status": "Active (Primary DB & Auth)"
+    },
+    {
+      "name": "Google Gemini API",
+      "env_vars": [
+        "GEMINI_API_KEY"
+      ],
+      "status": "Active (Cloud LLM Fallback & Reasoning)"
+    },
+    {
+      "name": "Local Ollama Engine",
+      "env_vars": [
+        "OLLAMA_HOST",
+        "OLLAMA_MODEL"
+      ],
+      "status": "Active (Local PC GPU Inference)"
+    },
+    {
+      "name": "LinkedIn REST API (OAuth 2.0)",
+      "env_vars": [
+        "LINKEDIN_CLIENT_ID",
+        "LINKEDIN_CLIENT_SECRET",
+        "LINKEDIN_REDIRECT_URI"
+      ],
+      "status": "Active (Article Sharing & Social Sync)"
+    },
+    {
+      "name": "Pollinations AI",
+      "env_vars": [],
+      "status": "Active (Dynamic Zero-Cost Visual Synthesis with Flux)"
+    },
+    {
+      "name": "Resend / SMTP Mailer",
+      "env_vars": [
+        "RESEND_API_KEY",
+        "SMTP_HOST",
+        "SMTP_USER",
+        "SMTP_PASS"
+      ],
+      "status": "Active (Contact Form & Lead Inquiries)"
+    },
+    {
+      "name": "OpenStreetMap / Overpass API",
+      "env_vars": [],
+      "status": "Active (Lead Scout Geographic Discovery)"
+    },
+    {
+      "name": "Google Places API (Optional)",
+      "env_vars": [
+        "GOOGLE_PLACES_API_KEY"
+      ],
+      "status": "Configurable (Fallback Commercial Lead Scout)"
+    },
+    {
+      "name": "Vercel Edge Platform",
+      "env_vars": [
+        "CRON_SECRET"
+      ],
+      "status": "Active (Hosting & Serverless Functions)"
+    },
+    {
+      "name": "Web Push (VAPID)",
+      "env_vars": [
+        "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+        "VAPID_PRIVATE_KEY"
+      ],
+      "status": "Configured (Browser Push Notifications)"
+    }
+  ],
+  "automations": [
+    {
+      "type": "Vercel Cron",
+      "path": "/api/cron/daily-news/",
+      "schedule": "30 3 * * *",
+      "description": "Triggered on schedule via Vercel Edge Cron"
+    },
+    {
+      "type": "Vercel Cron",
+      "path": "/api/cron/chief-of-staff/",
+      "schedule": "0 4 * * *",
+      "description": "Triggered on schedule via Vercel Edge Cron"
+    },
+    {
+      "type": "Vercel Cron",
+      "path": "/api/cron/lead-scout/",
+      "schedule": "0 5 * * *",
+      "description": "Triggered on schedule via Vercel Edge Cron"
+    },
+    {
+      "type": "APScheduler (Python)",
+      "path": "heyprince-ai-backend/app/scheduler/jobs.py",
+      "schedule": "Every 6h (Guardian) & Every 24h (SEO Analysis)",
+      "description": "Autonomous background execution in VPS container"
+    }
+  ],
+  "dependencies": {
+    "name": "react-website",
+    "version": "0.0.0",
+    "dependencies": {
+      "@payloadcms/db-postgres": "^3.90.2",
+      "@payloadcms/next": "^3.90.2",
+      "@payloadcms/richtext-lexical": "^3.90.2",
+      "@supabase/ssr": "^0.12.7",
+      "@supabase/supabase-js": "^2.117.2",
+      "@types/nodemailer": "^8.0.2",
+      "graphql": "^16.14.2",
+      "gsap": "^3.15.0",
+      "lenis": "^1.3.26",
+      "lucide-react": "^1.49.0",
+      "matter-js": "^0.20.0",
+      "mouse-follower": "^1.2.1",
+      "next": "^16.3.8",
+      "nodemailer": "^10.0.16",
+      "payload": "^3.90.2",
+      "pg": "^8.20.0",
+      "react": "^19.3.0",
+      "react-dom": "^19.3.0",
+      "react-icons": "^5.7.0",
+      "resend": "^4.8.0",
+      "web-push": "^3.6.7",
+      "zod": "^3.25.76"
+    },
+    "devDependencies": {
+      "@types/matter-js": "^0.20.2",
+      "@types/node": "^26.6.4",
+      "@types/pg": "^8.11.11",
+      "@types/react": "^19.3.0",
+      "@types/react-dom": "^19.3.0",
+      "@types/web-push": "^3.6.4",
+      "typescript": "~6.0.2"
+    },
+    "scripts": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "seed": "npx tsx src/scripts/seed.ts",
+      "migrate:outreach": "npx tsx src/scripts/migrate-outreach.ts",
+      "migrate:linkedin": "npx tsx src/scripts/migrate-linkedin.ts",
+      "migrate:news": "npx tsx src/scripts/migrate-daily-news.ts",
+      "test:outreach": "npx tsx src/scripts/test-outreach-suite.ts",
+      "test:linkedin": "npx tsx src/scripts/test-linkedin-suite.ts",
+      "test:news": "npx tsx src/scripts/test-daily-news-suite.ts",
+      "test:images": "npx tsx src/scripts/test-image-uniqueness.ts",
+      "migrate:captcha": "npx tsx src/scripts/migrate-captcha.ts",
+      "test:captcha": "npx tsx src/scripts/test-captcha-suite.ts"
+    }
+  },
+  "file_counts": {
+    "total_source_files": 609,
+    "by_directory": {
+      "root": 28,
+      "assets": 54,
+      "audio": 2,
+      "docs": 2,
+      "fonts": 42,
+      "heyprince-ai-backend": 26,
+      "images": 1,
+      "prisma": 1,
+      "public": 88,
+      "scripts": 1,
+      "src": 324,
+      "supabase": 1,
+      "trading-bot": 39
+    },
+    "by_extension": {
+      ".example": 4,
+      ".local": 1,
+      "no-ext": 6,
+      ".md": 5,
+      ".svg": 15,
+      ".json": 16,
+      ".ts": 198,
+      ".mjs": 1,
+      ".tsbuildinfo": 1,
+      ".woff2": 39,
+      ".ttf": 38,
+      ".woff": 39,
+      ".webp": 40,
+      ".css": 14,
+      ".js": 5,
+      ".mp3": 3,
+      ".py": 49,
+      ".html": 4,
+      ".yml": 2,
+      ".txt": 2,
+      ".png": 11,
+      ".prisma": 1,
+      ".jpg": 4,
+      ".cjs": 1,
+      ".tsx": 101,
+      ".sql": 5,
+      ".backend": 1,
+      ".worker": 1,
+      ".service": 2
+    }
+  }
+}
