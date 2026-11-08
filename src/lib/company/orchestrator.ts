@@ -21,9 +21,10 @@ import {
   CompanyProposal,
   CompanyTask,
 } from './types';
-import { sanitizeEmDashes, sanitizeAiContent } from '../ai-content-sanitizer';
+import { sanitizeEmDashes } from '../ai-content-sanitizer';
+import { generateAgentTurnResponse } from './gemini';
 import { sendPushToAllAdmins } from '../push/push-service';
-import { createPost, createService } from '../admin-db';
+import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
 
 const MODERATOR_ID = 'alex_vance';
@@ -74,104 +75,55 @@ export async function advanceDiscussionTurn(discussionId: string): Promise<{
   const allEmployees = await getAllEmployees();
   const empMap = new Map(allEmployees.map((e) => [e.id, e]));
 
-  const participants = discussion.participant_ids.filter((p) => empMap.has(p));
-  const lastSpeakerId = messages.length > 0 ? messages[messages.length - 1].sender_id : MODERATOR_ID;
+  let participants = (discussion.participant_ids || []).filter((p) => empMap.has(p) && p !== 'prince_ceo');
+  if (participants.length <= 1) {
+    if (discussion.room_id === 'war_room' || discussion.room_id === 'daily_standup') {
+      participants = ['alex_vance', 'david_chen', 'elena_rostova', 'marcus_sterling', 'liam_thorne', 'sophia_reynolds'];
+    } else if (discussion.room_id === 'growth_sales') {
+      participants = ['alex_vance', 'elena_rostova', 'liam_thorne', 'sophia_reynolds'];
+    } else if (discussion.room_id === 'innovation_lab') {
+      participants = ['alex_vance', 'marcus_sterling', 'elena_rostova', 'david_chen'];
+    } else if (discussion.room_id === 'dev_room') {
+      participants = ['alex_vance', 'david_chen', 'elena_rostova'];
+    } else {
+      participants = ['alex_vance', 'marcus_sterling', 'david_chen'];
+    }
+  }
 
-  // Determine next speaker: alternate between specialist and moderator
-  const availableSpecialists = participants.filter(
-    (p) => p !== lastSpeakerId && p !== MODERATOR_ID
-  );
+  const availableSpecialists = participants.filter((p) => p !== MODERATOR_ID);
+  const lastSpeakerId = messages.length > 0 ? messages[messages.length - 1].sender_id : MODERATOR_ID;
 
   let nextSpeakerId = MODERATOR_ID;
   if (lastSpeakerId === MODERATOR_ID && availableSpecialists.length > 0) {
     const turnIndex = discussion.turn_count % availableSpecialists.length;
     nextSpeakerId = availableSpecialists[turnIndex];
+  } else if (lastSpeakerId === 'prince_ceo') {
+    nextSpeakerId = MODERATOR_ID;
+  } else {
+    nextSpeakerId = MODERATOR_ID;
   }
 
   const speaker = empMap.get(nextSpeakerId) || empMap.get(MODERATOR_ID)!;
 
   // Format discourse context
   const recentTranscript = messages
-    .slice(-5)
+    .slice(-6)
     .map((m) => `${m.sender_name || m.sender_id} (${m.message_type.toUpperCase()}): ${m.content}`)
     .join('\n');
 
-  let generatedText = '';
-  let messageType: MessageType = 'statement';
-  let evidence: Record<string, any> = {};
+  // Generate in-character AI response via Gemini or intelligent fallback
+  const aiResult = await generateAgentTurnResponse({
+    speaker,
+    discussionTitle: discussion.title,
+    discussionObjective: discussion.objective,
+    recentTranscript,
+    isModerator: nextSpeakerId === MODERATOR_ID,
+    isConcludingTurn: discussion.turn_count >= discussion.max_turns - 1,
+  });
 
-  // Try calling Python backend if configured
-  const backendUrl = process.env.AI_BACKEND_URL;
-  const backendSecret = process.env.AI_SERVICE_SECRET;
-  let usedPythonBackend = false;
-
-  if (backendUrl && backendSecret) {
-    try {
-      const resp = await fetch(`${backendUrl}/api/v1/company/discussions/${discussionId}/turn`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${backendSecret}`,
-        },
-        body: JSON.stringify({ speakerId: nextSpeakerId }),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.success && data.message) {
-          usedPythonBackend = true;
-          return {
-            success: true,
-            status: data.status || 'in_progress',
-            turn: data.turn,
-            maxTurns: data.maxTurns,
-            message: data.message,
-            conclusion: data.conclusion,
-            proposalId: data.proposalId,
-          };
-        }
-      }
-    } catch {
-      // Fallback to in-process generator
-    }
-  }
-
-  if (!usedPythonBackend) {
-    // In-process conversational generation
-    if (nextSpeakerId === MODERATOR_ID) {
-      if (discussion.turn_count >= discussion.max_turns - 2) {
-        messageType = 'consensus';
-        generatedText = `We have reached solid alignment on "${discussion.title}". The consensus is clear: we should move forward with the recommended technical strategy and package it into an actionable proposal for Prince.`;
-      } else {
-        messageType = 'statement';
-        generatedText = `Let us evaluate the specific implementation trade-offs for "${discussion.objective}". What metrics or architectural constraints should we establish first?`;
-      }
-    } else {
-      // Specialist response tailored to employee department
-      if (speaker.department === 'Growth') {
-        messageType = 'evidence';
-        generatedText = `From a search footprint perspective, targeting this space gives us high organic commercial intent. We must maintain strict canonical tags and avoid thin content clusters.`;
-        evidence = { keyword_difficulty: 'medium', estimated_monthly_impressions: 4800 };
-      } else if (speaker.department === 'Editorial') {
-        messageType = 'proposal';
-        generatedText = `I will structure an authoritative 1,500 word deep-dive focusing on real-world engineering benchmarks, edge caching trade-offs, and actionable code patterns.`;
-        evidence = { format: 'technical_guide', target_words: 1500 };
-      } else if (speaker.department === 'Infrastructure') {
-        messageType = 'challenge';
-        generatedText = `We must verify that any new frontend or data layer adheres strictly to our sub-300ms mobile TTFB target. I will run synthetic lab tests before clearing it.`;
-        evidence = { max_ttfb_target_ms: 300, core_web_vitals: 'pass' };
-      } else if (speaker.department === 'Sales') {
-        messageType = 'evidence';
-        generatedText = `In our prospect pipeline, 4 out of 5 audited companies suffer from monolithic checkout friction. Demonstrating quantifiable speed gains will yield high engagement.`;
-        evidence = { conversion_upside_percent: '35%' };
-      } else {
-        messageType = 'statement';
-        generatedText = `I recommend structuring this initiative with clear milestones and measurable deliverables so client stakeholders see immediate value.`;
-      }
-    }
-  }
-
-  // Clean text and enforce zero em-dashes
-  const cleanContent = sanitizeEmDashes(generatedText.trim());
+  const cleanContent = sanitizeEmDashes(aiResult.content.trim());
+  const messageType = aiResult.messageType;
+  const evidence = aiResult.evidence;
 
   // Insert message into database
   const newMessage = await insertCompanyMessage({
@@ -474,5 +426,35 @@ export async function processCompanyTask(taskId: string): Promise<{
     success: true,
     task: completedTask,
     message: `Task "${task.title}" completed and independently verified by ${reviewerId}.`,
+  };
+}
+
+// ============================================================================
+// 5. Send CEO Directive (Prince speaking into the room)
+// ============================================================================
+
+export async function sendCeoDirective(params: {
+  discussionId: string;
+  directive: string;
+}): Promise<{
+  success: boolean;
+  ceoMessage: CompanyMessage;
+  agentResponse?: CompanyMessage;
+}> {
+  const ceoMessage = await insertCompanyMessage({
+    discussionId: params.discussionId,
+    senderId: 'prince_ceo',
+    messageType: 'statement',
+    content: sanitizeEmDashes(params.directive.trim()),
+    tokensUsed: 10,
+  });
+
+  // Prompt the team to respond immediately
+  const advance = await advanceDiscussionTurn(params.discussionId);
+
+  return {
+    success: true,
+    ceoMessage,
+    agentResponse: advance.message,
   };
 }

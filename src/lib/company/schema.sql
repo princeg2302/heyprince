@@ -161,6 +161,18 @@ INSERT INTO company_employees (
   id, legacy_agent_id, name, display_title, department, avatar_url, bio, personality_archetype, system_prompt_overlay, model_preference
 ) VALUES
   (
+    'prince_ceo',
+    NULL,
+    'Prince',
+    'Chief Executive Officer & Founder',
+    'Executive',
+    '/assets/cropped-prince-profile.webp',
+    'Owner & CEO of HeyPrince. Ultimate strategic authority, business direction, and final approval authority.',
+    'Visionary, Decisive, Strategic (CEO)',
+    'You are Prince, Chief Executive Officer of HeyPrince. You lead business direction and give final approvals.',
+    'human'
+  ),
+  (
     'alex_vance',
     NULL,
     'Alex Vance',

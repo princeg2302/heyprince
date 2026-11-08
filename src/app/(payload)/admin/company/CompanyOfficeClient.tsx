@@ -81,6 +81,10 @@ export default function CompanyOfficeClient() {
   const [executingTaskId, setExecutingTaskId] = useState<string | null>(null);
   const [approvingProposalId, setApprovingProposalId] = useState<string | null>(null);
 
+  // CEO Chat Directive Input
+  const [ceoInput, setCeoInput] = useState('');
+  const [sendingCeoMessage, setSendingCeoMessage] = useState(false);
+
   // Modals
   const [newMeetingModalOpen, setNewMeetingModalOpen] = useState(false);
   const [newMeetingTitle, setNewMeetingTitle] = useState('');
@@ -98,9 +102,6 @@ export default function CompanyOfficeClient() {
   const [draftingEmployee, setDraftingEmployee] = useState(false);
 
   const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState<CompanyEmployee | null>(null);
-
-  // SSE reference
-  const sseRef = useRef<EventSource | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // 1. Initial Load
@@ -162,57 +163,48 @@ export default function CompanyOfficeClient() {
     if (!selectedRoom) return;
 
     const loadRoomDiscussion = async () => {
-      // Find active discussion for this room
-      const active = overview?.activeDiscussions?.find((d) => d.room_id === selectedRoom.id);
-      if (active) {
-        setActiveDiscussion(active);
-        const mRes = await fetch(`/api/admin/company/discussions/${active.id}`);
-        const mJson = await mRes.json();
-        if (mJson.success) {
-          setMessages(mJson.messages || []);
+      try {
+        const res = await fetch(`/api/admin/company/discussions?roomId=${selectedRoom.id}`);
+        const json = await res.json();
+        if (json.success && json.discussion) {
+          setActiveDiscussion(json.discussion);
+          const mRes = await fetch(`/api/admin/company/discussions/${json.discussion.id}`);
+          const mJson = await mRes.json();
+          if (mJson.success) {
+            setMessages(mJson.messages || []);
+          }
+        } else {
+          setActiveDiscussion(null);
+          setMessages([]);
         }
-      } else {
+      } catch {
         setActiveDiscussion(null);
         setMessages([]);
       }
     };
 
     loadRoomDiscussion();
-  }, [selectedRoom, overview]);
+  }, [selectedRoom]);
 
-  // 3. SSE Stream for Active Discussion
+  // 3. Resilient Real-Time Polling for Active Discussion
   useEffect(() => {
-    if (!activeDiscussion || activeDiscussion.status !== 'in_progress') {
-      if (sseRef.current) {
-        sseRef.current.close();
-        sseRef.current = null;
-      }
-      return;
-    }
+    if (!activeDiscussion || activeDiscussion.status !== 'in_progress') return;
 
-    if (sseRef.current) {
-      sseRef.current.close();
-    }
-
-    const sse = new EventSource(`/api/admin/company/discussions/${activeDiscussion.id}/stream`);
-    sse.addEventListener('update', (event) => {
+    const interval = setInterval(async () => {
       try {
-        const payload = JSON.parse(event.data);
-        if (payload.discussion) {
-          setActiveDiscussion(payload.discussion);
-        }
-        if (payload.messages) {
-          setMessages(payload.messages);
+        const res = await fetch(`/api/admin/company/discussions/${activeDiscussion.id}`);
+        const json = await res.json();
+        if (json.success) {
+          if (json.discussion) setActiveDiscussion(json.discussion);
+          if (json.messages && json.messages.length !== messages.length) {
+            setMessages(json.messages);
+          }
         }
       } catch {}
-    });
+    }, 2500);
 
-    sseRef.current = sse;
-
-    return () => {
-      sse.close();
-    };
-  }, [activeDiscussion?.id]);
+    return () => clearInterval(interval);
+  }, [activeDiscussion?.id, activeDiscussion?.status, messages.length]);
 
   // 4. Meeting Controls
   const handleAdvanceTurn = async () => {
@@ -229,6 +221,7 @@ export default function CompanyOfficeClient() {
         }
         if (json.status === 'concluded') {
           showToast('Meeting reached consensus and adjourned!', 'success');
+          setActiveDiscussion((prev) => (prev ? { ...prev, status: 'concluded' } : null));
           fetchCompanyData();
           fetchProposals();
         }
@@ -254,6 +247,7 @@ export default function CompanyOfficeClient() {
       const json = await res.json();
       if (json.success) {
         showToast('Meeting concluded. Executive proposal generated for Prince!', 'success');
+        setActiveDiscussion((prev) => (prev ? { ...prev, status: 'concluded' } : null));
         fetchCompanyData();
         fetchProposals();
       }
@@ -261,6 +255,51 @@ export default function CompanyOfficeClient() {
       showToast('Failed to conclude meeting', 'error');
     } finally {
       setConcludingMeeting(false);
+    }
+  };
+
+  const handleSendCeoMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeDiscussion || !ceoInput.trim() || sendingCeoMessage) return;
+
+    const text = ceoInput.trim();
+    setCeoInput('');
+    setSendingCeoMessage(true);
+
+    const tempMsg: CompanyMessage = {
+      id: Date.now(),
+      discussion_id: activeDiscussion.id,
+      sender_id: 'prince_ceo',
+      sender_name: 'Prince (CEO)',
+      sender_role: 'Chief Executive Officer',
+      sender_avatar: '/assets/cropped-prince-profile.webp',
+      message_type: 'statement',
+      content: text,
+      evidence: {},
+      tokens_used: 10,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, tempMsg]);
+
+    try {
+      const res = await fetch(`/api/admin/company/discussions/${activeDiscussion.id}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        if (json.agentResponse) {
+          setMessages((prev) => [...prev, json.agentResponse]);
+        }
+        fetchCompanyData();
+      } else {
+        showToast(json.error || 'Failed to deliver directive', 'error');
+      }
+    } catch {
+      showToast('Network error delivering directive', 'error');
+    } finally {
+      setSendingCeoMessage(false);
     }
   };
 
@@ -644,21 +683,24 @@ export default function CompanyOfficeClient() {
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center text-zinc-500 p-8 space-y-3">
                     <MessageSquare className="w-12 h-12 text-zinc-700 stroke-[1.5]" />
-                    <p className="text-sm font-medium">No messages in this room right now.</p>
+                    <p className="text-sm font-medium">No active discussion in this room right now.</p>
                     <p className="text-xs max-w-sm text-zinc-600">
-                      Start a meeting or click an active room on the left to review agent debates and evidence sharing.
+                      Click &quot;Open Topic in this Room&quot; above to convene Alex Vance and your AI specialists.
                     </p>
                   </div>
                 ) : (
                   messages.map((msg) => {
                     const isModerator = msg.sender_id === 'alex_vance';
+                    const isCeo = msg.sender_id === 'prince_ceo';
                     const isSummary = msg.message_type === 'summary';
 
                     return (
                       <div
                         key={msg.id}
                         className={`flex gap-3.5 ${
-                          isSummary
+                          isCeo
+                            ? 'bg-indigo-950/40 border border-indigo-500/40 p-4 rounded-xl shadow-md'
+                            : isSummary
                             ? 'bg-purple-950/20 border border-purple-500/30 p-4 rounded-xl'
                             : 'p-3 rounded-xl bg-zinc-950/40 border border-zinc-800/60'
                         }`}
@@ -680,7 +722,9 @@ export default function CompanyOfficeClient() {
                             </div>
                             <span
                               className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase font-semibold ${
-                                isModerator
+                                isCeo
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  : isModerator
                                   ? 'bg-indigo-500/20 text-indigo-300'
                                   : msg.message_type === 'challenge'
                                   ? 'bg-red-500/20 text-red-300'
@@ -689,7 +733,7 @@ export default function CompanyOfficeClient() {
                                   : 'bg-zinc-800 text-zinc-300'
                               }`}
                             >
-                              {msg.message_type}
+                              {isCeo ? 'CEO DIRECTIVE' : msg.message_type}
                             </span>
                           </div>
 
@@ -700,7 +744,7 @@ export default function CompanyOfficeClient() {
                           {/* Evidence Drawer if present */}
                           {msg.evidence && Object.keys(msg.evidence).length > 0 && (
                             <div className="mt-2 p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-[11px] text-zinc-400">
-                              <span className="text-purple-400 font-bold block mb-1">CITED EVIDENCE & METRICS:</span>
+                              <span className="text-purple-400 font-bold block mb-1">CITED EVIDENCE &amp; METRICS:</span>
                               <pre className="overflow-x-auto">{JSON.stringify(msg.evidence, null, 2)}</pre>
                             </div>
                           )}
@@ -712,14 +756,60 @@ export default function CompanyOfficeClient() {
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* Concluded Strategic Consensus Banner */}
+              {activeDiscussion && activeDiscussion.status === 'concluded' && (
+                <div className="mt-3 p-3.5 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center justify-between text-xs">
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-purple-300 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      Meeting Concluded with Strategic Consensus
+                    </span>
+                    <p className="text-zinc-400">
+                      Consensus synthesized. Review proposal in CEO Approval Gate or start the next discussion.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setNewMeetingRoomId(selectedRoom?.id || 'war_room');
+                      setNewMeetingParticipants(employees.filter(e => e.id !== 'prince_ceo').map(e => e.id));
+                      setNewMeetingModalOpen(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold transition shrink-0 ml-3"
+                  >
+                    Start Next Topic
+                  </button>
+                </div>
+              )}
+
+              {/* Interactive CEO Directive Input Bar */}
+              {activeDiscussion && (
+                <form onSubmit={handleSendCeoMessage} className="mt-3 pt-3 border-t border-zinc-800 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={ceoInput}
+                    onChange={(e) => setCeoInput(e.target.value)}
+                    placeholder="Speak directly to the team as Prince (CEO)..."
+                    className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sendingCeoMessage || !ceoInput.trim()}
+                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+                  >
+                    {sendingCeoMessage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                    Send Directive
+                  </button>
+                </form>
+              )}
+
               {/* Bottom Quick Action Bar */}
               {activeDiscussion && activeDiscussion.status === 'in_progress' && (
-                <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-400 font-mono">
+                <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500 font-mono">
                   <span>
                     Token Budget: <strong className="text-purple-400">{activeDiscussion.tokens_consumed} / {activeDiscussion.token_budget}</strong>
                   </span>
                   <span>
-                    Max Turns: <strong className="text-purple-400">{activeDiscussion.turn_count} / {activeDiscussion.max_turns}</strong>
+                    Speaker Turn: <strong className="text-purple-400">{activeDiscussion.turn_count} / {activeDiscussion.max_turns}</strong>
                   </span>
                 </div>
               )}
@@ -1141,6 +1231,62 @@ export default function CompanyOfficeClient() {
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                   required
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-zinc-300">
+                    Invited Specialists ({newMeetingParticipants.length === 0 ? 'All Active by Default' : `${newMeetingParticipants.length} Selected`})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newMeetingParticipants.length === employees.length) {
+                        setNewMeetingParticipants([]);
+                      } else {
+                        setNewMeetingParticipants(employees.map((e) => e.id));
+                      }
+                    }}
+                    className="text-[11px] text-purple-400 hover:text-purple-300 transition"
+                  >
+                    {newMeetingParticipants.length === employees.length ? 'Clear Selection' : 'Select All'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 bg-zinc-950 border border-zinc-800 rounded-xl">
+                  {employees.map((emp) => {
+                    const isSelected = newMeetingParticipants.length === 0 || newMeetingParticipants.includes(emp.id);
+                    return (
+                      <button
+                        key={emp.id}
+                        type="button"
+                        onClick={() => {
+                          if (newMeetingParticipants.length === 0) {
+                            setNewMeetingParticipants(employees.filter((e) => e.id !== emp.id).map((e) => e.id));
+                          } else if (newMeetingParticipants.includes(emp.id)) {
+                            setNewMeetingParticipants(newMeetingParticipants.filter((id) => id !== emp.id));
+                          } else {
+                            setNewMeetingParticipants([...newMeetingParticipants, emp.id]);
+                          }
+                        }}
+                        className={`flex items-center gap-2 p-1.5 rounded-lg text-left text-xs transition border ${
+                          isSelected
+                            ? 'bg-purple-950/40 border-purple-500/60 text-purple-200'
+                            : 'bg-zinc-900/40 border-zinc-800/60 text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        <img
+                          src={emp.avatar_url || '/assets/cropped-prince-profile.webp'}
+                          alt={emp.name}
+                          className="w-6 h-6 rounded-full object-cover border border-zinc-700 shrink-0"
+                        />
+                        <div className="truncate">
+                          <div className="font-semibold truncate text-[11px]">{emp.name}</div>
+                          <div className="text-[9px] text-zinc-400 truncate">{emp.title}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">

@@ -140,19 +140,27 @@ export async function createOrUpdateEmployee(emp: Partial<CompanyEmployee> & { i
 export async function getAllRooms(): Promise<CompanyRoom[]> {
   const rooms = await query<CompanyRoom>(`SELECT * FROM company_rooms ORDER BY name ASC;`);
   
-  // Attach active discussions if present
+  // Attach latest discussion for each room (active or concluded)
   for (const r of rooms) {
-    const active = await query<CompanyDiscussion>(
-      `SELECT * FROM company_discussions WHERE room_id = $1 AND status = 'in_progress' ORDER BY created_at DESC LIMIT 1;`,
+    const latest = await query<CompanyDiscussion>(
+      `SELECT * FROM company_discussions WHERE room_id = $1 ORDER BY created_at DESC LIMIT 1;`,
       [r.id]
     );
-    r.active_discussion = active[0] || null;
+    r.active_discussion = latest[0] || null;
   }
   return rooms;
 }
 
 export async function getRoomById(id: string): Promise<CompanyRoom | null> {
   const rows = await query<CompanyRoom>(`SELECT * FROM company_rooms WHERE id = $1 LIMIT 1;`, [id]);
+  return rows[0] || null;
+}
+
+export async function getLatestDiscussionForRoom(roomId: string): Promise<CompanyDiscussion | null> {
+  const rows = await query<CompanyDiscussion>(
+    `SELECT * FROM company_discussions WHERE room_id = $1 ORDER BY created_at DESC LIMIT 1;`,
+    [roomId]
+  );
   return rows[0] || null;
 }
 
@@ -170,7 +178,26 @@ export async function createDiscussion(params: {
   maxTurns?: number;
 }): Promise<CompanyDiscussion> {
   const moderator = params.moderatorId || 'alex_vance';
-  const participants = Array.from(new Set([moderator, ...params.participantIds]));
+  let participants = Array.from(new Set(params.participantIds?.filter(Boolean) || []));
+
+  // If participants empty or only moderator, populate intelligent room defaults
+  if (participants.length === 0 || (participants.length === 1 && participants[0] === moderator)) {
+    if (params.roomId === 'war_room' || params.roomId === 'daily_standup') {
+      participants = ['alex_vance', 'david_chen', 'elena_rostova', 'marcus_sterling', 'liam_thorne', 'sophia_reynolds'];
+    } else if (params.roomId === 'growth_sales') {
+      participants = ['alex_vance', 'elena_rostova', 'liam_thorne', 'sophia_reynolds'];
+    } else if (params.roomId === 'innovation_lab') {
+      participants = ['alex_vance', 'marcus_sterling', 'elena_rostova', 'david_chen'];
+    } else if (params.roomId === 'dev_room') {
+      participants = ['alex_vance', 'david_chen', 'elena_rostova'];
+    } else {
+      participants = ['alex_vance', 'marcus_sterling', 'david_chen'];
+    }
+  }
+
+  if (!participants.includes(moderator)) {
+    participants.unshift(moderator);
+  }
 
   const rows = await query<CompanyDiscussion>(
     `INSERT INTO company_discussions (
@@ -276,11 +303,11 @@ export async function getDiscussionMessages(discussionId: string): Promise<Compa
   return await query<CompanyMessage>(
     `SELECT 
        m.*, 
-       e.name as sender_name, 
-       e.display_title as sender_role, 
-       e.avatar_url as sender_avatar
+       COALESCE(e.name, CASE WHEN m.sender_id = 'prince_ceo' THEN 'Prince (CEO)' ELSE m.sender_id END) as sender_name, 
+       COALESCE(e.display_title, CASE WHEN m.sender_id = 'prince_ceo' THEN 'Chief Executive Officer' ELSE 'Specialist' END) as sender_role, 
+       COALESCE(e.avatar_url, '/assets/cropped-prince-profile.webp') as sender_avatar
      FROM company_messages m
-     JOIN company_employees e ON m.sender_id = e.id
+     LEFT JOIN company_employees e ON m.sender_id = e.id
      WHERE m.discussion_id = $1
      ORDER BY m.created_at ASC;`,
     [discussionId]
@@ -312,11 +339,17 @@ export async function insertCompanyMessage(params: {
   );
 
   const msg = rows[0];
-  const sender = await getEmployeeById(params.senderId);
-  if (sender) {
-    msg.sender_name = sender.name;
-    msg.sender_role = sender.display_title;
-    msg.sender_avatar = sender.avatar_url;
+  if (params.senderId === 'prince_ceo') {
+    msg.sender_name = 'Prince (CEO)';
+    msg.sender_role = 'Chief Executive Officer';
+    msg.sender_avatar = '/assets/cropped-prince-profile.webp';
+  } else {
+    const sender = await getEmployeeById(params.senderId);
+    if (sender) {
+      msg.sender_name = sender.name;
+      msg.sender_role = sender.display_title;
+      msg.sender_avatar = sender.avatar_url;
+    }
   }
   return msg;
 }

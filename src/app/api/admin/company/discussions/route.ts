@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-db';
-import { createDiscussion, getActiveDiscussions } from '@/lib/company/db';
+import { createDiscussion, getActiveDiscussions, getLatestDiscussionForRoom } from '@/lib/company/db';
 import { advanceDiscussionTurn } from '@/lib/company/orchestrator';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const roomId = searchParams.get('roomId');
+
   try {
+    if (roomId) {
+      const discussion = await getLatestDiscussionForRoom(roomId);
+      return NextResponse.json({ success: true, discussion });
+    }
+
     const discussions = await getActiveDiscussions(20);
     return NextResponse.json({ success: true, discussions });
   } catch (error: any) {
