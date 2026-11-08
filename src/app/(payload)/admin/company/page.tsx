@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentAdmin } from '@/lib/admin-db';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import CompanyOfficeClient from './CompanyOfficeClient';
+import '@/styles/company-office.css';
 
 export const dynamic = 'force-dynamic';
 

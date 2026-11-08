@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import '@/styles/company-office.css';
 import {
   Building2,
   Users,
@@ -439,57 +440,55 @@ export default function CompanyOfficeClient() {
   const rooms = overview?.rooms || [];
 
   return (
-    <div className="space-y-6">
+    <div className="co-root">
       {/* ==================================================================== */}
       {/* EXECUTIVE HEADER & METRICS                                          */}
       {/* ==================================================================== */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-950/40 via-zinc-900 to-indigo-950/40 border border-purple-500/20 p-6 shadow-2xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold tracking-wider uppercase">
-              <Building2 className="w-3.5 h-3.5 text-purple-400" />
+      <div className="co-header-banner">
+        <div className="co-header-top">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="co-badge-pill">
+              <Building2 style={{ width: 14, height: 14, color: '#c084fc' }} />
               HeyPrince Autonomous AI Company
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-              Executive Virtual Office
-              <span className="text-xs font-mono font-normal px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                SOVEREIGN WORKFORCE LIVE
-              </span>
-            </h1>
-            <p className="text-sm text-zinc-400 max-w-2xl leading-relaxed">
+            <div className="co-title-row">
+              <h1 className="co-title">Executive Virtual Office</h1>
+              <span className="co-live-tag">SOVEREIGN WORKFORCE LIVE</span>
+            </div>
+            <p className="co-subtitle">
               Prince is CEO. Alex Vance (Chief of Staff) orchestrates 6 autonomous specialists across 5 virtual collaboration rooms.
               Internal planning is autonomous; all external and production changes require your direct sign-off.
             </p>
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="px-4 py-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-center">
-              <div className="text-2xl font-black text-white font-mono">{employees.length}</div>
-              <div className="text-[11px] text-zinc-400 uppercase font-semibold">Specialists</div>
+          <div className="co-stats-grid">
+            <div className="co-stat-box">
+              <div className="co-stat-num">{employees.length}</div>
+              <div className="co-stat-label">Specialists</div>
             </div>
-            <div className="px-4 py-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-center">
-              <div className="text-2xl font-black text-purple-400 font-mono">{overview?.activeDiscussions?.length || 0}</div>
-              <div className="text-[11px] text-zinc-400 uppercase font-semibold">In Meeting</div>
+            <div className="co-stat-box">
+              <div className="co-stat-num" style={{ color: '#c084fc' }}>{overview?.activeDiscussions?.length || 0}</div>
+              <div className="co-stat-label">In Meeting</div>
             </div>
-            <div className="px-4 py-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-center">
-              <div className="text-2xl font-black text-amber-400 font-mono">{overview?.pendingProposalsCount || 0}</div>
-              <div className="text-[11px] text-zinc-400 uppercase font-semibold">CEO Approval</div>
+            <div className="co-stat-box">
+              <div className="co-stat-num" style={{ color: '#fbbf24' }}>{overview?.pendingProposalsCount || 0}</div>
+              <div className="co-stat-label">CEO Approval</div>
             </div>
-            <div className="px-4 py-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-center">
-              <div className="text-2xl font-black text-emerald-400 font-mono">{overview?.openTasksCount || 0}</div>
-              <div className="text-[11px] text-zinc-400 uppercase font-semibold">Open Tasks</div>
+            <div className="co-stat-box">
+              <div className="co-stat-num" style={{ color: '#34d399' }}>{overview?.openTasksCount || 0}</div>
+              <div className="co-stat-label">Open Tasks</div>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 mt-6 pt-6 border-t border-zinc-800/80 overflow-x-auto">
+        <div className="co-tabs-bar">
           {[
             { id: 'office', label: 'Virtual Office & Rooms', icon: Building2 },
             { id: 'workforce', label: 'Employee Identities', icon: Users },
             { id: 'tasks', label: 'Task Matrix', icon: CheckSquare, badge: overview?.openTasksCount },
-            { id: 'proposals', label: 'CEO Approval Gate', icon: ShieldCheck, badge: overview?.pendingProposalsCount, badgeColor: 'bg-amber-500 text-black' },
+            { id: 'proposals', label: 'CEO Approval Gate', icon: ShieldCheck, badge: overview?.pendingProposalsCount, badgeColor: '#f59e0b' },
             { id: 'memory', label: 'Company Brain & Memory', icon: Brain },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -498,19 +497,14 @@ export default function CompanyOfficeClient() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-                }`}
+                className={`co-tab-btn ${isActive ? 'active' : ''}`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon style={{ width: 16, height: 16 }} />
                 {tab.label}
                 {tab.badge !== undefined && tab.badge > 0 && (
                   <span
-                    className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-bold ${
-                      tab.badgeColor || 'bg-purple-900 text-purple-200'
-                    }`}
+                    className="co-tab-badge"
+                    style={{ background: tab.badgeColor || 'rgba(0,0,0,0.5)' }}
                   >
                     {tab.badge}
                   </span>
@@ -525,12 +519,12 @@ export default function CompanyOfficeClient() {
       {/* TAB 1: VIRTUAL OFFICE FLOOR & LIVE COLLABORATION ROOM                */}
       {/* ==================================================================== */}
       {activeTab === 'office' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Room Selector & Office Floorplan (4 cols) */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-purple-400" />
+        <div className="co-office-layout">
+          {/* Room Selector & Office Floorplan (Sidebar) */}
+          <div className="co-sidebar-pane">
+            <div className="co-pane-header">
+              <h2 className="co-pane-title">
+                <Building2 style={{ width: 16, height: 16, color: '#a855f7' }} />
                 Virtual Office Rooms
               </h2>
               <button
@@ -538,14 +532,15 @@ export default function CompanyOfficeClient() {
                   setNewMeetingRoomId(selectedRoom?.id || 'war_room');
                   setNewMeetingModalOpen(true);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-md transition"
+                className="co-btn co-btn-primary"
+                style={{ padding: '6px 12px', fontSize: '0.75rem' }}
               >
-                <PlusCircle className="w-3.5 h-3.5" />
+                <PlusCircle style={{ width: 14, height: 14 }} />
                 Start Meeting
               </button>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="co-rooms-list">
               {rooms.map((room) => {
                 const isSelected = selectedRoom?.id === room.id;
                 const hasActive = Boolean(room.active_discussion);
@@ -554,33 +549,28 @@ export default function CompanyOfficeClient() {
                   <div
                     key={room.id}
                     onClick={() => setSelectedRoom(room)}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${
-                      isSelected
-                        ? 'bg-zinc-900 border-purple-500/60 shadow-lg shadow-purple-950/40 ring-1 ring-purple-500/30'
-                        : 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900'
-                    }`}
+                    className={`co-room-card ${isSelected ? 'selected' : ''}`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white">{room.name}</h3>
-                          {hasActive && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30">
-                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
-                              IN SESSION
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-zinc-400 line-clamp-2">{room.description}</p>
+                    <div className="co-room-title-row">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h3 className="co-room-name">{room.name}</h3>
+                        {hasActive && (
+                          <span className="co-room-active-pill">IN SESSION</span>
+                        )}
                       </div>
-                      <ChevronRight className={`w-4 h-4 transition ${isSelected ? 'text-purple-400 translate-x-1' : 'text-zinc-600'}`} />
+                      <ChevronRight style={{ width: 16, height: 16, color: isSelected ? '#a855f7' : '#64748b' }} />
                     </div>
+                    <p className="co-room-desc">{room.description}</p>
 
                     {/* Room Activity Snapshot */}
                     {hasActive && (
-                      <div className="mt-3 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
-                        <span className="truncate max-w-[200px]">"{room.active_discussion?.title}"</span>
-                        <span className="text-purple-400 font-bold">Turn {room.active_discussion?.turn_count}/{room.active_discussion?.max_turns}</span>
+                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--co-border)', display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--co-text-muted)' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                          "{room.active_discussion?.title}"
+                        </span>
+                        <span style={{ color: '#c084fc', fontWeight: 700 }}>
+                          Turn {room.active_discussion?.turn_count}/{room.active_discussion?.max_turns}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -589,26 +579,30 @@ export default function CompanyOfficeClient() {
             </div>
 
             {/* Quick Live Workforce Status */}
-            <div className="p-4 rounded-xl bg-zinc-900/70 border border-zinc-800 space-y-3">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="co-agents-pane">
+              <h3 className="co-pane-title">
+                <Activity style={{ width: 14, height: 14, color: '#10b981' }} />
                 Live Agent Presence
               </h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="co-agents-grid">
                 {employees.map((emp) => {
-                  const cfg = STATUS_CONFIG[emp.status] || STATUS_CONFIG.idle;
                   return (
                     <div
                       key={emp.id}
                       onClick={() => setSelectedEmployeeDetail(emp)}
-                      className="p-2 rounded-lg bg-zinc-950/60 border border-zinc-800/80 hover:border-zinc-700 cursor-pointer flex items-center gap-2.5 transition"
+                      className="co-agent-chip"
                     >
-                      <img src={emp.avatar_url} alt={emp.name} className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 object-cover" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold text-white truncate">{emp.name}</div>
-                        <div className="flex items-center gap-1 text-[10px] text-zinc-400">
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                          <span className="truncate">{emp.status.replace('_', ' ')}</span>
+                      <img
+                        src={emp.avatar_url || `/assets/avatars/${emp.id.replace('_', '-')}.svg`}
+                        alt={emp.name}
+                        className="co-avatar-sm"
+                        style={{ width: '32px', height: '32px', minWidth: '32px', maxWidth: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                      <div className="co-agent-info">
+                        <div className="co-agent-name">{emp.name}</div>
+                        <div className="co-status-row">
+                          <span className={`co-dot co-dot-${emp.status}`} />
+                          <span>{emp.status.replace('_', ' ')}</span>
                         </div>
                       </div>
                     </div>
@@ -618,202 +612,185 @@ export default function CompanyOfficeClient() {
             </div>
           </div>
 
-          {/* Live Meeting Room & Transcript Streamer (8 cols) */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="p-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl flex flex-col h-[720px]">
-              {/* Meeting Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-zinc-800 gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-bold">
-                      {selectedRoom?.name || 'Collaboration Hub'}
-                    </span>
-                    {activeDiscussion && (
-                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono font-bold">
-                        ACTIVE DISCUSSION
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-lg font-extrabold text-white">
-                    {activeDiscussion ? activeDiscussion.title : 'Room is currently quiet'}
-                  </h3>
+          {/* Live Meeting Room & Transcript Streamer */}
+          <div className="co-room-stage">
+            {/* Meeting Header */}
+            <div className="co-stage-header">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', color: '#e2e8f0', fontWeight: 700 }}>
+                    {selectedRoom?.name || 'Collaboration Hub'}
+                  </span>
                   {activeDiscussion && (
-                    <p className="text-xs text-zinc-400">
-                      <strong className="text-zinc-300">Objective:</strong> {activeDiscussion.objective}
-                    </p>
+                    <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '9999px', background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)', fontWeight: 700 }}>
+                      ACTIVE DISCUSSION
+                    </span>
                   )}
                 </div>
-
-                {/* Turn Controls for Prince (CEO) */}
-                {activeDiscussion && activeDiscussion.status === 'in_progress' ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleAdvanceTurn}
-                      disabled={advancingTurn}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg transition"
-                    >
-                      {advancingTurn ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                      Advance Turn ({activeDiscussion.turn_count}/{activeDiscussion.max_turns})
-                    </button>
-                    <button
-                      onClick={handleConcludeMeeting}
-                      disabled={concludingMeeting}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-200 text-xs font-bold border border-zinc-700 transition"
-                    >
-                      {concludingMeeting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                      Synthesize & Conclude
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setNewMeetingRoomId(selectedRoom?.id || 'war_room');
-                      setNewMeetingModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-md"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    Open Topic in this Room
-                  </button>
+                <h3 className="co-stage-title">
+                  {activeDiscussion ? activeDiscussion.title : 'Room is currently quiet'}
+                </h3>
+                {activeDiscussion && (
+                  <p className="co-stage-sub">
+                    <strong style={{ color: '#ffffff' }}>Objective:</strong> {activeDiscussion.objective}
+                  </p>
                 )}
               </div>
 
-              {/* Messages Transcript Scroll Area */}
-              <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-2">
-                {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center text-zinc-500 p-8 space-y-3">
-                    <MessageSquare className="w-12 h-12 text-zinc-700 stroke-[1.5]" />
-                    <p className="text-sm font-medium">No active discussion in this room right now.</p>
-                    <p className="text-xs max-w-sm text-zinc-600">
-                      Click &quot;Open Topic in this Room&quot; above to convene Alex Vance and your AI specialists.
-                    </p>
-                  </div>
-                ) : (
-                  messages.map((msg) => {
-                    const isModerator = msg.sender_id === 'alex_vance';
-                    const isCeo = msg.sender_id === 'prince_ceo';
-                    const isSummary = msg.message_type === 'summary';
-
-                    return (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-3.5 ${
-                          isCeo
-                            ? 'bg-indigo-950/40 border border-indigo-500/40 p-4 rounded-xl shadow-md'
-                            : isSummary
-                            ? 'bg-purple-950/20 border border-purple-500/30 p-4 rounded-xl'
-                            : 'p-3 rounded-xl bg-zinc-950/40 border border-zinc-800/60'
-                        }`}
-                      >
-                        <img
-                          src={msg.sender_avatar || `/assets/avatars/${msg.sender_id}.svg`}
-                          alt={msg.sender_name || msg.sender_id}
-                          className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 object-cover shrink-0"
-                        />
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-white">
-                                {msg.sender_name || msg.sender_id}
-                              </span>
-                              <span className="text-[11px] text-zinc-400 font-mono">
-                                {msg.sender_role || 'Specialist'}
-                              </span>
-                            </div>
-                            <span
-                              className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase font-semibold ${
-                                isCeo
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                  : isModerator
-                                  ? 'bg-indigo-500/20 text-indigo-300'
-                                  : msg.message_type === 'challenge'
-                                  ? 'bg-red-500/20 text-red-300'
-                                  : msg.message_type === 'consensus'
-                                  ? 'bg-emerald-500/20 text-emerald-300'
-                                  : 'bg-zinc-800 text-zinc-300'
-                              }`}
-                            >
-                              {isCeo ? 'CEO DIRECTIVE' : msg.message_type}
-                            </span>
-                          </div>
-
-                          <div className="text-sm text-zinc-300 leading-relaxed font-sans select-text">
-                            {msg.content}
-                          </div>
-
-                          {/* Evidence Drawer if present */}
-                          {msg.evidence && Object.keys(msg.evidence).length > 0 && (
-                            <div className="mt-2 p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-[11px] text-zinc-400">
-                              <span className="text-purple-400 font-bold block mb-1">CITED EVIDENCE &amp; METRICS:</span>
-                              <pre className="overflow-x-auto">{JSON.stringify(msg.evidence, null, 2)}</pre>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Concluded Strategic Consensus Banner */}
-              {activeDiscussion && activeDiscussion.status === 'concluded' && (
-                <div className="mt-3 p-3.5 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center justify-between text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-purple-300 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      Meeting Concluded with Strategic Consensus
-                    </span>
-                    <p className="text-zinc-400">
-                      Consensus synthesized. Review proposal in CEO Approval Gate or start the next discussion.
-                    </p>
-                  </div>
+              {/* Turn Controls for Prince (CEO) */}
+              {activeDiscussion && activeDiscussion.status === 'in_progress' ? (
+                <div className="co-stage-actions">
                   <button
-                    onClick={() => {
-                      setNewMeetingRoomId(selectedRoom?.id || 'war_room');
-                      setNewMeetingParticipants(employees.filter(e => e.id !== 'prince_ceo').map(e => e.id));
-                      setNewMeetingModalOpen(true);
-                    }}
-                    className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold transition shrink-0 ml-3"
+                    onClick={handleAdvanceTurn}
+                    disabled={advancingTurn}
+                    className="co-btn co-btn-primary"
                   >
-                    Start Next Topic
+                    {advancingTurn ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Play style={{ width: 14, height: 14 }} />}
+                    Advance Turn ({activeDiscussion.turn_count}/{activeDiscussion.max_turns})
+                  </button>
+                  <button
+                    onClick={handleConcludeMeeting}
+                    disabled={concludingMeeting}
+                    className="co-btn co-btn-secondary"
+                  >
+                    {concludingMeeting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 style={{ width: 14, height: 14, color: '#34d399' }} />}
+                    Synthesize & Conclude
                   </button>
                 </div>
-              )}
-
-              {/* Interactive CEO Directive Input Bar */}
-              {activeDiscussion && (
-                <form onSubmit={handleSendCeoMessage} className="mt-3 pt-3 border-t border-zinc-800 flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={ceoInput}
-                    onChange={(e) => setCeoInput(e.target.value)}
-                    placeholder="Speak directly to the team as Prince (CEO)..."
-                    className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
-                  />
-                  <button
-                    type="submit"
-                    disabled={sendingCeoMessage || !ceoInput.trim()}
-                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0"
-                  >
-                    {sendingCeoMessage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                    Send Directive
-                  </button>
-                </form>
-              )}
-
-              {/* Bottom Quick Action Bar */}
-              {activeDiscussion && activeDiscussion.status === 'in_progress' && (
-                <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500 font-mono">
-                  <span>
-                    Token Budget: <strong className="text-purple-400">{activeDiscussion.tokens_consumed} / {activeDiscussion.token_budget}</strong>
-                  </span>
-                  <span>
-                    Speaker Turn: <strong className="text-purple-400">{activeDiscussion.turn_count} / {activeDiscussion.max_turns}</strong>
-                  </span>
-                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setNewMeetingRoomId(selectedRoom?.id || 'war_room');
+                    setNewMeetingModalOpen(true);
+                  }}
+                  className="co-btn co-btn-primary"
+                >
+                  <PlusCircle style={{ width: 14, height: 14 }} />
+                  Open Topic in this Room
+                </button>
               )}
             </div>
+
+            {/* Messages Transcript Scroll Area */}
+            <div className="co-transcript-scroll">
+              {messages.length === 0 ? (
+                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#64748b', padding: '32px', gap: '12px' }}>
+                  <MessageSquare style={{ width: 44, height: 44, strokeWidth: 1.5, color: '#334155' }} />
+                  <p style={{ fontSize: '0.92rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>No active discussion in this room right now.</p>
+                  <p style={{ fontSize: '0.8rem', maxWidth: '360px', color: '#64748b', margin: 0 }}>
+                    Click "Open Topic in this Room" above to convene Alex Vance and your AI specialists.
+                  </p>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isModerator = msg.sender_id === 'alex_vance';
+                  const isCeo = msg.sender_id === 'prince_ceo';
+                  const isSummary = msg.message_type === 'summary';
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`co-chat-msg ${isCeo ? 'is-ceo' : ''} ${isSummary ? 'is-summary' : ''}`}
+                    >
+                      <img
+                        src={msg.sender_avatar || `/assets/avatars/${msg.sender_id.replace('_', '-')}.svg`}
+                        alt={msg.sender_name || msg.sender_id}
+                        className="co-msg-avatar"
+                        style={{ width: '36px', height: '36px', minWidth: '36px', maxWidth: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                      <div className="co-msg-body">
+                        <div className="co-msg-header">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span className="co-msg-author">
+                              {msg.sender_name || msg.sender_id}
+                            </span>
+                            <span className="co-msg-role">
+                              {msg.sender_role || 'Specialist'}
+                            </span>
+                          </div>
+                          <span className="co-msg-tag">
+                            {isCeo ? 'CEO DIRECTIVE' : msg.message_type}
+                          </span>
+                        </div>
+
+                        <div className="co-msg-content">
+                          {msg.content}
+                        </div>
+
+                        {/* Evidence Drawer if present */}
+                        {msg.evidence && Object.keys(msg.evidence).length > 0 && (
+                          <div className="co-evidence-box">
+                            <span style={{ color: '#c084fc', fontWeight: 700, display: 'block', marginBottom: '4px' }}>CITED EVIDENCE & METRICS:</span>
+                            <pre style={{ margin: 0, overflowX: 'auto' }}>{JSON.stringify(msg.evidence, null, 2)}</pre>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Concluded Strategic Consensus Banner */}
+            {activeDiscussion && activeDiscussion.status === 'concluded' && (
+              <div style={{ marginTop: '12px', padding: '14px 16px', borderRadius: '12px', background: 'rgba(88,28,135,0.25)', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <span style={{ fontWeight: 700, color: '#d8b4fe', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem' }}>
+                    <CheckCircle2 style={{ width: 16, height: 16, color: '#34d399' }} />
+                    Meeting Concluded with Strategic Consensus
+                  </span>
+                  <p style={{ fontSize: '0.76rem', color: '#cbd5e1', margin: '4px 0 0 0' }}>
+                    Consensus synthesized. Review proposal in CEO Approval Gate or start the next discussion.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setNewMeetingRoomId(selectedRoom?.id || 'war_room');
+                    setNewMeetingParticipants(employees.filter(e => e.id !== 'prince_ceo').map(e => e.id));
+                    setNewMeetingModalOpen(true);
+                  }}
+                  className="co-btn co-btn-primary"
+                  style={{ padding: '6px 14px', fontSize: '0.78rem', flexShrink: 0 }}
+                >
+                  Start Next Topic
+                </button>
+              </div>
+            )}
+
+            {/* Interactive CEO Directive Input Bar */}
+            {activeDiscussion && (
+              <form onSubmit={handleSendCeoMessage} className="co-ceo-bar">
+                <input
+                  type="text"
+                  value={ceoInput}
+                  onChange={(e) => setCeoInput(e.target.value)}
+                  placeholder="Speak directly to the team as Prince (CEO)..."
+                  className="co-input"
+                />
+                <button
+                  type="submit"
+                  disabled={sendingCeoMessage || !ceoInput.trim()}
+                  className="co-btn co-btn-primary"
+                  style={{ flexShrink: 0 }}
+                >
+                  {sendingCeoMessage ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
+                  Send Directive
+                </button>
+              </form>
+            )}
+
+            {/* Bottom Quick Action Bar */}
+            {activeDiscussion && activeDiscussion.status === 'in_progress' && (
+              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--co-text-dim)', fontFamily: 'monospace' }}>
+                <span>
+                  Token Budget: <strong style={{ color: '#c084fc' }}>{activeDiscussion.tokens_consumed} / {activeDiscussion.token_budget}</strong>
+                </span>
+                <span>
+                  Speaker Turn: <strong style={{ color: '#c084fc' }}>{activeDiscussion.turn_count} / {activeDiscussion.max_turns}</strong>
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -822,77 +799,68 @@ export default function CompanyOfficeClient() {
       {/* TAB 2: WORKFORCE IDENTITIES                                          */}
       {/* ==================================================================== */}
       {activeTab === 'workforce' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="co-pane-header">
             <div>
-              <h2 className="text-xl font-bold text-white">Autonomous Workforce Registry</h2>
-              <p className="text-xs text-zinc-400">
+              <h2 className="co-stage-title" style={{ fontSize: '1.4rem' }}>Autonomous Workforce Registry</h2>
+              <p className="co-stage-sub">
                 Specialists possess distinct psychological archetypes, system prompt overlays, and strict tool permissions.
               </p>
             </div>
             <button
               onClick={() => setNewEmployeeModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-md"
+              className="co-btn co-btn-primary"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus style={{ width: 16, height: 16 }} />
               Propose New AI Employee
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="co-card-grid">
             {employees.map((emp) => {
               const cfg = STATUS_CONFIG[emp.status] || STATUS_CONFIG.idle;
 
               return (
-                <div
-                  key={emp.id}
-                  className="rounded-2xl bg-zinc-900 border border-zinc-800 p-5 space-y-4 hover:border-purple-500/40 transition shadow-lg relative overflow-hidden flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={emp.avatar_url}
-                          alt={emp.name}
-                          className="w-14 h-14 rounded-2xl bg-zinc-800 border-2 border-purple-500/30 object-cover shadow-md"
-                        />
-                        <div>
-                          <h3 className="text-base font-bold text-white">{emp.name}</h3>
-                          <p className="text-xs text-purple-400 font-semibold">{emp.display_title}</p>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 mt-1 inline-block">
-                            {emp.department}
-                          </span>
-                        </div>
+                <div key={emp.id} className="co-generic-card">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <img
+                        src={emp.avatar_url || `/assets/avatars/${emp.id.replace('_', '-')}.svg`}
+                        alt={emp.name}
+                        style={{ width: '56px', height: '56px', minWidth: '56px', borderRadius: '14px', objectFit: 'cover', background: '#1e1b4b', border: '1px solid var(--co-border)' }}
+                      />
+                      <div>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>{emp.name}</h3>
+                        <p style={{ fontSize: '0.78rem', color: '#c084fc', fontWeight: 600, margin: '2px 0 0 0' }}>{emp.display_title}</p>
+                        <span style={{ fontSize: '0.68rem', fontFamily: 'monospace', padding: '2px 6px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', color: '#94a3b8', display: 'inline-block', marginTop: '4px' }}>
+                          {emp.department}
+                        </span>
                       </div>
                     </div>
 
-                    <div className={`px-2.5 py-1 rounded-lg border text-xs font-medium flex items-center gap-2 ${cfg.color}`}>
-                      <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                    <div style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--co-border)', fontSize: '0.74rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.3)', width: 'fit-content' }}>
+                      <span className={`co-dot co-dot-${emp.status}`} />
                       <span>{cfg.label}</span>
                     </div>
 
-                    <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3">{emp.bio}</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--co-text-muted)', lineHeight: 1.5, margin: 0 }}>{emp.bio}</p>
 
-                    <div className="space-y-1 text-[11px] text-zinc-400 font-mono pt-2 border-t border-zinc-800">
-                      <div>
-                        <strong>Archetype:</strong> {emp.personality_archetype}
-                      </div>
-                      <div>
-                        <strong>Model:</strong> {emp.model_preference}
-                      </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: 'var(--co-text-dim)', fontFamily: 'monospace', paddingTop: '8px', borderTop: '1px solid var(--co-border)' }}>
+                      <div><strong>Archetype:</strong> {emp.personality_archetype}</div>
+                      <div><strong>Model:</strong> {emp.model_preference}</div>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between">
-                    <div className="text-[11px] text-zinc-400 font-mono">
-                      ⭐ <strong>{emp.performance_metrics?.rating || 5.0}</strong> (
-                      {emp.performance_metrics?.tasks_completed || 0} tasks)
+                  <div style={{ paddingTop: '10px', borderTop: '1px solid var(--co-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--co-text-muted)', fontFamily: 'monospace' }}>
+                      ⭐ <strong>{emp.performance_metrics?.rating || 5.0}</strong> ({emp.performance_metrics?.tasks_completed || 0} tasks)
                     </div>
                     <button
                       onClick={() => setSelectedEmployeeDetail(emp)}
-                      className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                      className="co-btn co-btn-secondary"
+                      style={{ padding: '4px 10px', fontSize: '0.74rem' }}
                     >
-                      View Specs <ChevronRight className="w-3.5 h-3.5" />
+                      View Specs <ChevronRight style={{ width: 14, height: 14 }} />
                     </button>
                   </div>
                 </div>
@@ -906,11 +874,11 @@ export default function CompanyOfficeClient() {
       {/* TAB 3: TASK MATRIX & KANBAN                                         */}
       {/* ==================================================================== */}
       {activeTab === 'tasks' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="co-pane-header">
             <div>
-              <h2 className="text-xl font-bold text-white">Autonomous Task Matrix</h2>
-              <p className="text-xs text-zinc-400">
+              <h2 className="co-stage-title" style={{ fontSize: '1.4rem' }}>Autonomous Task Matrix</h2>
+              <p className="co-stage-sub">
                 Tasks created during meetings or assigned by Alex Vance with mandatory independent reviewer verification.
               </p>
             </div>
@@ -931,66 +899,69 @@ export default function CompanyOfficeClient() {
                   }).then(() => fetchTasks());
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md transition"
+              className="co-btn co-btn-primary"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle style={{ width: 16, height: 16 }} />
               Assign Task
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="co-kanban-grid">
             {(['pending', 'in_progress', 'review_ready', 'completed'] as const).map((colStatus) => {
               const colTasks = tasks.filter((t) => t.status === colStatus);
 
               return (
-                <div key={colStatus} className="space-y-3 bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800 min-h-[500px]">
-                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                    <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">
+                <div key={colStatus} className="co-kanban-col">
+                  <div className="co-kanban-col-header">
+                    <h3 className="co-kanban-col-title">
                       {colStatus.replace('_', ' ')}
                     </h3>
-                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                    <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', fontWeight: 700, padding: '2px 8px', borderRadius: '9999px', background: 'rgba(255,255,255,0.08)', color: '#cbd5e1' }}>
                       {colTasks.length}
                     </span>
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {colTasks.length === 0 ? (
-                      <div className="text-center py-10 text-zinc-600 text-xs">No tasks in this lane</div>
+                      <div style={{ textAlign: 'center', padding: '32px 0', color: '#64748b', fontSize: '0.78rem' }}>No tasks in this lane</div>
                     ) : (
                       colTasks.map((t) => (
                         <div
                           key={t.id}
-                          className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 space-y-2.5 shadow-md"
+                          style={{ padding: '14px', borderRadius: '12px', background: 'rgba(7,7,10,0.7)', border: '1px solid var(--co-border)', display: 'flex', flexDirection: 'column', gap: '10px' }}
                         >
-                          <div className="flex items-start justify-between gap-2">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                             <span
-                              className={`text-[9px] font-bold uppercase font-mono px-2 py-0.5 rounded ${
-                                t.priority === 'urgent'
-                                  ? 'bg-red-500/20 text-red-400'
-                                  : t.priority === 'high'
-                                  ? 'bg-amber-500/20 text-amber-400'
-                                  : 'bg-zinc-800 text-zinc-400'
-                              }`}
+                              style={{
+                                fontSize: '0.65rem',
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                fontFamily: 'monospace',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                background: t.priority === 'urgent' ? 'rgba(239,68,68,0.2)' : t.priority === 'high' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.08)',
+                                color: t.priority === 'urgent' ? '#f87171' : t.priority === 'high' ? '#fbbf24' : '#94a3b8'
+                              }}
                             >
                               {t.priority}
                             </span>
-                            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                              <span className="text-zinc-500">Assignee:</span>
-                              <strong className="text-zinc-300">{t.assigned_to}</strong>
+                            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                              <span>Assignee: </span>
+                              <strong style={{ color: '#ffffff' }}>{t.assigned_to}</strong>
                             </div>
                           </div>
 
-                          <h4 className="text-sm font-bold text-white leading-snug">{t.title}</h4>
-                          <p className="text-xs text-zinc-400 line-clamp-2">{t.description}</p>
+                          <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#ffffff', margin: 0, lineHeight: 1.4 }}>{t.title}</h4>
+                          <p style={{ fontSize: '0.78rem', color: 'var(--co-text-muted)', margin: 0, lineHeight: 1.4 }}>{t.description}</p>
 
                           {/* Acceptance Criteria */}
                           {t.acceptance_criteria && t.acceptance_criteria.length > 0 && (
-                            <div className="pt-2 border-t border-zinc-800/80 space-y-1">
-                              <div className="text-[10px] font-mono text-zinc-500 uppercase">Acceptance Checklist:</div>
+                            <div style={{ paddingTop: '8px', borderTop: '1px solid var(--co-border)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: '#64748b', textTransform: 'uppercase' }}>Acceptance Checklist:</div>
                               {t.acceptance_criteria.map((c, i) => (
-                                <div key={i} className="flex items-center gap-1.5 text-xs text-zinc-400">
-                                  <CheckCircle2 className={`w-3.5 h-3.5 ${t.status === 'completed' ? 'text-emerald-400' : 'text-zinc-600'}`} />
-                                  <span className="truncate">{c}</span>
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                                  <CheckCircle2 style={{ width: 14, height: 14, color: t.status === 'completed' ? '#34d399' : '#64748b', flexShrink: 0 }} />
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c}</span>
                                 </div>
                               ))}
                             </div>
@@ -998,7 +969,7 @@ export default function CompanyOfficeClient() {
 
                           {/* Verification Notes */}
                           {t.verification_notes && (
-                            <div className="p-2 rounded bg-emerald-950/30 border border-emerald-800/40 text-[11px] text-emerald-300 font-mono">
+                            <div style={{ padding: '8px', borderRadius: '6px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', fontSize: '0.72rem', color: '#34d399', fontFamily: 'monospace' }}>
                               {t.verification_notes}
                             </div>
                           )}
@@ -1008,12 +979,13 @@ export default function CompanyOfficeClient() {
                             <button
                               onClick={() => handleExecuteTask(t.id)}
                               disabled={executingTaskId === t.id}
-                              className="w-full mt-2 py-1.5 rounded-lg bg-purple-600/30 hover:bg-purple-600 text-purple-200 hover:text-white text-xs font-bold border border-purple-500/40 transition flex items-center justify-center gap-1.5"
+                              className="co-btn co-btn-primary"
+                              style={{ width: '100%', justifyContent: 'center', marginTop: '4px', fontSize: '0.76rem', padding: '6px' }}
                             >
                               {executingTaskId === t.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
                               ) : (
-                                <Play className="w-3.5 h-3.5" />
+                                <Play style={{ width: 14, height: 14 }} />
                               )}
                               Execute & Verify
                             </button>
@@ -1033,24 +1005,24 @@ export default function CompanyOfficeClient() {
       {/* TAB 4: CEO APPROVAL GATE                                             */}
       {/* ==================================================================== */}
       {activeTab === 'proposals' && (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6 text-amber-400" />
+            <h2 className="co-stage-title" style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck style={{ width: 24, height: 24, color: '#f59e0b' }} />
               CEO Executive Approval Gate
             </h2>
-            <p className="text-xs text-zinc-400">
+            <p className="co-stage-sub">
               Autonomous agents can brainstorm and draft internally, but production database updates, external communications,
               and code deploys are locked until you sign off.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {proposals.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-500 space-y-2">
-                <ShieldCheck className="w-12 h-12 text-zinc-700 mx-auto" />
-                <p className="text-sm font-medium">All executive proposals have been resolved.</p>
-                <p className="text-xs text-zinc-600">New initiatives emerging from virtual meetings will queue here.</p>
+              <div style={{ padding: '48px 24px', textAlign: 'center', borderRadius: '16px', background: 'var(--co-bg-card)', border: '1px solid var(--co-border)', color: '#64748b' }}>
+                <ShieldCheck style={{ width: 44, height: 44, color: '#334155', margin: '0 auto 12px auto' }} />
+                <p style={{ fontSize: '0.92rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>All executive proposals have been resolved.</p>
+                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '6px 0 0 0' }}>New initiatives emerging from virtual meetings will queue here.</p>
               </div>
             ) : (
               proposals.map((p) => {
@@ -1059,75 +1031,78 @@ export default function CompanyOfficeClient() {
                 return (
                   <div
                     key={p.id}
-                    className={`p-6 rounded-2xl border transition-all space-y-4 ${
-                      isPending
-                        ? 'bg-zinc-900 border-amber-500/40 shadow-xl shadow-amber-950/20'
-                        : 'bg-zinc-900/60 border-zinc-800 opacity-80'
-                    }`}
+                    className="co-generic-card"
+                    style={{ borderColor: isPending ? 'rgba(245,158,11,0.4)' : 'var(--co-border)' }}
                   >
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-bold">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.68rem', fontFamily: 'monospace', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', color: '#cbd5e1', fontWeight: 700 }}>
                             {p.proposal_type.replace('_', ' ')}
                           </span>
                           <span
-                            className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full font-bold uppercase ${
-                              isPending
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : p.status === 'approved'
-                                ? 'bg-emerald-500/20 text-emerald-300'
-                                : 'bg-red-500/20 text-red-300'
-                            }`}
+                            style={{
+                              fontSize: '0.68rem',
+                              fontFamily: 'monospace',
+                              padding: '2px 8px',
+                              borderRadius: '9999px',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              background: isPending ? 'rgba(245,158,11,0.15)' : p.status === 'approved' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                              color: isPending ? '#fbbf24' : p.status === 'approved' ? '#34d399' : '#f87171',
+                              border: `1px solid ${isPending ? 'rgba(245,158,11,0.3)' : p.status === 'approved' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
+                            }}
                           >
                             {p.status.replace('_', ' ')}
                           </span>
                         </div>
-                        <h3 className="text-lg font-bold text-white">{p.title}</h3>
-                        <p className="text-xs text-zinc-400">
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>{p.title}</h3>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--co-text-muted)', margin: 0 }}>
                           <strong>Sponsor:</strong> {p.sponsored_by} • <strong>Estimated Cost:</strong> ${p.estimated_cost_usd || '0.00'}
                         </p>
                       </div>
 
                       {/* CEO Decision Buttons */}
                       {isPending && (
-                        <div className="flex items-center gap-2">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <button
                             onClick={() => handleProposalAction(p.id, 'approved')}
                             disabled={approvingProposalId === p.id}
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg transition"
+                            className="co-btn co-btn-primary"
+                            style={{ background: '#10b981', boxShadow: '0 4px 14px rgba(16,185,129,0.3)' }}
                           >
                             {approvingProposalId === p.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
                             ) : (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <CheckCircle2 style={{ width: 14, height: 14 }} />
                             )}
                             Approve & Execute Live
                           </button>
                           <button
                             onClick={() => handleProposalAction(p.id, 'rejected')}
                             disabled={approvingProposalId === p.id}
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-red-400 text-xs font-bold border border-zinc-700 transition"
+                            className="co-btn co-btn-secondary"
+                            style={{ color: '#f87171' }}
                           >
-                            <XCircle className="w-3.5 h-3.5" />
+                            <XCircle style={{ width: 14, height: 14 }} />
                             Reject
                           </button>
                         </div>
                       )}
                     </div>
 
-                    <div className="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800/80 space-y-2">
-                      <div className="text-xs font-bold text-zinc-300">Business Justification & Strategic Impact:</div>
-                      <p className="text-xs text-zinc-400 leading-relaxed">{p.business_justification}</p>
+                    <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(7,7,10,0.6)', border: '1px solid var(--co-border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#cbd5e1' }}>Business Justification & Strategic Impact:</div>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--co-text-muted)', lineHeight: 1.5, margin: 0 }}>{p.business_justification}</p>
                     </div>
 
                     {/* Action Payload Preview */}
                     {p.action_payload && Object.keys(p.action_payload).length > 0 && (
-                      <details className="text-xs text-zinc-400 font-mono">
-                        <summary className="cursor-pointer text-purple-400 font-bold hover:underline mb-2">
+                      <details style={{ fontSize: '0.76rem', color: 'var(--co-text-dim)', fontFamily: 'monospace' }}>
+                        <summary style={{ cursor: 'pointer', color: '#c084fc', fontWeight: 700, marginBottom: '6px' }}>
                           Inspect Execution Payload Parameters
                         </summary>
-                        <pre className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 overflow-x-auto text-[11px]">
+                        <pre style={{ padding: '10px', borderRadius: '8px', background: 'rgba(7,7,10,0.8)', border: '1px solid var(--co-border)', overflowX: 'auto', margin: 0, fontSize: '0.72rem' }}>
                           {JSON.stringify(p.action_payload, null, 2)}
                         </pre>
                       </details>
@@ -1144,31 +1119,28 @@ export default function CompanyOfficeClient() {
       {/* TAB 5: COMPANY BRAIN & MEMORY                                        */}
       {/* ==================================================================== */}
       {activeTab === 'memory' && (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Brain className="w-6 h-6 text-purple-400" />
+            <h2 className="co-stage-title" style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Brain style={{ width: 24, height: 24, color: '#a855f7' }} />
               Multi-Tier Corporate Memory Store
             </h2>
-            <p className="text-xs text-zinc-400">
+            <p className="co-stage-sub">
               Persistent shared knowledge, verified engineering benchmarks, previous decisions, and failed experiment learnings.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="co-card-grid">
             {memoryItems.map((mem) => (
-              <div
-                key={mem.id}
-                className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-purple-500/40 transition space-y-2.5"
-              >
-                <div className="flex items-center justify-between text-[10px] font-mono uppercase">
-                  <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 font-bold border border-purple-500/20">
+              <div key={mem.id} className="co-generic-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+                  <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(168,85,247,0.15)', color: '#d8b4fe', fontWeight: 700, border: '1px solid rgba(168,85,247,0.3)' }}>
                     {mem.scope}
                   </span>
-                  <span className="text-zinc-500">{mem.category}</span>
+                  <span style={{ color: 'var(--co-text-dim)' }}>{mem.category}</span>
                 </div>
-                <p className="text-sm text-zinc-200 leading-relaxed font-sans">{mem.insight}</p>
-                <div className="text-[10px] font-mono text-zinc-500 pt-2 border-t border-zinc-800">
+                <p style={{ fontSize: '0.86rem', color: '#e2e8f0', lineHeight: 1.55, margin: 0 }}>{mem.insight}</p>
+                <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: 'var(--co-text-dim)', paddingTop: '8px', borderTop: '1px solid var(--co-border)' }}>
                   Recorded: {new Date(mem.created_at).toLocaleDateString()}
                 </div>
               </div>
@@ -1181,25 +1153,25 @@ export default function CompanyOfficeClient() {
       {/* MODAL: START NEW MEETING                                             */}
       {/* ==================================================================== */}
       {newMeetingModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-purple-400" />
+        <div className="co-modal-overlay">
+          <div className="co-modal-card">
+            <div className="co-modal-header">
+              <h3 className="co-modal-title">
+                <MessageSquare style={{ width: 20, height: 20, color: '#a855f7' }} />
                 Initialize Virtual Collaboration Meeting
               </h3>
-              <button onClick={() => setNewMeetingModalOpen(false)} className="text-zinc-500 hover:text-white">
-                <XCircle className="w-5 h-5" />
+              <button onClick={() => setNewMeetingModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                <XCircle style={{ width: 20, height: 20 }} />
               </button>
             </div>
 
-            <form onSubmit={handleStartNewMeeting} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Collaboration Room</label>
+            <form onSubmit={handleStartNewMeeting} className="co-modal-body">
+              <div className="co-form-group">
+                <label className="co-label">Collaboration Room</label>
                 <select
                   value={newMeetingRoomId}
                   onChange={(e) => setNewMeetingRoomId(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="co-select"
                 >
                   {rooms.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -1209,33 +1181,33 @@ export default function CompanyOfficeClient() {
                 </select>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Meeting Agenda Title</label>
+              <div className="co-form-group">
+                <label className="co-label">Meeting Agenda Title</label>
                 <input
                   type="text"
                   placeholder="e.g. Next.js 16 Edge Rendering & Headless Commerce Blueprint"
                   value={newMeetingTitle}
                   onChange={(e) => setNewMeetingTitle(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="co-input"
                   required
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Explicit Objective / Deliverable</label>
+              <div className="co-form-group">
+                <label className="co-label">Explicit Objective / Deliverable</label>
                 <textarea
                   rows={3}
                   placeholder="e.g. Evaluate technical trade-offs, formulate SEO keyword targets, and draft a high-converting service blueprint."
                   value={newMeetingObjective}
                   onChange={(e) => setNewMeetingObjective(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="co-textarea"
                   required
                 />
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-zinc-300">
+              <div className="co-form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label className="co-label">
                     Invited Specialists ({newMeetingParticipants.length === 0 ? 'All Active by Default' : `${newMeetingParticipants.length} Selected`})
                   </label>
                   <button
@@ -1247,12 +1219,12 @@ export default function CompanyOfficeClient() {
                         setNewMeetingParticipants(employees.map((e) => e.id));
                       }
                     }}
-                    className="text-[11px] text-purple-400 hover:text-purple-300 transition"
+                    style={{ background: 'transparent', border: 'none', color: '#c084fc', fontSize: '0.72rem', cursor: 'pointer' }}
                   >
                     {newMeetingParticipants.length === employees.length ? 'Clear Selection' : 'Select All'}
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 bg-zinc-950 border border-zinc-800 rounded-xl">
+                <div className="co-specialist-picker">
                   {employees.map((emp) => {
                     const isSelected = newMeetingParticipants.length === 0 || newMeetingParticipants.includes(emp.id);
                     return (
@@ -1268,20 +1240,16 @@ export default function CompanyOfficeClient() {
                             setNewMeetingParticipants([...newMeetingParticipants, emp.id]);
                           }
                         }}
-                        className={`flex items-center gap-2 p-1.5 rounded-lg text-left text-xs transition border ${
-                          isSelected
-                            ? 'bg-purple-950/40 border-purple-500/60 text-purple-200'
-                            : 'bg-zinc-900/40 border-zinc-800/60 text-zinc-500 hover:text-zinc-300'
-                        }`}
+                        className={`co-picker-chip ${isSelected ? 'selected' : ''}`}
                       >
                         <img
-                          src={emp.avatar_url || '/assets/cropped-prince-profile.webp'}
+                          src={emp.avatar_url || `/assets/avatars/${emp.id.replace('_', '-')}.svg`}
                           alt={emp.name}
-                          className="w-6 h-6 rounded-full object-cover border border-zinc-700 shrink-0"
+                          style={{ width: '24px', height: '24px', minWidth: '24px', borderRadius: '50%', objectFit: 'cover' }}
                         />
-                        <div className="truncate">
-                          <div className="font-semibold truncate text-[11px]">{emp.name}</div>
-                          <div className="text-[9px] text-zinc-400 truncate">{emp.display_title}</div>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ffffff' }}>{emp.name}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{emp.display_title}</div>
                         </div>
                       </button>
                     );
@@ -1289,20 +1257,20 @@ export default function CompanyOfficeClient() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--co-border)' }}>
                 <button
                   type="button"
                   onClick={() => setNewMeetingModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition"
+                  className="co-btn co-btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creatingMeeting}
-                  className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg flex items-center gap-1.5"
+                  className="co-btn co-btn-primary"
                 >
-                  {creatingMeeting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  {creatingMeeting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Play style={{ width: 14, height: 14 }} />}
                   Open Room
                 </button>
               </div>
@@ -1315,37 +1283,37 @@ export default function CompanyOfficeClient() {
       {/* MODAL: PROPOSE NEW EMPLOYEE (WORKFORCE BUILDER)                      */}
       {/* ==================================================================== */}
       {newEmployeeModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-purple-400" />
+        <div className="co-modal-overlay">
+          <div className="co-modal-card">
+            <div className="co-modal-header">
+              <h3 className="co-modal-title">
+                <UserPlus style={{ width: 20, height: 20, color: '#a855f7' }} />
                 AI Workforce Builder: Propose Specialist
               </h3>
-              <button onClick={() => setNewEmployeeModalOpen(false)} className="text-zinc-500 hover:text-white">
-                <XCircle className="w-5 h-5" />
+              <button onClick={() => setNewEmployeeModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                <XCircle style={{ width: 20, height: 20 }} />
               </button>
             </div>
 
-            <form onSubmit={handleDraftEmployee} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-zinc-300 block mb-1">Humanoid Name</label>
+            <form onSubmit={handleDraftEmployee} className="co-modal-body">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="co-form-group">
+                  <label className="co-label">Humanoid Name</label>
                   <input
                     type="text"
                     placeholder="e.g. Lucas Sterling"
                     value={newEmpName}
                     onChange={(e) => setNewEmpName(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="co-input"
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-zinc-300 block mb-1">Department</label>
+                <div className="co-form-group">
+                  <label className="co-label">Department</label>
                   <select
                     value={newEmpDept}
                     onChange={(e) => setNewEmpDept(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                    className="co-select"
                   >
                     <option value="Growth">Growth</option>
                     <option value="Editorial">Editorial</option>
@@ -1357,55 +1325,55 @@ export default function CompanyOfficeClient() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Corporate Title</label>
+              <div className="co-form-group">
+                <label className="co-label">Corporate Title</label>
                 <input
                   type="text"
                   placeholder="e.g. Lead Conversion Rate Optimization Specialist"
                   value={newEmpTitle}
                   onChange={(e) => setNewEmpTitle(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="co-input"
                   required
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Capability Gap to Fill</label>
+              <div className="co-form-group">
+                <label className="co-label">Capability Gap to Fill</label>
                 <input
                   type="text"
                   placeholder="e.g. Automated checkout funnel A/B testing and checkout drop-off diagnostics"
                   value={newEmpGap}
                   onChange={(e) => setNewEmpGap(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="co-input"
                   required
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-zinc-300 block mb-1">Business Justification & ROI</label>
+              <div className="co-form-group">
+                <label className="co-label">Business Justification & ROI</label>
                 <textarea
                   rows={2}
                   placeholder="e.g. Direct upside in client retainer value by delivering quantifiable conversion rate gains."
                   value={newEmpJustification}
                   onChange={(e) => setNewEmpJustification(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  className="co-textarea"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--co-border)' }}>
                 <button
                   type="button"
                   onClick={() => setNewEmployeeModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition"
+                  className="co-btn co-btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={draftingEmployee}
-                  className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg flex items-center gap-1.5"
+                  className="co-btn co-btn-primary"
                 >
-                  {draftingEmployee ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                  {draftingEmployee ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <UserPlus style={{ width: 14, height: 14 }} />}
                   Submit Proposal to CEO
                 </button>
               </div>
@@ -1418,70 +1386,70 @@ export default function CompanyOfficeClient() {
       {/* DRAWER: EMPLOYEE DETAIL                                              */}
       {/* ==================================================================== */}
       {selectedEmployeeDetail && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div className="flex items-center gap-3">
+        <div className="co-modal-overlay">
+          <div className="co-modal-card">
+            <div className="co-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <img
-                  src={selectedEmployeeDetail.avatar_url}
+                  src={selectedEmployeeDetail.avatar_url || `/assets/avatars/${selectedEmployeeDetail.id.replace('_', '-')}.svg`}
                   alt={selectedEmployeeDetail.name}
-                  className="w-12 h-12 rounded-xl bg-zinc-800 border object-cover"
+                  style={{ width: '48px', height: '48px', minWidth: '48px', borderRadius: '12px', objectFit: 'cover', background: '#1e1b4b', border: '1px solid var(--co-border)' }}
                 />
                 <div>
-                  <h3 className="text-lg font-bold text-white">{selectedEmployeeDetail.name}</h3>
-                  <p className="text-xs text-purple-400">{selectedEmployeeDetail.display_title}</p>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>{selectedEmployeeDetail.name}</h3>
+                  <p style={{ fontSize: '0.8rem', color: '#c084fc', fontWeight: 600, margin: '2px 0 0 0' }}>{selectedEmployeeDetail.display_title}</p>
                 </div>
               </div>
-              <button onClick={() => setSelectedEmployeeDetail(null)} className="text-zinc-500 hover:text-white">
-                <XCircle className="w-5 h-5" />
+              <button onClick={() => setSelectedEmployeeDetail(null)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                <XCircle style={{ width: 20, height: 20 }} />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-zinc-300">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.82rem', color: 'var(--co-text-muted)' }}>
               <div>
-                <strong className="text-white block mb-1">System Prompt Overlay:</strong>
-                <p className="p-3 rounded-lg bg-zinc-950 font-mono text-[11px] text-zinc-400 leading-relaxed">
+                <strong style={{ color: '#ffffff', display: 'block', marginBottom: '4px' }}>System Prompt Overlay:</strong>
+                <p style={{ padding: '12px', borderRadius: '10px', background: 'rgba(7,7,10,0.8)', border: '1px solid var(--co-border)', fontFamily: 'monospace', fontSize: '0.74rem', color: '#cbd5e1', lineHeight: 1.5, margin: 0 }}>
                   {selectedEmployeeDetail.system_prompt_overlay}
                 </p>
               </div>
 
               <div>
-                <strong className="text-white block mb-1">Tool Permissions & Safety Guardrails:</strong>
-                <div className="p-3 rounded-lg bg-zinc-950 font-mono text-[11px] space-y-1">
+                <strong style={{ color: '#ffffff', display: 'block', marginBottom: '4px' }}>Tool Permissions & Safety Guardrails:</strong>
+                <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(7,7,10,0.8)', border: '1px solid var(--co-border)', fontFamily: 'monospace', fontSize: '0.74rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div>
-                    <span className="text-emerald-400">Autonomous Tools:</span>{' '}
+                    <span style={{ color: '#34d399', fontWeight: 700 }}>Autonomous Tools:</span>{' '}
                     {selectedEmployeeDetail.tool_permissions?.allowed_tools?.join(', ') || 'None'}
                   </div>
                   <div>
-                    <span className="text-amber-400">Requires CEO Approval:</span>{' '}
+                    <span style={{ color: '#fbbf24', fontWeight: 700 }}>Requires CEO Approval:</span>{' '}
                     {selectedEmployeeDetail.tool_permissions?.requires_approval?.join(', ') || 'All critical actions'}
                   </div>
                 </div>
               </div>
 
               <div>
-                <strong className="text-white block mb-1">Performance Telemetry:</strong>
-                <div className="grid grid-cols-2 gap-2 text-center font-mono">
-                  <div className="p-2 rounded bg-zinc-950 border border-zinc-800">
-                    <div className="text-base font-bold text-white">
+                <strong style={{ color: '#ffffff', display: 'block', marginBottom: '4px' }}>Performance Telemetry:</strong>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', textAlign: 'center', fontFamily: 'monospace' }}>
+                  <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(7,7,10,0.8)', border: '1px solid var(--co-border)' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff' }}>
                       {selectedEmployeeDetail.performance_metrics?.tasks_completed || 0}
                     </div>
-                    <div className="text-[10px] text-zinc-500">Tasks Completed</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--co-text-dim)', marginTop: '2px' }}>Tasks Completed</div>
                   </div>
-                  <div className="p-2 rounded bg-zinc-950 border border-zinc-800">
-                    <div className="text-base font-bold text-emerald-400">
+                  <div style={{ padding: '10px', borderRadius: '10px', background: 'rgba(7,7,10,0.8)', border: '1px solid var(--co-border)' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#34d399' }}>
                       {selectedEmployeeDetail.performance_metrics?.proposals_approved || 0}
                     </div>
-                    <div className="text-[10px] text-zinc-500">Proposals Approved</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--co-text-dim)', marginTop: '2px' }}>Proposals Approved</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-zinc-800 flex justify-end">
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--co-border)', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setSelectedEmployeeDetail(null)}
-                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition"
+                className="co-btn co-btn-secondary"
               >
                 Close
               </button>
