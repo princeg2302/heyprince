@@ -196,10 +196,10 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
 
         {filtered.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table">
+            <table className="hpa-table" style={{ minWidth: '840px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '40px' }}>
+                  <th style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -211,11 +211,11 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                       title="Select All"
                     />
                   </th>
-                  <th>User Profile</th>
-                  <th>Email</th>
-                  <th>System Role</th>
-                  <th>Registered</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ minWidth: '220px', whiteSpace: 'nowrap' }}>User Profile</th>
+                  <th style={{ minWidth: '200px', whiteSpace: 'nowrap' }}>Email</th>
+                  <th style={{ minWidth: '130px', whiteSpace: 'nowrap' }}>System Role</th>
+                  <th style={{ minWidth: '130px', whiteSpace: 'nowrap' }}>Registered</th>
+                  <th style={{ minWidth: '100px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -231,7 +231,7 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
 
                   return (
                     <tr key={user.id}>
-                      <td style={{ width: '40px' }}>
+                      <td style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                         <input
                           type="checkbox"
                           disabled={isCurrent}

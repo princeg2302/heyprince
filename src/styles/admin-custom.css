@@ -631,22 +631,32 @@ code, pre, kbd, samp, .hpa-code {
   overflow: hidden;
   margin-bottom: 24px;
   min-width: 0;
-  word-break: break-word;
-  overflow-wrap: break-word;
 }
 
-/* Responsive Post View Grid */
+/* Responsive Post View Grid & Text Flow */
 .hpa-post-view-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: 24px;
   align-items: start;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
 }
 
-@media (max-width: 1100px) {
+.hpa-post-view-grid .hpa-card,
+.hpa-post-view-grid p,
+.hpa-post-view-grid span,
+.hpa-post-view-grid h1,
+.hpa-post-view-grid h2,
+.hpa-post-view-grid h3,
+.hpa-post-view-grid blockquote {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 1200px) {
   .hpa-post-view-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -720,26 +730,32 @@ code, pre, kbd, samp, .hpa-code {
   border-color: var(--hpa-primary);
 }
 
-/* Data Table */
+/* Data Table & No-Wrap Guard */
 .hpa-table-wrap {
+  width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .hpa-table {
   width: 100%;
+  min-width: 900px;
   border-collapse: collapse;
   text-align: left;
 }
 
 .hpa-table th {
-  padding: 12px 20px;
-  font-size: 0.72rem;
+  padding: 13px 20px;
+  font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hpa-text-dim);
   border-bottom: 1px solid var(--hpa-border);
-  background: rgba(255, 255, 255, 0.015);
+  background: rgba(255, 255, 255, 0.02);
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
 }
 
 .hpa-table td {
@@ -747,6 +763,16 @@ code, pre, kbd, samp, .hpa-code {
   font-size: 0.86rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   vertical-align: middle;
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.hpa-table td *,
+.hpa-table th * {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: nowrap !important;
 }
 
 .hpa-table tr:hover td {
@@ -756,32 +782,40 @@ code, pre, kbd, samp, .hpa-code {
 .hpa-table-thumb {
   width: 44px;
   height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--hpa-radius-sm);
   object-fit: cover;
   background: var(--hpa-surface-3);
   border: 1px solid var(--hpa-border);
+  flex-shrink: 0;
 }
 
 /* Status Badges */
-.hpa-pill {
+.hpa-pill,
+.hpa-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
+  gap: 6px;
+  padding: 3px 10px;
   border-radius: 100px;
   font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   border: 1px solid;
+  white-space: nowrap !important;
+  word-break: normal !important;
 }
 
-.hpa-pill-published {
+.hpa-pill-published,
+.hpa-status-badge.published {
   background: rgba(0, 245, 160, 0.1);
   border-color: rgba(0, 245, 160, 0.3);
   color: var(--hpa-success);
 }
 
-.hpa-pill-draft {
+.hpa-pill-draft,
+.hpa-status-badge.draft {
   background: rgba(251, 191, 36, 0.1);
   border-color: rgba(251, 191, 36, 0.3);
   color: var(--hpa-warning);

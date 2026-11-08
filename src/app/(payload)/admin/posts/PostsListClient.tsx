@@ -279,10 +279,10 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
         {/* Table */}
         {paginated.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table">
+            <table className="hpa-table" style={{ minWidth: '960px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '38px', textAlign: 'center' }}>
+                  <th style={{ width: '42px', minWidth: '42px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                     <input
                       type="checkbox"
                       checked={allOnPageSelected}
@@ -291,12 +291,12 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                       style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
                     />
                   </th>
-                  <th>Article</th>
-                  <th>Category</th>
-                  <th>Author</th>
-                  <th>Status</th>
-                  <th>Published Date</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ minWidth: '320px', whiteSpace: 'nowrap' }}>Article</th>
+                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Category</th>
+                  <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Author</th>
+                  <th style={{ minWidth: '140px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Published Date</th>
+                  <th style={{ minWidth: '160px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,7 +317,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         background: isChecked ? 'rgba(255, 71, 87, 0.06)' : undefined,
                       }}
                     >
-                      <td style={{ width: '38px', textAlign: 'center' }}>
+                      <td style={{ width: '42px', minWidth: '42px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -325,8 +325,8 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                           style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
                         />
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', whiteSpace: 'nowrap' }}>
                           <img
                             src={post.cover_image || '/assets/blog/photo1.webp'}
                             alt={post.title}
@@ -335,7 +335,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                               (e.target as HTMLImageElement).src = '/assets/blog/photo1.webp';
                             }}
                           />
-                          <div>
+                          <div style={{ minWidth: 0 }}>
                             <Link
                               href={`/admin/posts/${post.id}`}
                               style={{
@@ -351,30 +351,31 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             >
                               {post.title}
                             </Link>
-                            <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
+                            <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap' }}>
                               /{post.slug} • {post.read_mins || '5 min'}
                             </span>
                           </div>
                         </div>
                       </td>
 
-                      <td>
-                        <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)' }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', whiteSpace: 'nowrap' }}>
                           {post.category_name || 'General'}
                         </span>
                       </td>
 
-                      <td>
-                        <div style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: 500 }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: 500, whiteSpace: 'nowrap' }}>
                           {post.author_name}
                         </div>
                       </td>
 
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span
                           className={`hpa-status-badge ${
                             post.status === 'published' ? 'published' : 'draft'
                           }`}
+                          style={{ whiteSpace: 'nowrap' }}
                         >
                           {post.status === 'published' ? (
                             <CheckCircle2 size={12} />
@@ -385,7 +386,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         </span>
                       </td>
 
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <div
                           style={{
                             display: 'flex',
@@ -393,6 +394,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             gap: '6px',
                             fontSize: '0.82rem',
                             color: 'var(--hpa-text-dim)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <Calendar size={13} />
@@ -400,13 +402,14 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         </div>
                       </td>
 
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <div
                           style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'flex-end',
                             gap: '6px',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <button

@@ -243,10 +243,10 @@ export default function ServicesListClient({ initialServices, categories }: Serv
         {/* Table */}
         {paginated.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table">
+            <table className="hpa-table" style={{ minWidth: '940px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '40px' }}>
+                  <th style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -258,18 +258,18 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                       title="Select All"
                     />
                   </th>
-                  <th>Service Offering</th>
-                  <th>Category</th>
-                  <th>Theme & Badge</th>
-                  <th>Pricing</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ minWidth: '240px', whiteSpace: 'nowrap' }}>Service Offering</th>
+                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Category</th>
+                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Theme & Badge</th>
+                  <th style={{ minWidth: '130px', whiteSpace: 'nowrap' }}>Pricing</th>
+                  <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ minWidth: '120px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.map((srv) => (
                   <tr key={srv.id}>
-                    <td style={{ width: '40px' }}>
+                    <td style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                       <input
                         type="checkbox"
                         checked={selectedIds.includes(srv.id)}

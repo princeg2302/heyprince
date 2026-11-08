@@ -278,10 +278,10 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
 
         {filtered.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table">
+            <table className="hpa-table" style={{ minWidth: '820px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '40px' }}>
+                  <th style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -293,16 +293,16 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                       title="Select All"
                     />
                   </th>
-                  <th>Category Title</th>
-                  <th>URL Slug</th>
-                  <th>Description</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ minWidth: '180px', whiteSpace: 'nowrap' }}>Category Title</th>
+                  <th style={{ minWidth: '160px', whiteSpace: 'nowrap' }}>URL Slug</th>
+                  <th style={{ minWidth: '280px', whiteSpace: 'nowrap' }}>Description</th>
+                  <th style={{ minWidth: '120px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((cat) => (
                   <tr key={cat.id}>
-                    <td style={{ width: '40px' }}>
+                    <td style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                       <input
                         type="checkbox"
                         checked={selectedIds.includes(cat.id)}
@@ -310,8 +310,8 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                         style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
                       />
                     </td>
-                    <td>
-                      <div style={{ fontWeight: 700, color: '#ffffff' }}>{cat.title}</div>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap' }}>{cat.title}</div>
                     </td>
                     <td>
                       <code

@@ -52,26 +52,28 @@ export default async function ViewPostPage({
     <AdminLayout user={user}>
       {/* Top Action Bar */}
       <div className="hpa-page-title-row">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link href="/admin/posts" className="hpa-btn hpa-btn-secondary hpa-btn-icon" title="Back to Posts">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: '1 1 320px' }}>
+          <Link href="/admin/posts" className="hpa-btn hpa-btn-secondary hpa-btn-icon" style={{ flexShrink: 0 }} title="Back to Posts">
             <ArrowLeft size={16} />
           </Link>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
               <span
                 className={`hpa-pill ${post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
               >
                 {post.status}
               </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--hpa-text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 ID #{post.id} • /{post.slug}
               </span>
             </div>
-            <h1 className="hpa-page-title">{post.title}</h1>
+            <h1 className="hpa-page-title" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {post.title}
+            </h1>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flexShrink: 0 }}>
           <a
             href={`https://heyprince.in/insights/${post.slug}`}
             target="_blank"
@@ -258,7 +260,7 @@ export default async function ViewPostPage({
         </div>
 
         {/* Sidebar Meta Details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, width: '100%' }}>
           {/* Metadata Card */}
           <div className="hpa-card" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px' }}>

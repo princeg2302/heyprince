@@ -1564,10 +1564,10 @@ export default function NewsAutomationClient() {
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table className="hpa-table" style={{ width: '100%', fontSize: '0.82rem' }}>
+              <table className="hpa-table" style={{ width: '100%', minWidth: '940px', fontSize: '0.82rem' }}>
                 <thead>
                   <tr>
-                    <th style={{ width: '36px' }}>
+                    <th style={{ width: '40px', minWidth: '40px', whiteSpace: 'nowrap' }}>
                       <input
                         type="checkbox"
                         checked={allRunsSelected}
@@ -1973,10 +1973,10 @@ export default function NewsAutomationClient() {
             )}
 
             <div style={{ overflowX: 'auto' }}>
-              <table className="hpa-table" style={{ width: '100%', fontSize: '0.82rem' }}>
+              <table className="hpa-table" style={{ width: '100%', minWidth: '980px', fontSize: '0.82rem' }}>
                 <thead>
                   <tr>
-                    <th style={{ width: '36px' }}>
+                    <th style={{ width: '40px', minWidth: '40px', whiteSpace: 'nowrap' }}>
                       <input
                         type="checkbox"
                         checked={allSourcesSelected}

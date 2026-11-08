@@ -423,10 +423,10 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
 
         {filtered.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table">
+            <table className="hpa-table" style={{ minWidth: '960px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '40px' }}>
+                  <th style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -438,12 +438,12 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
                       title="Select All"
                     />
                   </th>
-                  <th>Client</th>
-                  <th>Requested Service</th>
-                  <th>Budget & Timeline</th>
-                  <th>Status</th>
-                  <th>Submitted</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th style={{ minWidth: '220px', whiteSpace: 'nowrap' }}>Client</th>
+                  <th style={{ minWidth: '180px', whiteSpace: 'nowrap' }}>Requested Service</th>
+                  <th style={{ minWidth: '160px', whiteSpace: 'nowrap' }}>Budget & Timeline</th>
+                  <th style={{ minWidth: '130px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ minWidth: '140px', whiteSpace: 'nowrap' }}>Submitted</th>
+                  <th style={{ minWidth: '120px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -458,7 +458,7 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
 
                   return (
                     <tr key={lead.id}>
-                      <td style={{ width: '40px' }}>
+                      <td style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(lead.id)}

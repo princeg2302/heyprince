@@ -10828,7 +10828,7 @@ body {
 .blog-sidebar-right {
   position: -webkit-sticky !important;
   position: sticky !important;
-  top: 104px !important;
+  top: 92px !important;
   align-self: start;
   height: fit-content;
   z-index: 25;
