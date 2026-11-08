@@ -171,19 +171,36 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 2. Process News Automation Draft Runs
+    // 2. Process News Automation Draft Runs with intelligent deduplication
     for (const r of recentNewsRuns) {
       if (!r.postId && r.articleContent && r.articleTitle) {
         const content = r.articleContent || {};
+        const title = content.title || r.articleTitle;
+        const slug = content.slug || r.articleSlug || '';
+        const normTitle = title.trim().toLowerCase();
+
+        // Check if an item with this title, slug, or matching run already exists from Chief of Staff
+        const alreadyExists = unifiedList.some((item) => {
+          if (item.id === String(r.id)) return true;
+          if (slug && item.slug && item.slug.toLowerCase() === slug.toLowerCase()) return true;
+          if (item.title && item.title.trim().toLowerCase() === normTitle) return true;
+          if (item.metadata?.daily_news_run_id === r.id) return true;
+          return false;
+        });
+
+        if (alreadyExists) {
+          continue; // Skip duplicate approval item
+        }
+
         unifiedList.push({
           id: String(r.id),
           numericId: r.id,
           sourceType: 'news',
           draftType: 'scheduled_blog',
-          title: content.title || r.articleTitle,
+          title,
           excerpt: content.excerpt || r.articleExcerpt || '',
           coverImage: content.coverImage || '/assets/blog/photo1.webp',
-          slug: content.slug || r.articleSlug || '',
+          slug,
           readMins: content.readMins || '5 min',
           categoryName: content.categoryName || 'Tech & AI News',
           tags: content.tags || [],
@@ -202,13 +219,33 @@ export async function GET(request: NextRequest) {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
+    // Global deduplication guard: Guarantee no duplicate titles/slugs reach the UI
+    const seenKeys = new Set<string>();
+    const deduplicatedList: UnifiedApprovalItem[] = [];
+
+    for (const item of unifiedList) {
+      const slugKey = item.slug ? `slug:${item.slug.trim().toLowerCase()}` : '';
+      const titleKey = item.title ? `title:${item.title.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}` : '';
+
+      if (slugKey && seenKeys.has(slugKey)) {
+        continue;
+      }
+      if (titleKey && seenKeys.has(titleKey)) {
+        continue;
+      }
+
+      if (slugKey) seenKeys.add(slugKey);
+      if (titleKey) seenKeys.add(titleKey);
+      deduplicatedList.push(item);
+    }
+
     return NextResponse.json({
       success: true,
-      items: unifiedList,
-      totalCount: unifiedList.length,
-      chiefCount: unifiedList.filter((i) => i.sourceType === 'chief').length,
-      newsCount: unifiedList.filter((i) => i.sourceType === 'news').length,
-      outreachCount: unifiedList.filter((i) => i.sourceType === 'outreach').length,
+      items: deduplicatedList,
+      totalCount: deduplicatedList.length,
+      chiefCount: deduplicatedList.filter((i) => i.sourceType === 'chief').length,
+      newsCount: deduplicatedList.filter((i) => i.sourceType === 'news').length,
+      outreachCount: deduplicatedList.filter((i) => i.sourceType === 'outreach').length,
     });
   } catch (error: any) {
     console.error('[API /api/admin/approvals] Error:', error);

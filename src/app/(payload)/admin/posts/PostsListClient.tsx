@@ -291,12 +291,12 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                       style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
                     />
                   </th>
-                  <th style={{ minWidth: '320px', whiteSpace: 'nowrap' }}>Article</th>
-                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Category</th>
-                  <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Author</th>
-                  <th style={{ minWidth: '140px', whiteSpace: 'nowrap' }}>Status</th>
-                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Published Date</th>
-                  <th style={{ minWidth: '160px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                  <th style={{ width: '280px', minWidth: '240px', maxWidth: '300px', whiteSpace: 'nowrap' }}>Article</th>
+                  <th style={{ width: '150px', minWidth: '130px', whiteSpace: 'nowrap' }}>Category</th>
+                  <th style={{ width: '110px', minWidth: '100px', whiteSpace: 'nowrap' }}>Author</th>
+                  <th style={{ width: '130px', minWidth: '120px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>Published Date</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,7 +325,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                           style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
                         />
                       </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '280px', minWidth: '240px', maxWidth: '300px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', whiteSpace: 'nowrap' }}>
                           <img
                             src={post.cover_image || '/assets/blog/photo1.webp'}
@@ -335,7 +335,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                               (e.target as HTMLImageElement).src = '/assets/blog/photo1.webp';
                             }}
                           />
-                          <div style={{ minWidth: 0 }}>
+                          <div style={{ minWidth: 0, maxWidth: '220px' }}>
                             <Link
                               href={`/admin/posts/${post.id}`}
                               style={{
@@ -343,7 +343,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                                 color: '#ffffff',
                                 textDecoration: 'none',
                                 display: 'block',
-                                maxWidth: '320px',
+                                maxWidth: '220px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -351,7 +351,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             >
                               {post.title}
                             </Link>
-                            <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap', display: 'block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               /{post.slug} • {post.read_mins || '5 min'}
                             </span>
                           </div>

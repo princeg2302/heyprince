@@ -91,6 +91,7 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
       case 'content_researcher': {
         taskResult = await runContentResearcherDiscovery({
           customTopic: payload.customTopic,
+          contentType: payload.contentType || (triggerSource === 'cron' ? 'service_page' : 'blog_article'),
         });
         taskSuccess = taskResult.success;
         if (!taskSuccess) errorMessage = taskResult.summary;

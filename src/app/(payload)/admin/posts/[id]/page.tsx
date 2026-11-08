@@ -262,37 +262,39 @@ export default async function ViewPostPage({
         {/* Sidebar Meta Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, width: '100%' }}>
           {/* Metadata Card */}
-          <div className="hpa-card" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px' }}>
+          <div className="hpa-card" style={{ padding: '22px' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '16px' }}>
               Publishing Details
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.84rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--hpa-text-dim)' }}>Status</span>
-                <span className={`hpa-pill ${post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Status</span>
+                <span className={`hpa-pill ${post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'}`} style={{ whiteSpace: 'nowrap' }}>
                   {post.status}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--hpa-text-dim)' }}>Category</span>
-                <span style={{ color: '#ffffff', fontWeight: 600 }}>{post.category_name || 'General'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Category</span>
+                <span style={{ color: '#ffffff', fontWeight: 600, textAlign: 'right', wordBreak: 'break-word' }}>
+                  {post.category_name || 'General'}
+                </span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--hpa-text-dim)' }}>Read Duration</span>
-                <span style={{ color: '#ffffff' }}>{post.read_mins || '5 min'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Read Duration</span>
+                <span style={{ color: '#ffffff', textAlign: 'right' }}>{post.read_mins || '5 min'}</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--hpa-text-dim)' }}>Published Date</span>
-                <span style={{ color: '#ffffff' }}>{formattedDate}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Published Date</span>
+                <span style={{ color: '#ffffff', textAlign: 'right', wordBreak: 'break-word' }}>{formattedDate}</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--hpa-text-dim)' }}>Created</span>
-                <span style={{ color: '#ffffff' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Created</span>
+                <span style={{ color: '#ffffff', textAlign: 'right' }}>
                   {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
@@ -300,28 +302,52 @@ export default async function ViewPostPage({
           </div>
 
           {/* Author Card */}
-          <div className="hpa-card" style={{ padding: '20px' }}>
+          <div className="hpa-card" style={{ padding: '22px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px' }}>
               Author Byline
             </h3>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img
-                src={post.author_avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
-                alt={post.author_name}
+              <div
                 style={{
                   width: '44px',
                   height: '44px',
                   borderRadius: '50%',
-                  objectFit: 'cover',
+                  background: 'linear-gradient(135deg, #d40027, #ff3366)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  flexShrink: 0,
                   border: '1px solid var(--hpa-border)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '1rem',
                 }}
-              />
-              <div>
-                <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.9rem' }}>
+              >
+                <img
+                  src={post.author_avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
+                  alt={post.author_name}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+                <span style={{ display: 'none' }} aria-hidden="true">
+                  {post.author_name ? post.author_name.charAt(0).toUpperCase() : 'P'}
+                </span>
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.9rem', wordBreak: 'break-word' }}>
                   {post.author_name}
                 </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', lineHeight: 1.3 }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', lineHeight: 1.3, wordBreak: 'break-word' }}>
                   {post.author_role}
                 </div>
               </div>

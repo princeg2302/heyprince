@@ -363,6 +363,7 @@ export async function runContentResearcherDiscovery(options?: ContentResearcherO
         rawSections: gen.sections,
         linkedinPost: gen.linkedinPost,
         sourcesCount: result.sourcesChecked,
+        daily_news_run_id: result.runId,
       },
       status: 'pending_approval',
     });
