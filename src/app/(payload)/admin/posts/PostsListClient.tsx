@@ -279,7 +279,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
         {/* Table */}
         {paginated.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table" style={{ minWidth: '1080px' }}>
+            <table className="hpa-table" style={{ width: '100%', minWidth: '960px' }}>
               <thead>
                 <tr>
                   <th style={{ width: '44px', minWidth: '44px', textAlign: 'center', whiteSpace: 'nowrap' }}>
@@ -291,12 +291,12 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                       style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
                     />
                   </th>
-                  <th style={{ width: '280px', minWidth: '260px', maxWidth: '320px', whiteSpace: 'nowrap' }}>Article</th>
-                  <th style={{ width: '170px', minWidth: '160px', whiteSpace: 'nowrap' }}>Category</th>
-                  <th style={{ width: '130px', minWidth: '120px', whiteSpace: 'nowrap' }}>Author</th>
-                  <th style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>Status</th>
-                  <th style={{ width: '150px', minWidth: '140px', whiteSpace: 'nowrap' }}>Published Date</th>
-                  <th style={{ width: '170px', minWidth: '170px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                  <th style={{ width: '240px', minWidth: '220px', maxWidth: '260px', whiteSpace: 'nowrap' }}>Article</th>
+                  <th style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>Category</th>
+                  <th style={{ width: '120px', minWidth: '110px', whiteSpace: 'nowrap' }}>Author</th>
+                  <th style={{ width: '130px', minWidth: '120px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>Published Date</th>
+                  <th style={{ width: '150px', minWidth: '150px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,7 +317,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         background: isChecked ? 'rgba(255, 71, 87, 0.06)' : undefined,
                       }}
                     >
-                      <td style={{ width: '42px', minWidth: '42px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '44px', minWidth: '44px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -325,17 +325,18 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                           style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: '#ff4757' }}
                         />
                       </td>
-                      <td style={{ width: '280px', minWidth: '240px', maxWidth: '300px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '240px', minWidth: '220px', maxWidth: '260px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap' }}>
                           <img
                             src={post.cover_image || '/assets/blog/photo1.webp'}
-                            alt={post.title}
+                            alt=""
                             className="hpa-table-thumb"
+                            style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }}
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = '/assets/blog/photo1.webp';
                             }}
                           />
-                          <div style={{ minWidth: 0, maxWidth: '220px' }}>
+                          <div style={{ minWidth: 0, maxWidth: '180px' }}>
                             <Link
                               href={`/admin/posts/${post.id}`}
                               style={{
@@ -343,7 +344,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                                 color: '#ffffff',
                                 textDecoration: 'none',
                                 display: 'block',
-                                maxWidth: '220px',
+                                maxWidth: '180px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -351,31 +352,31 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             >
                               {post.title}
                             </Link>
-                            <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap', display: 'block', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap', display: 'block', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               /{post.slug} • {post.read_mins || '5 min'}
                             </span>
                           </div>
                         </div>
                       </td>
 
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>
                         <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', whiteSpace: 'nowrap' }}>
                           {post.category_name || 'General'}
                         </span>
                       </td>
 
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '120px', minWidth: '110px', whiteSpace: 'nowrap' }}>
                         <div style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: 500, whiteSpace: 'nowrap' }}>
                           {post.author_name}
                         </div>
                       </td>
 
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '130px', minWidth: '120px', whiteSpace: 'nowrap' }}>
                         <span
                           className={`hpa-status-badge ${
                             post.status === 'published' ? 'published' : 'draft'
                           }`}
-                          style={{ whiteSpace: 'nowrap' }}
+                          style={{ whiteSpace: 'nowrap', display: 'inline-flex' }}
                         >
                           {post.status === 'published' ? (
                             <CheckCircle2 size={12} />
@@ -386,7 +387,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         </span>
                       </td>
 
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '140px', minWidth: '130px', whiteSpace: 'nowrap' }}>
                         <div
                           style={{
                             display: 'flex',
@@ -402,7 +403,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                         </div>
                       </td>
 
-                      <td style={{ whiteSpace: 'nowrap' }}>
+                      <td style={{ width: '150px', minWidth: '150px', whiteSpace: 'nowrap' }}>
                         <div
                           style={{
                             display: 'flex',

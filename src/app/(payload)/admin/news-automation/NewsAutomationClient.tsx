@@ -1579,13 +1579,13 @@ export default function NewsAutomationClient() {
                         title="Select All"
                       />
                     </th>
-                    <th>Date / Time</th>
-                    <th>Trigger</th>
-                    <th>Stories Discovered</th>
-                    <th>Generated Article</th>
-                    <th>Website Status</th>
-                    <th>LinkedIn Status</th>
-                    <th>Action</th>
+                    <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Date / Time</th>
+                    <th style={{ minWidth: '90px', whiteSpace: 'nowrap' }}>Trigger</th>
+                    <th style={{ minWidth: '160px', whiteSpace: 'nowrap' }}>Stories Discovered</th>
+                    <th style={{ minWidth: '220px', whiteSpace: 'nowrap' }}>Generated Article</th>
+                    <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Website Status</th>
+                    <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>LinkedIn Status</th>
+                    <th style={{ minWidth: '100px', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1988,14 +1988,14 @@ export default function NewsAutomationClient() {
                         title="Select All"
                       />
                     </th>
-                    <th>Feed Name</th>
-                    <th>Region &amp; Language</th>
-                    <th>Category</th>
-                    <th>Feed URL</th>
-                    <th>Status</th>
-                    <th>Last Fetched</th>
-                    <th>Active</th>
-                    <th>Actions</th>
+                    <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Feed Name</th>
+                    <th style={{ minWidth: '130px', whiteSpace: 'nowrap' }}>Region &amp; Language</th>
+                    <th style={{ minWidth: '110px', whiteSpace: 'nowrap' }}>Category</th>
+                    <th style={{ minWidth: '200px', whiteSpace: 'nowrap' }}>Feed URL</th>
+                    <th style={{ minWidth: '90px', whiteSpace: 'nowrap' }}>Status</th>
+                    <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Last Fetched</th>
+                    <th style={{ minWidth: '70px', whiteSpace: 'nowrap' }}>Active</th>
+                    <th style={{ minWidth: '90px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>

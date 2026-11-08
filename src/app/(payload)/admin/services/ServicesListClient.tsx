@@ -277,8 +277,8 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                         style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
                       />
                     </td>
-                    <td>
-                      <div>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ whiteSpace: 'nowrap' }}>
                         <Link
                           href={`/admin/services/${srv.id}`}
                           style={{
@@ -287,24 +287,25 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                             textDecoration: 'none',
                             display: 'block',
                             fontSize: '0.92rem',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {srv.title}
                         </Link>
-                        <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
+                        <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap' }}>
                           /{srv.slug} • {srv.tagline || 'Engineering Service'}
                         </span>
                       </div>
                     </td>
 
-                    <td>
-                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)' }}>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', whiteSpace: 'nowrap' }}>
                         {srv.category_name || 'Engineering'}
                       </span>
                     </td>
 
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
                         <span
                           style={{
                             fontSize: '0.72rem',
@@ -315,6 +316,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                             border: '1px solid var(--hpa-border)',
                             color: 'rgba(255,255,255,0.8)',
                             textTransform: 'capitalize',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {srv.card_theme}
@@ -329,6 +331,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                               background: 'rgba(0, 245, 160, 0.12)',
                               border: '1px solid rgba(0, 245, 160, 0.3)',
                               color: 'var(--hpa-success)',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             ★ Featured
@@ -337,21 +340,22 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                       </div>
                     </td>
 
-                    <td>
-                      <span style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: 600 }}>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: 600, whiteSpace: 'nowrap' }}>
                         {srv.starting_price ? `$${srv.starting_price}` : srv.pricing_type.replace('_', ' ')}
                       </span>
                     </td>
 
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <span
                         className={`hpa-pill ${srv.published ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
+                        style={{ whiteSpace: 'nowrap' }}
                       >
                         {srv.published ? 'Live' : 'Draft'}
                       </span>
                     </td>
 
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <Link
                           href={`/admin/services/${srv.id}`}

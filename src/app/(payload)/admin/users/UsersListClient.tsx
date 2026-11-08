@@ -247,8 +247,8 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                           }}
                         />
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap' }}>
                           <div
                             style={{
                               width: '36px',
@@ -276,29 +276,30 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                             )}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, color: '#ffffff' }}>
+                            <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap' }}>
                               {user.name} {isCurrent && <span style={{ fontSize: '0.72rem', color: 'var(--hpa-primary)' }}>(You)</span>}
                             </div>
-                            <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap' }}>
                               ID #{user.id}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      <td>
-                        <span style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.85)' }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap' }}>
                           {user.email}
                         </span>
                       </td>
 
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span
                           className="hpa-pill"
                           style={{
                             background: user.role === 'admin' ? 'rgba(255, 51, 102, 0.1)' : 'rgba(56, 189, 248, 0.1)',
                             borderColor: user.role === 'admin' ? 'rgba(255, 51, 102, 0.3)' : 'rgba(56, 189, 248, 0.3)',
                             color: user.role === 'admin' ? 'var(--hpa-primary)' : 'var(--hpa-info)',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {user.role === 'admin' ? <ShieldCheck size={12} /> : <Shield size={12} />}
@@ -306,11 +307,11 @@ export default function UsersListClient({ initialUsers, currentAdminId }: UsersL
                         </span>
                       </td>
 
-                      <td style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)' }}>
+                      <td style={{ fontSize: '0.82rem', color: 'var(--hpa-text-muted)', whiteSpace: 'nowrap' }}>
                         {dateStr}
                       </td>
 
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                           <Link
                             href={`/admin/users/${user.id}`}

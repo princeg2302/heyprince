@@ -313,7 +313,7 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                     <td style={{ whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 700, color: '#ffffff', whiteSpace: 'nowrap' }}>{cat.title}</div>
                     </td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <code
                         style={{
                           fontSize: '0.78rem',
@@ -321,17 +321,18 @@ export default function CategoriesClient({ initialCategories }: CategoriesClient
                           borderRadius: '4px',
                           background: 'rgba(255, 255, 255, 0.05)',
                           color: 'var(--hpa-primary)',
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         {cat.slug}
                       </code>
                     </td>
-                    <td>
-                      <span style={{ fontSize: '0.84rem', color: 'rgba(255, 255, 255, 0.65)' }}>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '0.84rem', color: 'rgba(255, 255, 255, 0.65)', whiteSpace: 'nowrap' }}>
                         {cat.description || 'No description provided.'}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <button
                           onClick={() => openEditModal(cat)}

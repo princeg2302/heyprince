@@ -103,8 +103,24 @@ export async function POST(request: NextRequest) {
       if (isNews) {
         const runId = typeof id === 'number' ? id : parseInt(String(id), 10);
         await deleteDailyRunsBulk([runId]);
+        // Also remove any linked chief draft
+        try {
+          await query(
+            `DELETE FROM chief_content_drafts 
+             WHERE status = 'pending_approval' AND (metadata->>'daily_news_run_id')::text = $1::text`,
+            [String(runId)]
+          );
+        } catch (delErr) {
+          console.warn('[delete] Note cleaning linked chief draft:', delErr);
+        }
       } else {
+        const draft = await getDraftById(String(id));
+        const meta = draft?.metadata || {};
+        const linkedRunId = meta.daily_news_run_id ? Number(meta.daily_news_run_id) : null;
         await deleteDraftsBulk([String(id)]);
+        if (linkedRunId) {
+          await deleteDailyRunsBulk([linkedRunId]);
+        }
       }
       return NextResponse.json({ success: true, message: 'Draft deleted.' });
     }
@@ -311,6 +327,23 @@ export async function POST(request: NextRequest) {
         if (!newsResult.success) {
           return NextResponse.json({ success: false, error: newsResult.error }, { status: 500 });
         }
+
+        // Cross-sync: Mark matching Chief of Staff draft as published so it clears from queue
+        try {
+          await query(
+            `UPDATE chief_content_drafts 
+             SET status = 'published', updated_at = NOW()
+             WHERE status = 'pending_approval' AND draft_type = 'article' AND (
+               (metadata->>'daily_news_run_id')::text = $1::text OR
+               metadata->>'slug' = $2 OR
+               LOWER(TRIM(title)) = LOWER(TRIM($3))
+             )`,
+            [String(runId), newsResult.postSlug || '', (newsResult as any).articleTitle || '']
+          );
+        } catch (syncErr) {
+          console.warn('[publish] Cross-sync Chief draft error:', syncErr);
+        }
+
         return NextResponse.json({
           success: true,
           message: 'Scheduled blog published to live site successfully.',
@@ -324,6 +357,28 @@ export async function POST(request: NextRequest) {
         if (!publishResult.success) {
           return NextResponse.json({ success: false, error: publishResult.error }, { status: 500 });
         }
+
+        // Cross-sync: Mark matching daily_news_runs as published with the post_id
+        try {
+          const draft = await getDraftById(String(id));
+          const meta = draft?.metadata || {};
+          const runId = meta.daily_news_run_id ? Number(meta.daily_news_run_id) : null;
+          const createdPostId = publishResult.postId || (publishResult as any).post?.id || null;
+
+          await query(
+            `UPDATE daily_news_runs 
+             SET post_id = $1, website_status = 'published', status = 'success', updated_at = NOW()
+             WHERE post_id IS NULL AND (
+               ($2::int IS NOT NULL AND id = $2) OR
+               article_slug = $3 OR
+               LOWER(TRIM(article_title)) = LOWER(TRIM($4))
+             )`,
+            [createdPostId, runId, meta.slug || '', draft?.title || '']
+          );
+        } catch (syncErr) {
+          console.warn('[publish] Cross-sync daily run error:', syncErr);
+        }
+
         return NextResponse.json({
           success: true,
           message: 'Draft approved and published successfully.',
@@ -348,8 +403,33 @@ export async function POST(request: NextRequest) {
             timestamp: new Date().toISOString(),
           },
         });
+        // Also reject any matching chief draft
+        try {
+          await query(
+            `UPDATE chief_content_drafts 
+             SET status = 'rejected', updated_at = NOW() 
+             WHERE status = 'pending_approval' AND (metadata->>'daily_news_run_id')::text = $1::text`,
+            [String(runId)]
+          );
+        } catch (rejErr) {
+          console.warn('[reject] Note syncing to chief draft:', rejErr);
+        }
       } else {
+        const draft = await getDraftById(String(id));
+        const meta = draft?.metadata || {};
+        const linkedRunId = meta.daily_news_run_id ? Number(meta.daily_news_run_id) : null;
+
         await updateDraftStatus(String(id), 'rejected', reason);
+        if (linkedRunId) {
+          await updateDailyRun(linkedRunId, {
+            status: 'failed',
+            errorDetails: {
+              stage: 'approval_rejection',
+              message: `${reason} (Rejected by ${admin.email})`,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
         await logChiefActivity(
           null,
           'warning',

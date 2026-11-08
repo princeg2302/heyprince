@@ -277,24 +277,24 @@ export default async function ViewPostPage({
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Category</span>
-                <span style={{ color: '#ffffff', fontWeight: 600, textAlign: 'right', wordBreak: 'break-word' }}>
+                <span style={{ color: '#ffffff', fontWeight: 600, textAlign: 'right' }}>
                   {post.category_name || 'General'}
                 </span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                 <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Read Duration</span>
-                <span style={{ color: '#ffffff', textAlign: 'right' }}>{post.read_mins || '5 min'}</span>
+                <span style={{ color: '#ffffff', textAlign: 'right', whiteSpace: 'nowrap' }}>{post.read_mins || '5 min'}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Published Date</span>
-                <span style={{ color: '#ffffff', textAlign: 'right', wordBreak: 'break-word' }}>{formattedDate}</span>
+                <span style={{ color: '#ffffff', textAlign: 'right' }}>{formattedDate}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                 <span style={{ color: 'var(--hpa-text-dim)', flexShrink: 0 }}>Created</span>
-                <span style={{ color: '#ffffff', textAlign: 'right' }}>
+                <span style={{ color: '#ffffff', textAlign: 'right', whiteSpace: 'nowrap' }}>
                   {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
@@ -323,11 +323,12 @@ export default async function ViewPostPage({
                   color: '#ffffff',
                   fontWeight: 700,
                   fontSize: '1rem',
+                  position: 'relative',
                 }}
               >
                 <img
-                  src={post.author_avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
-                  alt={post.author_name}
+                  src={post.author_avatar || '/assets/cropped-prince-profile.webp'}
+                  alt=""
                   style={{
                     width: '100%',
                     height: '100%',
@@ -336,18 +337,15 @@ export default async function ViewPostPage({
                   }}
                   onError={(e) => {
                     const target = e.currentTarget as HTMLImageElement;
-                    target.style.display = 'none';
+                    target.src = '/assets/cropped-prince-profile.webp';
                   }}
                 />
-                <span style={{ display: 'none' }} aria-hidden="true">
-                  {post.author_name ? post.author_name.charAt(0).toUpperCase() : 'P'}
-                </span>
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.9rem', wordBreak: 'break-word' }}>
+                <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.9rem' }}>
                   {post.author_name}
                 </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', lineHeight: 1.3, wordBreak: 'break-word' }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', lineHeight: 1.3 }}>
                   {post.author_role}
                 </div>
               </div>

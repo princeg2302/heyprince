@@ -173,23 +173,47 @@ export async function GET(request: NextRequest) {
 
     // 2. Process News Automation Draft Runs with intelligent deduplication
     for (const r of recentNewsRuns) {
+      // Ignore preview runs (previews are generated for Chief of Staff or manual inspector)
+      if (r.triggerType === 'preview') {
+        continue;
+      }
+
       if (!r.postId && r.articleContent && r.articleTitle) {
         const content = r.articleContent || {};
         const title = content.title || r.articleTitle;
         const slug = content.slug || r.articleSlug || '';
-        const normTitle = title.trim().toLowerCase();
+        const normTitle = title.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normSlug = slug.trim().toLowerCase().replace(/-\d{4}-\d{2}-\d{2}$/, '');
+        const runDateStr = r.startedAt ? new Date(r.startedAt).toISOString().slice(0, 10) : '';
 
-        // Check if an item with this title, slug, or matching run already exists from Chief of Staff
+        // Check if an item with this title, slug, run ID, or same calendar day already exists from Chief of Staff
         const alreadyExists = unifiedList.some((item) => {
           if (item.id === String(r.id)) return true;
-          if (slug && item.slug && item.slug.toLowerCase() === slug.toLowerCase()) return true;
-          if (item.title && item.title.trim().toLowerCase() === normTitle) return true;
-          if (item.metadata?.daily_news_run_id === r.id) return true;
+          if (item.metadata?.daily_news_run_id && Number(item.metadata.daily_news_run_id) === Number(r.id)) return true;
+          
+          const itemSlugNorm = (item.slug || '').trim().toLowerCase().replace(/-\d{4}-\d{2}-\d{2}$/, '');
+          if (normSlug && itemSlugNorm && (normSlug === itemSlugNorm || normSlug.includes(itemSlugNorm) || itemSlugNorm.includes(normSlug))) {
+            return true;
+          }
+
+          const itemTitleNorm = (item.title || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (normTitle && itemTitleNorm && (normTitle === itemTitleNorm || normTitle.includes(itemTitleNorm) || itemTitleNorm.includes(normTitle))) {
+            return true;
+          }
+
+          // If a Chief draft article was created on the same calendar date, let Chief take precedence
+          if (!item.isOutreachProposal && runDateStr) {
+            const itemDateStr = item.createdAt ? new Date(item.createdAt).toISOString().slice(0, 10) : '';
+            if (itemDateStr === runDateStr) {
+              return true;
+            }
+          }
+
           return false;
         });
 
         if (alreadyExists) {
-          continue; // Skip duplicate approval item
+          continue; // Skip duplicate scheduled blog item
         }
 
         unifiedList.push({
@@ -219,13 +243,16 @@ export async function GET(request: NextRequest) {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
-    // Global deduplication guard: Guarantee no duplicate titles/slugs reach the UI
+    // Global deduplication guard: Guarantee no duplicate titles/slugs/dates reach the UI
     const seenKeys = new Set<string>();
     const deduplicatedList: UnifiedApprovalItem[] = [];
 
     for (const item of unifiedList) {
-      const slugKey = item.slug ? `slug:${item.slug.trim().toLowerCase()}` : '';
+      const slugKey = item.slug ? `slug:${item.slug.trim().toLowerCase().replace(/-\d{4}-\d{2}-\d{2}$/, '')}` : '';
       const titleKey = item.title ? `title:${item.title.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}` : '';
+      const dateKey = !item.isOutreachProposal && item.createdAt
+        ? `article_date:${new Date(item.createdAt).toISOString().slice(0, 10)}`
+        : '';
 
       if (slugKey && seenKeys.has(slugKey)) {
         continue;
@@ -233,9 +260,13 @@ export async function GET(request: NextRequest) {
       if (titleKey && seenKeys.has(titleKey)) {
         continue;
       }
+      if (dateKey && seenKeys.has(dateKey)) {
+        continue;
+      }
 
       if (slugKey) seenKeys.add(slugKey);
       if (titleKey) seenKeys.add(titleKey);
+      if (dateKey) seenKeys.add(dateKey);
       deduplicatedList.push(item);
     }
 

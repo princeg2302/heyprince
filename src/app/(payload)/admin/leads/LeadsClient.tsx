@@ -466,8 +466,8 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
                           style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
                         />
                       </td>
-                      <td>
-                        <div>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div style={{ whiteSpace: 'nowrap' }}>
                           <button
                             type="button"
                             onClick={() => setSelectedLead(lead)}
@@ -480,34 +480,35 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
                               cursor: 'pointer',
                               fontSize: '0.9rem',
                               textAlign: 'left',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {lead.name}
                           </button>
-                          <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)' }}>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap' }}>
                             {lead.email} {lead.company ? `• ${lead.company}` : ''}
                           </div>
                         </div>
                       </td>
 
-                      <td>
-                        <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)' }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap' }}>
                           {lead.service}
                         </span>
                       </td>
 
-                      <td>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           {formatBudget(lead.budget)}
                         </div>
                         {lead.timeline && (
-                          <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap' }}>
                             {lead.timeline}
                           </div>
                         )}
                       </td>
 
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <select
                           className="hpa-select"
                           value={lead.status}
@@ -516,6 +517,7 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
                             padding: '4px 8px',
                             fontSize: '0.74rem',
                             fontWeight: 600,
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {statusOptions.map((opt) => (
@@ -526,11 +528,11 @@ export default function LeadsClient({ initialLeads, isEmailConfigured = true }: 
                         </select>
                       </td>
 
-                      <td style={{ fontSize: '0.8rem', color: 'var(--hpa-text-muted)' }}>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--hpa-text-muted)', whiteSpace: 'nowrap' }}>
                         {dateStr}
                       </td>
 
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                           <button
                             type="button"

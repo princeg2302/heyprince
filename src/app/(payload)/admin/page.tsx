@@ -404,14 +404,14 @@ export default async function AdminDashboardPage() {
 
           {stats.recentLeads.length > 0 ? (
             <div className="hpa-table-wrap">
-              <table className="hpa-table">
+              <table className="hpa-table" style={{ width: '100%', minWidth: '520px' }}>
                 <thead>
                   <tr>
-                    <th>Client</th>
-                    <th>Service</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th style={{ textAlign: 'right' }}>Action</th>
+                    <th style={{ minWidth: '160px', whiteSpace: 'nowrap' }}>Client</th>
+                    <th style={{ minWidth: '130px', whiteSpace: 'nowrap' }}>Service</th>
+                    <th style={{ minWidth: '100px', whiteSpace: 'nowrap' }}>Status</th>
+                    <th style={{ minWidth: '80px', whiteSpace: 'nowrap' }}>Date</th>
+                    <th style={{ minWidth: '70px', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -439,30 +439,30 @@ export default async function AdminDashboardPage() {
 
                     return (
                       <tr key={lead.id}>
-                        <td>
-                          <div style={{ fontWeight: 600, color: '#ffffff' }}>{lead.name}</div>
-                          <div style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.45)' }}>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap' }}>{lead.name}</div>
+                          <div style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.45)', whiteSpace: 'nowrap' }}>
                             {lead.email}
                           </div>
                         </td>
-                        <td>
-                          <span style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.8)', whiteSpace: 'nowrap' }}>
                             {lead.service || 'Consultation'}
                           </span>
                         </td>
-                        <td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
                           <span
                             className="hpa-pill"
-                            style={{ color: statusColor, background: statusBg, borderColor: `${statusColor}40` }}
+                            style={{ color: statusColor, background: statusBg, borderColor: `${statusColor}40`, whiteSpace: 'nowrap' }}
                           >
                             {statusVal.replace('_', ' ')}
                           </span>
                         </td>
-                        <td style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.45)' }}>
+                        <td style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.45)', whiteSpace: 'nowrap' }}>
                           {dateStr}
                         </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <Link href="/admin/leads/" className="hpa-btn hpa-btn-secondary hpa-btn-sm">
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <Link href="/admin/leads/" className="hpa-btn hpa-btn-secondary hpa-btn-sm" style={{ whiteSpace: 'nowrap' }}>
                             Inspect
                           </Link>
                         </td>
@@ -500,40 +500,41 @@ export default async function AdminDashboardPage() {
 
           {stats.recentPosts.length > 0 ? (
             <div className="hpa-table-wrap">
-              <table className="hpa-table">
+              <table className="hpa-table" style={{ width: '100%', minWidth: '480px' }}>
                 <thead>
                   <tr>
-                    <th>Article</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Action</th>
+                    <th style={{ minWidth: '180px', whiteSpace: 'nowrap' }}>Article</th>
+                    <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Category</th>
+                    <th style={{ minWidth: '90px', whiteSpace: 'nowrap' }}>Status</th>
+                    <th style={{ minWidth: '60px', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.recentPosts.map((post: any) => (
                     <tr key={post.id}>
-                      <td>
-                        <div style={{ fontWeight: 600, color: '#ffffff', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div style={{ fontWeight: 600, color: '#ffffff', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {post.title}
                         </div>
-                        <div style={{ fontSize: '0.76rem', color: 'rgba(255, 255, 255, 0.45)' }}>
+                        <div style={{ fontSize: '0.76rem', color: 'rgba(255, 255, 255, 0.45)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           /{post.slug}
                         </div>
                       </td>
-                      <td>
-                        <span style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.7)', whiteSpace: 'nowrap' }}>
                           {post.category_name || 'General'}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span
                           className={`hpa-pill ${post.status === 'published' ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
+                          style={{ whiteSpace: 'nowrap' }}
                         >
                           {post.status}
                         </span>
                       </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <Link href={`/admin/posts/${post.id}/`} className="hpa-btn hpa-btn-secondary hpa-btn-sm">
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <Link href={`/admin/posts/${post.id}/`} className="hpa-btn hpa-btn-secondary hpa-btn-sm" style={{ whiteSpace: 'nowrap' }}>
                           View
                         </Link>
                       </td>

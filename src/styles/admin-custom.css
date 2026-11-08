@@ -741,13 +741,12 @@ code, pre, kbd, samp, .hpa-code {
 
 .hpa-table {
   width: 100%;
-  min-width: 1080px;
   border-collapse: collapse;
   text-align: left;
 }
 
 .hpa-table th {
-  padding: 13px 20px;
+  padding: 13px 18px;
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -758,16 +757,18 @@ code, pre, kbd, samp, .hpa-code {
   white-space: nowrap !important;
   word-break: keep-all !important;
   overflow-wrap: normal !important;
+  hyphens: none !important;
 }
 
 .hpa-table td {
-  padding: 14px 20px;
+  padding: 14px 18px;
   font-size: 0.86rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   vertical-align: middle;
   white-space: nowrap !important;
   word-break: keep-all !important;
   overflow-wrap: normal !important;
+  hyphens: none !important;
 }
 
 .hpa-table td *,
@@ -775,6 +776,7 @@ code, pre, kbd, samp, .hpa-code {
   word-break: keep-all !important;
   overflow-wrap: normal !important;
   white-space: nowrap !important;
+  hyphens: none !important;
 }
 
 .hpa-table tr:hover td {

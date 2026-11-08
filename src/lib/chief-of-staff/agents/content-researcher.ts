@@ -419,6 +419,7 @@ export async function approveAndPublishDraft(
   options?: { publishToLinkedIn?: boolean }
 ): Promise<{
   success: boolean;
+  postId?: number;
   publishedUrl?: string;
   linkedInUrl?: string;
   error?: string;
@@ -496,15 +497,31 @@ export async function approveAndPublishDraft(
     }
 
     await updateDraftStatus(draftId, 'published');
+
+    // Cross-sync: Close corresponding daily_news_runs if this draft originated from news automation
+    if (meta.daily_news_run_id) {
+      try {
+        const { updateDailyRun } = await import('../../daily-news/db');
+        await updateDailyRun(Number(meta.daily_news_run_id), {
+          postId: postRes.post.id,
+          websiteStatus: 'published',
+          status: 'success',
+        });
+      } catch (syncErr) {
+        console.warn('[approveAndPublishDraft] Note syncing to daily_news_runs:', syncErr);
+      }
+    }
+
     await logChiefActivity(
       'content_researcher',
       'success',
       `Published approved article "${draft.title}" to live website`,
-      { draftId, postUrl, linkedInUrl }
+      { draftId, postId: postRes.post.id, postUrl, linkedInUrl }
     );
 
     return {
       success: true,
+      postId: postRes.post.id,
       publishedUrl: postUrl,
       linkedInUrl,
     };
