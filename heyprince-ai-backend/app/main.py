@@ -9,6 +9,7 @@ from app.api.v1.health import router as health_router
 from app.api.v1.news import router as news_router
 from app.api.v1.chief import router as chief_router
 from app.api.v1.outreach import router as outreach_router
+from app.api.v1.company import router as company_router
 
 # Configure root logger
 logging.basicConfig(
@@ -48,6 +49,7 @@ app.include_router(health_router, prefix="/api/v1", tags=["Health"])
 app.include_router(news_router, prefix="/api/v1/news", tags=["Daily AI News"])
 app.include_router(chief_router, prefix="/api/v1/chief", tags=["Chief of Staff"])
 app.include_router(outreach_router, prefix="/api/v1/outreach", tags=["Lead Intelligence"])
+app.include_router(company_router, prefix="/api/v1/company", tags=["AI Company & Workforce"])
 
 @app.get("/")
 async def root():

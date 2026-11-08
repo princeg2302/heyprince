@@ -16,7 +16,9 @@
     "test:news": "npx tsx src/scripts/test-daily-news-suite.ts",
     "test:images": "npx tsx src/scripts/test-image-uniqueness.ts",
     "migrate:captcha": "npx tsx src/scripts/migrate-captcha.ts",
-    "test:captcha": "npx tsx src/scripts/test-captcha-suite.ts"
+    "test:captcha": "npx tsx src/scripts/test-captcha-suite.ts",
+    "migrate:company": "npx tsx src/scripts/migrate-company.ts",
+    "test:company": "npx tsx src/scripts/test-ai-company-suite.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.90.2",
