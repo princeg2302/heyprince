@@ -7,6 +7,7 @@ import crypto from 'crypto';
 
 export interface AiBackendResponse<T = any> {
   success: boolean;
+  ok?: boolean;
   data?: T;
   error?: string;
   source?: 'python' | 'local_fallback';
@@ -60,6 +61,8 @@ export async function callAiBackend<T = any>(
         'Content-Type': 'application/json',
         'X-AI-Signature': signature,
         'X-AI-Timestamp': timestamp,
+        'X-Signature': signature,
+        'X-Timestamp': timestamp,
         'User-Agent': 'HeyPrince-NextJS-Client/1.0',
       },
       body: bodyStr,
@@ -72,6 +75,7 @@ export async function callAiBackend<T = any>(
       const errText = await res.text();
       return {
         success: false,
+        ok: false,
         error: `Python AI backend HTTP ${res.status}: ${errText}`,
         source: 'python',
       };
@@ -80,6 +84,7 @@ export async function callAiBackend<T = any>(
     const data = await res.json();
     return {
       success: true,
+      ok: true,
       data,
       source: 'python',
     };

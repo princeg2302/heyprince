@@ -12,7 +12,7 @@ class SeoGrowthAgent(BaseAgent):
     Analyzes content opportunities, keyword intent, and internal linking strategies.
     """
     def __init__(self):
-        super().__init__(name="seo_growth")
+        super().__init__(agent_id="seo_growth", name="SEO & Organic Growth Agent")
 
     async def execute(self, trigger: str = "scheduled", payload: Dict[str, Any] = None) -> Dict[str, Any]:
         logger.info(f"[{self.name}] Running SEO Growth & Semantic Optimization sweep")

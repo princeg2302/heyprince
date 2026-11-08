@@ -120,3 +120,11 @@ JSON SCHEMA REQUIRED:
 
     return parsed
 
+# Export alias for news router compatibility
+async def generate_deep_seo_article(
+    topic_title: str,
+    category: str = "Artificial Intelligence",
+    source_url: str = ""
+) -> Dict[str, Any]:
+    return await generate_daily_post([], custom_topic=topic_title)
+

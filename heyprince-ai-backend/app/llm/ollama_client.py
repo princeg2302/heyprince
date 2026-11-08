@@ -26,7 +26,8 @@ class OllamaClient:
         system: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
-        format_json: bool = False
+        format_json: bool = False,
+        **kwargs
     ) -> Dict[str, Any]:
         """
         Executes inference on local PC Ollama instance.
@@ -59,3 +60,6 @@ class OllamaClient:
 
 ollama_client = OllamaClient()
 
+# Export alias function for health endpoint
+async def check_ollama_health() -> bool:
+    return await ollama_client.is_available()

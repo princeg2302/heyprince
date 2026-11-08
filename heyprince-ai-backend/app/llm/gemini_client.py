@@ -10,10 +10,11 @@ class GeminiClient:
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.candidate_models = [
             settings.GEMINI_MODEL,
-            "gemini-2.5-flash",
+            "gemini-3.5-flash",
             "gemini-3.8-flash",
-            "gemini-2.5-pro",
-            "gemini-flash-latest"
+            "gemini-3.1-flash-lite",
+            "gemini-flash-latest",
+            "gemini-flash-lite-latest"
         ]
 
     async def generate(
@@ -22,7 +23,8 @@ class GeminiClient:
         system: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
-        format_json: bool = False
+        format_json: bool = False,
+        **kwargs
     ) -> Dict[str, Any]:
         """
         Executes inference via Google Gemini REST API with candidate model fallbacks.
@@ -55,6 +57,8 @@ class GeminiClient:
                     }
                     if format_json:
                         payload["generationConfig"]["responseMimeType"] = "application/json"
+                    if "max_tokens" in kwargs:
+                        payload["generationConfig"]["maxOutputTokens"] = kwargs["max_tokens"]
 
                     res = await client.post(url, json=payload)
                     if res.status_code == 200:
@@ -77,4 +81,3 @@ class GeminiClient:
         raise RuntimeError(f"All Gemini candidate models failed. Last error: {last_error}")
 
 gemini_client = GeminiClient()
-

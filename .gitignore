@@ -36,3 +36,9 @@ lighthouse*.json
 # Independent Trading Bot
 trading-bot/
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+

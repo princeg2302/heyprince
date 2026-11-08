@@ -10,7 +10,7 @@ class LeadScoutAgent(BaseAgent):
     Audits prospect domains, analyzes performance gaps, and synthesizes cold proposals.
     """
     def __init__(self):
-        super().__init__(name="lead_scout")
+        super().__init__(agent_id="lead_scout", name="Lead Intelligence Scout")
 
     async def execute(self, trigger: str = "manual", payload: Dict[str, Any] = None) -> Dict[str, Any]:
         payload = payload or {}

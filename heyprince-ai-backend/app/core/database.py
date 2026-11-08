@@ -15,11 +15,9 @@ class DatabasePool:
             return
 
         try:
-            # Handle sslmode in uri for asyncpg
             clean_uri = settings.DATABASE_URI
             ssl_context = "require" if "sslmode=require" in clean_uri or "supabase" in clean_uri else None
             
-            # Remove sslmode query param from connection string as asyncpg handles it in param
             if "?" in clean_uri:
                 clean_uri = clean_uri.split("?")[0]
 
@@ -54,3 +52,20 @@ class DatabasePool:
 
 db = DatabasePool()
 
+# Expose aliases for compatibility across all modules
+async def init_db_pool():
+    await db.connect()
+
+async def close_db_pool():
+    await db.disconnect()
+
+class DBPoolProxy:
+    def __getattr__(self, name):
+        if db.pool:
+            return getattr(db.pool, name)
+        raise RuntimeError("Database pool not yet initialized. Call init_db_pool() first.")
+    
+    def __bool__(self):
+        return db.pool is not None
+
+db_pool = DBPoolProxy()

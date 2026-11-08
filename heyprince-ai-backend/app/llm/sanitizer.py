@@ -46,3 +46,5 @@ def sanitize_em_dashes(text: str) -> str:
 
     return "".join(parts)
 
+# Export alias for agent compatibility
+sanitize_ai_output = sanitize_em_dashes

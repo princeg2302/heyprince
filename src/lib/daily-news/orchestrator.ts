@@ -20,6 +20,7 @@ import { generateDailyBlogImages, generateDynamicEditorialImageFallback } from '
 import { generateOfficeHumourMeme } from './meme-generator';
 import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
+import { isAiBackendEnabled, callAiBackend } from '@/lib/ai-backend-client';
 
 export async function executeDailyNewsAutomation(params?: {
   triggerType?: 'scheduled' | 'manual_run' | 'preview';
@@ -301,7 +302,7 @@ export async function executeDailyNewsAutomation(params?: {
     }
 
     // Branch B or C: Daily Technology News OR Custom Topic / Festival Generation
-    let generated: GeneratedContentPayload;
+    let generated: GeneratedContentPayload = null as any;
     let collection = {
       sourcesChecked: 0,
       itemsDiscovered: 0,
@@ -311,7 +312,31 @@ export async function executeDailyNewsAutomation(params?: {
 
     if (activeContentType === 'custom_topic' || Boolean(params?.customTopic)) {
       const topicPrompt = params?.customTopic?.trim() || 'Software Architecture, System Design, and Modern Engineering Strategy';
-      generated = await generateCustomTopicPost(topicPrompt, settings.aiModel);
+      
+      let pythonSuccess = false;
+      if (isAiBackendEnabled()) {
+        try {
+          const pyRes = await callAiBackend('/api/v1/news/generate', {
+            title: topicPrompt,
+            category: 'Artificial Intelligence',
+            trigger_type: triggerType,
+            save_draft: false,
+          });
+          if (pyRes.ok && pyRes.data?.article) {
+            generated = pyRes.data.article;
+            if (pyRes.data.cover_image) {
+              generated.coverImage = pyRes.data.cover_image;
+            }
+            pythonSuccess = true;
+          }
+        } catch (pyErr) {
+          console.warn('[Orchestrator] Python backend delegation failed, falling back to local TypeScript generator:', pyErr);
+        }
+      }
+
+      if (!pythonSuccess) {
+        generated = await generateCustomTopicPost(topicPrompt, settings.aiModel);
+      }
 
       await updateDailyRun(run.id, {
         sourcesChecked: 0,
@@ -366,7 +391,32 @@ export async function executeDailyNewsAutomation(params?: {
       }
 
       // 5. Stage 2: AI Generation of Humanized Post
-      generated = await generateDailyPost(collection.availableItems, settings.aiModel);
+      let pythonTechSuccess = false;
+      if (isAiBackendEnabled()) {
+        try {
+          const topItem = collection.availableItems[0];
+          const pyRes = await callAiBackend('/api/v1/news/generate', {
+            title: topItem?.headline || 'Modern Software Architecture and System Engineering',
+            category: 'Artificial Intelligence',
+            source_url: topItem?.url || '',
+            trigger_type: triggerType,
+            save_draft: false,
+          });
+          if (pyRes.ok && pyRes.data?.article) {
+            generated = pyRes.data.article;
+            if (pyRes.data.cover_image) {
+              generated.coverImage = pyRes.data.cover_image;
+            }
+            pythonTechSuccess = true;
+          }
+        } catch (pyErr) {
+          console.warn('[Orchestrator] Python backend delegation failed for tech news, falling back to local TypeScript generator:', pyErr);
+        }
+      }
+
+      if (!pythonTechSuccess) {
+        generated = await generateDailyPost(collection.availableItems, settings.aiModel);
+      }
 
       // Save selected items for transparency
       const selectedSummary = collection.availableItems.slice(0, 5).map((i) => ({

@@ -50,3 +50,15 @@ Generate a concise, professional cold proposal in JSON:
             "recommendedService": "Headless Next.js Architecture"
         }
 
+# Export alias for lead_scout and outreach router compatibility
+async def generate_tailored_proposal(
+    company_name: str,
+    domain: str = "target-domain.com",
+    notes: str = ""
+) -> Dict[str, Any]:
+    return await generate_lead_proposal({
+        "company_name": company_name,
+        "domain": domain,
+        "notes": notes
+    })
+

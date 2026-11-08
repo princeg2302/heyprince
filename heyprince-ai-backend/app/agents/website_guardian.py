@@ -11,7 +11,7 @@ class WebsiteGuardianAgent(BaseAgent):
     Monitors website health, response latency, and Core Web Vitals targets.
     """
     def __init__(self):
-        super().__init__(name="website_guardian")
+        super().__init__(agent_id="website_guardian", name="Website Guardian Sentinel")
 
     async def execute(self, trigger: str = "scheduled", payload: Dict[str, Any] = None) -> Dict[str, Any]:
         logger.info(f"[{self.name}] Initiating site diagnostic sweep (trigger={trigger})")

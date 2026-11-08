@@ -14,7 +14,8 @@ class LLMRouter:
         preferred_provider: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.7,
-        format_json: bool = False
+        format_json: bool = False,
+        **kwargs
     ) -> Dict[str, Any]:
         """
         Routes inference between local PC Ollama and cloud Gemini.
@@ -33,7 +34,8 @@ class LLMRouter:
                         system=effective_system,
                         model=model,
                         temperature=temperature,
-                        format_json=format_json
+                        format_json=format_json,
+                        **kwargs
                     )
                     result["text"] = sanitize_em_dashes(result["text"])
                     return result
@@ -49,10 +51,24 @@ class LLMRouter:
             system=effective_system,
             model=model if preferred_provider == "gemini" else None,
             temperature=temperature,
-            format_json=format_json
+            format_json=format_json,
+            **kwargs
         )
         result["text"] = sanitize_em_dashes(result["text"])
         return result
 
 llm_router = LLMRouter()
 
+# Export alias function for agent compatibility
+async def route_llm_request(
+    user_prompt: str,
+    system_prompt: Optional[str] = None,
+    temperature: float = 0.7,
+    **kwargs
+) -> Dict[str, Any]:
+    return await llm_router.generate(
+        prompt=user_prompt,
+        system=system_prompt,
+        temperature=temperature,
+        **kwargs
+    )
