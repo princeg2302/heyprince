@@ -4,6 +4,7 @@ import {
   getAgentById,
   logChiefActivity,
 } from './db';
+import { isAiBackendEnabled, callAiBackend } from '@/lib/ai-backend-client';
 import { runWebsiteGuardianAudit } from './agents/website-guardian';
 import { runSeoGrowthAudit } from './agents/seo-growth';
 import { runLeadScoutDiscovery } from './agents/lead-scout';
@@ -67,7 +68,23 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
   let errorMessage: string | null = null;
 
   try {
-    switch (agentId) {
+    if (isAiBackendEnabled() && agentId !== 'inbound_responder') {
+      const pythonRes = await callAiBackend('/api/v1/chief/run-agent', {
+        agent: agentId,
+        trigger: triggerSource,
+        payload,
+      });
+      if (pythonRes.success && pythonRes.data?.result) {
+        taskResult = pythonRes.data.result;
+        taskSuccess = true;
+        console.log('[Chief Orchestrator] Agent executed successfully via dedicated Python AI backend.');
+      } else {
+        console.warn('[Chief Orchestrator] Python backend delegation failed, falling back to local TypeScript agent:', pythonRes.error);
+      }
+    }
+
+    if (taskResult === null) {
+      switch (agentId) {
       case 'website_guardian': {
         taskResult = await runWebsiteGuardianAudit({
           routes: payload.routes,
@@ -107,6 +124,7 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
       default: {
         throw new Error(`Unsupported agent id: ${agentId}`);
       }
+    }
     }
   } catch (err: any) {
     taskSuccess = false;
