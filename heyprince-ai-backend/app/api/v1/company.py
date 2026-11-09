@@ -23,7 +23,7 @@ class StartDiscussionRequest(BaseModel):
     objective: str
     participant_ids: Optional[List[str]] = None
     token_budget: Optional[int] = 4000
-    max_turns: Optional[int] = 8
+    max_turns: Optional[int] = 0
 
 class TurnRequest(BaseModel):
     speakerId: Optional[str] = None
@@ -75,7 +75,7 @@ async def create_discussion(
             objective=req.objective,
             participant_ids=req.participant_ids,
             token_budget=req.token_budget or 4000,
-            max_turns=req.max_turns or 8
+            max_turns=req.max_turns if req.max_turns is not None else 0
         )
         return {"success": True, **result}
     except Exception as e:

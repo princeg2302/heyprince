@@ -65,11 +65,8 @@ export async function advanceDiscussionTurn(
     };
   }
 
-  // Check if reached max turns or token limit
-  if (
-    discussion.turn_count >= discussion.max_turns ||
-    discussion.tokens_consumed >= discussion.token_budget
-  ) {
+  // Turn count is informational; the token budget remains the meeting limit.
+  if (discussion.tokens_consumed >= discussion.token_budget) {
     const concluded = await finishAndSynthesizeDiscussion(discussionId);
     return {
       success: true,
@@ -156,7 +153,7 @@ export async function advanceDiscussionTurn(
     discussionObjective: discussion.objective,
     recentTranscript,
     isModerator: nextSpeakerId === MODERATOR_ID,
-    isConcludingTurn: discussion.turn_count >= discussion.max_turns - 1,
+    isConcludingTurn: false,
     ceoDirective: options?.ceoDirective,
     toolResult,
     historicalMemories,
@@ -179,25 +176,11 @@ export async function advanceDiscussionTurn(
   // Increment turn
   await updateDiscussionTurn(discussionId, 1, 65);
 
-  // Check if this was final turn
-  if (discussion.turn_count + 1 >= discussion.max_turns) {
-    const concluded = await finishAndSynthesizeDiscussion(discussionId);
-    return {
-      success: true,
-      status: 'concluded',
-      turn: discussion.turn_count + 1,
-      maxTurns: discussion.max_turns,
-      message: newMessage,
-      conclusion: concluded.conclusion,
-      proposalId: concluded.proposalId,
-    };
-  }
-
   return {
     success: true,
     status: 'in_progress',
     turn: discussion.turn_count + 1,
-    maxTurns: discussion.max_turns,
+    maxTurns: 0,
     message: newMessage,
   };
 }

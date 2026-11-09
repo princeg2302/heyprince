@@ -213,7 +213,7 @@ export async function createDiscussion(params: {
       moderator,
       participants,
       params.tokenBudget || 4000,
-      params.maxTurns || 8,
+      params.maxTurns ?? 0,
     ]
   );
 

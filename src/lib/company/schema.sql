@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS company_discussions (
   token_budget INTEGER NOT NULL DEFAULT 4000,
   tokens_consumed INTEGER NOT NULL DEFAULT 0,
   turn_count INTEGER NOT NULL DEFAULT 0,
-  max_turns INTEGER NOT NULL DEFAULT 8,
+  max_turns INTEGER NOT NULL DEFAULT 0,
   conclusion JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   concluded_at TIMESTAMPTZ,

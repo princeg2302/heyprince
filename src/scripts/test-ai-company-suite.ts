@@ -32,7 +32,12 @@ import {
   recordCompanyMemory,
   queryCompanyMemory,
 } from '../lib/company/db';
-import { advanceDiscussionTurn, processCompanyTask, executeApprovedProposal } from '../lib/company/orchestrator';
+import {
+  advanceDiscussionTurn,
+  finishAndSynthesizeDiscussion,
+  processCompanyTask,
+  executeApprovedProposal,
+} from '../lib/company/orchestrator';
 
 async function runTestSuite() {
   console.info('================================================================');
@@ -99,12 +104,16 @@ async function runTestSuite() {
     const turn2 = await advanceDiscussionTurn(disc.id);
     assert(turn2.success && Boolean(turn2.message), 'Turn 2 executed (specialist argumentation)');
 
-    // Turn 3 (Reaches maxTurns -> concludes)
+    // Turn 3 (The configured turn count no longer concludes the meeting)
     const turn3 = await advanceDiscussionTurn(disc.id);
-    assert(turn3.status === 'concluded', 'Meeting successfully reached consensus and adjourned');
+    assert(turn3.status === 'in_progress', 'Meeting continues past its configured turn count');
 
     const msgs = await getDiscussionMessages(disc.id);
     assert(msgs.length >= 3, `Discussion recorded ${msgs.length} messages`);
+
+    await finishAndSynthesizeDiscussion(disc.id);
+    const concludedDiscussion = await getDiscussionById(disc.id);
+    assert(concludedDiscussion?.status === 'concluded', 'Meeting can be explicitly concluded by the CEO');
 
     // ------------------------------------------------------------------------
     // TEST 4: CEO APPROVAL GATE & PROPOSAL PIPELINE

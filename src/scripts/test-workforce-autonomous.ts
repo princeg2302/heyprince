@@ -164,10 +164,12 @@ async function runTestSuite() {
 
   const t4Turn3 = await advanceDiscussionTurn(test4Discussion.id);
   console.log(`Turn 3 [${t4Turn3.message?.sender_id}]:`, t4Turn3.message?.content);
-  console.log('Meeting Conclusion Status:', t4Turn3.status);
-  console.log('Proposal ID Generated:', t4Turn3.proposalId);
 
-  console.log(`TEST 4 RESULT: ${t4Turn3.status === 'concluded' ? 'PASSED ✅' : 'FAILED ❌'}\n`);
+  const t4Conclusion = await finishAndSynthesizeDiscussion(test4Discussion.id);
+  console.log('Meeting Conclusion Status: concluded');
+  console.log('Proposal ID Generated:', t4Conclusion.proposalId);
+
+  console.log(`TEST 4 RESULT: ${Boolean(t4Conclusion.proposalId) ? 'PASSED ✅' : 'FAILED ❌'}\n`);
 
   // --------------------------------------------------------------------------
   // TEST 5 & 6: Real Evidence Grounding & Real Tool Execution Test

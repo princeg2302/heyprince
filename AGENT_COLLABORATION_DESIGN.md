@@ -10,7 +10,7 @@ Autonomous agent collaboration is designed as a structured debate rather than op
 1. An explicit **Objective**.
 2. A **Moderator** (`alex_vance`, Chief of Staff).
 3. A designated set of **Participants**.
-4. Strict **Constraints**: Maximum turns (`max_turns: 6-8`) and token budget (`token_budget: 3500-4000`).
+4. **Meeting limits**: No fixed speaker-turn cap; the 4,000-token cumulative meeting budget remains. Each next speaker turn is triggered manually, and the CEO can conclude the meeting at any time.
 5. A deterministic **Synthesis Phase** yielding structured CEO Proposals or internal Company Tasks.
 
 ```mermaid
@@ -71,4 +71,4 @@ sequenceDiagram
 To enable live viewing of meetings in the CEO Admin panel without expensive polling:
 1. **Server-Sent Events (SSE):** Next.js endpoint `/api/admin/company/discussions/[id]/stream` streams chunked message payloads as agents speak.
 2. **Supabase Realtime Replication:** Tables `company_messages`, `company_discussions`, and `company_employees` are added to the `supabase_realtime` publication, allowing instant client subscription using `@supabase/supabase-js`.
-3. **Turn Controller:** Alex Vance acts as turn orchestrator; if the meeting is streaming, turns advance automatically or on manual "Advance Turn" command from the CEO.
+3. **Turn Controller:** Alex Vance selects the next speaker when the CEO uses "Advance Turn." Meetings remain open for as many turns as needed until the token budget is reached or the CEO concludes them.

@@ -34,7 +34,7 @@ async def start_company_discussion(
     objective: str,
     participant_ids: Optional[List[str]] = None,
     token_budget: int = 4000,
-    max_turns: int = 8
+    max_turns: int = 0
 ) -> Dict[str, Any]:
     """
     Initializes a structured corporate meeting in a virtual room.
@@ -143,8 +143,8 @@ async def advance_discussion_turn(discussion_id: str) -> Dict[str, Any]:
     if discussion["status"] != "in_progress":
         return {"status": discussion["status"], "message": "Discussion is already concluded or converted."}
 
-    # Check limits
-    if discussion["turn_count"] >= discussion["max_turns"] or discussion["tokens_consumed"] >= discussion["token_budget"]:
+    # Turn count is informational; the token budget remains the meeting limit.
+    if discussion["tokens_consumed"] >= discussion["token_budget"]:
         logger.info(f"[CompanyEngine] Discussion {discussion_id} reached limits. Concluding meeting.")
         return await conclude_company_discussion(discussion_id)
 
@@ -202,7 +202,7 @@ If a decision or consensus is emerging, synthesize the agreement and state the a
 If a point needs clarification, challenge the specialist with a direct technical question.
 Keep response to 2 concise sentences. Do not use em-dashes.
 """
-        msg_type = "consensus" if discussion["turn_count"] >= discussion["max_turns"] - 2 else "statement"
+        msg_type = "statement"
     else:
         user_prompt = f"""
 RECENT MEETING DISCOURSE:
@@ -251,14 +251,10 @@ Keep response to 2 to 3 concise, impactful sentences. Do not use em-dashes.
         uuid.UUID(discussion_id)
     )
 
-    # Check if this was final turn
-    if discussion["turn_count"] + 1 >= discussion["max_turns"]:
-        return await conclude_company_discussion(discussion_id)
-
     return {
         "status": "in_progress",
         "turn": discussion["turn_count"] + 1,
-        "max_turns": discussion["max_turns"],
+        "max_turns": 0,
         "message": new_msg
     }
 
