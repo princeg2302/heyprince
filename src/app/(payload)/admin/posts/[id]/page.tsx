@@ -328,16 +328,12 @@ export default async function ViewPostPage({
               >
                 <img
                   src={post.author_avatar || '/assets/cropped-prince-profile.webp'}
-                  alt=""
+                  alt={post.author_name || 'Author'}
                   style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
                     display: 'block',
-                  }}
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.src = '/assets/cropped-prince-profile.webp';
                   }}
                 />
               </div>
