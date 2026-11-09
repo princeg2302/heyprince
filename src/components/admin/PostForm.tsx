@@ -62,7 +62,7 @@ export function PostForm({
   const [authorAvatar, setAuthorAvatar] = useState(
     initialData?.author_avatar ||
       defaultAuthorAvatar ||
-      'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'
+      '/assets/cropped-prince-profile.webp'
   );
 
   // Tags

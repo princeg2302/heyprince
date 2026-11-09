@@ -243,7 +243,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
         {/* Table */}
         {paginated.length > 0 ? (
           <div className="hpa-table-wrap">
-            <table className="hpa-table" style={{ minWidth: '940px' }}>
+            <table className="hpa-table" style={{ width: '100%', minWidth: '960px' }}>
               <thead>
                 <tr>
                   <th style={{ width: '42px', minWidth: '42px', whiteSpace: 'nowrap' }}>
@@ -258,12 +258,12 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                       title="Select All"
                     />
                   </th>
-                  <th style={{ minWidth: '240px', whiteSpace: 'nowrap' }}>Service Offering</th>
-                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Category</th>
-                  <th style={{ minWidth: '150px', whiteSpace: 'nowrap' }}>Theme & Badge</th>
-                  <th style={{ minWidth: '130px', whiteSpace: 'nowrap' }}>Pricing</th>
-                  <th style={{ minWidth: '120px', whiteSpace: 'nowrap' }}>Status</th>
-                  <th style={{ minWidth: '120px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                  <th style={{ width: '280px', minWidth: '220px', maxWidth: '300px', whiteSpace: 'nowrap' }}>Service Offering</th>
+                  <th style={{ width: '180px', minWidth: '140px', maxWidth: '200px', whiteSpace: 'nowrap' }}>Category</th>
+                  <th style={{ width: '160px', minWidth: '140px', whiteSpace: 'nowrap' }}>Theme & Badge</th>
+                  <th style={{ width: '120px', minWidth: '110px', whiteSpace: 'nowrap' }}>Pricing</th>
+                  <th style={{ width: '120px', minWidth: '110px', whiteSpace: 'nowrap' }}>Status</th>
+                  <th style={{ width: '140px', minWidth: '130px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -277,8 +277,8 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                         style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
                       />
                     </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <div style={{ whiteSpace: 'nowrap' }}>
+                    <td style={{ width: '280px', minWidth: '220px', maxWidth: '300px' }}>
+                      <div style={{ minWidth: 0, maxWidth: '280px' }}>
                         <Link
                           href={`/admin/services/${srv.id}`}
                           style={{
@@ -287,24 +287,46 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                             textDecoration: 'none',
                             display: 'block',
                             fontSize: '0.92rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
                           }}
+                          title={srv.title}
                         >
                           {srv.title}
                         </Link>
-                        <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', whiteSpace: 'nowrap' }}>
-                          /{srv.slug} • {srv.tagline || 'Engineering Service'}
-                        </span>
+                        <div
+                          style={{
+                            fontSize: '0.76rem',
+                            color: 'var(--hpa-text-dim)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            marginTop: '2px',
+                          }}
+                          title={`/${srv.slug}${srv.tagline ? ` • ${srv.tagline}` : ''}`}
+                        >
+                          /{srv.slug}{srv.tagline ? ` • ${srv.tagline}` : ''}
+                        </div>
                       </div>
                     </td>
 
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.75)', whiteSpace: 'nowrap' }}>
+                    <td style={{ width: '180px', minWidth: '140px', maxWidth: '200px' }}>
+                      <div
+                        style={{
+                          fontSize: '0.82rem',
+                          color: 'rgba(255,255,255,0.75)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={srv.category_name || 'Engineering'}
+                      >
                         {srv.category_name || 'Engineering'}
-                      </span>
+                      </div>
                     </td>
 
-                    <td style={{ whiteSpace: 'nowrap' }}>
+                    <td style={{ width: '160px', minWidth: '140px', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
                         <span
                           style={{
@@ -340,13 +362,13 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                       </div>
                     </td>
 
-                    <td style={{ whiteSpace: 'nowrap' }}>
+                    <td style={{ width: '120px', minWidth: '110px', whiteSpace: 'nowrap' }}>
                       <span style={{ fontSize: '0.82rem', color: '#ffffff', fontWeight: 600, whiteSpace: 'nowrap' }}>
                         {srv.starting_price ? `$${srv.starting_price}` : srv.pricing_type.replace('_', ' ')}
                       </span>
                     </td>
 
-                    <td style={{ whiteSpace: 'nowrap' }}>
+                    <td style={{ width: '120px', minWidth: '110px', whiteSpace: 'nowrap' }}>
                       <span
                         className={`hpa-pill ${srv.published ? 'hpa-pill-published' : 'hpa-pill-draft'}`}
                         style={{ whiteSpace: 'nowrap' }}
@@ -355,7 +377,7 @@ export default function ServicesListClient({ initialServices, categories }: Serv
                       </span>
                     </td>
 
-                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <td style={{ width: '140px', minWidth: '130px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <Link
                           href={`/admin/services/${srv.id}`}

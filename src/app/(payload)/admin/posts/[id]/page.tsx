@@ -48,6 +48,14 @@ export default async function ViewPostPage({
       })
     : 'Draft (Unpublished)';
 
+  const authorAvatarUrl =
+    post.author_avatar &&
+    !post.author_avatar.includes('1791537029941-author.jpg')
+      ? post.author_avatar
+      : '/assets/cropped-prince-profile.webp';
+
+  const coverImageUrl = post.cover_image || '/assets/blog/photo1.webp';
+
   return (
     <AdminLayout user={user}>
       {/* Top Action Bar */}
@@ -96,21 +104,19 @@ export default async function ViewPostPage({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
           {/* Cover & Excerpt Card */}
           <div className="hpa-card" style={{ padding: '24px' }}>
-            {post.cover_image && (
-              <img
-                src={post.cover_image}
-                alt={post.title}
-                style={{
-                  width: '100%',
-                  maxHeight: '420px',
-                  aspectRatio: '16 / 9',
-                  objectFit: 'cover',
-                  borderRadius: '10px',
-                  marginBottom: '20px',
-                  border: '1px solid var(--hpa-border)',
-                }}
-              />
-            )}
+            <img
+              src={coverImageUrl}
+              alt={post.title}
+              style={{
+                width: '100%',
+                maxHeight: '420px',
+                aspectRatio: '16 / 9',
+                objectFit: 'cover',
+                borderRadius: '10px',
+                marginBottom: '20px',
+                border: '1px solid var(--hpa-border)',
+              }}
+            />
 
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', marginBottom: '10px' }}>
               Article Summary / Excerpt
@@ -327,7 +333,7 @@ export default async function ViewPostPage({
                 }}
               >
                 <img
-                  src={post.author_avatar || '/assets/cropped-prince-profile.webp'}
+                  src={authorAvatarUrl}
                   alt={post.author_name || 'Author'}
                   style={{
                     width: '100%',

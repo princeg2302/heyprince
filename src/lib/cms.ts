@@ -286,7 +286,7 @@ export async function getPosts(): Promise<Article[]> {
             avatar:
               adminUser?.avatar_url ||
               doc.author_avatar ||
-              'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
+              '/assets/cropped-prince-profile.webp',
           },
           tags: [],
           sections: [],
@@ -397,7 +397,7 @@ export async function getPostBySlug(slug: string): Promise<Article | null> {
           avatar:
             adminUser?.avatar_url ||
             dbPost.author_avatar ||
-            'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg',
+            '/assets/cropped-prince-profile.webp',
         },
         tags: tags.length > 0 ? tags : ['Technology', 'Engineering'],
         sections: sections.length > 0 ? sections : [],
