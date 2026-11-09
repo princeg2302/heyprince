@@ -26,6 +26,9 @@ import { generateAgentTurnResponse } from './gemini';
 import { sendPushToAllAdmins } from '../push/push-service';
 import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
+import { classifyAndRouteCeoMessage } from './ceo-router';
+import { executeRelevantAgentTool } from './tools';
+import { getRelevantCompanyMemories, recordCompanyMemory, formatMemoriesForPrompt } from './memory';
 
 const MODERATOR_ID = 'alex_vance';
 
@@ -33,7 +36,13 @@ const MODERATOR_ID = 'alex_vance';
 // 1. Advance Discussion Turn
 // ============================================================================
 
-export async function advanceDiscussionTurn(discussionId: string): Promise<{
+export async function advanceDiscussionTurn(
+  discussionId: string,
+  options?: {
+    forcedSpeakerId?: string;
+    ceoDirective?: string;
+  }
+): Promise<{
   success: boolean;
   status: string;
   turn?: number;
@@ -91,19 +100,48 @@ export async function advanceDiscussionTurn(discussionId: string): Promise<{
   }
 
   const availableSpecialists = participants.filter((p) => p !== MODERATOR_ID);
-  const lastSpeakerId = messages.length > 0 ? messages[messages.length - 1].sender_id : MODERATOR_ID;
+  const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+  const lastSpeakerId = lastMsg ? lastMsg.sender_id : MODERATOR_ID;
 
   let nextSpeakerId = MODERATOR_ID;
-  if (lastSpeakerId === MODERATOR_ID && availableSpecialists.length > 0) {
-    const turnIndex = discussion.turn_count % availableSpecialists.length;
-    nextSpeakerId = availableSpecialists[turnIndex];
+
+  if (options?.forcedSpeakerId && empMap.has(options.forcedSpeakerId)) {
+    nextSpeakerId = options.forcedSpeakerId;
   } else if (lastSpeakerId === 'prince_ceo') {
-    nextSpeakerId = MODERATOR_ID;
+    // If CEO just spoke, determine who should respond
+    const routing = classifyAndRouteCeoMessage(lastMsg?.content || '', allEmployees);
+    nextSpeakerId = routing.primaryResponderId;
+  } else if (lastSpeakerId === MODERATOR_ID && availableSpecialists.length > 0) {
+    // After Alex Vance, select specialist based on recent context
+    const recentContent = messages.slice(-2).map((m) => m.content.toLowerCase()).join(' ');
+    if (recentContent.includes('seo') || recentContent.includes('traffic') || recentContent.includes('search')) {
+      nextSpeakerId = availableSpecialists.includes('elena_rostova') ? 'elena_rostova' : availableSpecialists[0];
+    } else if (recentContent.includes('lead') || recentContent.includes('client') || recentContent.includes('outreach')) {
+      nextSpeakerId = availableSpecialists.includes('liam_thorne') ? 'liam_thorne' : availableSpecialists[0];
+    } else if (recentContent.includes('latency') || recentContent.includes('speed') || recentContent.includes('server') || recentContent.includes('uptime')) {
+      nextSpeakerId = availableSpecialists.includes('david_chen') ? 'david_chen' : availableSpecialists[0];
+    } else if (recentContent.includes('hindi') || recentContent.includes('bilingual')) {
+      nextSpeakerId = availableSpecialists.includes('elena_rostova') ? 'elena_rostova' : availableSpecialists[0];
+    } else {
+      const turnIndex = discussion.turn_count % availableSpecialists.length;
+      nextSpeakerId = availableSpecialists[turnIndex];
+    }
   } else {
     nextSpeakerId = MODERATOR_ID;
   }
 
   const speaker = empMap.get(nextSpeakerId) || empMap.get(MODERATOR_ID)!;
+
+  // Execute relevant live tool grounded in reality
+  const toolResult = await executeRelevantAgentTool(speaker, `${discussion.title} ${discussion.objective} ${options?.ceoDirective || ''}`);
+
+  // Fetch relevant historical memory
+  const memories = await getRelevantCompanyMemories({
+    department: speaker.department,
+    employeeId: speaker.id,
+    limit: 5,
+  });
+  const historicalMemories = formatMemoriesForPrompt(memories);
 
   // Format discourse context
   const recentTranscript = messages
@@ -119,6 +157,9 @@ export async function advanceDiscussionTurn(discussionId: string): Promise<{
     recentTranscript,
     isModerator: nextSpeakerId === MODERATOR_ID,
     isConcludingTurn: discussion.turn_count >= discussion.max_turns - 1,
+    ceoDirective: options?.ceoDirective,
+    toolResult,
+    historicalMemories,
   });
 
   const cleanContent = sanitizeEmDashes(aiResult.content.trim());
@@ -187,7 +228,7 @@ export async function finishAndSynthesizeDiscussion(discussionId: string): Promi
   } else if (discussion.room_id === 'growth_sales' || discussion.title.toLowerCase().includes('lead')) {
     recommendedAction = 'outreach_campaign';
     proposalType = 'outreach_campaign';
-  } else if (discussion.room_id === 'dev_room' || discussion.title.toLowerCase().includes('cwv')) {
+  } else if (discussion.room_id === 'dev_room' || discussion.title.toLowerCase().includes('cwv') || discussion.title.toLowerCase().includes('speed')) {
     recommendedAction = 'site_modification';
     proposalType = 'site_modification';
   }
@@ -217,6 +258,25 @@ export async function finishAndSynthesizeDiscussion(discussionId: string): Promi
     content: `MEETING ADJOURNED: ${summaryText} Action item queued for executive review.`,
     tokensUsed: 40,
   });
+
+  // Record consensus to persistent company memory
+  try {
+    await recordCompanyMemory({
+      scope: 'company',
+      category: 'decision',
+      insight: `Executive consensus reached on "${discussion.title}": ${conclusion.actionTitle}`,
+      discussionId,
+      department: 'Executive',
+      metadata: {
+        room: discussion.room_id,
+        recommendedAction,
+        assignedTo: conclusion.assignedTo,
+      },
+      confidenceScore: 0.95,
+    });
+  } catch (memErr) {
+    console.warn('[Orchestrator] Memory persist warning:', memErr);
+  }
 
   // Create CEO Action Proposal if action requires CEO approval
   let proposalId: string | undefined;
@@ -441,6 +501,9 @@ export async function sendCeoDirective(params: {
   ceoMessage: CompanyMessage;
   agentResponse?: CompanyMessage;
 }> {
+  const allEmployees = await getAllEmployees();
+  const routing = classifyAndRouteCeoMessage(params.directive, allEmployees);
+
   const ceoMessage = await insertCompanyMessage({
     discussionId: params.discussionId,
     senderId: 'prince_ceo',
@@ -449,8 +512,11 @@ export async function sendCeoDirective(params: {
     tokensUsed: 10,
   });
 
-  // Prompt the team to respond immediately
-  const advance = await advanceDiscussionTurn(params.discussionId);
+  // Prompt the team with the intelligent routing and directive context
+  const advance = await advanceDiscussionTurn(params.discussionId, {
+    forcedSpeakerId: routing.primaryResponderId,
+    ceoDirective: params.directive.trim(),
+  });
 
   return {
     success: true,
