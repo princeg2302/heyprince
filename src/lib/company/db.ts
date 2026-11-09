@@ -379,6 +379,33 @@ export async function insertCompanyMessage(params: {
   return msg;
 }
 
+export async function clearDiscussionMessages(discussionId: string): Promise<boolean> {
+  // Purge all discussion messages
+  await query(`DELETE FROM company_messages WHERE discussion_id = $1;`, [discussionId]);
+
+  // Reset turns and ensure status is in_progress
+  await query(
+    `UPDATE company_discussions 
+     SET turn_count = 0, status = 'in_progress', updated_at = NOW() 
+     WHERE id = $1;`,
+    [discussionId]
+  );
+
+  // Seed fresh executive synchronization message from Alex Vance
+  await query(
+    `INSERT INTO company_messages (
+       discussion_id, sender_id, message_type, content, evidence, tokens_used, created_at
+     ) VALUES (
+       $1, 'alex_vance', 'statement',
+       'Floor timeline cleared and synchronized by Prince (CEO). All specialists are active and standing by for your directives or discussion points.',
+       '{}', 10, NOW()
+     );`,
+    [discussionId]
+  );
+
+  return true;
+}
+
 // ============================================================================
 // 5. Task Orchestration Operations
 // ============================================================================
@@ -672,6 +699,15 @@ export async function queryCompanyMemory(options?: {
   params.push(options?.limit || 20);
 
   return await query<CompanyMemory>(sql, params);
+}
+
+export async function deleteCompanyMemory(id?: string): Promise<boolean> {
+  if (id && id !== 'all') {
+    await query(`DELETE FROM company_memory WHERE id = $1;`, [id]);
+  } else {
+    await query(`DELETE FROM company_memory;`);
+  }
+  return true;
 }
 
 // ============================================================================

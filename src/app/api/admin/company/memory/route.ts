@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-db';
-import { queryCompanyMemory, recordCompanyMemory } from '@/lib/company/db';
+import { queryCompanyMemory, recordCompanyMemory, deleteCompanyMemory } from '@/lib/company/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +58,29 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error?.message || 'Failed to record memory.' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id') || undefined;
+
+  try {
+    const success = await deleteCompanyMemory(id);
+    return NextResponse.json({
+      success,
+      message: id === 'all' || !id ? 'All memory cleared.' : 'Memory entry deleted.',
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Failed to delete memory.' },
       { status: 500 }
     );
   }

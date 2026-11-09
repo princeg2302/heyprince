@@ -35,6 +35,7 @@ import {
   Settings,
   Flame,
   UserPlus,
+  Trash2,
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -103,6 +104,26 @@ export default function CompanyOfficeClient() {
   const [draftingEmployee, setDraftingEmployee] = useState(false);
 
   const [selectedEmployeeDetail, setSelectedEmployeeDetail] = useState<CompanyEmployee | null>(null);
+
+  // Clear Chat & Clear Memory Modals & States
+  const [clearChatConfirmOpen, setClearChatConfirmOpen] = useState(false);
+  const [clearingChat, setClearingChat] = useState(false);
+  const [clearMemoryConfirmOpen, setClearMemoryConfirmOpen] = useState(false);
+  const [clearingMemory, setClearingMemory] = useState(false);
+
+  // Assign Task Modal & States
+  const [assignTaskModalOpen, setAssignTaskModalOpen] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskAssignedTo, setTaskAssignedTo] = useState('marcus_sterling');
+  const [taskPriority, setTaskPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('high');
+  const [taskAcceptanceCriteria, setTaskAcceptanceCriteria] = useState('Deliver concrete technical analysis, Provide verified production recommendations');
+  const [taskExecuteImmediately, setTaskExecuteImmediately] = useState(true);
+  const [submittingTask, setSubmittingTask] = useState(false);
+
+  // Task Detail Modal (view deliverable & findings)
+  const [selectedTaskDetail, setSelectedTaskDetail] = useState<CompanyTask | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // 1. Initial Load
@@ -433,6 +454,139 @@ export default function CompanyOfficeClient() {
     }
   };
 
+  // 7. Clear Floor Chat
+  const handleClearFloorChat = async () => {
+    if (!activeDiscussion) return;
+    setClearingChat(true);
+    try {
+      const res = await fetch(`/api/admin/company/discussions/${activeDiscussion.id}/message`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast('Company Floor chat timeline cleared and synchronized.', 'success');
+        setClearChatConfirmOpen(false);
+        const mRes = await fetch(`/api/admin/company/discussions/${activeDiscussion.id}`);
+        const mJson = await mRes.json();
+        if (mJson.success) {
+          setMessages(mJson.messages || []);
+        }
+        fetchCompanyData();
+      } else {
+        showToast(json.error || 'Failed to clear timeline', 'error');
+      }
+    } catch {
+      showToast('Network error clearing timeline', 'error');
+    } finally {
+      setClearingChat(false);
+    }
+  };
+
+  // 8. Delete Individual Memory Entry
+  const handleDeleteMemoryItem = async (memoryId: string) => {
+    try {
+      const res = await fetch(`/api/admin/company/memory?id=${memoryId}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMemoryItems((prev) => prev.filter((m) => m.id !== memoryId));
+        showToast('Memory entry removed from Corporate Brain.', 'success');
+      } else {
+        showToast(json.error || 'Failed to delete memory item', 'error');
+      }
+    } catch {
+      showToast('Network error deleting memory item', 'error');
+    }
+  };
+
+  // 9. Clear All Memory
+  const handleClearAllMemory = async () => {
+    setClearingMemory(true);
+    try {
+      const res = await fetch('/api/admin/company/memory?id=all', {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMemoryItems([]);
+        setClearMemoryConfirmOpen(false);
+        showToast('Corporate Brain memory cleared.', 'success');
+      } else {
+        showToast(json.error || 'Failed to clear memory', 'error');
+      }
+    } catch {
+      showToast('Network error clearing memory', 'error');
+    } finally {
+      setClearingMemory(false);
+    }
+  };
+
+  // 10. Assign Task to Specialist with Immediate Execution
+  const handleAssignTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskTitle.trim() || !taskDescription.trim()) {
+      showToast('Please provide a task title and detailed point / instructions.', 'error');
+      return;
+    }
+
+    setSubmittingTask(true);
+    try {
+      const criteriaList = taskAcceptanceCriteria
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const res = await fetch('/api/admin/company/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: taskTitle.trim(),
+          description: taskDescription.trim(),
+          assignedTo: taskAssignedTo,
+          priority: taskPriority,
+          acceptanceCriteria: criteriaList.length > 0 ? criteriaList : ['Execute deliverable to enterprise quality standards', 'Validate output metrics and findings'],
+          executeImmediately: taskExecuteImmediately,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        const emp = employees.find((e) => e.id === taskAssignedTo);
+        const empName = emp ? emp.name : taskAssignedTo;
+        if (json.executed) {
+          showToast(`Task assigned to ${empName} and executed immediately! Update posted to Company Floor.`, 'success');
+        } else {
+          showToast(`Task assigned to ${empName}!`, 'success');
+        }
+
+        setAssignTaskModalOpen(false);
+        setTaskTitle('');
+        setTaskDescription('');
+        setTaskAssignedTo('marcus_sterling');
+        setTaskPriority('high');
+        setTaskAcceptanceCriteria('Deliver concrete technical analysis, Provide verified production recommendations');
+        fetchTasks();
+        fetchCompanyData();
+
+        // Refresh Floor messages to display the immediate completion notice
+        if (activeDiscussion) {
+          const mRes = await fetch(`/api/admin/company/discussions/${activeDiscussion.id}`);
+          const mJson = await mRes.json();
+          if (mJson.success) {
+            setMessages(mJson.messages || []);
+          }
+        }
+      } else {
+        showToast(json.error || 'Failed to assign task', 'error');
+      }
+    } catch {
+      showToast('Network error assigning task', 'error');
+    } finally {
+      setSubmittingTask(false);
+    }
+  };
+
   if (loading && !overview) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-zinc-400">
@@ -685,6 +839,16 @@ export default function CompanyOfficeClient() {
                   {concludingMeeting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 style={{ width: 14, height: 14, color: '#34d399' }} />}
                   Synthesize Consensus
                 </button>
+                <button
+                  onClick={() => setClearChatConfirmOpen(true)}
+                  disabled={clearingChat || !activeDiscussion}
+                  className="co-btn co-btn-secondary"
+                  style={{ color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                  title="Clear Floor Chat History"
+                >
+                  {clearingChat ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <RotateCcw style={{ width: 14, height: 14 }} />}
+                  Clear Floor Chat
+                </button>
               </div>
             </div>
 
@@ -917,26 +1081,11 @@ export default function CompanyOfficeClient() {
               </p>
             </div>
             <button
-              onClick={() => {
-                const title = prompt('Enter task title:');
-                if (title) {
-                  fetch('/api/admin/company/tasks', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      title,
-                      description: 'Manually assigned task from CEO',
-                      assignedTo: 'marcus_sterling',
-                      priority: 'high',
-                      acceptanceCriteria: ['Pass full architectural audit'],
-                    }),
-                  }).then(() => fetchTasks());
-                }
-              }}
+              onClick={() => setAssignTaskModalOpen(true)}
               className="co-btn co-btn-primary"
             >
               <PlusCircle style={{ width: 16, height: 16 }} />
-              Assign Task
+              Assign Task to Specialist
             </button>
           </div>
 
@@ -1008,22 +1157,34 @@ export default function CompanyOfficeClient() {
                             </div>
                           )}
 
-                          {/* Action Button */}
-                          {t.status !== 'completed' && (
-                            <button
-                              onClick={() => handleExecuteTask(t.id)}
-                              disabled={executingTaskId === t.id}
-                              className="co-btn co-btn-primary"
-                              style={{ width: '100%', justifyContent: 'center', marginTop: '4px', fontSize: '0.76rem', padding: '6px' }}
-                            >
-                              {executingTaskId === t.id ? (
-                                <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
-                              ) : (
-                                <Play style={{ width: 14, height: 14 }} />
-                              )}
-                              Execute & Verify
-                            </button>
-                          )}
+                          {/* Action Buttons */}
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                            {t.output_result && Object.keys(t.output_result).length > 0 && (
+                              <button
+                                onClick={() => setSelectedTaskDetail(t)}
+                                className="co-btn co-btn-secondary"
+                                style={{ flex: 1, justifyContent: 'center', fontSize: '0.74rem', padding: '6px' }}
+                              >
+                                <Eye style={{ width: 14, height: 14 }} />
+                                View Deliverables
+                              </button>
+                            )}
+                            {t.status !== 'completed' && (
+                              <button
+                                onClick={() => handleExecuteTask(t.id)}
+                                disabled={executingTaskId === t.id}
+                                className="co-btn co-btn-primary"
+                                style={{ flex: 1, justifyContent: 'center', fontSize: '0.74rem', padding: '6px' }}
+                              >
+                                {executingTaskId === t.id ? (
+                                  <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />
+                                ) : (
+                                  <Play style={{ width: 14, height: 14 }} />
+                                )}
+                                Execute & Verify
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))
                     )}
@@ -1154,32 +1315,62 @@ export default function CompanyOfficeClient() {
       {/* ==================================================================== */}
       {activeTab === 'memory' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div>
-            <h2 className="co-stage-title" style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Brain style={{ width: 24, height: 24, color: '#a855f7' }} />
-              Multi-Tier Corporate Memory Store
-            </h2>
-            <p className="co-stage-sub">
-              Persistent shared knowledge, verified engineering benchmarks, previous decisions, and failed experiment learnings.
-            </p>
+          <div className="co-pane-header">
+            <div>
+              <h2 className="co-stage-title" style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Brain style={{ width: 24, height: 24, color: '#a855f7' }} />
+                Multi-Tier Corporate Memory Store
+              </h2>
+              <p className="co-stage-sub">
+                Persistent shared knowledge, verified engineering benchmarks, previous decisions, and failed experiment learnings.
+              </p>
+            </div>
+            {memoryItems.length > 0 && (
+              <button
+                onClick={() => setClearMemoryConfirmOpen(true)}
+                disabled={clearingMemory}
+                className="co-btn co-btn-secondary"
+                style={{ color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+              >
+                {clearingMemory ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Trash2 style={{ width: 14, height: 14 }} />}
+                Clear All Memory
+              </button>
+            )}
           </div>
 
-          <div className="co-card-grid">
-            {memoryItems.map((mem) => (
-              <div key={mem.id} className="co-generic-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-                  <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(168,85,247,0.15)', color: '#d8b4fe', fontWeight: 700, border: '1px solid rgba(168,85,247,0.3)' }}>
-                    {mem.scope}
-                  </span>
-                  <span style={{ color: 'var(--co-text-dim)' }}>{mem.category}</span>
+          {memoryItems.length === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', borderRadius: '16px', background: 'var(--co-bg-card)', border: '1px solid var(--co-border)', color: '#64748b' }}>
+              <Brain style={{ width: 44, height: 44, color: '#334155', margin: '0 auto 12px auto' }} />
+              <p style={{ fontSize: '0.92rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>Corporate Memory Store is empty.</p>
+              <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '6px 0 0 0' }}>Learnings, meeting syntheses, and executed task findings will automatically persist here.</p>
+            </div>
+          ) : (
+            <div className="co-card-grid">
+              {memoryItems.map((mem) => (
+                <div key={mem.id} className="co-generic-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.68rem', fontFamily: 'monospace', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '4px', background: 'rgba(168,85,247,0.15)', color: '#d8b4fe', fontWeight: 700, border: '1px solid rgba(168,85,247,0.3)' }}>
+                        {mem.scope}
+                      </span>
+                      <span style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: 'var(--co-text-dim)', textTransform: 'uppercase' }}>{mem.category}</span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteMemoryItem(mem.id)}
+                      style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                      title="Delete memory entry"
+                    >
+                      <Trash2 style={{ width: 14, height: 14 }} />
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.86rem', color: '#e2e8f0', lineHeight: 1.55, margin: 0 }}>{mem.insight}</p>
+                  <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: 'var(--co-text-dim)', paddingTop: '8px', borderTop: '1px solid var(--co-border)' }}>
+                    Recorded: {new Date(mem.created_at).toLocaleDateString()}
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.86rem', color: '#e2e8f0', lineHeight: 1.55, margin: 0 }}>{mem.insight}</p>
-                <div style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: 'var(--co-text-dim)', paddingTop: '8px', borderTop: '1px solid var(--co-border)' }}>
-                  Recorded: {new Date(mem.created_at).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1484,6 +1675,293 @@ export default function CompanyOfficeClient() {
           </div>
         </div>
       )}
+
+      {/* ==================================================================== */}
+      {/* MODAL: ASSIGN TASK TO AI SPECIALIST                                  */}
+      {/* ==================================================================== */}
+      {assignTaskModalOpen && (
+        <div className="co-modal-overlay">
+          <div className="co-modal-card" style={{ maxWidth: '620px' }}>
+            <div className="co-modal-header">
+              <h3 className="co-modal-title">
+                <CheckSquare style={{ width: 20, height: 20, color: '#a855f7' }} />
+                Assign Task to AI Specialist
+              </h3>
+              <button
+                onClick={() => setAssignTaskModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                <XCircle style={{ width: 20, height: 20 }} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignTask} className="co-modal-body">
+              {/* Specialist Selector Grid */}
+              <div className="co-form-group">
+                <label className="co-label">Select Assigned Specialist</label>
+                <div className="co-specialist-picker" style={{ gridTemplateColumns: '1fr 1fr', maxHeight: '190px' }}>
+                  {[
+                    { id: 'marcus_sterling', name: 'Marcus Sterling', role: 'Content & Editorial Writer', dept: 'Editorial', avatar: '/assets/avatars/marcus-sterling.webp' },
+                    { id: 'elena_rostova', name: 'Elena Rostova', role: 'Head of Search & SEO', dept: 'Growth', avatar: '/assets/avatars/elena-rostova.webp' },
+                    { id: 'david_chen', name: 'David Chen', role: 'Site Reliability & SRE', dept: 'Infrastructure', avatar: '/assets/avatars/david-chen.webp' },
+                    { id: 'liam_thorne', name: 'Liam Thorne', role: 'Lead Scout & Sales', dept: 'Sales', avatar: '/assets/avatars/liam-thorne.webp' },
+                    { id: 'sophia_reynolds', name: 'Sophia Reynolds', role: 'Client Solutions Partner', dept: 'Solutions', avatar: '/assets/avatars/sophia-reynolds.webp' },
+                    { id: 'alex_vance', name: 'Alex Vance', role: 'Chief of Staff & Ops', dept: 'Executive', avatar: '/assets/avatars/alex-vance.webp' },
+                  ].map((spec) => {
+                    const isSelected = taskAssignedTo === spec.id;
+                    return (
+                      <button
+                        key={spec.id}
+                        type="button"
+                        onClick={() => setTaskAssignedTo(spec.id)}
+                        className={`co-picker-chip ${isSelected ? 'selected' : ''}`}
+                        style={{ padding: '8px 10px' }}
+                      >
+                        <img
+                          src={spec.avatar}
+                          alt={spec.name}
+                          style={{ width: '28px', height: '28px', minWidth: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ffffff' }}>{spec.name}</div>
+                          <div style={{ fontSize: '0.66rem', color: isSelected ? '#d8b4fe' : '#94a3b8' }}>{spec.role}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Task Title */}
+              <div className="co-form-group">
+                <label className="co-label">Task Title / Deliverable Goal</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Next.js 16 Edge Rendering & Headless Commerce Blueprint"
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  className="co-input"
+                  required
+                />
+              </div>
+
+              {/* Task Point / Specific Instructions */}
+              <div className="co-form-group">
+                <label className="co-label">Specific Point / Topic Directives</label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Focus on high-ticket B2B founders, emphasize Next.js App Router performance, zero em-dashes, and include actionable implementation guidelines."
+                  value={taskDescription}
+                  onChange={(e) => setTaskDescription(e.target.value)}
+                  className="co-textarea"
+                  required
+                />
+              </div>
+
+              {/* Priority & Acceptance Criteria */}
+              <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px' }}>
+                <div className="co-form-group">
+                  <label className="co-label">Priority</label>
+                  <select
+                    value={taskPriority}
+                    onChange={(e) => setTaskPriority(e.target.value as any)}
+                    className="co-select"
+                  >
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+
+                <div className="co-form-group">
+                  <label className="co-label">Acceptance Checklist (comma separated)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Zero em-dashes, Actionable engineering checklist, High-converting CTA"
+                    value={taskAcceptanceCriteria}
+                    onChange={(e) => setTaskAcceptanceCriteria(e.target.value)}
+                    className="co-input"
+                  />
+                </div>
+              </div>
+
+              {/* Execute Immediately Switch */}
+              <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Zap style={{ width: 18, height: 18, color: '#c084fc', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ffffff' }}>Execute Immediately</div>
+                    <div style={{ fontSize: '0.72rem', color: '#cbd5e1' }}>Assigned agent will work on this point ASAP and post an update to the Company Floor.</div>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={taskExecuteImmediately}
+                  onChange={(e) => setTaskExecuteImmediately(e.target.checked)}
+                  style={{ width: '18px', height: '18px', accentColor: '#a855f7', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--co-border)' }}>
+                <button
+                  type="button"
+                  onClick={() => setAssignTaskModalOpen(false)}
+                  className="co-btn co-btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingTask}
+                  className="co-btn co-btn-primary"
+                >
+                  {submittingTask ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Play style={{ width: 14, height: 14 }} />}
+                  Assign & Dispatch
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* MODAL: TASK DETAIL & DELIVERABLE VIEWER                              */}
+      {/* ==================================================================== */}
+      {selectedTaskDetail && (
+        <div className="co-modal-overlay">
+          <div className="co-modal-card" style={{ maxWidth: '720px', maxHeight: '88vh' }}>
+            <div className="co-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    fontFamily: 'monospace',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    background: selectedTaskDetail.status === 'completed' ? 'rgba(16,185,129,0.2)' : 'rgba(168,85,247,0.2)',
+                    color: selectedTaskDetail.status === 'completed' ? '#34d399' : '#d8b4fe',
+                    border: `1px solid ${selectedTaskDetail.status === 'completed' ? 'rgba(16,185,129,0.3)' : 'rgba(168,85,247,0.3)'}`,
+                  }}
+                >
+                  {selectedTaskDetail.status.replace('_', ' ')}
+                </span>
+                <h3 className="co-modal-title" style={{ fontSize: '1.05rem', margin: 0 }}>
+                  {selectedTaskDetail.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedTaskDetail(null)}
+                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                <XCircle style={{ width: 20, height: 20 }} />
+              </button>
+            </div>
+
+            <div className="co-modal-body" style={{ overflowY: 'auto', maxHeight: 'calc(88vh - 140px)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Meta row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: 'rgba(7,7,10,0.8)', border: '1px solid var(--co-border)', fontSize: '0.78rem' }}>
+                <div>
+                  <span style={{ color: '#94a3b8' }}>Assigned Specialist: </span>
+                  <strong style={{ color: '#ffffff' }}>{selectedTaskDetail.assigned_to}</strong>
+                </div>
+                <div>
+                  <span style={{ color: '#94a3b8' }}>Priority: </span>
+                  <strong style={{ textTransform: 'uppercase', color: selectedTaskDetail.priority === 'urgent' ? '#f87171' : '#fbbf24' }}>
+                    {selectedTaskDetail.priority}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Task Directives */}
+              <div>
+                <strong style={{ fontSize: '0.78rem', color: '#c084fc', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Task Directives:</strong>
+                <p style={{ padding: '12px', borderRadius: '10px', background: 'rgba(7,7,10,0.6)', border: '1px solid var(--co-border)', color: '#cbd5e1', fontSize: '0.82rem', lineHeight: 1.5, margin: 0 }}>
+                  {selectedTaskDetail.description}
+                </p>
+              </div>
+
+              {/* Deliverable Output */}
+              {selectedTaskDetail.output_result && Object.keys(selectedTaskDetail.output_result).length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {selectedTaskDetail.output_result.summary && (
+                    <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(88,28,135,0.25)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                      <strong style={{ fontSize: '0.74rem', color: '#d8b4fe', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Executive Summary:</strong>
+                      <p style={{ color: '#ffffff', fontSize: '0.84rem', margin: 0, lineHeight: 1.5 }}>
+                        {selectedTaskDetail.output_result.summary}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedTaskDetail.output_result.details && (
+                    <div>
+                      <strong style={{ fontSize: '0.74rem', color: '#38bdf8', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Verified Deliverable Document:</strong>
+                      <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(7,7,10,0.85)', border: '1px solid var(--co-border)', color: '#e2e8f0', fontSize: '0.8rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', fontFamily: 'system-ui, sans-serif' }}>
+                        {selectedTaskDetail.output_result.details}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTaskDetail.output_result.keyFindings && Array.isArray(selectedTaskDetail.output_result.keyFindings) && (
+                    <div>
+                      <strong style={{ fontSize: '0.74rem', color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Key Findings:</strong>
+                      <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                        {selectedTaskDetail.output_result.keyFindings.map((f: string, i: number) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Verification Notes */}
+              {selectedTaskDetail.verification_notes && (
+                <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', fontSize: '0.76rem', color: '#34d399', fontFamily: 'monospace' }}>
+                  {selectedTaskDetail.verification_notes}
+                </div>
+              )}
+            </div>
+
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--co-border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setSelectedTaskDetail(null)}
+                className="co-btn co-btn-secondary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* CONFIRMATION MODALS: CLEAR CHAT & CLEAR MEMORY                       */}
+      {/* ==================================================================== */}
+      <ConfirmModal
+        isOpen={clearChatConfirmOpen}
+        title="Clear Company Floor Chat"
+        message="Are you sure you want to clear the Company Floor chat history? All messages in this timeline will be purged and synchronized into a fresh clean state."
+        confirmLabel="Clear Floor Chat"
+        cancelLabel="Cancel"
+        onConfirm={handleClearFloorChat}
+        onCancel={() => setClearChatConfirmOpen(false)}
+        isLoading={clearingChat}
+      />
+
+      <ConfirmModal
+        isOpen={clearMemoryConfirmOpen}
+        title="Clear Corporate Brain Memory"
+        message="Are you sure you want to clear all multi-tier memory entries? This will delete all saved learnings, benchmarks, and task summaries."
+        confirmLabel="Clear All Memory"
+        cancelLabel="Cancel"
+        onConfirm={handleClearAllMemory}
+        onCancel={() => setClearMemoryConfirmOpen(false)}
+        isLoading={clearingMemory}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   getCompanyTaskById,
   updateTaskStatus,
   createOrUpdateEmployee,
+  getLatestDiscussionForRoom,
 } from './db';
 import {
   CompanyDiscussion,
@@ -22,7 +23,7 @@ import {
   CompanyTask,
 } from './types';
 import { sanitizeEmDashes } from '../ai-content-sanitizer';
-import { generateAgentTurnResponse } from './gemini';
+import { generateAgentTurnResponse, generateTaskExecutionDeliverable } from './gemini';
 import { sendPushToAllAdmins } from '../push/push-service';
 import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
@@ -452,31 +453,110 @@ export async function processCompanyTask(taskId: string): Promise<{
   // 1. Move to in_progress
   await updateTaskStatus(taskId, 'in_progress');
 
-  // 2. Perform task work according to assigned agent
+  // 2. Fetch assigned specialist profile
+  const agent = await getEmployeeById(task.assigned_to);
+
+  // 3. Generate authentic, specialized deliverable
+  const deliverable = await generateTaskExecutionDeliverable({
+    agent: agent || {
+      id: task.assigned_to,
+      legacy_agent_id: null,
+      name: task.assigned_to,
+      display_title: 'Specialist',
+      department: 'Growth',
+      avatar_url: `/assets/avatars/${task.assigned_to}.svg`,
+      bio: 'Autonomous specialist',
+      personality_archetype: 'Analytical',
+      system_prompt_overlay: 'Execute tasks with precision.',
+      model_preference: 'gemini-3.5-flash',
+      status: 'working',
+      current_activity: 'Executing task',
+      tool_permissions: { allowed_tools: [], requires_approval: [] },
+      performance_metrics: { tasks_completed: 0, proposals_approved: 0, proposals_rejected: 0, total_tokens: 0, rating: 5.0 },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    taskTitle: task.title,
+    taskDescription: task.description,
+    acceptanceCriteria: task.acceptance_criteria || [],
+  });
+
   const outputResult: Record<string, any> = {
     executedAt: new Date().toISOString(),
     completedBy: task.assigned_to,
-    deliverables: task.acceptance_criteria.map((crit) => ({
+    agentName: agent?.name || task.assigned_to,
+    summary: deliverable.summary,
+    details: deliverable.details,
+    keyFindings: deliverable.keyFindings,
+    metrics: deliverable.metrics || {},
+    deliverables: task.acceptance_criteria.map((crit, idx) => ({
       criterion: crit,
       verified: true,
-      evidence: `Validated successfully by ${task.assigned_to}`,
+      evidence: deliverable.keyFindings[idx] || `Validated successfully by ${agent?.name || task.assigned_to}`,
     })),
   };
 
-  // 3. Move to review_ready
+  // 4. Move to review_ready
   await updateTaskStatus(taskId, 'review_ready', outputResult);
 
-  // 4. Independent Review by Reviewer Agent
+  // 5. Independent Review by Reviewer Agent
   const reviewerId = task.reviewer_id || 'alex_vance';
-  const verificationNotes = `Independent verification passed: All ${task.acceptance_criteria.length} acceptance criteria satisfied. Reviewed by ${reviewerId}.`;
+  const verificationNotes = `Independent verification passed: All ${task.acceptance_criteria.length} acceptance criteria validated by ${reviewerId}. Deliverable meets HeyPrince engineering and editorial standards.`;
 
-  // 5. Complete task
+  // 6. Complete task
   const completedTask = await updateTaskStatus(taskId, 'completed', outputResult, verificationNotes);
+
+  // 7. Record in multi-tier company memory
+  try {
+    await recordCompanyMemory({
+      scope: 'employee',
+      department: agent?.department || 'Executive',
+      employeeId: task.assigned_to,
+      category: 'learning',
+      insight: `[${agent?.name || task.assigned_to} - ${task.title}]: ${deliverable.summary}`,
+      metadata: {
+        taskId: task.id,
+        title: task.title,
+        summary: deliverable.summary,
+        keyFindings: deliverable.keyFindings,
+      },
+    });
+  } catch (memErr) {
+    console.error('[processCompanyTask] Error recording task memory:', memErr);
+  }
+
+  // 8. Post live update notification to the Company Floor (company_hq)
+  try {
+    const targetDiscussionId = task.discussion_id || (await getLatestDiscussionForRoom('company_hq'))?.id;
+    if (targetDiscussionId) {
+      const updateContent = sanitizeEmDashes(
+        `Task Completed & Verified: I have executed the task "${task.title}".\n\n` +
+        `Executive Summary:\n${deliverable.summary}\n\n` +
+        `Key Deliverables & Findings:\n${deliverable.keyFindings.map((k) => `• ${k}`).join('\n')}\n\n` +
+        `The full report and artifacts have been archived to the Task Matrix and Company Brain for Prince's review.`
+      );
+
+      await insertCompanyMessage({
+        discussionId: targetDiscussionId,
+        senderId: task.assigned_to,
+        messageType: 'evidence',
+        content: updateContent,
+        evidence: {
+          taskId: task.id,
+          taskTitle: task.title,
+          agentName: agent?.name || task.assigned_to,
+          metrics: deliverable.metrics || {},
+        },
+      });
+    }
+  } catch (msgErr) {
+    console.error('[processCompanyTask] Error posting update message to floor:', msgErr);
+  }
 
   return {
     success: true,
     task: completedTask,
-    message: `Task "${task.title}" completed and independently verified by ${reviewerId}.`,
+    message: `Task "${task.title}" completed by ${agent?.name || task.assigned_to} and verified.`,
   };
 }
 

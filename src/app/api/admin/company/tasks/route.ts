@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-db';
 import { getCompanyTasks, createCompanyTask } from '@/lib/company/db';
+import { processCompanyTask } from '@/lib/company/orchestrator';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, description, assignedTo, reviewerId, priority, acceptanceCriteria, executionPayload } = body;
+    const { title, description, assignedTo, reviewerId, priority, acceptanceCriteria, executionPayload, executeImmediately } = body;
 
     if (!title || !description || !assignedTo) {
       return NextResponse.json(
@@ -46,11 +47,24 @@ export async function POST(request: NextRequest) {
       title,
       description,
       assignedTo,
+      assignedBy: 'prince_ceo',
       reviewerId,
       priority: priority || 'medium',
-      acceptanceCriteria: acceptanceCriteria || ['Validate output requirements'],
+      acceptanceCriteria: Array.isArray(acceptanceCriteria) && acceptanceCriteria.length > 0
+        ? acceptanceCriteria
+        : ['Execute deliverable to enterprise quality standards', 'Validate output metrics and findings'],
       executionPayload: executionPayload || {},
     });
+
+    if (executeImmediately) {
+      const execResult = await processCompanyTask(task.id);
+      return NextResponse.json({
+        success: true,
+        task: execResult.task || task,
+        message: execResult.message,
+        executed: true,
+      });
+    }
 
     return NextResponse.json({ success: true, task });
   } catch (error: any) {
