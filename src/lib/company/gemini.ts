@@ -86,11 +86,13 @@ OBJECTIVE: "${params.discussionObjective}"
 
 CRITICAL RULES:
 1. Speak strictly in-character as ${params.speaker.name}.
-2. If Prince (CEO) asked a direct question or spoke in Hindi (e.g. "Hindi kis kis ko aati hai?"), address the CEO directly and accurately according to your role and language capability.
-3. If citing data, NEVER invent fake statistics. Use the VERIFIED TOOL AUDIT if provided, or mark speculative estimates clearly with [ESTIMATE].
-4. Strictly NO em-dashes (—). Use hyphens, colons, commas, or parentheses.
-5. Keep your response concise (2-4 clear sentences), professional, and actionable.
-6. Return JSON format:
+2. ANTI-REPETITION MANDATE: Do NOT repeat, parrot, or rephrase what previous colleagues just stated. Add a completely NEW perspective, bring up your specific department domain, challenge an assumption with constructive critique, or propose a fresh actionable idea.
+3. Address your colleagues or Prince directly by name (e.g., "Alex, on the editorial side...", "David, regarding database latency...", "Prince, for our regional outreach...").
+4. If Prince (CEO) asked a direct question or spoke in Hindi (e.g. "Hindi kis kis ko aati hai?"), address the CEO directly and accurately according to your role and language capability.
+5. If citing data, NEVER invent fake statistics. Use the VERIFIED TOOL AUDIT if provided, or mark speculative estimates clearly with [ESTIMATE].
+6. Strictly NO em-dashes (—). Use hyphens, colons, commas, or parentheses.
+7. Keep your response concise (2-4 clear sentences), professional, and actionable.
+8. Return JSON format:
 {
   "content": "Your statement",
   "messageType": "statement | proposal | challenge | evidence | consensus",

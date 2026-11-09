@@ -138,7 +138,10 @@ export async function createOrUpdateEmployee(emp: Partial<CompanyEmployee> & { i
 // ============================================================================
 
 export async function getAllRooms(): Promise<CompanyRoom[]> {
-  const rooms = await query<CompanyRoom>(`SELECT * FROM company_rooms ORDER BY name ASC;`);
+  const rooms = await query<CompanyRoom>(`
+    SELECT * FROM company_rooms 
+    ORDER BY CASE WHEN id = 'company_hq' THEN 0 ELSE 1 END, name ASC;
+  `);
   
   // Attach latest discussion for each room (active or concluded)
   for (const r of rooms) {
@@ -157,11 +160,33 @@ export async function getRoomById(id: string): Promise<CompanyRoom | null> {
 }
 
 export async function getLatestDiscussionForRoom(roomId: string): Promise<CompanyDiscussion | null> {
+  const targetRoom = roomId || 'company_hq';
   const rows = await query<CompanyDiscussion>(
     `SELECT * FROM company_discussions WHERE room_id = $1 ORDER BY created_at DESC LIMIT 1;`,
-    [roomId]
+    [targetRoom]
   );
-  return rows[0] || null;
+  if (rows[0]) return rows[0];
+
+  // If company_hq has no discussion yet, initialize the primary unified discussion
+  if (targetRoom === 'company_hq') {
+    const newDisc = await query<CompanyDiscussion>(`
+      INSERT INTO company_discussions (
+        room_id, title, objective, moderator_id, participant_ids, status, token_budget, max_turns
+      ) VALUES (
+        'company_hq',
+        'HeyPrince Autonomous AI Company Floor',
+        'Continuous all-hands collaboration, strategic growth, technical execution, and CEO directives',
+        'alex_vance',
+        ARRAY['alex_vance', 'elena_rostova', 'marcus_sterling', 'liam_thorne', 'david_chen', 'sophia_reynolds'],
+        'in_progress',
+        50000,
+        0
+      ) RETURNING *;
+    `);
+    return newDisc[0] || null;
+  }
+
+  return null;
 }
 
 // ============================================================================

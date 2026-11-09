@@ -81,24 +81,15 @@ export async function advanceDiscussionTurn(
   const allEmployees = await getAllEmployees();
   const empMap = new Map(allEmployees.map((e) => [e.id, e]));
 
+  const ALL_SPECIALISTS = ['alex_vance', 'elena_rostova', 'marcus_sterling', 'liam_thorne', 'david_chen', 'sophia_reynolds'];
   let participants = (discussion.participant_ids || []).filter((p) => empMap.has(p) && p !== 'prince_ceo');
-  if (participants.length <= 1) {
-    if (discussion.room_id === 'war_room' || discussion.room_id === 'daily_standup') {
-      participants = ['alex_vance', 'david_chen', 'elena_rostova', 'marcus_sterling', 'liam_thorne', 'sophia_reynolds'];
-    } else if (discussion.room_id === 'growth_sales') {
-      participants = ['alex_vance', 'elena_rostova', 'liam_thorne', 'sophia_reynolds'];
-    } else if (discussion.room_id === 'innovation_lab') {
-      participants = ['alex_vance', 'marcus_sterling', 'elena_rostova', 'david_chen'];
-    } else if (discussion.room_id === 'dev_room') {
-      participants = ['alex_vance', 'david_chen', 'elena_rostova'];
-    } else {
-      participants = ['alex_vance', 'marcus_sterling', 'david_chen'];
-    }
+  if (participants.length <= 1 || discussion.room_id === 'company_hq' || discussion.room_id === 'war_room') {
+    participants = ALL_SPECIALISTS;
   }
 
-  const availableSpecialists = participants.filter((p) => p !== MODERATOR_ID);
   const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
   const lastSpeakerId = lastMsg ? lastMsg.sender_id : MODERATOR_ID;
+  const recentSpeakers = messages.slice(-3).map((m) => m.sender_id);
 
   let nextSpeakerId = MODERATOR_ID;
 
@@ -108,23 +99,40 @@ export async function advanceDiscussionTurn(
     // If CEO just spoke, determine who should respond
     const routing = classifyAndRouteCeoMessage(lastMsg?.content || '', allEmployees);
     nextSpeakerId = routing.primaryResponderId;
-  } else if (lastSpeakerId === MODERATOR_ID && availableSpecialists.length > 0) {
-    // After Alex Vance, select specialist based on recent context
-    const recentContent = messages.slice(-2).map((m) => m.content.toLowerCase()).join(' ');
-    if (recentContent.includes('seo') || recentContent.includes('traffic') || recentContent.includes('search')) {
-      nextSpeakerId = availableSpecialists.includes('elena_rostova') ? 'elena_rostova' : availableSpecialists[0];
-    } else if (recentContent.includes('lead') || recentContent.includes('client') || recentContent.includes('outreach')) {
-      nextSpeakerId = availableSpecialists.includes('liam_thorne') ? 'liam_thorne' : availableSpecialists[0];
-    } else if (recentContent.includes('latency') || recentContent.includes('speed') || recentContent.includes('server') || recentContent.includes('uptime')) {
-      nextSpeakerId = availableSpecialists.includes('david_chen') ? 'david_chen' : availableSpecialists[0];
-    } else if (recentContent.includes('hindi') || recentContent.includes('bilingual')) {
-      nextSpeakerId = availableSpecialists.includes('elena_rostova') ? 'elena_rostova' : availableSpecialists[0];
-    } else {
-      const turnIndex = discussion.turn_count % availableSpecialists.length;
-      nextSpeakerId = availableSpecialists[turnIndex];
-    }
   } else {
-    nextSpeakerId = MODERATOR_ID;
+    // Filter out the last 2 speakers so we never get into a 2-agent ping-pong loop
+    const eligibleSpecialists = participants.filter(
+      (id) => !recentSpeakers.slice(-2).includes(id)
+    );
+    const pool = eligibleSpecialists.length > 0 ? eligibleSpecialists : participants.filter((id) => id !== lastSpeakerId);
+
+    // Check if the previous message directly addressed a colleague by name
+    const lastContent = (lastMsg?.content || '').toLowerCase();
+    if (lastContent.includes('marcus') && pool.includes('marcus_sterling')) {
+      nextSpeakerId = 'marcus_sterling';
+    } else if (lastContent.includes('elena') && pool.includes('elena_rostova')) {
+      nextSpeakerId = 'elena_rostova';
+    } else if (lastContent.includes('liam') && pool.includes('liam_thorne')) {
+      nextSpeakerId = 'liam_thorne';
+    } else if (lastContent.includes('david') && pool.includes('david_chen')) {
+      nextSpeakerId = 'david_chen';
+    } else if (lastContent.includes('sophia') && pool.includes('sophia_reynolds')) {
+      nextSpeakerId = 'sophia_reynolds';
+    } else if (lastContent.includes('alex') && pool.includes('alex_vance')) {
+      nextSpeakerId = 'alex_vance';
+    } else {
+      // Pick specialist who has spoken the least in this discussion to ensure everyone participates
+      const speechCounts: Record<string, number> = {};
+      participants.forEach((id) => {
+        speechCounts[id] = messages.filter((m) => m.sender_id === id).length;
+      });
+
+      const sortedByParticipation = [...pool].sort(
+        (a, b) => (speechCounts[a] || 0) - (speechCounts[b] || 0)
+      );
+
+      nextSpeakerId = sortedByParticipation[0] || MODERATOR_ID;
+    }
   }
 
   const speaker = empMap.get(nextSpeakerId) || empMap.get(MODERATOR_ID)!;
@@ -483,6 +491,7 @@ export async function sendCeoDirective(params: {
   success: boolean;
   ceoMessage: CompanyMessage;
   agentResponse?: CompanyMessage;
+  additionalResponses?: CompanyMessage[];
 }> {
   const allEmployees = await getAllEmployees();
   const routing = classifyAndRouteCeoMessage(params.directive, allEmployees);
@@ -495,15 +504,57 @@ export async function sendCeoDirective(params: {
     tokensUsed: 10,
   });
 
-  // Prompt the team with the intelligent routing and directive context
+  // 1. Primary response (e.g. Alex Vance or targeted specialist)
   const advance = await advanceDiscussionTurn(params.discussionId, {
     forcedSpeakerId: routing.primaryResponderId,
     ceoDirective: params.directive.trim(),
   });
 
+  const additionalResponses: CompanyMessage[] = [];
+
+  // 2. Supporting specialist 1 immediately responds with domain perspective
+  if (routing.supportingParticipantIds.length > 0) {
+    const spec1 = routing.supportingParticipantIds[0];
+    if (spec1 !== routing.primaryResponderId) {
+      try {
+        const spec1Advance = await advanceDiscussionTurn(params.discussionId, {
+          forcedSpeakerId: spec1,
+          ceoDirective: params.directive.trim(),
+        });
+        if (spec1Advance.message) {
+          additionalResponses.push(spec1Advance.message);
+        }
+      } catch (err) {
+        console.warn('[Orchestrator] Supporting specialist 1 warning:', err);
+      }
+    }
+  }
+
+  // 3. Supporting specialist 2 chimes in with feedback or operational detail
+  if (routing.supportingParticipantIds.length > 1) {
+    const spec2 = routing.supportingParticipantIds[1];
+    if (
+      spec2 !== routing.primaryResponderId &&
+      !additionalResponses.some((r) => r.sender_id === spec2)
+    ) {
+      try {
+        const spec2Advance = await advanceDiscussionTurn(params.discussionId, {
+          forcedSpeakerId: spec2,
+          ceoDirective: params.directive.trim(),
+        });
+        if (spec2Advance.message) {
+          additionalResponses.push(spec2Advance.message);
+        }
+      } catch (err) {
+        console.warn('[Orchestrator] Supporting specialist 2 warning:', err);
+      }
+    }
+  }
+
   return {
     success: true,
     ceoMessage,
     agentResponse: advance.message,
+    additionalResponses,
   };
 }

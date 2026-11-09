@@ -90,7 +90,7 @@ export default function CompanyOfficeClient() {
   const [newMeetingModalOpen, setNewMeetingModalOpen] = useState(false);
   const [newMeetingTitle, setNewMeetingTitle] = useState('');
   const [newMeetingObjective, setNewMeetingObjective] = useState('');
-  const [newMeetingRoomId, setNewMeetingRoomId] = useState('war_room');
+  const [newMeetingRoomId, setNewMeetingRoomId] = useState('company_hq');
   const [newMeetingParticipants, setNewMeetingParticipants] = useState<string[]>([]);
   const [creatingMeeting, setCreatingMeeting] = useState(false);
 
@@ -112,8 +112,9 @@ export default function CompanyOfficeClient() {
       const json = await res.json();
       if (json.success && json.data) {
         setOverview(json.data);
-        if (!selectedRoom && json.data.rooms?.length > 0) {
-          setSelectedRoom(json.data.rooms[0]);
+        const hqRoom = json.data.rooms?.find((r: CompanyRoom) => r.id === 'company_hq') || json.data.rooms?.[0];
+        if (hqRoom) {
+          setSelectedRoom(hqRoom);
         }
       }
     } catch {
@@ -159,13 +160,12 @@ export default function CompanyOfficeClient() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 2. Room Selection & Discussion Loading
+  // 2. Room Selection & Discussion Loading (Unified Company Floor)
   useEffect(() => {
-    if (!selectedRoom) return;
-
     const loadRoomDiscussion = async () => {
       try {
-        const res = await fetch(`/api/admin/company/discussions?roomId=${selectedRoom.id}`);
+        const roomId = selectedRoom?.id || 'company_hq';
+        const res = await fetch(`/api/admin/company/discussions?roomId=${roomId}`);
         const json = await res.json();
         if (json.success && json.discussion) {
           setActiveDiscussion(json.discussion);
@@ -187,9 +187,9 @@ export default function CompanyOfficeClient() {
     loadRoomDiscussion();
   }, [selectedRoom]);
 
-  // 3. Resilient Real-Time Polling for Active Discussion
+  // 3. Resilient Real-Time Polling for Company Chat
   useEffect(() => {
-    if (!activeDiscussion || activeDiscussion.status !== 'in_progress') return;
+    if (!activeDiscussion) return;
 
     const interval = setInterval(async () => {
       try {
@@ -205,7 +205,7 @@ export default function CompanyOfficeClient() {
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [activeDiscussion?.id, activeDiscussion?.status, messages.length]);
+  }, [activeDiscussion?.id, messages.length]);
 
   // 4. Meeting Controls
   const handleAdvanceTurn = async () => {
@@ -290,8 +290,13 @@ export default function CompanyOfficeClient() {
       });
       const json = await res.json();
       if (json.success) {
-        if (json.agentResponse) {
-          setMessages((prev) => [...prev, json.agentResponse]);
+        const incoming: CompanyMessage[] = [];
+        if (json.agentResponse) incoming.push(json.agentResponse);
+        if (Array.isArray(json.additionalResponses)) {
+          incoming.push(...json.additionalResponses);
+        }
+        if (incoming.length > 0) {
+          setMessages((prev) => [...prev, ...incoming]);
         }
         fetchCompanyData();
       } else {
@@ -307,7 +312,7 @@ export default function CompanyOfficeClient() {
   const handleStartNewMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMeetingTitle || !newMeetingObjective) {
-      showToast('Please provide a meeting title and objective.', 'error');
+      showToast('Please provide an agenda title and strategic objective.', 'error');
       return;
     }
 
@@ -317,24 +322,25 @@ export default function CompanyOfficeClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          roomId: newMeetingRoomId,
+          roomId: 'company_hq',
           title: newMeetingTitle,
           objective: newMeetingObjective,
-          participantIds: newMeetingParticipants.length > 0 ? newMeetingParticipants : undefined,
+          participantIds: ['alex_vance', 'elena_rostova', 'marcus_sterling', 'liam_thorne', 'david_chen', 'sophia_reynolds'],
         }),
       });
       const json = await res.json();
       if (json.success && json.discussion) {
-        showToast(`Meeting "${newMeetingTitle}" opened in ${newMeetingRoomId}!`, 'success');
+        showToast(`Company Floor agenda updated: "${newMeetingTitle}"!`, 'success');
+        setActiveDiscussion(json.discussion);
         setNewMeetingModalOpen(false);
         setNewMeetingTitle('');
         setNewMeetingObjective('');
         fetchCompanyData();
       } else {
-        showToast(json.error || 'Failed to start meeting', 'error');
+        showToast(json.error || 'Failed to update agenda', 'error');
       }
     } catch {
-      showToast('Network error starting meeting', 'error');
+      showToast('Network error updating agenda', 'error');
     } finally {
       setCreatingMeeting(false);
     }
@@ -456,8 +462,8 @@ export default function CompanyOfficeClient() {
               <span className="co-live-tag">SOVEREIGN WORKFORCE LIVE</span>
             </div>
             <p className="co-subtitle">
-              Prince is CEO. Alex Vance (Chief of Staff) orchestrates 6 autonomous specialists across 5 virtual collaboration rooms.
-              Internal planning is autonomous; all external and production changes require your direct sign-off.
+              Prince is CEO. Alex Vance (Chief of Staff) orchestrates 6 autonomous specialists on the unified company floor.
+              Strategy, opportunity research, and internal planning are continuous in one shared timeline; all external and production changes require your direct sign-off.
             </p>
           </div>
 
@@ -468,8 +474,8 @@ export default function CompanyOfficeClient() {
               <div className="co-stat-label">Specialists</div>
             </div>
             <div className="co-stat-box">
-              <div className="co-stat-num" style={{ color: '#c084fc' }}>{overview?.activeDiscussions?.length || 0}</div>
-              <div className="co-stat-label">In Meeting</div>
+              <div className="co-stat-num" style={{ color: '#c084fc' }}>{messages.length}</div>
+              <div className="co-stat-label">Floor Messages</div>
             </div>
             <div className="co-stat-box">
               <div className="co-stat-num" style={{ color: '#fbbf24' }}>{overview?.pendingProposalsCount || 0}</div>
@@ -485,7 +491,7 @@ export default function CompanyOfficeClient() {
         {/* Navigation Tabs */}
         <div className="co-tabs-bar">
           {[
-            { id: 'office', label: 'Virtual Office & Rooms', icon: Building2 },
+            { id: 'office', label: 'Company Floor (All-Hands HQ)', icon: Building2 },
             { id: 'workforce', label: 'Employee Identities', icon: Users },
             { id: 'tasks', label: 'Task Matrix', icon: CheckSquare, badge: overview?.openTasksCount },
             { id: 'proposals', label: 'CEO Approval Gate', icon: ShieldCheck, badge: overview?.pendingProposalsCount, badgeColor: '#f59e0b' },
@@ -516,94 +522,117 @@ export default function CompanyOfficeClient() {
       </div>
 
       {/* ==================================================================== */}
-      {/* TAB 1: VIRTUAL OFFICE FLOOR & LIVE COLLABORATION ROOM                */}
+      {/* TAB 1: UNIFIED VIRTUAL OFFICE FLOOR & LIVE ALL-HANDS COLLABORATION  */}
       {/* ==================================================================== */}
       {activeTab === 'office' && (
         <div className="co-office-layout">
-          {/* Room Selector & Office Floorplan (Sidebar) */}
+          {/* Left Column: Unified Floor Focus & Workforce Roster */}
           <div className="co-sidebar-pane">
-            <div className="co-pane-header">
-              <h2 className="co-pane-title">
-                <Building2 style={{ width: 16, height: 16, color: '#a855f7' }} />
-                Virtual Office Rooms
-              </h2>
-              <button
-                onClick={() => {
-                  setNewMeetingRoomId(selectedRoom?.id || 'war_room');
-                  setNewMeetingModalOpen(true);
-                }}
-                className="co-btn co-btn-primary"
-                style={{ padding: '6px 12px', fontSize: '0.75rem' }}
-              >
-                <PlusCircle style={{ width: 14, height: 14 }} />
-                Start Meeting
-              </button>
-            </div>
+            {/* Unified Company Floor Card */}
+            <div className="co-floor-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="co-floor-badge">
+                  <span className="co-dot co-dot-in_meeting" />
+                  All-Hands Unified HQ
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#c084fc', fontWeight: 700, fontFamily: 'monospace' }}>
+                  {messages.length} Messages
+                </span>
+              </div>
 
-            <div className="co-rooms-list">
-              {rooms.map((room) => {
-                const isSelected = selectedRoom?.id === room.id;
-                const hasActive = Boolean(room.active_discussion);
+              <div>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '4px 0 2px 0' }}>
+                  HeyPrince Company Floor
+                </h2>
+                <p style={{ fontSize: '0.78rem', color: 'var(--co-text-muted)', margin: 0, lineHeight: 1.45 }}>
+                  Unified collaboration space where Prince (CEO) and all 6 AI specialists continuously research opportunities, debate strategy, critique execution, and advance company growth.
+                </p>
+              </div>
 
-                return (
-                  <div
-                    key={room.id}
-                    onClick={() => setSelectedRoom(room)}
-                    className={`co-room-card ${isSelected ? 'selected' : ''}`}
+              {/* Current Strategic Focus */}
+              <div className="co-floor-objective-box">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#c084fc' }}>
+                    Active Strategic Agenda
+                  </span>
+                  <button
+                    onClick={() => {
+                      setNewMeetingRoomId('company_hq');
+                      setNewMeetingTitle(activeDiscussion?.title || 'HeyPrince Autonomous AI Company Floor');
+                      setNewMeetingObjective(activeDiscussion?.objective || 'Continuous all-hands collaboration, strategic growth, technical execution, and CEO directives');
+                      setNewMeetingModalOpen(true);
+                    }}
+                    style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                   >
-                    <div className="co-room-title-row">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <h3 className="co-room-name">{room.name}</h3>
-                        {hasActive && (
-                          <span className="co-room-active-pill">IN SESSION</span>
-                        )}
-                      </div>
-                      <ChevronRight style={{ width: 16, height: 16, color: isSelected ? '#a855f7' : '#64748b' }} />
-                    </div>
-                    <p className="co-room-desc">{room.description}</p>
+                    Update Focus
+                  </button>
+                </div>
+                <h3 className="co-floor-objective-title">
+                  {activeDiscussion ? activeDiscussion.title : 'HeyPrince Autonomous AI Company Floor'}
+                </h3>
+                <p className="co-floor-objective-desc">
+                  {activeDiscussion?.objective || 'Continuous all-hands collaboration, strategic growth, technical execution, and CEO directives'}
+                </p>
+              </div>
 
-                    {/* Room Activity Snapshot */}
-                    {hasActive && (
-                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--co-border)', display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--co-text-muted)' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
-                          "{room.active_discussion?.title}"
-                        </span>
-                        <span style={{ color: '#c084fc', fontWeight: 700 }}>
-                          Turn {room.active_discussion?.turn_count}/{room.active_discussion?.max_turns}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {/* Action Controls */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                <button
+                  onClick={handleAdvanceTurn}
+                  disabled={advancingTurn}
+                  className="co-btn co-btn-primary"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {advancingTurn ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Play style={{ width: 14, height: 14 }} />}
+                  Hear Next Specialist Perspective
+                </button>
+                <button
+                  onClick={handleConcludeMeeting}
+                  disabled={concludingMeeting}
+                  className="co-btn co-btn-secondary"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {concludingMeeting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 style={{ width: 14, height: 14, color: '#34d399' }} />}
+                  Synthesize Consensus & Proposals
+                </button>
+              </div>
             </div>
 
-            {/* Quick Live Workforce Status */}
+            {/* Quick Live Workforce Roster */}
             <div className="co-agents-pane">
-              <h3 className="co-pane-title">
-                <Activity style={{ width: 14, height: 14, color: '#10b981' }} />
-                Live Agent Presence
-              </h3>
-              <div className="co-agents-grid">
+              <div className="co-pane-header" style={{ marginBottom: '12px' }}>
+                <h3 className="co-pane-title">
+                  <Users style={{ width: 15, height: 15, color: '#38bdf8' }} />
+                  Workforce Roster ({employees.length})
+                </h3>
+                <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 700 }}>
+                  Active on Floor
+                </span>
+              </div>
+              <div className="co-roster-list">
                 {employees.map((emp) => {
+                  const isCeo = emp.id === 'prince_ceo';
                   return (
                     <div
                       key={emp.id}
                       onClick={() => setSelectedEmployeeDetail(emp)}
-                      className="co-agent-chip"
+                      className="co-roster-item"
                     >
                       <img
                         src={emp.avatar_url || `/assets/avatars/${emp.id.replace('_', '-')}.svg`}
                         alt={emp.name}
-                        className="co-avatar-sm"
-                        style={{ width: '32px', height: '32px', minWidth: '32px', maxWidth: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                        className="co-roster-avatar"
+                        style={{ width: '34px', height: '34px', minWidth: '34px', maxWidth: '34px', borderRadius: '50%', objectFit: 'cover' }}
                       />
-                      <div className="co-agent-info">
-                        <div className="co-agent-name">{emp.name}</div>
-                        <div className="co-status-row">
-                          <span className={`co-dot co-dot-${emp.status}`} />
-                          <span>{emp.status.replace('_', ' ')}</span>
+                      <div className="co-roster-info">
+                        <div className="co-roster-name-row">
+                          <span className="co-roster-name">{emp.name}</span>
+                          <span className="co-status-row">
+                            <span className={`co-dot co-dot-${emp.status}`} />
+                            <span style={{ fontSize: '0.65rem' }}>{emp.status.replace('_', ' ')}</span>
+                          </span>
                         </div>
+                        <div className="co-roster-title">{emp.display_title || emp.department}</div>
                       </div>
                     </div>
                   );
@@ -612,73 +641,61 @@ export default function CompanyOfficeClient() {
             </div>
           </div>
 
-          {/* Live Meeting Room & Transcript Streamer */}
+          {/* Right Column: Unified Meeting Room & Unbroken Transcript Streamer */}
           <div className="co-room-stage">
-            {/* Meeting Header */}
+            {/* Floor Stage Header */}
             <div className="co-stage-header">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '240px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', color: '#e2e8f0', fontWeight: 700 }}>
-                    {selectedRoom?.name || 'Collaboration Hub'}
+                    HeyPrince Company Floor (HQ)
                   </span>
-                  {activeDiscussion && (
-                    <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '9999px', background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)', fontWeight: 700 }}>
-                      ACTIVE DISCUSSION
-                    </span>
-                  )}
+                  <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '9999px', background: 'rgba(168,85,247,0.15)', color: '#d8b4fe', border: '1px solid rgba(168,85,247,0.3)', fontWeight: 700 }}>
+                    ALL-HANDS CONTINUOUS CHAT
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                    {messages.length} messages in timeline
+                  </span>
                 </div>
-                <h3 className="co-stage-title">
-                  {activeDiscussion ? activeDiscussion.title : 'Room is currently quiet'}
+                <h3 className="co-stage-title" style={{ fontSize: '1.2rem' }}>
+                  {activeDiscussion ? activeDiscussion.title : 'HeyPrince Autonomous AI Company Floor'}
                 </h3>
                 {activeDiscussion && (
                   <p className="co-stage-sub">
-                    <strong style={{ color: '#ffffff' }}>Objective:</strong> {activeDiscussion.objective}
+                    <strong style={{ color: '#ffffff' }}>Focus:</strong> {activeDiscussion.objective}
                   </p>
                 )}
               </div>
 
               {/* Turn Controls for Prince (CEO) */}
-              {activeDiscussion && activeDiscussion.status === 'in_progress' ? (
-                <div className="co-stage-actions">
-                  <button
-                    onClick={handleAdvanceTurn}
-                    disabled={advancingTurn}
-                    className="co-btn co-btn-primary"
-                  >
-                    {advancingTurn ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Play style={{ width: 14, height: 14 }} />}
-                    Advance Turn ({activeDiscussion.turn_count}/{activeDiscussion.max_turns})
-                  </button>
-                  <button
-                    onClick={handleConcludeMeeting}
-                    disabled={concludingMeeting}
-                    className="co-btn co-btn-secondary"
-                  >
-                    {concludingMeeting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 style={{ width: 14, height: 14, color: '#34d399' }} />}
-                    Synthesize & Conclude
-                  </button>
-                </div>
-              ) : (
+              <div className="co-stage-actions">
                 <button
-                  onClick={() => {
-                    setNewMeetingRoomId(selectedRoom?.id || 'war_room');
-                    setNewMeetingModalOpen(true);
-                  }}
+                  onClick={handleAdvanceTurn}
+                  disabled={advancingTurn}
                   className="co-btn co-btn-primary"
                 >
-                  <PlusCircle style={{ width: 14, height: 14 }} />
-                  Open Topic in this Room
+                  {advancingTurn ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Play style={{ width: 14, height: 14 }} />}
+                  Hear Next Specialist
                 </button>
-              )}
+                <button
+                  onClick={handleConcludeMeeting}
+                  disabled={concludingMeeting}
+                  className="co-btn co-btn-secondary"
+                >
+                  {concludingMeeting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 style={{ width: 14, height: 14, color: '#34d399' }} />}
+                  Synthesize Consensus
+                </button>
+              </div>
             </div>
 
-            {/* Messages Transcript Scroll Area */}
+            {/* Messages Transcript Scroll Area (Continuous Unbroken History) */}
             <div className="co-transcript-scroll">
               {messages.length === 0 ? (
                 <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#64748b', padding: '32px', gap: '12px' }}>
                   <MessageSquare style={{ width: 44, height: 44, strokeWidth: 1.5, color: '#334155' }} />
-                  <p style={{ fontSize: '0.92rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>No active discussion in this room right now.</p>
+                  <p style={{ fontSize: '0.92rem', fontWeight: 600, color: '#94a3b8', margin: 0 }}>Connecting to the Company Floor...</p>
                   <p style={{ fontSize: '0.8rem', maxWidth: '360px', color: '#64748b', margin: 0 }}>
-                    Click "Open Topic in this Room" above to convene Alex Vance and your AI specialists.
+                    Send a directive below or click "Hear Next Specialist" to start the discussion.
                   </p>
                 </div>
               ) : (
@@ -686,6 +703,15 @@ export default function CompanyOfficeClient() {
                   const isModerator = msg.sender_id === 'alex_vance';
                   const isCeo = msg.sender_id === 'prince_ceo';
                   const isSummary = msg.message_type === 'summary';
+
+                  // Departmental badge styling
+                  let tagLabel = isCeo ? 'CEO DIRECTIVE' : msg.message_type;
+                  if (msg.sender_id === 'elena_rostova') tagLabel = 'SEARCH & SEO';
+                  else if (msg.sender_id === 'marcus_sterling') tagLabel = 'REVENUE & GROWTH';
+                  else if (msg.sender_id === 'liam_thorne') tagLabel = 'CONTENT & EDITORIAL';
+                  else if (msg.sender_id === 'david_chen') tagLabel = 'SRE & INFRASTRUCTURE';
+                  else if (msg.sender_id === 'sophia_reynolds') tagLabel = 'PRODUCT & UX';
+                  else if (msg.sender_id === 'alex_vance') tagLabel = isSummary ? 'EXECUTIVE CONSENSUS' : 'CHIEF OF STAFF';
 
                   return (
                     <div
@@ -696,11 +722,11 @@ export default function CompanyOfficeClient() {
                         src={msg.sender_avatar || `/assets/avatars/${msg.sender_id.replace('_', '-')}.svg`}
                         alt={msg.sender_name || msg.sender_id}
                         className="co-msg-avatar"
-                        style={{ width: '36px', height: '36px', minWidth: '36px', maxWidth: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                        style={{ width: '38px', height: '38px', minWidth: '38px', maxWidth: '38px', borderRadius: '50%', objectFit: 'cover' }}
                       />
                       <div className="co-msg-body">
                         <div className="co-msg-header">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span className="co-msg-author">
                               {msg.sender_name || msg.sender_id}
                             </span>
@@ -708,9 +734,16 @@ export default function CompanyOfficeClient() {
                               {msg.sender_role || 'Specialist'}
                             </span>
                           </div>
-                          <span className="co-msg-tag">
-                            {isCeo ? 'CEO DIRECTIVE' : msg.message_type}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="co-msg-tag">
+                              {tagLabel}
+                            </span>
+                            {msg.created_at && (
+                              <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
+                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         <div className="co-msg-content">
@@ -720,7 +753,7 @@ export default function CompanyOfficeClient() {
                         {/* Evidence Drawer if present */}
                         {msg.evidence && Object.keys(msg.evidence).length > 0 && (
                           <div className="co-evidence-box">
-                            <span style={{ color: '#c084fc', fontWeight: 700, display: 'block', marginBottom: '4px' }}>CITED EVIDENCE & METRICS:</span>
+                            <span style={{ color: '#c084fc', fontWeight: 700, display: 'block', marginBottom: '4px' }}>VERIFIED EVIDENCE & AUDIT DATA:</span>
                             <pre style={{ margin: 0, overflowX: 'auto' }}>{JSON.stringify(msg.evidence, null, 2)}</pre>
                           </div>
                         )}
@@ -738,59 +771,60 @@ export default function CompanyOfficeClient() {
                 <div>
                   <span style={{ fontWeight: 700, color: '#d8b4fe', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem' }}>
                     <CheckCircle2 style={{ width: 16, height: 16, color: '#34d399' }} />
-                    Meeting Concluded with Strategic Consensus
+                    Consensus Synthesized for CEO Review
                   </span>
                   <p style={{ fontSize: '0.76rem', color: '#cbd5e1', margin: '4px 0 0 0' }}>
-                    Consensus synthesized. Review proposal in CEO Approval Gate or start the next discussion.
+                    An actionable proposal has been queued in CEO Approval Gate. The floor remains open for ongoing collaboration.
                   </p>
                 </div>
                 <button
                   onClick={() => {
-                    setNewMeetingRoomId(selectedRoom?.id || 'war_room');
+                    setNewMeetingRoomId('company_hq');
                     setNewMeetingParticipants(employees.filter(e => e.id !== 'prince_ceo').map(e => e.id));
                     setNewMeetingModalOpen(true);
                   }}
                   className="co-btn co-btn-primary"
                   style={{ padding: '6px 14px', fontSize: '0.78rem', flexShrink: 0 }}
                 >
-                  Start Next Topic
+                  Set Next Objective
                 </button>
               </div>
             )}
 
-            {/* Interactive CEO Directive Input Bar */}
-            {activeDiscussion && (
-              <form onSubmit={handleSendCeoMessage} className="co-ceo-bar">
-                <input
-                  type="text"
-                  value={ceoInput}
-                  onChange={(e) => setCeoInput(e.target.value)}
-                  placeholder="Speak directly to the team as Prince (CEO)..."
-                  className="co-input"
-                />
-                <button
-                  type="submit"
-                  disabled={sendingCeoMessage || !ceoInput.trim()}
-                  className="co-btn co-btn-primary"
-                  style={{ flexShrink: 0 }}
-                >
-                  {sendingCeoMessage ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
-                  Send Directive
-                </button>
-              </form>
-            )}
+            {/* Interactive CEO Directive Input Bar (Fixed & Always Active) */}
+            <form onSubmit={handleSendCeoMessage} className="co-ceo-bar" style={{ alignItems: 'center' }}>
+              <img
+                src="/assets/cropped-prince-profile.webp"
+                alt="Prince (CEO)"
+                style={{ width: '36px', height: '36px', minWidth: '36px', maxWidth: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1' }}
+              />
+              <input
+                type="text"
+                value={ceoInput}
+                onChange={(e) => setCeoInput(e.target.value)}
+                placeholder="Direct your workforce, ask any question, or share an idea..."
+                className="co-input"
+              />
+              <button
+                type="submit"
+                disabled={sendingCeoMessage || !ceoInput.trim()}
+                className="co-btn co-btn-primary"
+                style={{ flexShrink: 0 }}
+              >
+                {sendingCeoMessage ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 14, height: 14 }} />}
+                Send Directive
+              </button>
+            </form>
 
-            {/* Bottom Quick Action Bar */}
-            {activeDiscussion && activeDiscussion.status === 'in_progress' && (
-              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--co-text-dim)', fontFamily: 'monospace' }}>
-                <span>
-                  Token Budget: <strong style={{ color: '#c084fc' }}>{activeDiscussion.tokens_consumed} / {activeDiscussion.token_budget}</strong>
-                </span>
-                <span>
-                  Speaker Turn: <strong style={{ color: '#c084fc' }}>{activeDiscussion.turn_count} / {activeDiscussion.max_turns}</strong>
-                </span>
-              </div>
-            )}
+            {/* Bottom Real-time Notice */}
+            <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--co-text-dim)' }}>
+              <span>
+                All 6 AI specialists actively collaborate on this floor. Messages auto-sync in real time.
+              </span>
+              <span style={{ fontFamily: 'monospace' }}>
+                Floor: <strong style={{ color: '#c084fc' }}>HeyPrince Company Floor</strong>
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -1150,7 +1184,7 @@ export default function CompanyOfficeClient() {
       )}
 
       {/* ==================================================================== */}
-      {/* MODAL: START NEW MEETING                                             */}
+      {/* MODAL: UPDATE COMPANY FLOOR AGENDA & FOCUS                           */}
       {/* ==================================================================== */}
       {newMeetingModalOpen && (
         <div className="co-modal-overlay">
@@ -1158,7 +1192,7 @@ export default function CompanyOfficeClient() {
             <div className="co-modal-header">
               <h3 className="co-modal-title">
                 <MessageSquare style={{ width: 20, height: 20, color: '#a855f7' }} />
-                Initialize Virtual Collaboration Meeting
+                Update Company Floor Agenda & Focus
               </h3>
               <button onClick={() => setNewMeetingModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}>
                 <XCircle style={{ width: 20, height: 20 }} />
@@ -1167,22 +1201,15 @@ export default function CompanyOfficeClient() {
 
             <form onSubmit={handleStartNewMeeting} className="co-modal-body">
               <div className="co-form-group">
-                <label className="co-label">Collaboration Room</label>
-                <select
-                  value={newMeetingRoomId}
-                  onChange={(e) => setNewMeetingRoomId(e.target.value)}
-                  className="co-select"
-                >
-                  {rooms.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="co-label">Target Collaboration Space</label>
+                <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(7, 7, 10, 0.8)', border: '1px solid var(--co-border)', color: '#d8b4fe', fontSize: '0.86rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="co-dot co-dot-in_meeting" />
+                  HeyPrince Company Floor (All-Hands Unified HQ)
+                </div>
               </div>
 
               <div className="co-form-group">
-                <label className="co-label">Meeting Agenda Title</label>
+                <label className="co-label">Floor Agenda Title</label>
                 <input
                   type="text"
                   placeholder="e.g. Next.js 16 Edge Rendering & Headless Commerce Blueprint"
@@ -1271,7 +1298,7 @@ export default function CompanyOfficeClient() {
                   className="co-btn co-btn-primary"
                 >
                   {creatingMeeting ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Play style={{ width: 14, height: 14 }} />}
-                  Open Room
+                  Update Floor Agenda
                 </button>
               </div>
             </form>
