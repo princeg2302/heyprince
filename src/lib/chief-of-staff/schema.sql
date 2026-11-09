@@ -172,6 +172,17 @@ VALUES
     'event_driven',
     'Real-time Event Triggered',
     '{"auto_draft_proposal": true, "turnaround_target_hours": 2, "estimated_rate_usd": 65}'::jsonb
+  ),
+  (
+    'alex_vance',
+    'Chief of Staff & Head of Operations',
+    'Executive Orchestration, Task Delegation & Consensus Moderation',
+    'Coordinates all company specialists, moderates virtual meetings, tracks deliverables, and prepares executive proposals for CEO approval.',
+    'enabled',
+    'auto',
+    '0 */2 * * *',
+    'Every 2 Hours',
+    '{"role": "chief_of_staff", "auto_synthesize": true}'::jsonb
   )
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,

@@ -26,6 +26,16 @@ export interface ChiefAgent {
     estimated_cost_usd?: number;
     [key: string]: any;
   };
+  // Humanoid Employee Extensions
+  employee_id?: string;
+  humanoid_name?: string;
+  display_title?: string;
+  department?: string;
+  avatar_url?: string;
+  bio?: string;
+  personality_archetype?: string;
+  live_status?: string;
+  current_activity?: string;
   created_at: string;
   updated_at: string;
 }

@@ -210,19 +210,25 @@ export async function finishAndSynthesizeDiscussion(discussionId: string): Promi
   const messages = await getDiscussionMessages(discussionId);
   const summaryText = `Meeting on "${discussion.title}" concluded with cross-departmental consensus. The team agreed on a verified execution roadmap.`;
 
-  // Determine proposal recommendation based on room
+  // Determine proposal recommendation based on room & substance
   let recommendedAction: DiscussionConclusion['recommendedAction'] = 'internal_task';
   let proposalType: CompanyProposal['proposal_type'] = 'site_modification';
 
-  if (discussion.room_id === 'innovation_lab' || discussion.title.toLowerCase().includes('article')) {
-    recommendedAction = 'publish_content';
-    proposalType = 'publish_content';
-  } else if (discussion.room_id === 'growth_sales' || discussion.title.toLowerCase().includes('lead')) {
-    recommendedAction = 'outreach_campaign';
-    proposalType = 'outreach_campaign';
-  } else if (discussion.room_id === 'dev_room' || discussion.title.toLowerCase().includes('cwv') || discussion.title.toLowerCase().includes('speed')) {
-    recommendedAction = 'site_modification';
-    proposalType = 'site_modification';
+  const isTrivial =
+    /^(hello|hi|hey|test|introduction|intro)$/i.test(discussion.title.trim()) ||
+    /^(hello|hi|hey|test)$/i.test(discussion.objective.trim());
+
+  if (!isTrivial) {
+    if (discussion.room_id === 'innovation_lab' || discussion.title.toLowerCase().includes('article')) {
+      recommendedAction = 'publish_content';
+      proposalType = 'publish_content';
+    } else if (discussion.room_id === 'growth_sales' || discussion.title.toLowerCase().includes('lead')) {
+      recommendedAction = 'outreach_campaign';
+      proposalType = 'outreach_campaign';
+    } else if (discussion.room_id === 'dev_room' || discussion.title.toLowerCase().includes('cwv') || discussion.title.toLowerCase().includes('speed')) {
+      recommendedAction = 'site_modification';
+      proposalType = 'site_modification';
+    }
   }
 
   const conclusion: DiscussionConclusion = {

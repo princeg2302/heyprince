@@ -18,7 +18,8 @@
     "migrate:captcha": "npx tsx src/scripts/migrate-captcha.ts",
     "test:captcha": "npx tsx src/scripts/test-captcha-suite.ts",
     "migrate:company": "npx tsx src/scripts/migrate-company.ts",
-    "test:company": "npx tsx src/scripts/test-ai-company-suite.ts"
+    "test:company": "npx tsx src/scripts/test-ai-company-suite.ts",
+    "test:workforce": "npx tsx src/scripts/test-unified-workforce.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.90.2",

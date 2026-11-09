@@ -368,11 +368,40 @@ export async function runContentResearcherDiscovery(options?: ContentResearcherO
       status: 'pending_approval',
     });
 
+    // Synchronize to unified company_proposals
+    try {
+      const { createProposal } = await import('../../company/db');
+      await createProposal({
+        sponsoredBy: 'marcus_sterling',
+        title: `Publish Engineering Article: ${draftTitle}`,
+        proposalType: 'publish_content',
+        businessJustification: `Authored by Marcus Sterling with Elena Rostova SEO review. Deep technical insights for senior engineers and enterprise clients.`,
+        actionPayload: {
+          draftId,
+          slug: gen.slug,
+          title: draftTitle,
+          excerpt: draftExcerpt,
+          category: gen.categoryName,
+          readMins: gen.readMins,
+          tags: gen.tags,
+          seoTitle: gen.seoTitle,
+          seoDescription: gen.seoDescription,
+          coverImage: gen.coverImage,
+          sections: gen.sections,
+          linkedinPost: gen.linkedinPost,
+          publishToLinkedIn: true,
+        },
+        estimatedCostUsd: 0,
+      });
+    } catch (propErr) {
+      console.warn('[content-researcher] company_proposals sync notice:', propErr);
+    }
+
     // Notify Admin via iPhone Web Push
     try {
       await sendPushToAllAdmins({
-        title: '🤖 JARVIS: New Draft Ready for Review',
-        body: `"${draftTitle}" - Tap to review & customize on your phone`,
+        title: '💼 Marcus Sterling: New Article Draft Ready',
+        body: `"${draftTitle}" - Tap to review & approve`,
         url: `/admin/approvals?draftId=${draftId}`,
         draftId,
       });

@@ -50,7 +50,7 @@ export default async function ViewPostPage({
 
   const authorAvatarUrl =
     post.author_avatar &&
-    !post.author_avatar.includes('1791537029941-author.jpg')
+    !post.author_avatar.includes('author.jpg')
       ? post.author_avatar
       : '/assets/cropped-prince-profile.webp';
 

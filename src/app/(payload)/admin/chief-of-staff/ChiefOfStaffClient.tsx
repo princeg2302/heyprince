@@ -37,6 +37,8 @@ import {
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 import { MobileDraftApprovalModal } from '@/components/admin/MobileDraftApprovalModal';
+import { EmployeePrivateDeskModal } from '@/components/admin/EmployeePrivateDeskModal';
+import { MessageSquare } from 'lucide-react';
 import {
   ChiefAgent,
   ChiefContentDraft,
@@ -60,6 +62,16 @@ interface AgentTheme {
 }
 
 const AGENT_THEMES: Record<string, AgentTheme> = {
+  alex_vance: {
+    primary: '#ff4757',
+    gradient: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)',
+    glow: 'rgba(255, 71, 87, 0.4)',
+    badgeBg: 'rgba(255, 71, 87, 0.1)',
+    badgeBorder: 'rgba(255, 71, 87, 0.25)',
+    category: 'EXECUTIVE ORCHESTRATOR',
+    icon: Bot,
+    accentText: '#ff6b81',
+  },
   content_researcher: {
     primary: '#a855f7',
     gradient: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
@@ -125,6 +137,7 @@ export default function ChiefOfStaffClient() {
   const [togglingAgentId, setTogglingAgentId] = useState<string | null>(null);
   const [approvingDraftId, setApprovingDraftId] = useState<string | null>(null);
   const [selectedDraftForModal, setSelectedDraftForModal] = useState<ChiefContentDraft | null>(null);
+  const [selectedDeskAgent, setSelectedDeskAgent] = useState<ChiefAgent | null>(null);
   const [shareToLinkedIn, setShareToLinkedIn] = useState(true);
 
   // Bulk Draft Selection & Deletion State
@@ -735,38 +748,60 @@ export default function ChiefOfStaffClient() {
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
                       <div
                         style={{
-                          width: '46px',
-                          height: '46px',
-                          borderRadius: '12px',
-                          background: theme.gradient,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#ffffff',
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          background: 'rgba(22, 22, 34, 0.9)',
+                          border: `2px solid ${theme.badgeBorder}`,
                           boxShadow: `0 4px 18px ${theme.glow}`,
                           flexShrink: 0,
+                          position: 'relative',
                         }}
                       >
-                        <AgentIcon size={22} />
+                        <img
+                          src={agent.avatar_url || '/assets/avatars/alex-vance.webp'}
+                          alt={agent.humanoid_name || agent.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e: any) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
                       </div>
 
                       <div style={{ minWidth: 0 }}>
-                        <span
-                          style={{
-                            fontSize: '0.66rem',
-                            fontWeight: 800,
-                            letterSpacing: '0.08em',
-                            color: theme.accentText,
-                            textTransform: 'uppercase',
-                            display: 'block',
-                            marginBottom: '2px',
-                          }}
-                        >
-                          {theme.category}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                          <span
+                            style={{
+                              fontSize: '0.64rem',
+                              fontWeight: 800,
+                              letterSpacing: '0.08em',
+                              color: theme.accentText,
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            {agent.department || theme.category}
+                          </span>
+                          {agent.live_status && (
+                            <span
+                              style={{
+                                fontSize: '0.6rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                padding: '1px 6px',
+                                borderRadius: '10px',
+                                background: 'rgba(16, 185, 129, 0.15)',
+                                color: '#34d399',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                              }}
+                            >
+                              ● {agent.live_status}
+                            </span>
+                          )}
+                        </div>
                         <h3
                           style={{
-                            fontSize: '1.2rem',
+                            fontSize: '1.18rem',
                             fontWeight: 800,
                             color: '#ffffff',
                             margin: 0,
@@ -775,8 +810,18 @@ export default function ChiefOfStaffClient() {
                             wordBreak: 'break-word',
                           }}
                         >
-                          {agent.name}
+                          {agent.humanoid_name || agent.name}
                         </h3>
+                        <span
+                          style={{
+                            fontSize: '0.74rem',
+                            color: 'var(--hpa-text-dim)',
+                            display: 'block',
+                            marginTop: '2px',
+                          }}
+                        >
+                          {agent.display_title || agent.role}
+                        </span>
                       </div>
                     </div>
 
@@ -1084,33 +1129,57 @@ export default function ChiefOfStaffClient() {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => handleRunAgentTask(agent.id)}
-                    disabled={isRunning}
-                    style={{
-                      background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '8px 16px',
-                      color: '#ffffff',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      cursor: isRunning ? 'not-allowed' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: '0 4px 16px rgba(255, 71, 87, 0.35)',
-                      transition: 'all 0.2s ease',
-                      opacity: isRunning ? 0.8 : 1,
-                    }}
-                  >
-                    {isRunning ? (
-                      <Loader2 size={13} className="hpa-spin" />
-                    ) : (
-                      <Play size={13} fill="currentColor" />
-                    )}
-                    <span>{isRunning ? 'Executing...' : 'Run Task Now'}</span>
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setSelectedDeskAgent(agent)}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.16)',
+                        borderRadius: '8px',
+                        padding: '8px 14px',
+                        color: '#ffffff',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      title="Open 1-on-1 Private Desk"
+                    >
+                      <MessageSquare size={13} color={theme.accentText} />
+                      <span>Private Desk</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleRunAgentTask(agent.id)}
+                      disabled={isRunning}
+                      style={{
+                        background: 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        color: '#ffffff',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        cursor: isRunning ? 'not-allowed' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 16px rgba(255, 71, 87, 0.35)',
+                        transition: 'all 0.2s ease',
+                        opacity: isRunning ? 0.8 : 1,
+                      }}
+                    >
+                      {isRunning ? (
+                        <Loader2 size={13} className="hpa-spin" />
+                      ) : (
+                        <Play size={13} fill="currentColor" />
+                      )}
+                      <span>{isRunning ? 'Executing...' : 'Run Task Now'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -1650,6 +1719,16 @@ export default function ChiefOfStaffClient() {
             setSelectedDraftForModal(null);
             fetchStatus();
           }}
+        />
+      )}
+
+      {/* 1-on-1 Employee Private Desk Drawer Modal */}
+      {selectedDeskAgent && (
+        <EmployeePrivateDeskModal
+          isOpen={Boolean(selectedDeskAgent)}
+          onClose={() => setSelectedDeskAgent(null)}
+          agent={selectedDeskAgent}
+          onTaskCreated={() => fetchStatus()}
         />
       )}
 

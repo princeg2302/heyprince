@@ -164,6 +164,28 @@ export async function runSeoGrowthAudit(): Promise<{
     });
   }
 
+  // Collaborative Task Delegation: Elena asks Marcus to draft on top content opportunity
+  if (keywordOpportunities.length > 0) {
+    try {
+      const topOpp = keywordOpportunities[0];
+      const { createCompanyTask } = await import('../../company/db');
+      await createCompanyTask({
+        title: `Draft Content on Search Gap: ${topOpp.issue}`,
+        description: `Identified by Elena Rostova: ${topOpp.evidence} Recommended Action: ${topOpp.suggestedChange}`,
+        assignedTo: 'marcus_sterling',
+        assignedBy: 'elena_rostova',
+        priority: 'high',
+        acceptanceCriteria: [
+          'Target commercial search intent for WooCommerce speed fixes',
+          'Include concrete architectural code snippets',
+          'Enforce strict zero em-dash policy',
+        ],
+      });
+    } catch (taskErr) {
+      console.warn('[SEO Growth] Task matrix auto-record notice:', taskErr);
+    }
+  }
+
   const duration = Date.now() - startTime;
   const summary = `Evaluated published pages & topic clusters in ${duration}ms. Produced ${recommendations.length} recommendations.`;
 

@@ -173,6 +173,27 @@ export async function runWebsiteGuardianAudit(options?: {
     });
   }
 
+  // Cross-system workforce task creation: automatically create remediation task
+  if (issuesFound.length > 0) {
+    try {
+      const { createCompanyTask } = await import('../../company/db');
+      await createCompanyTask({
+        title: `Site Health Remediation: Resolve ${issuesFound.length} Issue(s)`,
+        description: `David Chen detected health issues: ${issuesFound.map((i) => `${i.route} (${i.type})`).join('; ')}`,
+        assignedTo: 'david_chen',
+        assignedBy: 'david_chen',
+        priority: hasCritical ? 'urgent' : 'high',
+        acceptanceCriteria: [
+          'Verify route availability and HTTP 200 status',
+          'Eliminate latency bottlenecks or 404 links',
+          'Confirm sub-200ms TTFB threshold on primary routes',
+        ],
+      });
+    } catch (taskErr) {
+      console.warn('[Website Guardian] Task matrix auto-record notice:', taskErr);
+    }
+  }
+
   await updateAgentExecutionTime('website_guardian', new Date(), new Date(Date.now() + 4 * 3600 * 1000));
   await incrementAgentStats('website_guardian', overallStatus !== 'critical', issuesFound.length === 0 ? 1 : 0);
 

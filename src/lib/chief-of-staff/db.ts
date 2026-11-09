@@ -21,25 +21,51 @@ import {
 
 export async function getAllAgents(): Promise<ChiefAgent[]> {
   const rows = await query<ChiefAgent>(`
-    SELECT * FROM chief_agents 
-    WHERE id != 'inbound_responder'
+    SELECT 
+      ca.*,
+      COALESCE(ce.id, ca.id) AS employee_id,
+      COALESCE(ce.name, ca.name) AS humanoid_name,
+      COALESCE(ce.display_title, ca.name) AS display_title,
+      COALESCE(ce.department, 'Operations') AS department,
+      COALESCE(ce.avatar_url, '/assets/avatars/alex-vance.webp') AS avatar_url,
+      ce.bio,
+      ce.personality_archetype,
+      COALESCE(ce.status, 'idle') AS live_status,
+      ce.current_activity
+    FROM chief_agents ca
+    LEFT JOIN company_employees ce ON ce.legacy_agent_id = ca.id OR ce.id = ca.id
     ORDER BY 
-      CASE id 
-        WHEN 'content_researcher' THEN 1
-        WHEN 'website_guardian' THEN 2
-        WHEN 'seo_growth' THEN 3
-        WHEN 'lead_scout' THEN 4
-        ELSE 5
+      CASE ca.id 
+        WHEN 'alex_vance' THEN 1
+        WHEN 'content_researcher' THEN 2
+        WHEN 'website_guardian' THEN 3
+        WHEN 'seo_growth' THEN 4
+        WHEN 'lead_scout' THEN 5
+        WHEN 'inbound_responder' THEN 6
+        ELSE 7
       END ASC;
   `);
   return rows || [];
 }
 
 export async function getAgentById(id: string): Promise<ChiefAgent | null> {
-  const rows = await query<ChiefAgent>(
-    `SELECT * FROM chief_agents WHERE id = $1 LIMIT 1;`,
-    [id]
-  );
+  const rows = await query<ChiefAgent>(`
+    SELECT 
+      ca.*,
+      COALESCE(ce.id, ca.id) AS employee_id,
+      COALESCE(ce.name, ca.name) AS humanoid_name,
+      COALESCE(ce.display_title, ca.name) AS display_title,
+      COALESCE(ce.department, 'Operations') AS department,
+      COALESCE(ce.avatar_url, '/assets/avatars/alex-vance.webp') AS avatar_url,
+      ce.bio,
+      ce.personality_archetype,
+      COALESCE(ce.status, 'idle') AS live_status,
+      ce.current_activity
+    FROM chief_agents ca
+    LEFT JOIN company_employees ce ON ce.legacy_agent_id = ca.id OR ce.id = ca.id
+    WHERE ca.id = $1 OR ce.id = $1
+    LIMIT 1;
+  `, [id]);
   return rows[0] || null;
 }
 
