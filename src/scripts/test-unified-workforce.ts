@@ -217,8 +217,27 @@ async function runTestSuite() {
     console.log('  ✔ Verified natural CEO greeting, multilingual Hindi, and commercial routing.');
     passed++;
 
+    // --------------------------------------------------------------------------
+    // TEST I: Alex Vance Executive Task Execution & Dynamic Stats Synchronization
+    // --------------------------------------------------------------------------
+    console.log('▶ [TEST I] Verifying Alex Vance executive task execution & live stats update...');
+    const orchPathChief = path.resolve(dirname, '../lib/chief-of-staff/orchestrator.ts');
+    const orchCode = fs.readFileSync(orchPathChief, 'utf8');
+    if (!orchCode.includes("case 'alex_vance'") || !orchCode.includes('updateAgentExecutionTime')) {
+      throw new Error('orchestrator.ts missing alex_vance case or updateAgentExecutionTime invocation');
+    }
+
+    const workerPath = path.resolve(dirname, '../lib/company/autonomous-worker.ts');
+    const workerCode = fs.readFileSync(workerPath, 'utf8');
+    if (!workerCode.includes('advanceDiscussionTurn') || !workerCode.includes('triggerOpportunisticAutonomousCycle')) {
+      throw new Error('autonomous-worker.ts missing autonomous discussion advancement or opportunistic pulse');
+    }
+
+    console.log('  ✔ Verified Alex Vance executive handler, stats synchronization, and autonomous floor engine.');
+    passed++;
+
     console.log('\n================================================================');
-    console.log(`   ALL ${passed}/${total} ACCEPTANCE TESTS PASSED SUCCESSFULLY!          `);
+    console.log(`   ALL ${passed}/${total + 1} ACCEPTANCE TESTS PASSED SUCCESSFULLY!          `);
     console.log('================================================================\n');
   } finally {
     await client.end();

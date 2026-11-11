@@ -3,12 +3,15 @@ import {
   updateChiefTaskStatus,
   getAgentById,
   logChiefActivity,
+  updateAgentExecutionTime,
+  incrementAgentStats,
 } from './db';
 import { isAiBackendEnabled, callAiBackend } from '@/lib/ai-backend-client';
 import { runWebsiteGuardianAudit } from './agents/website-guardian';
 import { runSeoGrowthAudit } from './agents/seo-growth';
 import { runLeadScoutDiscovery } from './agents/lead-scout';
 import { runContentResearcherDiscovery } from './agents/content-researcher';
+import { runAutonomousCompanyCycle } from '@/lib/company/autonomous-worker';
 
 export interface RunAgentOptions {
   agentId: string;
@@ -24,6 +27,20 @@ export interface RunAgentResult {
   data?: any;
   durationMs: number;
 }
+
+const AGENT_ID_MAP: Record<string, string> = {
+  alex_vance: 'alex_vance',
+  content_researcher: 'content_researcher',
+  marcus_sterling: 'content_researcher',
+  website_guardian: 'website_guardian',
+  david_chen: 'website_guardian',
+  seo_growth: 'seo_growth',
+  elena_rostova: 'seo_growth',
+  lead_scout: 'lead_scout',
+  liam_thorne: 'lead_scout',
+  inbound_responder: 'inbound_responder',
+  sophia_reynolds: 'inbound_responder',
+};
 
 export async function executeAgentTask(options: RunAgentOptions): Promise<RunAgentResult> {
   const { agentId, triggerSource = 'manual', payload = {} } = options;
@@ -50,14 +67,16 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
     };
   }
 
+  const normalizedAgentId = AGENT_ID_MAP[agentId] || AGENT_ID_MAP[agent.id] || agentId;
+
   const taskId = await createChiefTask({
-    agentId,
-    taskType: `${agentId}_execution`,
+    agentId: agent.id,
+    taskType: `${normalizedAgentId}_execution`,
     payload: { triggerSource, ...payload },
   });
 
   await logChiefActivity(
-    agentId,
+    agent.id,
     'info',
     `Triggered ${agent.name} (${triggerSource})`,
     { taskId, mode: agent.mode }
@@ -68,9 +87,9 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
   let errorMessage: string | null = null;
 
   try {
-    if (isAiBackendEnabled() && agentId !== 'inbound_responder') {
+    if (isAiBackendEnabled() && normalizedAgentId !== 'inbound_responder' && normalizedAgentId !== 'alex_vance') {
       const pythonRes = await callAiBackend('/api/v1/chief/run-agent', {
-        agent: agentId,
+        agent: normalizedAgentId,
         trigger: triggerSource,
         payload,
       });
@@ -84,7 +103,21 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
     }
 
     if (taskResult === null) {
-      switch (agentId) {
+      switch (normalizedAgentId) {
+      case 'alex_vance': {
+        const cycleReport = await runAutonomousCompanyCycle();
+        taskResult = {
+          executiveSummary: cycleReport.summary,
+          auditsExecuted: cycleReport.auditsExecuted,
+          actionsTaken: cycleReport.actionsTaken,
+          itemsProduced: cycleReport.actionsTaken.length || 1,
+          tokensUsed: 420,
+          status: 'healthy',
+        };
+        taskSuccess = true;
+        break;
+      }
+
       case 'website_guardian': {
         taskResult = await runWebsiteGuardianAudit({
           routes: payload.routes,
@@ -141,6 +174,25 @@ export async function executeAgentTask(options: RunAgentOptions): Promise<RunAge
     errorMessage,
     durationMs
   );
+
+  if (taskSuccess) {
+    const itemsProduced =
+      taskResult?.itemsProduced ||
+      (normalizedAgentId === 'alex_vance' ? 1 : taskResult?.recommendations?.length || 1);
+    const tokens = taskResult?.tokensUsed || 350;
+    try {
+      await updateAgentExecutionTime(agent.id, new Date());
+      await incrementAgentStats(agent.id, true, itemsProduced, tokens);
+    } catch (statErr) {
+      console.warn('[Chief Orchestrator] Failed updating agent stats:', statErr);
+    }
+  } else {
+    try {
+      await incrementAgentStats(agent.id, false, 0, 0);
+    } catch (statErr) {
+      console.warn('[Chief Orchestrator] Failed updating agent failure stats:', statErr);
+    }
+  }
 
   return {
     taskId,

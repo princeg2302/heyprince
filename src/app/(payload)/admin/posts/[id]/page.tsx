@@ -40,6 +40,10 @@ export default async function ViewPostPage({
   const post = await getPostById(numId);
   if (!post) notFound();
 
+  // Clean serialization to ensure no Date instances cause React 19 Client Component serialization errors (#441)
+  const plainPost = JSON.parse(JSON.stringify(post));
+  const plainUser = user ? JSON.parse(JSON.stringify(user)) : undefined;
+
   const formattedDate = post.published_at
     ? new Date(post.published_at).toLocaleDateString('en-US', {
         month: 'long',
@@ -57,7 +61,7 @@ export default async function ViewPostPage({
   const coverImageUrl = post.cover_image || '/assets/blog/photo1.webp';
 
   return (
-    <AdminLayout user={user}>
+    <AdminLayout user={plainUser}>
       {/* Top Action Bar */}
       <div className="hpa-page-title-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: '1 1 320px' }}>
@@ -91,7 +95,7 @@ export default async function ViewPostPage({
             <span>View on Live Site</span>
             <ExternalLink size={14} />
           </a>
-          <LinkedInPostDetailButton post={post} />
+          <LinkedInPostDetailButton post={plainPost} />
           <Link href={`/admin/posts/${post.id}/edit`} className="hpa-btn hpa-btn-primary">
             <Edit2 size={15} />
             <span>Edit Article</span>
