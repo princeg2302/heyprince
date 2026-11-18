@@ -13,21 +13,39 @@ export interface TwitterConfig {
   isConfigured: boolean;
 }
 
-export function getTwitterConfig(): TwitterConfig {
-  const apiKey = process.env.TWITTER_API_KEY?.trim() || '';
-  const apiSecret = process.env.TWITTER_API_SECRET?.trim() || '';
-  const accessToken = process.env.TWITTER_ACCESS_TOKEN?.trim() || '';
-  const accessSecret = process.env.TWITTER_ACCESS_SECRET?.trim() || '';
-  const bearerToken = process.env.TWITTER_BEARER_TOKEN?.trim() || undefined;
+function cleanEnv(val?: string): string {
+  if (!val) return '';
+  let str = val.trim();
+  if (
+    (str.startsWith('"') && str.endsWith('"')) ||
+    (str.startsWith("'") && str.endsWith("'"))
+  ) {
+    str = str.slice(1, -1).trim();
+  }
+  return str;
+}
 
-  const isConfigured = Boolean(apiKey && apiSecret && accessToken && accessSecret);
+export function getTwitterConfig(): TwitterConfig {
+  const apiKey = cleanEnv(process.env.TWITTER_API_KEY || process.env.TWITTER_CONSUMER_KEY);
+  const apiSecret = cleanEnv(process.env.TWITTER_API_SECRET || process.env.TWITTER_CONSUMER_SECRET);
+  const accessToken = cleanEnv(process.env.TWITTER_ACCESS_TOKEN || process.env.TWITTER_OAUTH_TOKEN);
+  const accessSecret = cleanEnv(
+    process.env.TWITTER_ACCESS_SECRET ||
+      process.env.TWITTER_TOKEN_SECRET ||
+      process.env.TWITTER_ACCESS_TOKEN_SECRET
+  );
+  const bearerToken = cleanEnv(process.env.TWITTER_BEARER_TOKEN);
+
+  const isConfigured = Boolean(
+    (apiKey && apiSecret && accessToken && accessSecret) || bearerToken || accessToken
+  );
 
   return {
     apiKey,
     apiSecret,
     accessToken,
     accessSecret,
-    bearerToken,
+    bearerToken: bearerToken || undefined,
     isConfigured,
   };
 }
@@ -181,10 +199,16 @@ export async function publishToTwitter(params: SocialPublishParams): Promise<Soc
 
   try {
     const tweetUrl = 'https://api.x.com/2/tweets';
-    const authHeader = generateOAuth1Header('POST', tweetUrl, config);
+    let authHeader = '';
+
+    if (config.apiKey && config.apiSecret && config.accessToken && config.accessSecret) {
+      authHeader = generateOAuth1Header('POST', tweetUrl, config);
+    } else if (config.bearerToken || config.accessToken) {
+      authHeader = `Bearer ${config.bearerToken || config.accessToken}`;
+    }
 
     console.log('[Twitter Publisher] Dispatching tweet to api.x.com/2/tweets...');
-    const res = await fetch(tweetUrl, {
+    let res = await fetch(tweetUrl, {
       method: 'POST',
       headers: {
         Authorization: authHeader,
@@ -193,12 +217,38 @@ export async function publishToTwitter(params: SocialPublishParams): Promise<Soc
       body: JSON.stringify({ text: tweetText }),
     });
 
-    const data = await res.json().catch(() => ({}));
-    console.log('[Twitter Publisher] API response status:', res.status, JSON.stringify(data));
+    let data = await res.json().catch(() => ({}));
+    let wwwAuth = res.headers.get('www-authenticate') || '';
+    console.log('[Twitter Publisher] Attempt 1 status:', res.status, 'auth:', wwwAuth, JSON.stringify(data));
+
+    // If OAuth 1.0 returned 401 Unauthorized, attempt fallback with Bearer token
+    if (res.status === 401 && (config.bearerToken || config.accessToken)) {
+      const fallbackToken = config.bearerToken || config.accessToken;
+      console.log('[Twitter Publisher] Retrying with Bearer token...');
+      const retryRes = await fetch(tweetUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${fallbackToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: tweetText }),
+      });
+
+      const retryData = await retryRes.json().catch(() => ({}));
+      if (retryRes.ok && retryData.data?.id) {
+        res = retryRes;
+        data = retryData;
+        console.log('[Twitter Publisher] Bearer token retry succeeded!');
+      } else {
+        wwwAuth = retryRes.headers.get('www-authenticate') || wwwAuth;
+        console.log('[Twitter Publisher] Bearer token retry status:', retryRes.status, JSON.stringify(retryData));
+      }
+    }
 
     if (!res.ok || !data.data?.id) {
       const errorMsg =
         data.errors?.[0]?.message ||
+        (wwwAuth ? `Twitter auth error: ${wwwAuth}` : '') ||
         data.detail ||
         data.title ||
         `Twitter publish failed (HTTP ${res.status})`;
@@ -209,7 +259,7 @@ export async function publishToTwitter(params: SocialPublishParams): Promise<Soc
         contentText: tweetText,
         articleUrl,
         imageUrl,
-        apiResponse: data,
+        apiResponse: { ...data, wwwAuthenticate: wwwAuth, httpStatus: res.status },
         errorMessage: errorMsg,
       });
 
@@ -217,7 +267,7 @@ export async function publishToTwitter(params: SocialPublishParams): Promise<Soc
         success: false,
         platform: 'twitter',
         error: errorMsg,
-        details: data,
+        details: { ...data, wwwAuthenticate: wwwAuth, httpStatus: res.status },
       };
     }
 
