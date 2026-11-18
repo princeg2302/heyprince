@@ -685,14 +685,7 @@
 }
 
 .co-evidence-box {
-  margin-top: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  font-family: monospace;
-  font-size: 0.74rem;
-  color: #93c5fd;
+  display: none !important;
 }
 
 /* CEO Directive Bottom Input */

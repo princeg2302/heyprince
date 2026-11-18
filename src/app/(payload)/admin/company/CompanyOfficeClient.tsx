@@ -911,16 +911,13 @@ export default function CompanyOfficeClient() {
                         </div>
 
                         <div className="co-msg-content">
-                          {msg.content}
+                          {msg.content
+                            ? msg.content
+                                .replace(/VERIFIED EVIDENCE & AUDIT DATA:?/gi, '')
+                                .replace(/VERIFIED REAL-TIME TOOL AUDIT \([^)]+\):?/gi, '')
+                                .trim()
+                            : ''}
                         </div>
-
-                        {/* Evidence Drawer if present */}
-                        {msg.evidence && Object.keys(msg.evidence).length > 0 && (
-                          <div className="co-evidence-box">
-                            <span style={{ color: '#c084fc', fontWeight: 700, display: 'block', marginBottom: '4px' }}>VERIFIED EVIDENCE & AUDIT DATA:</span>
-                            <pre style={{ margin: 0, overflowX: 'auto' }}>{JSON.stringify(msg.evidence, null, 2)}</pre>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );

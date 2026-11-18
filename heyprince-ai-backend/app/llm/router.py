@@ -15,6 +15,37 @@ from app.llm.telemetry import telemetry_tracker, TelemetryEvent
 
 logger = logging.getLogger(__name__)
 
+# Task-based model profiles organized by quota limits and task requirements
+TASK_MODEL_MAPPING: Dict[str, List[str]] = {
+    "high_reasoning": [
+        "gemini-3.8-flash",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-pro",
+        "gemini-3.5-flash-lite",
+    ],
+    "balanced": [
+        "gemini-3.8-flash",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+    ],
+    "high_volume_chat": [
+        # 500 RPD models first to protect standard 20 RPD limits during high-frequency chat
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash-lite",
+        "gemini-3.8-flash",
+    ],
+    "memory_learning": [
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.0-flash-lite",
+    ],
+}
+
 class LLMRouter:
     def __init__(self):
         self.telemetry = telemetry_tracker
@@ -22,7 +53,6 @@ class LLMRouter:
     def _extract_json_payload(self, text: str) -> Optional[Any]:
         """Extracts and validates JSON from raw text or markdown code fences."""
         cleaned = text.strip()
-        # Remove markdown code fences if present
         fenced_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned)
         if fenced_match:
             cleaned = fenced_match.group(1).strip()
@@ -115,20 +145,30 @@ class LLMRouter:
         system: Optional[str] = None,
         preferred_provider: Optional[str] = None,
         model: Optional[str] = None,
+        task_type: str = "balanced",
         temperature: float = 0.7,
         format_json: bool = False,
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Centrally routes inference across configured AI providers in strict priority:
+        Centrally routes inference across configured AI providers with dynamic task-based model selection:
           0. Local PC Ollama (if online and explicitly requested or available)
-          1. Gemini Primary (GEMINI_API_KEY_1 or GEMINI_API_KEY)
-          2. Gemini Backup (GEMINI_API_KEY_2)
+          1. Gemini Primary (GEMINI_API_KEY_1 or GEMINI_API_KEY) with model auto-shifting
+          2. Gemini Backup (GEMINI_API_KEY_2) with model auto-shifting
           3. OpenAI Fallback (OPENAI_API_KEY)
         Applies automated no-em-dash rule, structured output consistency, and telemetry tracking.
         """
         effective_system = f"{system}\n\n{NO_EM_DASH_INSTRUCTION}" if system else NO_EM_DASH_INSTRUCTION
         provider_errors: List[str] = []
+
+        # Determine task-appropriate candidate Gemini models
+        base_models = TASK_MODEL_MAPPING.get(task_type, TASK_MODEL_MAPPING["balanced"])
+        candidate_models: List[str] = []
+        if model:
+            candidate_models.append(model)
+        for m in base_models:
+            if m not in candidate_models:
+                candidate_models.append(m)
 
         # ----------------------------------------------------------------------
         # PRIORITY 0: Local PC Ollama (Optional GPU acceleration)
@@ -157,50 +197,54 @@ class LLMRouter:
         # PRIORITY 1: Gemini Primary (GEMINI_API_KEY_1 or GEMINI_API_KEY)
         # ----------------------------------------------------------------------
         primary_key = settings.get_gemini_primary_key()
-        gemini_model = model or settings.GEMINI_MODEL
         project_quota_exhausted = False
 
         if primary_key:
-            try:
-                logger.info(f"[LLMRouter] Priority 1: Dispatching to Gemini Primary ({gemini_model}).")
-                res = await self._execute_with_backoff(
-                    call_fn=lambda: gemini_client.generate(
-                        prompt=prompt,
-                        system=effective_system,
-                        model=gemini_model,
-                        api_key_override=primary_key,
-                        temperature=temperature,
-                        format_json=format_json,
-                        **kwargs
-                    ),
-                    provider_name="gemini_primary",
-                    model_name=gemini_model,
-                    max_retries=2
-                )
-                res["text"] = sanitize_em_dashes(res["text"])
-                if format_json:
-                    res["json"] = self._extract_json_payload(res["text"])
-                return res
+            # Try task-appropriate candidate models on Primary Key
+            for active_model in candidate_models:
+                try:
+                    logger.info(f"[LLMRouter] Priority 1: Dispatching to Gemini Primary ({active_model}).")
+                    res = await self._execute_with_backoff(
+                        call_fn=lambda m=active_model: gemini_client.generate(
+                            prompt=prompt,
+                            system=effective_system,
+                            model=m,
+                            api_key_override=primary_key,
+                            temperature=temperature,
+                            format_json=format_json,
+                            **kwargs
+                        ),
+                        provider_name="gemini_primary",
+                        model_name=active_model,
+                        max_retries=2
+                    )
+                    res["text"] = sanitize_em_dashes(res["text"])
+                    if format_json:
+                        res["json"] = self._extract_json_payload(res["text"])
+                    return res
 
-            except GeminiError as ge:
-                logger.warning(f"[LLMRouter] Gemini Primary encountered error: {ge}")
-                provider_errors.append(f"Gemini Primary: {ge}")
-                if ge.category == "project_quota_exhausted":
-                    project_quota_exhausted = True
-                elif ge.category == "invalid_request":
-                    # Client-side invalid format: do not retry other providers
-                    raise ValueError(f"Malformed request rejected by provider: {ge}")
-            except Exception as e:
-                logger.warning(f"[LLMRouter] Gemini Primary exception: {e}")
-                provider_errors.append(f"Gemini Primary: {e}")
+                except GeminiError as ge:
+                    logger.warning(f"[LLMRouter] Gemini Primary ({active_model}) error: {ge}")
+                    provider_errors.append(f"Gemini Primary ({active_model}): {ge}")
+                    if ge.category == "project_quota_exhausted":
+                        project_quota_exhausted = True
+                        break  # Project-level quota exhausted: no other model on this project will work
+                    elif ge.category == "invalid_request":
+                        raise ValueError(f"Malformed request rejected by provider: {ge}")
+                    elif ge.category == "quota_exhausted":
+                        # Per-model quota reached: advance to next candidate model in list
+                        continue
+                    else:
+                        break  # Auth or fatal error: advance to Backup Key
+                except Exception as e:
+                    logger.warning(f"[LLMRouter] Gemini Primary ({active_model}) exception: {e}")
+                    provider_errors.append(f"Gemini Primary: {e}")
+                    break
 
         # ----------------------------------------------------------------------
         # PRIORITY 2: Gemini Backup (GEMINI_API_KEY_2)
         # ----------------------------------------------------------------------
         backup_key = settings.get_gemini_backup_key()
-        # Important Gemini Project Quota Rule:
-        # If Gemini quotas were exhausted at the project level, or both keys share project ID,
-        # skip backup to avoid duplicate quota rejections and immediately advance to OpenAI.
         same_project = (
             settings.GEMINI_PROJECT_ID_1 and
             settings.GEMINI_PROJECT_ID_2 and
@@ -208,36 +252,41 @@ class LLMRouter:
         )
 
         if backup_key and not project_quota_exhausted and not (same_project and "quota" in str(provider_errors).lower()):
-            try:
-                backup_model = settings.GEMINI_FALLBACK_MODEL or gemini_model
-                logger.info(f"[LLMRouter] Priority 2: Dispatching to Gemini Backup ({backup_model}).")
-                res = await self._execute_with_backoff(
-                    call_fn=lambda: gemini_client.generate(
-                        prompt=prompt,
-                        system=effective_system,
-                        model=backup_model,
-                        api_key_override=backup_key,
-                        temperature=temperature,
-                        format_json=format_json,
-                        **kwargs
-                    ),
-                    provider_name="gemini_backup",
-                    model_name=backup_model,
-                    max_retries=2
-                )
-                res["text"] = sanitize_em_dashes(res["text"])
-                if format_json:
-                    res["json"] = self._extract_json_payload(res["text"])
-                return res
+            for active_model in candidate_models:
+                try:
+                    logger.info(f"[LLMRouter] Priority 2: Dispatching to Gemini Backup ({active_model}).")
+                    res = await self._execute_with_backoff(
+                        call_fn=lambda m=active_model: gemini_client.generate(
+                            prompt=prompt,
+                            system=effective_system,
+                            model=m,
+                            api_key_override=backup_key,
+                            temperature=temperature,
+                            format_json=format_json,
+                            **kwargs
+                        ),
+                        provider_name="gemini_backup",
+                        model_name=active_model,
+                        max_retries=2
+                    )
+                    res["text"] = sanitize_em_dashes(res["text"])
+                    if format_json:
+                        res["json"] = self._extract_json_payload(res["text"])
+                    return res
 
-            except GeminiError as ge:
-                logger.warning(f"[LLMRouter] Gemini Backup encountered error: {ge}")
-                provider_errors.append(f"Gemini Backup: {ge}")
-                if ge.category == "invalid_request":
-                    raise ValueError(f"Malformed request rejected by provider: {ge}")
-            except Exception as e:
-                logger.warning(f"[LLMRouter] Gemini Backup exception: {e}")
-                provider_errors.append(f"Gemini Backup: {e}")
+                except GeminiError as ge:
+                    logger.warning(f"[LLMRouter] Gemini Backup ({active_model}) error: {ge}")
+                    provider_errors.append(f"Gemini Backup ({active_model}): {ge}")
+                    if ge.category == "invalid_request":
+                        raise ValueError(f"Malformed request rejected by provider: {ge}")
+                    elif ge.category == "quota_exhausted":
+                        continue
+                    else:
+                        break
+                except Exception as e:
+                    logger.warning(f"[LLMRouter] Gemini Backup ({active_model}) exception: {e}")
+                    provider_errors.append(f"Gemini Backup: {e}")
+                    break
         elif project_quota_exhausted:
             logger.info("[LLMRouter] Skipping Gemini Backup because project-level quota was exhausted on Primary.")
 
@@ -246,7 +295,7 @@ class LLMRouter:
         # ----------------------------------------------------------------------
         if settings.OPENAI_API_KEY:
             try:
-                openai_model = settings.OPENAI_MODEL or "gpt-4o-mini"
+                openai_model = settings.OPENAI_MODEL or ("gpt-4o" if task_type == "high_reasoning" else "gpt-4o-mini")
                 logger.info(f"[LLMRouter] Priority 3: Dispatching to OpenAI Fallback ({openai_model}).")
                 res = await self._execute_with_backoff(
                     call_fn=lambda: openai_client.generate(
@@ -267,25 +316,12 @@ class LLMRouter:
                 return res
 
             except Exception as e:
-                logger.error(f"[LLMRouter] OpenAI Fallback encountered error: {e}")
+                logger.error(f"[LLMRouter] OpenAI Fallback failed: {e}")
                 provider_errors.append(f"OpenAI: {e}")
 
-        # If all providers failed or none configured
-        error_summary = " | ".join(provider_errors) if provider_errors else "No valid AI provider credentials configured."
-        raise RuntimeError(f"All configured AI providers failed. Summary: {error_summary}")
+        # If all providers failed or are unconfigured
+        error_summary = " | ".join(provider_errors) if provider_errors else "No valid API keys configured."
+        raise RuntimeError(f"All configured LLM providers failed. Summary: {error_summary}")
 
+# Singleton instance
 llm_router = LLMRouter()
-
-# Export alias function for agent compatibility
-async def route_llm_request(
-    user_prompt: str,
-    system_prompt: Optional[str] = None,
-    temperature: float = 0.7,
-    **kwargs
-) -> Dict[str, Any]:
-    return await llm_router.generate(
-        prompt=user_prompt,
-        system=system_prompt,
-        temperature=temperature,
-        **kwargs
-    )

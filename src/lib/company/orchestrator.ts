@@ -29,7 +29,7 @@ import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
 import { classifyAndRouteCeoMessage } from './ceo-router';
 import { executeRelevantAgentTool } from './tools';
-import { getRelevantCompanyMemories, recordCompanyMemory, formatMemoriesForPrompt } from './memory';
+import { getRelevantCompanyMemories, recordCompanyMemory, formatMemoriesForPrompt, extractAndRecordLearning } from './memory';
 
 const MODERATOR_ID = 'alex_vance';
 
@@ -184,6 +184,17 @@ export async function advanceDiscussionTurn(
 
   // Increment turn
   await updateDiscussionTurn(discussionId, 1, 65);
+
+  // Autonomous Employee Continuous Learning & Self-Growth
+  if (nextSpeakerId !== 'alex_vance' && nextSpeakerId !== 'prince_ceo' && cleanContent.length > 40) {
+    extractAndRecordLearning({
+      employeeId: nextSpeakerId,
+      department: speaker.department,
+      employeeName: speaker.name,
+      context: `${discussion.title}: ${discussion.objective}`,
+      outputProduced: cleanContent,
+    }).catch((err) => console.warn('[AutonomousLearning] Background turn capture skipped:', err));
+  }
 
   return {
     success: true,
@@ -530,6 +541,15 @@ export async function processCompanyTask(taskId: string): Promise<{
   } catch (memErr) {
     console.error('[processCompanyTask] Error recording task memory:', memErr);
   }
+
+  // Refine and record high-level strategic learning into employee long-term memory
+  extractAndRecordLearning({
+    employeeId: task.assigned_to,
+    department: agent?.department || 'Executive',
+    employeeName: agent?.name,
+    context: `Completed Task: ${task.title}. Instructions: ${task.description}`,
+    outputProduced: `${deliverable.summary}\n${deliverable.keyFindings.join('\n')}`,
+  }).catch((err) => console.warn('[AutonomousLearning] Task learning error:', err));
 
   // 8. Post live update notification to the Company Floor (company_hq)
   try {

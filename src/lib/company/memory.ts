@@ -1,4 +1,5 @@
 import { query } from '../outreach/db';
+import { executeAICompletion } from '../ai/model-router';
 
 export interface CompanyMemoryRecord {
   id: string;
@@ -98,3 +99,66 @@ export function formatMemoriesForPrompt(memories: CompanyMemoryRecord[]): string
     )
     .join('\n');
 }
+
+/**
+ * Autonomous Employee Learning Engine:
+ * Extracts tactical business lessons, technical patterns, market findings,
+ * or SEO insights from completed tasks and discussions, saving them to company_memory
+ * so employees continuously learn, retain facts, and grow smarter every day.
+ */
+export async function extractAndRecordLearning(params: {
+  employeeId: string;
+  department: string;
+  employeeName?: string;
+  context: string;
+  outputProduced: string;
+}): Promise<CompanyMemoryRecord | null> {
+  try {
+    const prompt = `Context of completed work:
+${params.context.slice(0, 800)}
+
+Work / Message Output by ${params.employeeName || params.employeeId}:
+${params.outputProduced.slice(0, 1000)}
+
+Task: Extract 1 clear, actionable business or engineering insight learned from this work.
+Return strictly valid JSON:
+{
+  "insight": "1 concise sentence stating the specific fact, metric, technical tactic, or customer insight learned (zero em-dashes)",
+  "category": "learning" | "market_intelligence" | "performance_benchmark" | "strategy",
+  "confidenceScore": 0.95
+}`;
+
+    const completion = await executeAICompletion({
+      taskType: 'memory_learning',
+      systemInstruction: 'You are an autonomous corporate knowledge compiler. Extract high-signal, factual learnings for employee memory banks. Strictly no em-dashes.',
+      userPrompt: prompt,
+      formatJson: true,
+      temperatureOverride: 0.2,
+      maxTokensOverride: 200,
+    });
+
+    if (completion.json?.insight && completion.json.insight.length > 10) {
+      const insight = completion.json.insight.trim();
+      const category = completion.json.category || 'learning';
+      const confidence = typeof completion.json.confidenceScore === 'number' ? completion.json.confidenceScore : 0.95;
+
+      return await recordCompanyMemory({
+        scope: 'employee',
+        department: params.department,
+        employeeId: params.employeeId,
+        category,
+        insight,
+        confidenceScore: confidence,
+        metadata: {
+          learnedAt: new Date().toISOString(),
+          provider: completion.provider,
+          model: completion.model,
+        },
+      });
+    }
+  } catch (err) {
+    console.warn('[AutonomousLearning] Failed to extract learning:', err);
+  }
+  return null;
+}
+

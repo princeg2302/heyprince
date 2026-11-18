@@ -1,4 +1,5 @@
 import { sanitizeEmDashes, NO_EM_DASH_INSTRUCTION } from '../ai-content-sanitizer';
+import { executeAICompletion } from '../ai/model-router';
 
 export interface LLMResponse {
   text: string;
@@ -8,194 +9,81 @@ export interface LLMResponse {
   completionTokens?: number;
 }
 
-export interface AIProviderConfig {
-  provider: 'gemini' | 'openai' | 'anthropic';
-  model: string;
-  apiKey?: string;
+export function isAIConfigured(): boolean {
+  const gemini1 = process.env.GEMINI_API_KEY_1?.trim();
+  const gemini2 = process.env.GEMINI_API_KEY_2?.trim();
+  const geminiLegacy = process.env.GEMINI_API_KEY?.trim();
+  const openai = process.env.OPENAI_API_KEY?.trim();
+
+  return Boolean(gemini1 || gemini2 || geminiLegacy || openai);
 }
 
-export function getAIProviderConfig(): AIProviderConfig {
-  const geminiKey = process.env.GEMINI_API_KEY?.trim();
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
-  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+export function getAIProviderConfig(): { provider: string; model: string } {
+  const hasGemini = Boolean(
+    process.env.GEMINI_API_KEY_1?.trim() ||
+    process.env.GEMINI_API_KEY_2?.trim() ||
+    process.env.GEMINI_API_KEY?.trim()
+  );
+  const hasOpenAi = Boolean(process.env.OPENAI_API_KEY?.trim());
 
-  if (geminiKey) {
+  if (hasGemini) {
     return {
-      provider: 'gemini',
-      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gemini-3.8-flash',
-      apiKey: geminiKey,
+      provider: 'gemini_multi_tier',
+      model: 'gemini-3.8-flash (with auto-shifting to 3.5-flash-lite & OpenAI)',
     };
   }
 
-  if (openaiKey) {
+  if (hasOpenAi) {
     return {
       provider: 'openai',
-      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'gpt-4o-mini',
-      apiKey: openaiKey,
-    };
-  }
-
-  if (anthropicKey) {
-    return {
-      provider: 'anthropic',
-      model: process.env.DAILY_NEWS_AI_MODEL?.trim() || 'claude-3-5-haiku-20241022',
-      apiKey: anthropicKey,
+      model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini',
     };
   }
 
   return {
-    provider: 'gemini',
-    model: 'gemini-3.8-flash',
-    apiKey: undefined,
+    provider: 'unconfigured',
+    model: 'none',
   };
 }
 
-export function isAIConfigured(): boolean {
-  const config = getAIProviderConfig();
-  return Boolean(config.apiKey);
-}
-
+/**
+ * Universal callAIModel for Daily AI News and Blog Generation.
+ * Powered by task-based multi-provider routing (Gemini Key 1 -> Gemini Key 2 -> OpenAI).
+ */
 export async function callAIModel(
   systemPrompt: string,
   userPrompt: string,
-  preferredModel?: string
+  _preferredModel?: string
 ): Promise<LLMResponse> {
-  const config = getAIProviderConfig();
-
-  if (!config.apiKey) {
+  if (!isAIConfigured()) {
     throw new Error(
-      'AI Provider API key is missing. Please configure GEMINI_API_KEY (recommended) or OPENAI_API_KEY in your Vercel / server environment variables.'
+      'No AI Provider configured. Please add GEMINI_API_KEY_1, GEMINI_API_KEY_2, or OPENAI_API_KEY in your environment variables.'
     );
-  }
-
-  let modelName = preferredModel || config.model;
-  if (modelName === 'gemini-2.5-flash' || !modelName) {
-    modelName = 'gemini-3.8-flash';
   }
 
   const effectiveSystemPrompt = systemPrompt
     ? `${systemPrompt}\n\n${NO_EM_DASH_INSTRUCTION}`
     : NO_EM_DASH_INSTRUCTION;
 
-  // 1. Google Gemini Provider
-  if (config.provider === 'gemini') {
-    const candidateModels = Array.from(
-      new Set([
-        modelName,
-        'gemini-3.5-flash',
-        'gemini-2.5-flash',
-        'gemini-3.8-flash',
-        'gemini-3.1-flash-lite',
-        'gemini-flash-latest',
-        'gemini-flash-lite-latest',
-        'gemini-3.5-flash-lite',
-      ])
+  const result = await executeAICompletion({
+    taskType: 'high_reasoning',
+    systemInstruction: effectiveSystemPrompt,
+    userPrompt,
+    formatJson: true,
+    maxTokensOverride: 8192,
+    temperatureOverride: 0.35,
+    timeoutMs: 25000,
+  });
+
+  if (!result.text) {
+    throw new Error(
+      'All AI providers (Gemini Primary, Gemini Backup, and OpenAI Fallback) exhausted or returned empty responses. Please verify your API quotas and network connectivity.'
     );
-
-    let lastError: Error | null = null;
-    let attemptIndex = 0;
-
-    for (const activeModel of candidateModels) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${config.apiKey}`;
-
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: `${effectiveSystemPrompt}\n\n${userPrompt}` }],
-              },
-            ],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.3,
-              maxOutputTokens: 8192,
-            },
-          }),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!res.ok) {
-          const errBody = await res.text();
-          if (res.status === 503 || res.status === 429 || res.status === 404) {
-            console.warn(`[Gemini] Model ${activeModel} returned HTTP ${res.status}, waiting before attempting fallback model...`);
-            lastError = new Error(`Google Gemini API error (HTTP ${res.status}): ${errBody}`);
-            attemptIndex++;
-            // Jittered backoff to clear demand spikes on upstream Google clusters
-            await new Promise((resolve) => setTimeout(resolve, Math.min(attemptIndex * 1500, 4000)));
-            continue;
-          }
-          throw new Error(`Google Gemini API error (HTTP ${res.status}): ${errBody}`);
-        }
-
-        const data = await res.json();
-        const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!candidateText) {
-          throw new Error('Gemini API returned an empty response candidate.');
-        }
-
-        return {
-          text: sanitizeEmDashes(candidateText),
-          provider: 'gemini',
-          model: activeModel,
-          promptTokens: data.usageMetadata?.promptTokenCount,
-          completionTokens: data.usageMetadata?.candidatesTokenCount,
-        };
-      } catch (callErr: any) {
-        lastError = callErr;
-        attemptIndex++;
-        console.warn(`[Gemini] Attempt with ${activeModel} failed: ${callErr?.message || callErr}`);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-
-    throw lastError || new Error('All Gemini candidate models failed to generate content.');
   }
 
-  // 2. OpenAI Provider
-  if (config.provider === 'openai') {
-    const url = 'https://api.openai.com/v1/chat/completions';
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: 'system', content: effectiveSystemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.3,
-      }),
-      signal: AbortSignal.timeout(35000),
-    });
-
-    if (!res.ok) {
-      const errBody = await res.text();
-      throw new Error(`OpenAI API error (HTTP ${res.status}): ${errBody}`);
-    }
-
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error('OpenAI API returned an empty message content.');
-    }
-
-    return {
-      text: sanitizeEmDashes(content),
-      provider: 'openai',
-      model: modelName,
-      promptTokens: data.usage?.prompt_tokens,
-      completionTokens: data.usage?.completion_tokens,
-    };
-  }
-
-  throw new Error(`Unsupported AI provider: ${config.provider}`);
+  return {
+    text: result.text,
+    provider: result.provider,
+    model: result.model,
+  };
 }

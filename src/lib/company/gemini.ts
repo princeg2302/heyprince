@@ -1,6 +1,7 @@
 import { sanitizeEmDashes, NO_EM_DASH_INSTRUCTION } from '../ai-content-sanitizer';
 import { CompanyEmployee } from './types';
 import { ToolExecutionResult } from './tools';
+import { executeAICompletion } from '../ai/model-router';
 
 export interface GenerateTurnParams {
   speaker: CompanyEmployee;
@@ -29,23 +30,6 @@ export async function generateAgentTurnResponse(params: {
   messageType: 'statement' | 'proposal' | 'challenge' | 'evidence' | 'consensus' | 'summary';
   evidence: Record<string, any>;
 }> {
-  const primaryGeminiKey = process.env.GEMINI_API_KEY_1?.trim() || process.env.GEMINI_API_KEY?.trim();
-  const backupGeminiKey = process.env.GEMINI_API_KEY_2?.trim();
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
-  const openaiModel = process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini';
-
-  const geminiKeysToTry = [primaryGeminiKey, backupGeminiKey].filter(
-    (k): k is string => Boolean(k && k.startsWith('AIzaSy'))
-  );
-
-  // Candidate models: verified live Gemini models
-  const candidateModels = [
-    'gemini-3.5-flash',
-    'gemini-3.8-flash',
-    'gemini-flash-latest',
-    'gemini-3.5-flash-lite',
-  ];
-
   const languageCapability =
     params.speaker.id === 'elena_rostova'
       ? 'Fluent in English and conversational Hindi/Hinglish for domestic SEO and Indian search intent.'
@@ -99,7 +83,8 @@ CRITICAL RULES:
 5. If citing data, NEVER invent fake statistics. Use the VERIFIED TOOL AUDIT if provided, or mark speculative estimates clearly with [ESTIMATE].
 6. Strictly NO em-dashes (—). Use hyphens, colons, commas, or parentheses.
 7. Keep your response concise (2-4 clear sentences), professional, and actionable.
-8. Return JSON format:
+8. FORMATTING MANDATE: Clean conversational dialogue only. Never write headers like "VERIFIED EVIDENCE & AUDIT DATA:" or raw JSON blocks into your statement text.
+9. Return JSON format:
 {
   "content": "Your statement",
   "messageType": "statement | proposal | challenge | evidence | consensus",
@@ -121,117 +106,35 @@ ${
     : `Respond in your professional role as ${params.speaker.name}. Address Prince or the previous speaker, reference factual capabilities or verified tools, and advance the objective.`
 }`;
 
-  // 1. Primary & Backup Gemini Execution
-  for (const activeGeminiKey of geminiKeysToTry) {
-    for (const model of candidateModels) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
+  // Execute through Universal Model Router using high_volume_chat profile (500 RPD models first)
+  const completion = await executeAICompletion({
+    taskType: 'high_volume_chat',
+    systemInstruction,
+    userPrompt,
+    formatJson: true,
+    maxTokensOverride: 500,
+    temperatureOverride: 0.35,
+  });
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeGeminiKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-            systemInstruction: { parts: [{ text: systemInstruction }] },
-            generationConfig: {
-              temperature: 0.35,
-              maxOutputTokens: 400,
-              responseMimeType: 'application/json',
-            },
-          }),
-        });
+  if (completion.json) {
+    const parsed = completion.json;
+    const cleanContent = sanitizeEmDashes(parsed.content || '');
+    if (cleanContent) {
+      const liveEvidence = params.toolResult
+        ? {
+            isLive: true,
+            tool: params.toolResult.toolName,
+            timestamp: params.toolResult.timestamp,
+            ...params.toolResult.data,
+            ...parsed.evidence,
+          }
+        : parsed.evidence || {};
 
-        clearTimeout(timeoutId);
-
-        if (!res.ok) {
-          // If quota hit (429), advance to next key/provider
-          continue;
-        }
-
-        const data = await res.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawText) continue;
-
-        const parsed = JSON.parse(rawText.trim());
-        const cleanContent = sanitizeEmDashes(parsed.content || '');
-
-        const liveEvidence = params.toolResult
-          ? {
-              isLive: true,
-              tool: params.toolResult.toolName,
-              timestamp: params.toolResult.timestamp,
-              ...params.toolResult.data,
-              ...parsed.evidence,
-            }
-          : parsed.evidence || {};
-
-        return {
-          content: cleanContent,
-          messageType: parsed.messageType || (params.isConcludingTurn ? 'consensus' : 'statement'),
-          evidence: liveEvidence,
-        };
-      } catch (err) {
-        // Continue to next model or key
-      }
-    }
-  }
-
-  // 2. OpenAI Fallback Execution
-  if (openaiKey) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${openaiKey}`,
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: openaiModel,
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: `${userPrompt}\n\nPlease output valid JSON.` },
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.35,
-          max_tokens: 450,
-        }),
-      });
-
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        const rawText = data?.choices?.[0]?.message?.content;
-        if (rawText) {
-          const parsed = JSON.parse(rawText.trim());
-          const cleanContent = sanitizeEmDashes(parsed.content || '');
-
-          const liveEvidence = params.toolResult
-            ? {
-                isLive: true,
-                tool: params.toolResult.toolName,
-                timestamp: params.toolResult.timestamp,
-                ...params.toolResult.data,
-                ...parsed.evidence,
-              }
-            : parsed.evidence || {};
-
-          return {
-            content: cleanContent,
-            messageType: parsed.messageType || (params.isConcludingTurn ? 'consensus' : 'statement'),
-            evidence: liveEvidence,
-          };
-        }
-      }
-    } catch (openAiErr) {
-      // Fall through to dynamic fallback
+      return {
+        content: cleanContent,
+        messageType: parsed.messageType || (params.isConcludingTurn ? 'consensus' : 'statement'),
+        evidence: liveEvidence,
+      };
     }
   }
 
@@ -525,21 +428,6 @@ export async function generateTaskExecutionDeliverable(params: {
   acceptanceCriteria: string[];
 }): Promise<TaskExecutionDeliverable> {
   const { agent, taskTitle, taskDescription, acceptanceCriteria } = params;
-  const primaryGeminiKey = process.env.GEMINI_API_KEY_1?.trim() || process.env.GEMINI_API_KEY?.trim();
-  const backupGeminiKey = process.env.GEMINI_API_KEY_2?.trim();
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
-  const openaiModel = process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini';
-
-  const geminiKeysToTry = [primaryGeminiKey, backupGeminiKey].filter(
-    (k): k is string => Boolean(k && k.startsWith('AIzaSy'))
-  );
-
-  const candidateModels = [
-    'gemini-3.5-flash',
-    'gemini-3.8-flash',
-    'gemini-flash-latest',
-    'gemini-3.5-flash-lite',
-  ];
 
   const systemInstruction = `You are ${agent.name}, ${agent.display_title} at HeyPrince (https://heyprince.in).
 DEPARTMENT: ${agent.department}
@@ -583,91 +471,23 @@ ${acceptanceCriteria.map((c) => `- ${c}`).join('\n')}
 
 Produce the complete professional deliverable now.`;
 
-  // 1. Primary & Backup Gemini Execution
-  for (const activeGeminiKey of geminiKeysToTry) {
-    for (const model of candidateModels) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const completion = await executeAICompletion({
+    taskType: 'balanced',
+    systemInstruction,
+    userPrompt,
+    formatJson: true,
+    maxTokensOverride: 1800,
+    temperatureOverride: 0.3,
+  });
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeGeminiKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-            systemInstruction: { parts: [{ text: systemInstruction }] },
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 1200,
-              responseMimeType: 'application/json',
-            },
-          }),
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!res.ok) continue;
-
-        const data = await res.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawText) continue;
-
-        const parsed = JSON.parse(rawText.trim());
-        return {
-          summary: sanitizeEmDashes(parsed.summary || `Deliverable completed for "${taskTitle}" by ${agent.name}.`),
-          details: sanitizeEmDashes(parsed.details || ''),
-          keyFindings: (parsed.keyFindings || []).map((k: string) => sanitizeEmDashes(k)),
-          metrics: parsed.metrics || {},
-        };
-      } catch (err) {
-        // Fallback to next model or key
-      }
-    }
-  }
-
-  // 2. OpenAI Fallback Execution
-  if (openaiKey) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${openaiKey}`,
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: openaiModel,
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: `${userPrompt}\n\nPlease output valid JSON.` },
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.3,
-          max_tokens: 1200,
-        }),
-      });
-
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        const rawText = data?.choices?.[0]?.message?.content;
-        if (rawText) {
-          const parsed = JSON.parse(rawText.trim());
-          return {
-            summary: sanitizeEmDashes(parsed.summary || `Deliverable completed for "${taskTitle}" by ${agent.name}.`),
-            details: sanitizeEmDashes(parsed.details || ''),
-            keyFindings: (parsed.keyFindings || []).map((k: string) => sanitizeEmDashes(k)),
-            metrics: parsed.metrics || {},
-          };
-        }
-      }
-    } catch {}
+  if (completion.json) {
+    const parsed = completion.json;
+    return {
+      summary: sanitizeEmDashes(parsed.summary || `Deliverable completed for "${taskTitle}" by ${agent.name}.`),
+      details: sanitizeEmDashes(parsed.details || ''),
+      keyFindings: (parsed.keyFindings || []).map((k: string) => sanitizeEmDashes(k)),
+      metrics: parsed.metrics || {},
+    };
   }
 
   // Dynamic fallback deliverable
