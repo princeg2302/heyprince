@@ -14,12 +14,13 @@ export interface ThreadsConfig {
 
 export function getThreadsConfig(): ThreadsConfig {
   const accessToken = process.env.THREADS_ACCESS_TOKEN?.trim() || '';
-  const userId = process.env.THREADS_USER_ID?.trim() || '';
+  const userId = process.env.THREADS_USER_ID?.trim() || 'me';
   const appId = process.env.THREADS_APP_ID?.trim() || undefined;
   const appSecret = process.env.THREADS_APP_SECRET?.trim() || undefined;
   const username = process.env.THREADS_USERNAME?.trim() || 'heyprincein';
 
-  const isConfigured = Boolean(accessToken && userId);
+  // Threads API can publish directly using 'me' with an authorized access token
+  const isConfigured = Boolean(accessToken);
 
   return {
     accessToken,
@@ -40,13 +41,14 @@ export function getThreadsConnectionStatus(): PlatformConfigStatus {
   const missingKeys: string[] = [];
 
   if (!config.accessToken) missingKeys.push('THREADS_ACCESS_TOKEN');
-  if (!config.userId) missingKeys.push('THREADS_USER_ID');
 
   return {
     platform: 'threads',
     name: 'Threads (Meta)',
     isConfigured: config.isConfigured,
-    accountIdentifier: config.userId ? `@${config.username} (${config.userId})` : undefined,
+    accountIdentifier: config.isConfigured
+      ? `@${config.username} (${config.userId})`
+      : undefined,
     missingKeys,
   };
 }
@@ -59,7 +61,7 @@ export async function publishToThreads(params: SocialPublishParams): Promise<Soc
   const config = getThreadsConfig();
 
   if (!config.isConfigured) {
-    const errorMsg = 'Threads is not configured. Missing THREADS_ACCESS_TOKEN or THREADS_USER_ID.';
+    const errorMsg = 'Threads is not configured. Missing THREADS_ACCESS_TOKEN in environment variables.';
     await recordSocialShare({
       postId: params.postId,
       platform: 'threads',
@@ -117,27 +119,67 @@ export async function publishToThreads(params: SocialPublishParams): Promise<Soc
     postText = `${postText.slice(0, 497)}...`;
   }
 
+  // 3. Resolve actual Threads User ID and username via Meta Graph API /me
+  let targetUserId = 'me';
+  let resolvedUsername = config.username || 'heyprincein';
+
   try {
-    // 3. Step 1: Create Media Container
-    const containerParams = new URLSearchParams({
-      access_token: config.accessToken,
-      text: postText,
-    });
+    const meRes = await fetch(
+      `https://graph.threads.net/v1.0/me?fields=id,username&access_token=${encodeURIComponent(config.accessToken)}`
+    );
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      if (meData.id) {
+        targetUserId = meData.id;
+      }
+      if (meData.username) {
+        resolvedUsername = meData.username;
+      }
+    } else {
+      // If /me returned an error, check if config.userId was provided and not 'me'
+      if (config.userId && config.userId !== 'me' && !config.userId.startsWith('1919')) {
+        targetUserId = config.userId;
+      }
+    }
+  } catch (meErr) {
+    console.warn('[Threads] Notice resolving /me profile:', meErr);
+    targetUserId = config.userId || 'me';
+  }
+
+  try {
+    // 4. Step 1: Create Media Container
+    // Use application/x-www-form-urlencoded body as specified in Meta Threads API documentation
+    const containerBody = new URLSearchParams();
+    containerBody.append('access_token', config.accessToken);
+    containerBody.append('text', postText);
 
     if (imageUrl && !imageUrl.endsWith('.svg')) {
-      containerParams.append('media_type', 'IMAGE');
-      containerParams.append('image_url', imageUrl);
+      containerBody.append('media_type', 'IMAGE');
+      containerBody.append('image_url', imageUrl);
     } else {
-      containerParams.append('media_type', 'TEXT');
+      containerBody.append('media_type', 'TEXT');
     }
 
-    const containerUrl = `https://graph.threads.net/v1.0/${config.userId}/threads?${containerParams.toString()}`;
-    const containerRes = await fetch(containerUrl, {
+    let containerUrl = `https://graph.threads.net/v1.0/${targetUserId}/threads`;
+    let containerRes = await fetch(containerUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: containerBody.toString(),
     });
 
-    const containerData = await containerRes.json();
+    let containerData = await containerRes.json();
+
+    // Fallback: If targetUserId failed with Object Not Found, retry using 'me'
+    if (!containerRes.ok && targetUserId !== 'me') {
+      containerUrl = 'https://graph.threads.net/v1.0/me/threads';
+      targetUserId = 'me';
+      containerRes = await fetch(containerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: containerBody.toString(),
+      });
+      containerData = await containerRes.json();
+    }
 
     if (!containerRes.ok || !containerData.id) {
       const errorMsg = containerData.error?.message || `Threads container creation failed (HTTP ${containerRes.status})`;
@@ -163,21 +205,32 @@ export async function publishToThreads(params: SocialPublishParams): Promise<Soc
     const creationId = containerData.id;
 
     // Small delay to ensure container processing on Meta servers
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // 4. Step 2: Publish Container
-    const publishParams = new URLSearchParams({
-      creation_id: creationId,
-      access_token: config.accessToken,
-    });
+    // 5. Step 2: Publish Container
+    const publishBody = new URLSearchParams();
+    publishBody.append('creation_id', creationId);
+    publishBody.append('access_token', config.accessToken);
 
-    const publishUrl = `https://graph.threads.net/v1.0/${config.userId}/threads_publish?${publishParams.toString()}`;
-    const publishRes = await fetch(publishUrl, {
+    let publishUrl = `https://graph.threads.net/v1.0/${targetUserId}/threads_publish`;
+    let publishRes = await fetch(publishUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: publishBody.toString(),
     });
 
-    const publishData = await publishRes.json();
+    let publishData = await publishRes.json();
+
+    // Fallback publish with 'me' if needed
+    if (!publishRes.ok && targetUserId !== 'me') {
+      publishUrl = 'https://graph.threads.net/v1.0/me/threads_publish';
+      publishRes = await fetch(publishUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: publishBody.toString(),
+      });
+      publishData = await publishRes.json();
+    }
 
     if (!publishRes.ok || !publishData.id) {
       const errorMsg = publishData.error?.message || `Threads publish failed (HTTP ${publishRes.status})`;
@@ -202,8 +255,8 @@ export async function publishToThreads(params: SocialPublishParams): Promise<Soc
     }
 
     const threadPostId = publishData.id;
-    const threadPostUrl = config.username
-      ? `https://www.threads.net/@${config.username}/post/${threadPostId}`
+    const threadPostUrl = resolvedUsername
+      ? `https://www.threads.net/@${resolvedUsername}/post/${threadPostId}`
       : `https://www.threads.net/t/${threadPostId}`;
 
     await recordSocialShare({
