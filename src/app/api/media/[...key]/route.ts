@@ -59,29 +59,5 @@ export async function GET(
     }
   }
 
-  // 2. Resilient Fallback: Supabase Storage "media" bucket
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (supabaseUrl) {
-    const filename = objectKey.split('/').pop() || objectKey;
-    const fallbackUrl = `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/media/${encodeURIComponent(filename)}`;
-    try {
-      const fallbackRes = await fetch(fallbackUrl);
-      if (fallbackRes.ok && fallbackRes.body) {
-        const contentType = fallbackRes.headers.get('content-type') || 'application/octet-stream';
-        const buffer = await fallbackRes.arrayBuffer();
-        return new NextResponse(new Uint8Array(buffer), {
-          status: 200,
-          headers: {
-            'Content-Type': contentType,
-            'Cache-Control': 'public, max-age=31536000, immutable',
-            'Access-Control-Allow-Origin': '*',
-          },
-        });
-      }
-    } catch (fbErr) {
-      console.warn(`[api/media] Supabase fallback error for filename "${filename}":`, fbErr);
-    }
-  }
-
   return new NextResponse('Asset not found', { status: 404 });
 }

@@ -1,6 +1,7 @@
 import { sanitizeAiContent } from '../ai-content-sanitizer';
 import { callAIModel } from './ai-provider';
-import { supabase, createMediaRecord } from '@/lib/admin-db';
+import { createMediaRecord } from '@/lib/admin-db';
+import { uploadToR2, isR2Configured, getR2PublicUrl } from '@/lib/storage/r2';
 import { query } from '@/lib/outreach/db';
 import { computeBufferHash, recordMediaContentHash } from '@/lib/deduplication';
 import { GeneratedArticleSection, GeneratedContentPayload } from './types';
@@ -202,31 +203,40 @@ export async function generateOfficeHumourMeme(): Promise<GeneratedMemePackage> 
   let mediaId: number | undefined;
 
   try {
-    // Upload to Supabase Storage in 'media' bucket
-    const { data: uploadData, error: uploadErr } = await supabase.storage
-      .from('media')
-      .upload(filename, svgBuffer, {
+    // 1. Upload to Cloudflare R2 object storage in 'blogs' folder
+    const r2Key = `blogs/${filename}`;
+    if (isR2Configured()) {
+      const r2Res = await uploadToR2({
+        key: r2Key,
+        body: svgBuffer,
         contentType: 'image/svg+xml',
-        upsert: true,
+        visibility: 'public',
+        metadata: {
+          category: 'meme-card',
+          theme: selectedTheme.theme,
+          contentHash,
+        },
       });
 
-    if (!uploadErr && uploadData) {
-      const { data: urlData } = supabase.storage.from('media').getPublicUrl(filename);
-      if (urlData?.publicUrl) {
-        imageUrl = urlData.publicUrl;
+      if (r2Res.success && r2Res.url) {
+        imageUrl = r2Res.url;
       }
     }
 
-    // Catalog in Supabase Media Vault
+    if (!imageUrl) {
+      imageUrl = getR2PublicUrl(r2Key);
+    }
+
+    // 2. Catalog in Media Vault
     const mediaRecord = await createMediaRecord({
       alt: `${selectedTheme.theme} - Indian Office Humour Card`,
       caption: `Relatable Tech Culture: ${selectedTheme.theme}`,
-      filename,
+      filename: r2Key,
       mime_type: 'image/svg+xml',
       filesize: svgBuffer.length,
       width: 1200,
       height: 675,
-      url: imageUrl || `procedural-meme://${slugify(selectedTheme.theme)}`,
+      url: imageUrl,
     });
 
     if (mediaRecord.success && mediaRecord.media) {
@@ -234,11 +244,11 @@ export async function generateOfficeHumourMeme(): Promise<GeneratedMemePackage> 
       await recordMediaContentHash(mediaId, contentHash, selectedTheme.theme);
     }
   } catch (storageErr) {
-    console.warn('[meme-generator] Storage or Media Vault upload notice:', storageErr);
+    console.warn('[meme-generator] Cloudflare R2 or Media Vault upload notice:', storageErr);
   }
 
   if (!imageUrl) {
-    imageUrl = `https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/${filename}`;
+    imageUrl = getR2PublicUrl(`blogs/${filename}`);
   }
 
   // 3. Ask AI to write the witty humanized breakdown & LinkedIn caption

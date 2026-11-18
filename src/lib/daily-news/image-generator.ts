@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { supabase, createMediaRecord } from '@/lib/admin-db';
+import { createMediaRecord } from '@/lib/admin-db';
 import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { query } from '@/lib/outreach/db';
 import { GeneratedArticleSection } from './types';
@@ -518,30 +518,7 @@ async function uploadAndRecordMedia(
     }
   }
 
-  // 2. Secondary fallback: Supabase Storage ('media' bucket) if R2 was not used
-  if (publicUrl === fallbackExternalUrl) {
-    try {
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from('media')
-        .upload(filename, buffer, {
-          contentType,
-          upsert: true,
-        });
-
-      if (!uploadErr && uploadData) {
-        const { data: urlData } = supabase.storage.from('media').getPublicUrl(filename);
-        if (urlData?.publicUrl) {
-          publicUrl = urlData.publicUrl;
-        }
-      } else if (uploadErr) {
-        console.warn('[image-generator] Supabase storage upload warning:', uploadErr);
-      }
-    } catch (storageErr) {
-      console.warn('[image-generator] Supabase storage exception:', storageErr);
-    }
-  }
-
-  // 3. Insert into Supabase 'media' table for Media Vault cataloging
+  // 2. Insert into PostgreSQL 'media' table for Media Vault cataloging
   let mediaId: number | undefined;
   try {
     const mediaRecordRes = await createMediaRecord({

@@ -2284,7 +2284,7 @@ export default function NewsAutomationClient() {
                   Renders a crisp 1200x675 SVG graphic meme card with punchy typography and modern gradient palette.
                 </li>
                 <li style={{ marginBottom: '4px' }}>
-                  Uploads the SVG to Supabase Storage (<code>media/memes/</code>) and catalogs it in your Media Vault.
+                  Uploads the SVG to Cloudflare R2 (<code>blogs/</code>) and catalogs it in your Media Vault.
                 </li>
                 <li style={{ marginBottom: '4px' }}>
                   Inserts a full post into your Posts CMS at <code>/insights/[slug]/</code> with a relatable humanized essay on corporate tech life.
@@ -2738,7 +2738,7 @@ export default function NewsAutomationClient() {
                     3. Visual Assets &amp; Media Vault Cataloging
                   </div>
                   <div style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', marginTop: '2px', lineHeight: 1.4 }}>
-                    Creates 1 cover image + 2 architectural diagrams, saving them into Supabase Storage and your Media Vault.
+                    Creates 1 cover image + 2 architectural diagrams, saving them into Cloudflare R2 and your Media Vault.
                   </div>
                 </div>
               </div>

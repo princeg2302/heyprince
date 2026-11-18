@@ -4,7 +4,7 @@
  * 
  * Features:
  * - High-speed in-memory & session caching to eliminate redundant network fetches.
- * - Handles relative URLs, absolute URLs, Supabase Storage URLs, and inline data:image/svg+xml URIs.
+ * - Handles relative URLs, absolute URLs, Cloudflare R2 URLs, and inline data:image/svg+xml URIs.
  * - Transfers id, class, style, dimensions, alt text, ARIA roles, and data-* attributes.
  * - Ensures responsive viewBox calculation and prevents layout shifts.
  * - Sanitizes SVG content by stripping scripts and inline event handlers (XSS safe).

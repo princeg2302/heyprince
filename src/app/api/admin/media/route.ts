@@ -35,57 +35,36 @@ export async function POST(request: NextRequest) {
       let storageEngine = 'supabase';
       let storedKey = safeFilename;
 
-      // 1. Primary: If Cloudflare R2 is configured, upload to R2
-      if (isR2Configured()) {
-        const r2Key = generateR2ObjectKey('media-vault', file.name);
-        const r2Res = await uploadToR2({
-          key: r2Key,
-          body: buffer,
-          contentType: file.type || 'image/jpeg',
-          visibility: 'public',
-          metadata: {
-            originalName: file.name,
-            uploader: user.email || 'admin',
-          },
-        });
-
-        if (r2Res.success) {
-          publicUrl = r2Res.url;
-          storageEngine = 'cloudflare-r2';
-          storedKey = r2Key;
-        }
+      // Cloudflare R2 Object Storage
+      if (!isR2Configured()) {
+        return NextResponse.json(
+          { error: 'Cloudflare R2 is not configured. Please check R2 environment variables.' },
+          { status: 500 }
+        );
       }
 
-      // 2. Secondary fallback: Supabase Storage "media" bucket
-      if (!publicUrl) {
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('media')
-          .upload(safeFilename, buffer, {
-            contentType: file.type || 'image/jpeg',
-            upsert: true,
-          });
+      const r2Key = generateR2ObjectKey('media-vault', file.name);
+      const r2Res = await uploadToR2({
+        key: r2Key,
+        body: buffer,
+        contentType: file.type || 'image/jpeg',
+        visibility: 'public',
+        metadata: {
+          originalName: file.name,
+          uploader: user.email || 'admin',
+        },
+      });
 
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabase.storage.from('media').getPublicUrl(safeFilename);
-          publicUrl = urlData.publicUrl;
-        } else {
-          // Local filesystem fallback for dev server if applicable
-          try {
-            const uploadDir = path.resolve(process.cwd(), 'public/media');
-            if (!fs.existsSync(uploadDir)) {
-              fs.mkdirSync(uploadDir, { recursive: true });
-            }
-            const filePath = path.join(uploadDir, safeFilename);
-            fs.writeFileSync(filePath, buffer);
-            publicUrl = `/media/${safeFilename}`;
-          } catch {
-            return NextResponse.json(
-              { error: uploadError?.message || 'Storage upload failed.' },
-              { status: 500 }
-            );
-          }
-        }
+      if (!r2Res.success) {
+        return NextResponse.json(
+          { error: r2Res.error || 'Failed to upload asset to Cloudflare R2.' },
+          { status: 500 }
+        );
       }
+
+      publicUrl = r2Res.url;
+      storageEngine = 'cloudflare-r2';
+      storedKey = r2Key;
 
       const result = await createMediaRecord({
         alt: alt || file.name,

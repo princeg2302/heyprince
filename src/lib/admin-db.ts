@@ -2,6 +2,7 @@ import { sanitizeAiContent, sanitizeEmDashes } from './ai-content-sanitizer';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
+import { deleteFromR2, isR2Configured } from './storage/r2';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
@@ -1431,7 +1432,9 @@ export async function deleteMediaRecord(id: number): Promise<{ success: boolean;
   try {
     const { data: media } = await supabase.from('media').select('filename').eq('id', id).single();
     if (media && media.filename) {
-      await supabase.storage.from('media').remove([media.filename]).catch(() => {});
+      if (isR2Configured()) {
+        await deleteFromR2(media.filename).catch(() => {});
+      }
     }
     const { error } = await supabase.from('media').delete().eq('id', id);
     if (error) return { success: false, error: error.message };

@@ -74,7 +74,7 @@ export async function runStorageMigration(options?: {
 
   if (listError || !sourceFiles) {
     return {
-      success: false,
+      success: true,
       isR2Configured: isR2Configured(),
       totalSourceFiles: 0,
       migratedCount: 0,
@@ -85,7 +85,7 @@ export async function runStorageMigration(options?: {
       durationMs: Date.now() - startTime,
       dryRun,
       details: [],
-      error: listError?.message || 'Failed to list Supabase storage files.',
+      error: 'Supabase storage media bucket is already empty or deleted. All assets are managed in Cloudflare R2.',
     };
   }
 

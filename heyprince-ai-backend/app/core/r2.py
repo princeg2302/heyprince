@@ -38,11 +38,10 @@ def get_r2_endpoint() -> str:
 
 def get_r2_public_base_url() -> str:
     """Returns the public base URL for accessing uploaded assets."""
-    if settings.R2_PUBLIC_BASE_URL and settings.R2_PUBLIC_BASE_URL.strip():
-        return settings.R2_PUBLIC_BASE_URL.rstrip('/')
-    bucket = settings.R2_BUCKET_NAME or ""
-    account_id = settings.R2_ACCOUNT_ID or ""
-    return f"https://{bucket}.{account_id}.r2.cloudflarestorage.com"
+    custom = (settings.R2_PUBLIC_BASE_URL or "").strip()
+    if custom and ".r2.cloudflarestorage.com" not in custom:
+        return custom.rstrip('/')
+    return "https://heyprince.in/api/media"
 
 def get_public_url(key: str) -> str:
     """Constructs the public URL for an object key."""
