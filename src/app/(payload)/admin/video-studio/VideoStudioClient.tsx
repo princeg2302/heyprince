@@ -231,70 +231,137 @@ export default function VideoStudioClient() {
   const activeStageIdx = activeJob ? getStageIndex(activeJob.status) : -1;
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-16">
+    <div className="hpa-content" style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md transition-all text-sm font-medium ${
-            toastMessage.type === 'success'
-              ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'
-              : toastMessage.type === 'error'
-              ? 'bg-rose-950/90 text-rose-300 border-rose-500/40'
-              : 'bg-zinc-900/90 text-zinc-200 border-zinc-700/60'
-          }`}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 18px',
+            borderRadius: '12px',
+            background:
+              toastMessage.type === 'success'
+                ? 'rgba(16, 185, 129, 0.95)'
+                : toastMessage.type === 'error'
+                ? 'rgba(239, 68, 68, 0.95)'
+                : 'rgba(30, 41, 59, 0.95)',
+            color: '#ffffff',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            backdropFilter: 'blur(10px)',
+          }}
         >
-          {toastMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-          {toastMessage.type === 'error' && <AlertTriangle className="w-4 h-4 text-rose-400" />}
-          {toastMessage.type === 'info' && <Sparkles className="w-4 h-4 text-blue-400" />}
+          {toastMessage.type === 'success' && <CheckCircle2 size={16} />}
+          {toastMessage.type === 'error' && <AlertTriangle size={16} />}
+          {toastMessage.type === 'info' && <Sparkles size={16} />}
           <span>{toastMessage.text}</span>
         </div>
       )}
 
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-zinc-900/95 via-zinc-950 to-black p-6 sm:p-8 shadow-xl">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-transparent blur-3xl pointer-events-none" />
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
-                <Video className="w-5 h-5" />
+      <div
+        className="hpa-card"
+        style={{
+          background: 'linear-gradient(135deg, rgba(20, 20, 35, 0.95) 0%, rgba(10, 10, 18, 0.98) 100%)',
+          border: '1px solid var(--hpa-border)',
+          borderRadius: '16px',
+          padding: '24px',
+          marginBottom: '24px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}
+        >
+          <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  color: '#38bdf8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Video size={20} />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
                 HeyPrince AI Video Studio
               </h1>
-              <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: '100px',
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  textTransform: 'uppercase',
+                }}
+              >
                 Veo & Remotion
               </span>
             </div>
-            <p className="text-sm text-zinc-400 max-w-2xl leading-relaxed">
+            <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--hpa-text-muted)', lineHeight: 1.5 }}>
               Autonomous cinematic video generation pipeline. Renders scenes with Google Veo and Remotion, synthesizes natural Hindi voiceover, synchronizes English subtitles, and strictly enforces Cloudflare R2 retention (maximum 5 published videos).
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={() => fetchData()}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium bg-zinc-900 border border-zinc-700/80 text-zinc-300 hover:text-white hover:bg-zinc-800 transition"
+              className="hpa-btn hpa-btn-secondary"
+              style={{ fontSize: '0.8rem', padding: '8px 14px' }}
               title="Refresh studio state"
             >
-              <RotateCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <RotateCw size={14} className={refreshing ? 'hpa-spin' : ''} />
               <span>Refresh</span>
             </button>
 
             <button
               onClick={() => setSettingsModalOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium bg-zinc-900 border border-zinc-700/80 text-zinc-300 hover:text-white hover:bg-zinc-800 transition"
+              className="hpa-btn hpa-btn-secondary"
+              style={{ fontSize: '0.8rem', padding: '8px 14px' }}
             >
-              <Settings className="w-3.5 h-3.5" />
+              <Settings size={14} />
               <span>Settings</span>
             </button>
 
             <button
               onClick={() => setNewJobModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/20 transition"
+              className="hpa-btn hpa-btn-primary"
+              style={{
+                fontSize: '0.82rem',
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
+                color: '#000000',
+                borderColor: '#38bdf8',
+                fontWeight: 700,
+              }}
             >
-              <Plus className="w-4 h-4" />
+              <Plus size={15} />
               <span>New Production Job</span>
             </button>
           </div>
@@ -302,144 +369,254 @@ export default function VideoStudioClient() {
       </div>
 
       {/* Cloudflare R2 Retention & Storage Dashboard Panel */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 backdrop-blur-sm shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <HardDrive className="w-4 h-4" />
+      <div
+        className="hpa-card"
+        style={{
+          background: 'var(--hpa-surface)',
+          border: '1px solid var(--hpa-border)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '24px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: '16px',
+            borderBottom: '1px solid var(--hpa-border)',
+            paddingBottom: '14px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(0, 245, 160, 0.12)',
+                border: '1px solid rgba(0, 245, 160, 0.3)',
+                color: '#00f5a0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <HardDrive size={16} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">
+              <h2 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                 Cloudflare R2 Retention & Storage Dashboard
               </h2>
-              <p className="text-xs text-zinc-400">
+              <p style={{ margin: '2px 0 0', fontSize: '0.76rem', color: 'var(--hpa-text-muted)' }}>
                 Retention policy: Maximum {storageSummary?.maxRetentionLimit || 5} published video asset collections preserved. Older media pruned safely upon 6th publication.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleEnforceRetention}
-              disabled={actionLoading}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-700 transition"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Enforce Retention Now</span>
-            </button>
-          </div>
+          <button
+            onClick={handleEnforceRetention}
+            disabled={actionLoading}
+            className="hpa-btn hpa-btn-secondary"
+            style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+          >
+            <Trash2 size={13} style={{ color: 'var(--hpa-text-dim)' }} />
+            <span>Enforce Retention Now</span>
+          </button>
         </div>
 
         {/* Storage Warning Banner */}
         {storageSummary?.hasStorageWarning && (
-          <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 text-xs">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              border: '1px solid rgba(251, 191, 36, 0.4)',
+              background: 'rgba(251, 191, 36, 0.1)',
+              color: '#fef08a',
+              fontSize: '0.8rem',
+              marginBottom: '16px',
+            }}
+          >
+            <AlertTriangle size={16} style={{ color: '#fbbf24', flexShrink: 0, marginTop: '2px' }} />
             <div>
-              <span className="font-semibold">Storage Alert:</span> {storageSummary.storageWarningMessage || 'Storage growth threshold reached.'}
+              <strong style={{ fontWeight: 700 }}>Storage Alert:</strong> {storageSummary.storageWarningMessage || 'Storage growth threshold reached.'}
             </div>
           </div>
         )}
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <div className="p-4 rounded-xl bg-black/40 border border-zinc-800/80">
-            <span className="text-xs text-zinc-400 font-medium">R2 Storage Used</span>
-            <div className="text-lg font-bold text-white mt-1">
+        {/* Metrics Grid (Fully Responsive on Mobile/Tablet) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '12px',
+          }}
+        >
+          <div style={{ background: 'var(--hpa-surface-2)', border: '1px solid var(--hpa-border)', borderRadius: '12px', padding: '14px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              R2 Storage Used
+            </span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '4px' }}>
               {storageSummary?.r2TotalFormatted || '0 B'}
             </div>
-            <span className="text-[11px] text-zinc-500">Video Studio bucket</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>Video Studio bucket</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black/40 border border-zinc-800/80">
-            <span className="text-xs text-zinc-400 font-medium">Retained Collections</span>
-            <div className="text-lg font-bold text-white mt-1">
+          <div style={{ background: 'var(--hpa-surface-2)', border: '1px solid var(--hpa-border)', borderRadius: '12px', padding: '14px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Retained Collections
+            </span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '4px' }}>
               {storageSummary?.retainedVideosCount || 0} / {storageSummary?.maxRetentionLimit || 5}
             </div>
-            <span className="text-[11px] text-zinc-500">Active R2 sets</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>Active R2 media sets</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black/40 border border-zinc-800/80">
-            <span className="text-xs text-zinc-400 font-medium">Estimated Per Video</span>
-            <div className="text-lg font-bold text-white mt-1">
+          <div style={{ background: 'var(--hpa-surface-2)', border: '1px solid var(--hpa-border)', borderRadius: '12px', padding: '14px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Est. Per Video
+            </span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginTop: '4px' }}>
               {storageSummary?.estimatedStoragePerVideoFormatted || '0 B'}
             </div>
-            <span className="text-[11px] text-zinc-500">Video, audio, subtitles</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>Video, audio, subtitles</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black/40 border border-zinc-800/80">
-            <span className="text-xs text-zinc-400 font-medium">Oldest Retained</span>
-            <div className="text-sm font-semibold text-zinc-200 mt-1 truncate" title={storageSummary?.oldestRetainedVideo?.title || 'None'}>
+          <div style={{ background: 'var(--hpa-surface-2)', border: '1px solid var(--hpa-border)', borderRadius: '12px', padding: '14px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Oldest Retained
+            </span>
+            <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--hpa-text)', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={storageSummary?.oldestRetainedVideo?.title || 'None'}>
               {storageSummary?.oldestRetainedVideo?.title || 'None'}
             </div>
-            <span className="text-[11px] text-zinc-500">
+            <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>
               {storageSummary?.oldestRetainedVideo?.publishedAt
                 ? new Date(storageSummary.oldestRetainedVideo.publishedAt).toLocaleDateString()
                 : 'N/A'}
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black/40 border border-zinc-800/80">
-            <span className="text-xs text-zinc-400 font-medium">Last Cleanup</span>
-            <div className="text-sm font-semibold text-zinc-200 mt-1">
+          <div style={{ background: 'var(--hpa-surface-2)', border: '1px solid var(--hpa-border)', borderRadius: '12px', padding: '14px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Last Cleanup
+            </span>
+            <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--hpa-text)', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {storageSummary?.lastCleanupExecution
                 ? storageSummary.lastCleanupExecution.prunedTitle || 'Completed'
                 : 'Never'}
             </div>
-            <span className="text-[11px] text-zinc-500">
+            <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>
               {storageSummary?.lastCleanupExecution
                 ? `${storageSummary.lastCleanupExecution.bytesFreedFormatted} freed`
                 : 'Awaiting 6th publish'}
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-black/40 border border-zinc-800/80">
-            <span className="text-xs text-zinc-400 font-medium">Failed Cleanups</span>
-            <div className={`text-lg font-bold mt-1 ${(storageSummary?.failedCleanupTasksCount || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+          <div style={{ background: 'var(--hpa-surface-2)', border: '1px solid var(--hpa-border)', borderRadius: '12px', padding: '14px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Failed Cleanups
+            </span>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '4px', color: (storageSummary?.failedCleanupTasksCount || 0) > 0 ? '#f43f5e' : '#00f5a0' }}>
               {storageSummary?.failedCleanupTasksCount || 0}
             </div>
-            <span className="text-[11px] text-zinc-500">Safe retry queue</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>Safe retry queue</span>
           </div>
         </div>
       </div>
 
       {/* Active Video Production Pipeline Card */}
       {activeJob && (
-        <div className="rounded-2xl border border-blue-500/30 bg-zinc-900/80 p-6 backdrop-blur-md shadow-xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
+        <div
+          className="hpa-card"
+          style={{
+            background: 'linear-gradient(135deg, rgba(16, 24, 48, 0.95) 0%, rgba(10, 15, 30, 0.98) 100%)',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '24px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              borderBottom: '1px solid var(--hpa-border)',
+              paddingBottom: '14px',
+              marginBottom: '16px',
+            }}
+          >
             <div>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 animate-pulse">
-                  <Film className="w-3.5 h-3.5" />
-                  <span>In Production</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '3px 10px',
+                    borderRadius: '100px',
+                    background: 'rgba(56, 189, 248, 0.2)',
+                    color: '#38bdf8',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  <Film size={12} />
+                  <span>IN PRODUCTION</span>
                 </span>
-                <span className="text-xs text-zinc-500 font-mono">Job ID: {activeJob.id.slice(0, 8)}...</span>
+                <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)', fontFamily: 'var(--hpa-font-mono)' }}>
+                  Job ID: {activeJob.id.slice(0, 14)}...
+                </span>
               </div>
-              <h2 className="text-xl font-bold text-white mt-1">
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                 {activeJob.title}
               </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Current Step: {activeJob.currentStep} • Voice: {activeJob.languageSettings.narration} • Subtitles: {activeJob.languageSettings.subtitles}
+              <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: 'var(--hpa-text-muted)' }}>
+                Current Step: {activeJob.currentStep} | Voice: {activeJob.languageSettings?.narration || 'hi-IN'} | Subtitles: {activeJob.languageSettings?.subtitles || 'en-US'}
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-zinc-400">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--hpa-text-muted)', fontFamily: 'var(--hpa-font-mono)' }}>
                 Stage {activeStageIdx + 1} of {PIPELINE_STAGES.length}
               </span>
-              <div className="w-32 h-2.5 rounded-full bg-zinc-800 overflow-hidden">
+              <div style={{ width: '100px', height: '8px', borderRadius: '100px', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                 <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
-                  style={{ width: `${activeJob.progressPercent || Math.round(((activeStageIdx + 1) / PIPELINE_STAGES.length) * 100)}%` }}
+                  style={{
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #38bdf8 0%, #8b5cf6 100%)',
+                    width: `${activeJob.progressPercent || Math.round(((activeStageIdx + 1) / PIPELINE_STAGES.length) * 100)}%`,
+                    transition: 'width 0.4s ease',
+                  }}
                 />
               </div>
-              <span className="text-xs font-bold text-blue-400 font-mono">
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--hpa-font-mono)' }}>
                 {activeJob.progressPercent || Math.round(((activeStageIdx + 1) / PIPELINE_STAGES.length) * 100)}%
               </span>
             </div>
           </div>
 
-          {/* 12-Stage Visual Stepper */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2">
+          {/* 12-Stage Visual Stepper (Responsive Grid) */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
+              gap: '8px',
+              marginBottom: '16px',
+            }}
+          >
             {PIPELINE_STAGES.map((stage, idx) => {
               const isCurrent = activeJob.status === stage.key;
               const isDone = activeStageIdx > idx || activeJob.status === 'published';
@@ -448,16 +625,30 @@ export default function VideoStudioClient() {
               return (
                 <div
                   key={stage.key}
-                  className={`p-2.5 rounded-xl border text-center transition flex flex-col items-center justify-center gap-1.5 ${
-                    isCurrent
-                      ? 'bg-blue-500/20 border-blue-500 text-blue-300 shadow-md shadow-blue-500/20 ring-1 ring-blue-500/50'
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '10px',
+                    border: isCurrent
+                      ? '1px solid #38bdf8'
                       : isDone
-                      ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
-                      : 'bg-zinc-950/40 border-zinc-800/80 text-zinc-500'
-                  }`}
+                      ? '1px solid rgba(0, 245, 160, 0.4)'
+                      : '1px solid var(--hpa-border)',
+                    background: isCurrent
+                      ? 'rgba(56, 189, 248, 0.18)'
+                      : isDone
+                      ? 'rgba(0, 245, 160, 0.08)'
+                      : 'var(--hpa-surface-2)',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    color: isCurrent ? '#38bdf8' : isDone ? '#00f5a0' : 'var(--hpa-text-dim)',
+                  }}
                 >
-                  <StageIcon className={`w-4 h-4 ${isCurrent ? 'animate-bounce text-blue-400' : ''}`} />
-                  <span className="text-[10px] font-semibold leading-tight line-clamp-1">
+                  <StageIcon size={14} className={isCurrent ? 'hpa-spin' : ''} />
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
                     {stage.label}
                   </span>
                 </div>
@@ -465,39 +656,61 @@ export default function VideoStudioClient() {
             })}
           </div>
 
-          {/* Active Job Scenes Preview */}
+          {/* Storyboard Scene Preview Grid */}
           {activeJob.storyboard && activeJob.storyboard.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-zinc-300">
+            <div style={{ marginTop: '16px', borderTop: '1px solid var(--hpa-border)', paddingTop: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--hpa-text)' }}>
                   Rendered Scenes ({activeJob.storyboard.length} total)
                 </span>
-                <span className="text-xs text-zinc-500">
+                <span style={{ fontSize: '0.74rem', color: 'var(--hpa-text-dim)' }}>
                   Total Duration: {activeJob.storyboard.reduce((acc: number, s: StoryboardScene) => acc + s.estimatedDurationSec, 0)}s
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '10px',
+                }}
+              >
                 {activeJob.storyboard.map((scene: StoryboardScene) => (
                   <div
                     key={`scene-${scene.sceneIndex}`}
-                    className="p-3 rounded-xl bg-zinc-950/70 border border-zinc-800/80 space-y-2 text-xs"
+                    style={{
+                      padding: '12px',
+                      borderRadius: '10px',
+                      background: 'var(--hpa-surface-2)',
+                      border: '1px solid var(--hpa-border)',
+                      fontSize: '0.78rem',
+                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-zinc-200">Scene {scene.sceneIndex + 1}: {scene.title}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                        {scene.visualType} • {scene.estimatedDurationSec}s
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontWeight: 700, color: '#ffffff' }}>Scene {scene.sceneIndex + 1}: {scene.title}</span>
+                      <span
+                        style={{
+                          fontSize: '0.66rem',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          background: 'rgba(56, 189, 248, 0.1)',
+                          color: '#38bdf8',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          fontFamily: 'var(--hpa-font-mono)',
+                        }}
+                      >
+                        {scene.visualType} | {scene.estimatedDurationSec}s
                       </span>
                     </div>
-                    <div className="text-zinc-400 line-clamp-2 italic">
-                      Narration (Hindi): &quot;{scene.narrationHindi}&quot;
+                    <div style={{ color: 'var(--hpa-text-muted)', marginBottom: '4px', fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      Hindi: &quot;{scene.narrationHindi}&quot;
                     </div>
-                    <div className="text-zinc-500 line-clamp-2">
-                      Subtitle (English): &quot;{scene.narrationEnglish}&quot;
+                    <div style={{ color: 'var(--hpa-text-dim)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      English: &quot;{scene.narrationEnglish}&quot;
                     </div>
                     {scene.renderedClipUrl && (
-                      <div className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono">
-                        <Check className="w-3 h-3" /> Scene clip rendered
+                      <div style={{ marginTop: '6px', color: '#00f5a0', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Check size={12} /> Scene clip rendered
                       </div>
                     )}
                   </div>
@@ -508,204 +721,283 @@ export default function VideoStudioClient() {
 
           {/* Quality Assurance Report Card */}
           {activeJob.qualityReport && (
-            <div className="p-4 rounded-xl bg-zinc-950/60 border border-zinc-800 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span className="font-semibold text-zinc-200">
-                    Mandatory 10-Point QA Checklist
-                  </span>
+            <div
+              style={{
+                marginTop: '14px',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'var(--hpa-surface-2)',
+                border: '1px solid var(--hpa-border)',
+                fontSize: '0.78rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ShieldCheck size={15} style={{ color: '#00f5a0' }} />
+                  <strong style={{ color: '#ffffff' }}>Mandatory 10-Point QA Checklist</strong>
                 </div>
-                <span className="font-mono font-bold text-emerald-400">
-                  Score: {activeJob.qualityReport.score}/100 • {activeJob.qualityReport.overallPassed ? 'PASSED' : 'FAILED'}
+                <span style={{ fontWeight: 800, color: activeJob.qualityReport.overallPassed ? '#00f5a0' : '#f43f5e' }}>
+                  Score: {activeJob.qualityReport.score}/100 ({activeJob.qualityReport.overallPassed ? 'PASSED' : 'FAILED'})
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: '6px',
+                }}
+              >
                 {Object.values(activeJob.qualityReport.checks).map((check: QualityCheckItem) => (
                   <div
                     key={check.id}
-                    className={`p-2 rounded-lg border text-[11px] flex items-center gap-1.5 ${
-                      check.passed
-                        ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-300'
-                        : 'bg-rose-950/20 border-rose-500/30 text-rose-300'
-                    }`}
+                    style={{
+                      padding: '6px 8px',
+                      borderRadius: '8px',
+                      border: check.passed ? '1px solid rgba(0, 245, 160, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)',
+                      background: check.passed ? 'rgba(0, 245, 160, 0.06)' : 'rgba(244, 63, 94, 0.08)',
+                      color: check.passed ? '#00f5a0' : '#f43f5e',
+                      fontSize: '0.72rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
                   >
-                    {check.passed ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0" />}
-                    <span className="truncate" title={check.name}>{check.name}</span>
+                    {check.passed ? <Check size={12} style={{ flexShrink: 0 }} /> : <X size={12} style={{ flexShrink: 0 }} />}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={check.name}>
+                      {check.name}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Error Message if Failed */}
+          {/* Failure Banner */}
           {activeJob.failureReason && (
-            <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: 'rgba(244, 63, 94, 0.1)',
+                border: '1px solid rgba(244, 63, 94, 0.3)',
+                color: '#fca5a5',
+                fontSize: '0.78rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px',
+              }}
+            >
+              <AlertTriangle size={15} style={{ color: '#f43f5e', flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <span className="font-bold">Execution Failed:</span> {activeJob.failureReason}
+                <strong style={{ fontWeight: 700 }}>Execution Failed:</strong> {activeJob.failureReason}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Recent Video Jobs Table */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-sm overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
-              <Film className="w-4 h-4" />
+      {/* Production History Table Card (Mobile & Tablet Responsive) */}
+      <div
+        className="hpa-card"
+        style={{
+          background: 'var(--hpa-surface)',
+          border: '1px solid var(--hpa-border)',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          marginBottom: '24px',
+        }}
+      >
+        <div className="hpa-card-header" style={{ padding: '16px 20px', borderBottom: '1px solid var(--hpa-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '8px',
+                background: 'rgba(56, 189, 248, 0.12)',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                color: '#38bdf8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Film size={15} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">Video Production History</h2>
-              <p className="text-xs text-zinc-400">
+              <h2 className="hpa-card-title" style={{ fontSize: '0.98rem', fontWeight: 700, margin: 0 }}>
+                Video Production History
+              </h2>
+              <p className="hpa-card-sub" style={{ fontSize: '0.76rem', margin: '2px 0 0' }}>
                 Persistent video production logs, R2 retention states, and YouTube URLs.
               </p>
             </div>
           </div>
-          <span className="text-xs text-zinc-500 font-mono">
+          <span style={{ fontSize: '0.76rem', color: 'var(--hpa-text-dim)', fontFamily: 'var(--hpa-font-mono)' }}>
             {jobs.length} total jobs
           </span>
         </div>
 
         {loading ? (
-          <div className="p-12 text-center text-zinc-500 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
-            <span className="text-xs">Loading Video Studio records...</span>
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--hpa-text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <Loader2 size={24} className="hpa-spin" style={{ color: '#38bdf8' }} />
+            <span style={{ fontSize: '0.82rem' }}>Loading Video Studio records...</span>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="p-12 text-center text-zinc-500 space-y-3">
-            <Video className="w-8 h-8 mx-auto text-zinc-600" />
-            <p className="text-sm">No video production jobs have been created yet.</p>
+          <div className="hpa-empty-state" style={{ padding: '40px 20px' }}>
+            <div className="hpa-empty-icon">
+              <Video size={24} />
+            </div>
+            <div className="hpa-empty-title">No video production jobs yet</div>
+            <p className="hpa-empty-sub">Trigger your first autonomous production job to begin creating cinematic videos.</p>
             <button
               onClick={() => setNewJobModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-500 transition"
+              className="hpa-btn hpa-btn-primary"
+              style={{ fontSize: '0.8rem', padding: '8px 16px' }}
             >
-              <Plus className="w-4 h-4" />
+              <Plus size={14} />
               <span>Create First Video Job</span>
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-black/40 text-zinc-400 font-semibold uppercase tracking-wider border-b border-zinc-800">
+          <div className="hpa-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+            <table className="hpa-table" style={{ width: '100%', minWidth: '700px' }}>
+              <thead>
                 <tr>
-                  <th className="px-6 py-3.5">Title & Topic</th>
-                  <th className="px-6 py-3.5">Status</th>
-                  <th className="px-6 py-3.5">Voice & Subtitles</th>
-                  <th className="px-6 py-3.5">Scenes</th>
-                  <th className="px-6 py-3.5">QA Score</th>
-                  <th className="px-6 py-3.5">R2 Retention</th>
-                  <th className="px-6 py-3.5">YouTube</th>
-                  <th className="px-6 py-3.5">Actions</th>
+                  <th>Title & ID</th>
+                  <th>Status</th>
+                  <th>Voice & Subtitles</th>
+                  <th>Scenes</th>
+                  <th>QA Score</th>
+                  <th>R2 Retention</th>
+                  <th>YouTube</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+              <tbody>
                 {jobs.map((job) => {
                   const isJobFailed = job.status === 'failed';
                   const isPublished = job.status === 'published';
                   const isPruned = !job.r2Retained && Boolean(job.r2DeletedAt);
 
                   return (
-                    <tr key={job.id} className="hover:bg-zinc-800/30 transition">
-                      <td className="px-6 py-4 max-w-xs">
-                        <div className="font-semibold text-white truncate" title={job.title}>
+                    <tr key={job.id}>
+                      <td style={{ maxWidth: '240px' }}>
+                        <div style={{ fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.title}>
                           {job.title}
                         </div>
-                        <div className="text-[11px] text-zinc-500 font-mono truncate" title={job.id}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)', fontFamily: 'var(--hpa-font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.id}>
                           {job.id}
                         </div>
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td>
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                            isPublished
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                          className="hpa-pill"
+                          style={{
+                            background: isPublished
+                              ? 'rgba(0, 245, 160, 0.12)'
                               : isJobFailed
-                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/30 animate-pulse'
-                          }`}
+                              ? 'rgba(244, 63, 94, 0.12)'
+                              : 'rgba(56, 189, 248, 0.12)',
+                            color: isPublished
+                              ? '#00f5a0'
+                              : isJobFailed
+                              ? '#f43f5e'
+                              : '#38bdf8',
+                            borderColor: isPublished
+                              ? 'rgba(0, 245, 160, 0.3)'
+                              : isJobFailed
+                              ? 'rgba(244, 63, 94, 0.3)'
+                              : 'rgba(56, 189, 248, 0.3)',
+                          }}
                         >
-                          {isPublished && <CheckCircle2 className="w-3 h-3" />}
-                          {isJobFailed && <AlertTriangle className="w-3 h-3" />}
-                          {!isPublished && !isJobFailed && <Clock className="w-3 h-3" />}
-                          <span className="capitalize">{job.status.replace(/_/g, ' ')}</span>
+                          {isPublished && <CheckCircle2 size={11} />}
+                          {isJobFailed && <AlertTriangle size={11} />}
+                          {!isPublished && !isJobFailed && <Clock size={11} />}
+                          <span style={{ textTransform: 'capitalize' }}>{job.status.replace(/_/g, ' ')}</span>
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-zinc-400">
-                        <div className="font-medium text-zinc-300">
-                          Narration: {job.languageSettings?.narration || 'hi-IN'}
-                        </div>
-                        <div className="text-[11px] text-zinc-500">
+                      <td style={{ color: 'var(--hpa-text-muted)', fontSize: '0.78rem' }}>
+                        <div>Narration: {job.languageSettings?.narration || 'hi-IN'}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)' }}>
                           Subtitles: {job.languageSettings?.subtitles || 'en-US'}
                         </div>
                       </td>
 
-                      <td className="px-6 py-4 font-mono text-zinc-400">
+                      <td style={{ fontFamily: 'var(--hpa-font-mono)', fontSize: '0.78rem' }}>
                         {job.storyboard?.length || 0} scenes
                       </td>
 
-                      <td className="px-6 py-4 font-mono">
+                      <td style={{ fontFamily: 'var(--hpa-font-mono)', fontSize: '0.78rem' }}>
                         {job.qualityReport?.score !== undefined ? (
-                          <span className={job.qualityReport.overallPassed ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                          <strong style={{ color: job.qualityReport.overallPassed ? '#00f5a0' : '#f43f5e' }}>
                             {job.qualityReport.score}/100
-                          </span>
+                          </strong>
                         ) : (
-                          <span className="text-zinc-500">Pending</span>
+                          <span style={{ color: 'var(--hpa-text-dim)' }}>Pending</span>
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td>
                         {isPruned ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-zinc-500 font-mono">
-                            <Trash2 className="w-3 h-3" /> Pruned (Archived)
+                          <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Trash2 size={11} /> Pruned (Archived)
                           </span>
                         ) : job.r2Retained && job.r2VideoKey ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono">
-                            <Check className="w-3 h-3" /> Active in R2
+                          <span style={{ color: '#00f5a0', fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Check size={11} /> Active in R2
                           </span>
                         ) : (
-                          <span className="text-[11px] text-zinc-600 font-mono">N/A</span>
+                          <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.72rem' }}>N/A</span>
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td>
                         {job.youtubeVideoId ? (
                           <a
                             href={job.youtubeVideoUrl || `https://youtube.com/watch?v=${job.youtubeVideoId}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-semibold"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              color: '#38bdf8',
+                              textDecoration: 'none',
+                              fontWeight: 700,
+                              fontSize: '0.78rem',
+                            }}
                           >
                             <span>Watch</span>
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink size={12} />
                           </a>
                         ) : (
-                          <span className="text-zinc-600">Pending</span>
+                          <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem' }}>Pending</span>
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <button
                             onClick={() => setSelectedJob(job)}
-                            className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition"
+                            className="hpa-table-action-btn"
                             title="Inspect Storyboard & Quality QA"
                           >
-                            <FileText className="w-3.5 h-3.5" />
+                            <FileText size={13} />
                           </button>
 
                           {isJobFailed && (
                             <button
                               onClick={() => handleRetryJob(job.id)}
                               disabled={actionLoading}
-                              className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 transition"
+                              className="hpa-table-action-btn danger"
                               title="Retry failed video job"
                             >
-                              <RotateCw className="w-3.5 h-3.5" />
+                              <RotateCw size={13} />
                             </button>
                           )}
                         </div>
@@ -719,26 +1011,54 @@ export default function VideoStudioClient() {
         )}
       </div>
 
-      {/* New Video Production Job Modal */}
+      {/* New Video Production Job Modal (Mobile & Tablet Responsive) */}
       {newJobModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <Video className="w-5 h-5 text-blue-400" />
-                <h3 className="text-base font-bold text-white">Create Video Production Job</h3>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            className="hpa-card"
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              background: 'var(--hpa-surface)',
+              border: '1px solid var(--hpa-border)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--hpa-border)', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Video size={18} style={{ color: '#38bdf8' }} />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Create Video Production Job
+                </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setNewJobModalOpen(false)}
-                className="text-zinc-500 hover:text-zinc-300 transition"
+                style={{ background: 'none', border: 'none', color: 'var(--hpa-text-muted)', cursor: 'pointer', padding: '4px' }}
               >
-                <X className="w-5 h-5" />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateJob} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateJob} style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.82rem' }}>
               <div>
-                <label className="block text-zinc-300 font-medium mb-1.5">
+                <label style={{ display: 'block', color: 'var(--hpa-text)', fontWeight: 600, marginBottom: '6px' }}>
                   Video Topic or Key Theme
                 </label>
                 <input
@@ -746,12 +1066,22 @@ export default function VideoStudioClient() {
                   value={newTopic}
                   onChange={(e) => setNewTopic(e.target.value)}
                   placeholder="e.g., The Architecture of Autonomous AI Companies"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    background: 'var(--hpa-surface-2)',
+                    border: '1px solid var(--hpa-border)',
+                    color: '#ffffff',
+                    fontSize: '0.82rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1.5">
+                <label style={{ display: 'block', color: 'var(--hpa-text)', fontWeight: 600, marginBottom: '6px' }}>
                   Source Post ID (Optional)
                 </label>
                 <input
@@ -759,27 +1089,39 @@ export default function VideoStudioClient() {
                   value={newPostId}
                   onChange={(e) => setNewPostId(e.target.value)}
                   placeholder="e.g., 42"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    background: 'var(--hpa-surface-2)',
+                    border: '1px solid var(--hpa-border)',
+                    color: '#ffffff',
+                    fontSize: '0.82rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
-                <span className="text-[11px] text-zinc-500 mt-1 block">
+                <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', marginTop: '4px', display: 'block' }}>
                   Link an existing HeyPrince blog post to base the script and metadata on.
                 </span>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '12px', paddingTop: '14px', borderTop: '1px solid var(--hpa-border)' }}>
                 <button
                   type="button"
                   onClick={() => setNewJobModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white transition"
+                  className="hpa-btn hpa-btn-secondary"
+                  style={{ fontSize: '0.8rem', padding: '8px 14px' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition"
+                  className="hpa-btn hpa-btn-primary"
+                  style={{ fontSize: '0.82rem', padding: '8px 16px', background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)', color: '#000000', borderColor: '#38bdf8', fontWeight: 700 }}
                 >
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  {actionLoading ? <Loader2 size={14} className="hpa-spin" /> : <Play size={14} />}
                   <span>Start Production</span>
                 </button>
               </div>
@@ -788,27 +1130,55 @@ export default function VideoStudioClient() {
         </div>
       )}
 
-      {/* Video Studio Settings Modal */}
+      {/* Video Studio Settings Modal (Mobile & Tablet Responsive) */}
       {settingsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="relative w-full max-w-xl rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <Settings className="w-5 h-5 text-blue-400" />
-                <h3 className="text-base font-bold text-white">Video Studio Configuration</h3>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            className="hpa-card"
+            style={{
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              background: 'var(--hpa-surface)',
+              border: '1px solid var(--hpa-border)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--hpa-border)', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Settings size={18} style={{ color: '#38bdf8' }} />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Video Studio Configuration
+                </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setSettingsModalOpen(false)}
-                className="text-zinc-500 hover:text-zinc-300 transition"
+                style={{ background: 'none', border: 'none', color: 'var(--hpa-text-muted)', cursor: 'pointer', padding: '4px' }}
               >
-                <X className="w-5 h-5" />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.82rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1.5">
+                  <label style={{ display: 'block', color: 'var(--hpa-text)', fontWeight: 600, marginBottom: '6px' }}>
                     R2 Max Published Videos
                   </label>
                   <input
@@ -817,71 +1187,113 @@ export default function VideoStudioClient() {
                     max={20}
                     value={formSettings.maxPublishedVideos || 5}
                     onChange={(e) => setFormSettings({ ...formSettings, maxPublishedVideos: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-blue-500"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'var(--hpa-surface-2)',
+                      border: '1px solid var(--hpa-border)',
+                      color: '#ffffff',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
-                  <span className="text-[11px] text-zinc-500 mt-1 block">
+                  <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)', marginTop: '4px', display: 'block' }}>
                     Strict retention ceiling (default: 5 collections in R2).
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1.5">
+                  <label style={{ display: 'block', color: 'var(--hpa-text)', fontWeight: 600, marginBottom: '6px' }}>
                     Video Provider
                   </label>
                   <input
                     type="text"
                     value={formSettings.videoProvider || 'hybrid'}
                     onChange={(e) => setFormSettings({ ...formSettings, videoProvider: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-blue-500"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'var(--hpa-surface-2)',
+                      border: '1px solid var(--hpa-border)',
+                      color: '#ffffff',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
-                  <span className="text-[11px] text-zinc-500 mt-1 block">
+                  <span style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)', marginTop: '4px', display: 'block' }}>
                     e.g., hybrid, veo, remotion
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1.5">
+                  <label style={{ display: 'block', color: 'var(--hpa-text)', fontWeight: 600, marginBottom: '6px' }}>
                     Default Hindi Voice ID
                   </label>
                   <input
                     type="text"
                     value={formSettings.voiceId || 'hi-IN-Standard-D'}
                     onChange={(e) => setFormSettings({ ...formSettings, voiceId: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-blue-500"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'var(--hpa-surface-2)',
+                      border: '1px solid var(--hpa-border)',
+                      color: '#ffffff',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1.5">
+                  <label style={{ display: 'block', color: 'var(--hpa-text)', fontWeight: 600, marginBottom: '6px' }}>
                     Aspect Ratio
                   </label>
                   <select
                     value={formSettings.aspectRatio || '16:9'}
                     onChange={(e) => setFormSettings({ ...formSettings, aspectRatio: e.target.value as '16:9' | '9:16' })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white focus:outline-none focus:border-blue-500"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      background: 'var(--hpa-surface-2)',
+                      border: '1px solid var(--hpa-border)',
+                      color: '#ffffff',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
-                    <option value="16:9">16:9 (Landscape)</option>
-                    <option value="9:16">9:16 (Vertical Shorts)</option>
+                    <option value="16:9">16:9 (Landscape Desktop)</option>
+                    <option value="9:16">9:16 (Vertical Mobile Shorts)</option>
                   </select>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '12px', paddingTop: '14px', borderTop: '1px solid var(--hpa-border)' }}>
                 <button
                   type="button"
                   onClick={() => setSettingsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white transition"
+                  className="hpa-btn hpa-btn-secondary"
+                  style={{ fontSize: '0.8rem', padding: '8px 14px' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition"
+                  className="hpa-btn hpa-btn-primary"
+                  style={{ fontSize: '0.82rem', padding: '8px 16px', background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)', color: '#000000', borderColor: '#38bdf8', fontWeight: 700 }}
                 >
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {actionLoading ? <Loader2 size={14} className="hpa-spin" /> : <Check size={14} />}
                   <span>Save Settings</span>
                 </button>
               </div>
@@ -890,40 +1302,87 @@ export default function VideoStudioClient() {
         </div>
       )}
 
-      {/* Storyboard & QA Inspection Modal */}
+      {/* Storyboard & QA Inspection Modal (Mobile & Tablet Responsive) */}
       {selectedJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            className="hpa-card"
+            style={{
+              width: '100%',
+              maxWidth: '720px',
+              maxHeight: '88vh',
+              overflowY: 'auto',
+              background: 'var(--hpa-surface)',
+              border: '1px solid var(--hpa-border)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--hpa-border)', paddingBottom: '14px', marginBottom: '16px' }}>
               <div>
-                <h3 className="text-lg font-bold text-white">{selectedJob.title}</h3>
-                <p className="text-xs text-zinc-400">Job ID: {selectedJob.id} • Status: {selectedJob.status}</p>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>{selectedJob.title}</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.74rem', color: 'var(--hpa-text-dim)', fontFamily: 'var(--hpa-font-mono)' }}>
+                  Job ID: {selectedJob.id} | Status: {selectedJob.status}
+                </p>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedJob(null)}
-                className="text-zinc-500 hover:text-zinc-300 transition"
+                style={{ background: 'none', border: 'none', color: 'var(--hpa-text-muted)', cursor: 'pointer', padding: '4px' }}
               >
-                <X className="w-5 h-5" />
+                <X size={18} />
               </button>
             </div>
 
             {/* QA Checklist Details */}
             {selectedJob.qualityReport && (
-              <div className="space-y-3 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs">
-                <div className="flex items-center justify-between font-semibold text-zinc-200">
-                  <span>Mandatory 10-Point QA Checklist</span>
-                  <span className={selectedJob.qualityReport.overallPassed ? 'text-emerald-400' : 'text-rose-400'}>
+              <div
+                style={{
+                  padding: '14px',
+                  borderRadius: '12px',
+                  background: 'var(--hpa-surface-2)',
+                  border: '1px solid var(--hpa-border)',
+                  fontSize: '0.78rem',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <span style={{ fontWeight: 700, color: '#ffffff' }}>Mandatory 10-Point QA Checklist</span>
+                  <span style={{ fontWeight: 800, color: selectedJob.qualityReport.overallPassed ? '#00f5a0' : '#f43f5e' }}>
                     Score: {selectedJob.qualityReport.score}/100 ({selectedJob.qualityReport.overallPassed ? 'PASSED' : 'FAILED'})
                   </span>
                 </div>
-                <div className="space-y-1.5">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {Object.values(selectedJob.qualityReport.checks).map((c: QualityCheckItem) => (
-                    <div key={c.id} className="flex items-start justify-between gap-3 py-1 border-b border-zinc-800/40 last:border-0">
-                      <div className="flex items-center gap-2">
-                        {c.passed ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <X className="w-3.5 h-3.5 text-rose-400" />}
-                        <span className="text-zinc-300 font-medium">{c.name}</span>
+                    <div
+                      key={c.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '4px 0',
+                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        gap: '8px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {c.passed ? <Check size={12} style={{ color: '#00f5a0' }} /> : <X size={12} style={{ color: '#f43f5e' }} />}
+                        <span style={{ color: 'var(--hpa-text)' }}>{c.name}</span>
                       </div>
-                      <span className="text-zinc-500 text-[11px]">{c.details}</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', textAlign: 'right' }}>{c.details}</span>
                     </div>
                   ))}
                 </div>
@@ -931,39 +1390,62 @@ export default function VideoStudioClient() {
             )}
 
             {/* Storyboard Scenes */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+            <div style={{ marginBottom: '16px' }}>
+              <h4 style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--hpa-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
                 Storyboard & Scenes ({selectedJob.storyboard?.length || 0})
               </h4>
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedJob.storyboard?.map((s: StoryboardScene) => (
-                  <div key={`modal-scene-${s.sceneIndex}`} className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2 text-xs">
-                    <div className="flex items-center justify-between font-semibold text-zinc-200">
-                      <span>Scene {s.sceneIndex + 1}: {s.title}</span>
-                      <span className="font-mono text-[11px] text-blue-400">{s.visualType} • {s.estimatedDurationSec}s</span>
+                  <div
+                    key={`modal-scene-${s.sceneIndex}`}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '10px',
+                      background: 'var(--hpa-surface-2)',
+                      border: '1px solid var(--hpa-border)',
+                      fontSize: '0.78rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontWeight: 700, color: '#ffffff' }}>Scene {s.sceneIndex + 1}: {s.title}</span>
+                      <span style={{ fontSize: '0.68rem', color: '#38bdf8', fontFamily: 'var(--hpa-font-mono)' }}>
+                        {s.visualType} | {s.estimatedDurationSec}s
+                      </span>
                     </div>
-                    <p className="text-zinc-400 italic">
-                      <strong className="text-zinc-300">Hindi Voiceover:</strong> {s.narrationHindi}
+                    <p style={{ margin: '0 0 4px', color: 'var(--hpa-text-muted)', fontStyle: 'italic' }}>
+                      <strong style={{ color: '#ffffff' }}>Hindi:</strong> {s.narrationHindi}
                     </p>
-                    <p className="text-zinc-500">
-                      <strong className="text-zinc-400">English Subtitle:</strong> {s.narrationEnglish}
+                    <p style={{ margin: 0, color: 'var(--hpa-text-dim)' }}>
+                      <strong style={{ color: 'var(--hpa-text)' }}>English:</strong> {s.narrationEnglish}
                     </p>
-                    {s.visualPrompt && (
-                      <p className="text-[11px] text-zinc-600 font-mono">
-                        Visual Prompt: {s.visualPrompt}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Media URLs */}
-            <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-2 text-xs font-mono">
-              <div className="text-zinc-400 font-semibold">Artifact Destinations:</div>
-              <div>R2 Public Key: <span className="text-zinc-300">{selectedJob.r2VideoKey || 'N/A'}</span></div>
-              <div>R2 Status: <span className={!selectedJob.r2Retained && selectedJob.r2DeletedAt ? 'text-zinc-500' : 'text-emerald-400'}>{!selectedJob.r2Retained && selectedJob.r2DeletedAt ? 'Pruned (Retention Policy)' : 'Active in Bucket'}</span></div>
-              <div>YouTube URL: <span className="text-blue-400">{selectedJob.youtubeVideoUrl || 'N/A'}</span></div>
+            {/* Media Artifacts */}
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'var(--hpa-surface-2)',
+                border: '1px solid var(--hpa-border)',
+                fontSize: '0.74rem',
+                fontFamily: 'var(--hpa-font-mono)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+              }}
+            >
+              <div style={{ color: 'var(--hpa-text-muted)', fontWeight: 700 }}>Artifact Destinations:</div>
+              <div>R2 Public Key: <span style={{ color: '#ffffff' }}>{selectedJob.r2VideoKey || 'N/A'}</span></div>
+              <div>
+                R2 Retention:{' '}
+                <span style={{ color: !selectedJob.r2Retained && selectedJob.r2DeletedAt ? 'var(--hpa-text-dim)' : '#00f5a0' }}>
+                  {!selectedJob.r2Retained && selectedJob.r2DeletedAt ? 'Pruned (Retention Policy)' : 'Active in Bucket'}
+                </span>
+              </div>
+              <div>YouTube URL: <span style={{ color: '#38bdf8' }}>{selectedJob.youtubeVideoUrl || 'N/A'}</span></div>
             </div>
           </div>
         </div>

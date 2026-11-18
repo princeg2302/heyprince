@@ -277,3 +277,55 @@ export async function publishToWhatsAppChannel(
     };
   }
 }
+
+/**
+ * Sends a direct text message to a specific WhatsApp phone number via Whapi.
+ */
+export async function sendWhatsAppDirectMessage(
+  toPhone: string,
+  bodyText: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const config = getWhatsAppConfig();
+  if (!config.accessToken) {
+    return { success: false, error: 'WHATSAPP_ACCESS_TOKEN is not configured.' };
+  }
+
+  const cleanPhone = toPhone.replace(/[^0-9]/g, '');
+  if (!cleanPhone) {
+    return { success: false, error: 'Invalid recipient phone number.' };
+  }
+
+  const recipient = cleanPhone.includes('@') ? cleanPhone : `${cleanPhone}@s.whatsapp.net`;
+  const whapiBase = process.env.WHATSAPP_GATEWAY_URL || 'https://gate.whapi.cloud';
+
+  try {
+    const res = await fetch(`${whapiBase}/messages/text`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        to: recipient,
+        body: sanitizeEmDashes(bodyText),
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data?.error?.message || `HTTP ${res.status}` };
+    }
+
+    return {
+      success: true,
+      messageId: data.messages?.[0]?.id,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Failed to dispatch WhatsApp message.',
+    };
+  }
+}
+
