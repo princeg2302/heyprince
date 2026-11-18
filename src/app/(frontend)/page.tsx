@@ -25,7 +25,7 @@ const CapturedMemories = dynamic(() => import('@/components/CapturedMemories'), 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
+  title: 'Prince - Senior Full Stack IT Consultant & Web Engineer',
   description:
     'Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance Next.js apps, bespoke WordPress/CMS development, and Next-Gen AI workflow automations.',
   alternates: {

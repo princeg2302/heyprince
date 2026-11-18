@@ -1,30 +1,37 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import {
   FaSearch,
   FaCalendarAlt,
-  FaClock,
-  FaArrowRight,
-  FaFilter,
   FaTimes,
   FaSortAmountDown,
   FaSortAmountUp,
-  FaLayerGroup,
+  FaCheckCircle,
 } from 'react-icons/fa';
+import {
+  FaClock,
+  FaArrowRight,
+  FaFilter,
+  FaLayerGroup,
+  FaRotateRight,
+} from 'react-icons/fa6';
 import { Article } from '@/data/siteContent';
+
+const DEFAULT_BLOG_FALLBACK = '/assets/blog/photo1.webp';
+const PAGE_SIZE = 9;
 
 interface InsightsListingClientProps {
   initialPosts: Article[];
+  totalCount?: number;
 }
 
-export function InsightsListingClient({ initialPosts }: InsightsListingClientProps) {
-  const router = useRouter();
+export function InsightsListingClient({ initialPosts, totalCount }: InsightsListingClientProps) {
   const searchParams = useSearchParams();
 
-  // Initialize from URL parameters if available
+  // Initialize filters from URL parameters if available
   const urlCategory = searchParams.get('category') || 'all';
   const urlPeriod = searchParams.get('period') || 'all';
   const urlSort = (searchParams.get('sort') as 'newest' | 'oldest') || 'newest';
@@ -35,31 +42,34 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>(urlSort);
   const [searchQuery, setSearchQuery] = useState<string>(urlQuery);
 
-  // Extract unique categories with post counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    initialPosts.forEach((post) => {
-      const cat = post.category || 'General';
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return counts;
-  }, [initialPosts]);
+  // Paginated articles state
+  const [posts, setPosts] = useState<Article[]>(() => initialPosts.slice(0, PAGE_SIZE));
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(() => {
+    if (typeof totalCount === 'number') {
+      return totalCount > initialPosts.slice(0, PAGE_SIZE).length;
+    }
+    return initialPosts.length >= PAGE_SIZE;
+  });
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const categories = useMemo(() => {
-    return Object.keys(categoryCounts).sort();
-  }, [categoryCounts]);
+  // Pagination Cursor
+  const [nextCursor, setNextCursor] = useState<{ publishedAt?: string; slug?: string } | null>(() => {
+    const initialSlice = initialPosts.slice(0, PAGE_SIZE);
+    if (initialSlice.length >= PAGE_SIZE) {
+      const last = initialSlice[initialSlice.length - 1];
+      return {
+        publishedAt: (last as any).publishedAtIso || last.date,
+        slug: last.slug,
+      };
+    }
+    return null;
+  });
 
-  // Extract available years for the date filter
-  const availableYears = useMemo(() => {
-    const years = new Set<string>();
-    initialPosts.forEach((post) => {
-      const dateObj = new Date(post.date);
-      if (!isNaN(dateObj.getTime())) {
-        years.add(dateObj.getFullYear().toString());
-      }
-    });
-    return Array.from(years).sort().reverse();
-  }, [initialPosts]);
+  // Concurrency & Observer Locks
+  const isLoadingRef = useRef<boolean>(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const isInitialMount = useRef<boolean>(true);
 
   // Sync state to URL without full page reload
   useEffect(() => {
@@ -77,54 +87,134 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
     }
   }, [selectedCategory, selectedPeriod, sortOrder, searchQuery]);
 
-  // Filter and sort posts
-  const filteredPosts = useMemo(() => {
-    const now = new Date();
+  // Fetch a page of posts from the feed API
+  const fetchPostsBatch = useCallback(
+    async (isReset: boolean, cursor?: { publishedAt?: string; slug?: string } | null) => {
+      if (isLoadingRef.current) return;
+      isLoadingRef.current = true;
+      setIsLoading(true);
+      setErrorMessage(null);
 
-    return initialPosts
-      .filter((post) => {
-        // 1. Category filter
+      try {
+        const queryParams = new URLSearchParams();
+        queryParams.set('limit', String(PAGE_SIZE));
+        queryParams.set('sort', sortOrder);
+
         if (selectedCategory !== 'all') {
-          const postCat = (post.category || 'General').toLowerCase();
-          if (postCat !== selectedCategory.toLowerCase()) return false;
+          queryParams.set('category', selectedCategory);
         }
-
-        // 2. Search query filter
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase().trim();
-          const matchTitle = post.title.toLowerCase().includes(q);
-          const matchDesc = post.description.toLowerCase().includes(q);
-          const matchTags = post.tags?.some((t) => t.toLowerCase().includes(q));
-          if (!matchTitle && !matchDesc && !matchTags) return false;
-        }
-
-        // 3. Date / Period filter
         if (selectedPeriod !== 'all') {
-          const postDate = new Date(post.date);
-          if (isNaN(postDate.getTime())) return true; // keep if undated
-
-          if (selectedPeriod === 'last30') {
-            const diffDays = (now.getTime() - postDate.getTime()) / (1000 * 3600 * 24);
-            if (diffDays > 30) return false;
-          } else if (selectedPeriod === 'last90') {
-            const diffDays = (now.getTime() - postDate.getTime()) / (1000 * 3600 * 24);
-            if (diffDays > 90) return false;
-          } else {
-            // Filter by specific Year (e.g. '2026', '2025')
-            if (postDate.getFullYear().toString() !== selectedPeriod) {
-              return false;
-            }
-          }
+          queryParams.set('period', selectedPeriod);
+        }
+        if (searchQuery.trim()) {
+          queryParams.set('q', searchQuery.trim());
+        }
+        if (cursor?.publishedAt) {
+          queryParams.set('cursorPublishedAt', cursor.publishedAt);
+        }
+        if (cursor?.slug) {
+          queryParams.set('cursorSlug', cursor.slug);
         }
 
-        return true;
-      })
-      .sort((a, b) => {
-        const dateA = new Date(a.date).getTime() || 0;
-        const dateB = new Date(b.date).getTime() || 0;
-        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-      });
-  }, [initialPosts, selectedCategory, selectedPeriod, sortOrder, searchQuery]);
+        const res = await fetch(`/api/insights/feed?${queryParams.toString()}`);
+        if (!res.ok) {
+          throw new Error(`Server returned HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        if (!data.success || !Array.isArray(data.posts)) {
+          throw new Error(data.error || 'Invalid API response format.');
+        }
+
+        const newPosts: Article[] = data.posts;
+        const newHasMore: boolean = Boolean(data.hasMore);
+        const newCursor = data.nextCursor || null;
+
+        if (isReset) {
+          setPosts(newPosts);
+        } else {
+          setPosts((prev) => {
+            const existingSlugs = new Set(prev.map((p) => p.slug));
+            const unique = newPosts.filter((p) => !existingSlugs.has(p.slug));
+            return [...prev, ...unique];
+          });
+        }
+
+        setHasMore(newHasMore);
+        setNextCursor(newCursor);
+      } catch (err: any) {
+        setErrorMessage(err?.message || 'Failed to load posts. Please try again.');
+      } finally {
+        isLoadingRef.current = false;
+        setIsLoading(false);
+      }
+    },
+    [selectedCategory, selectedPeriod, sortOrder, searchQuery]
+  );
+
+  // When filters or search criteria change, reset list and fetch page 1
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      // If initial URL had active filters different from default, fetch matching results
+      if (urlCategory !== 'all' || urlPeriod !== 'all' || urlSort !== 'newest' || urlQuery !== '') {
+        fetchPostsBatch(true, null);
+      }
+      return;
+    }
+
+    fetchPostsBatch(true, null);
+  }, [selectedCategory, selectedPeriod, sortOrder, searchQuery, fetchPostsBatch, urlCategory, urlPeriod, urlSort, urlQuery]);
+
+  // Infinite Scroll IntersectionObserver
+  useEffect(() => {
+    if (!hasMore || isLoading) {
+      return;
+    }
+
+    const target = sentinelRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && hasMore && !isLoadingRef.current) {
+          fetchPostsBatch(false, nextCursor);
+        }
+      },
+      {
+        root: null,
+        rootMargin: '250px',
+        threshold: 0.05,
+      }
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoading, nextCursor, fetchPostsBatch]);
+
+  // Derived filter categories from initial list
+  const categories = useMemo(() => {
+    const catSet = new Set<string>();
+    initialPosts.forEach((p) => {
+      if (p.category) catSet.add(p.category);
+    });
+    return Array.from(catSet).sort();
+  }, [initialPosts]);
+
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    initialPosts.forEach((post) => {
+      const dateObj = new Date(post.date);
+      if (!isNaN(dateObj.getTime())) {
+        years.add(dateObj.getFullYear().toString());
+      }
+    });
+    return Array.from(years).sort().reverse();
+  }, [initialPosts]);
 
   const hasActiveFilters =
     selectedCategory !== 'all' ||
@@ -137,6 +227,10 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
     setSelectedPeriod('all');
     setSortOrder('newest');
     setSearchQuery('');
+  };
+
+  const handleRetry = () => {
+    fetchPostsBatch(false, nextCursor);
   };
 
   return (
@@ -246,7 +340,7 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
             </div>
           </div>
 
-          {/* Date Sort Order (Newest vs Oldest) */}
+          {/* Date Sort Order */}
           <div className="col-lg-3 col-md-3 col-6">
             <div
               style={{
@@ -300,7 +394,19 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
             scrollbarWidth: 'none',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255, 255, 255, 0.4)', fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '6px', flexShrink: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'rgba(255, 255, 255, 0.4)',
+              fontSize: '0.74rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginRight: '6px',
+              flexShrink: 0,
+            }}
+          >
             <FaLayerGroup size={12} style={{ color: '#d40027' }} />
             <span>Category:</span>
           </div>
@@ -324,7 +430,7 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
               flexShrink: 0,
             }}
           >
-            All Insights ({initialPosts.length})
+            All Insights
           </button>
 
           {/* Category Filter Pills */}
@@ -350,14 +456,14 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
                   flexShrink: 0,
                 }}
               >
-                {cat} ({categoryCounts[cat] || 0})
+                {cat}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Filter Status & Count Bar */}
+      {/* Filter Status Bar */}
       <div
         style={{
           display: 'flex',
@@ -370,13 +476,19 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
         }}
       >
         <div>
-          Showing <strong style={{ color: '#ffffff' }}>{filteredPosts.length}</strong> of{' '}
-          <strong>{initialPosts.length}</strong> engineering articles
+          Showing <strong style={{ color: '#ffffff' }}>{posts.length}</strong> engineering articles
           {selectedCategory !== 'all' && (
-            <span style={{ color: '#d40027', fontWeight: 600 }}> • in {selectedCategory}</span>
+            <span style={{ color: '#d40027', fontWeight: 600 }}> in {selectedCategory}</span>
           )}
           {selectedPeriod !== 'all' && (
-            <span style={{ color: '#38bdf8' }}> • {selectedPeriod === 'last30' ? 'Last 30 Days' : selectedPeriod === 'last90' ? 'Last 90 Days' : `Year ${selectedPeriod}`}</span>
+            <span style={{ color: '#38bdf8' }}>
+              {' '}
+              {selectedPeriod === 'last30'
+                ? 'Last 30 Days'
+                : selectedPeriod === 'last90'
+                ? 'Last 90 Days'
+                : `Year ${selectedPeriod}`}
+            </span>
           )}
         </div>
 
@@ -404,9 +516,9 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
       </div>
 
       {/* Articles Grid */}
-      {filteredPosts.length > 0 ? (
+      {posts.length > 0 ? (
         <div className="row g-4 justify-content-center">
-          {filteredPosts.map((post) => (
+          {posts.map((post) => (
             <div key={post.slug} className="col-lg-4 col-md-6 col-12 d-flex">
               <div
                 className="card article-card insight-card w-100 d-flex flex-column"
@@ -416,6 +528,7 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
                   borderRadius: '16px',
                   overflow: 'hidden',
                   transition: 'transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease',
+                  minWidth: 0,
                 }}
               >
                 <Link
@@ -427,17 +540,25 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
                     style={{
                       position: 'relative',
                       width: '100%',
-                      height: '220px',
+                      aspectRatio: '16 / 10',
                       overflow: 'hidden',
                       background: '#13151f',
                     }}
                   >
                     <img
                       className="card-img"
-                      src={post.image}
+                      src={post.image || DEFAULT_BLOG_FALLBACK}
                       alt={`${post.title} - Engineering Insight by Prince`}
                       loading="lazy"
                       decoding="async"
+                      width="600"
+                      height="375"
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (target.src !== DEFAULT_BLOG_FALLBACK && !target.src.endsWith(DEFAULT_BLOG_FALLBACK)) {
+                          target.src = DEFAULT_BLOG_FALLBACK;
+                        }
+                      }}
                       style={{
                         width: '100%',
                         height: '100%',
@@ -447,7 +568,7 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
                     />
                   </div>
 
-                  <div className="card-body d-flex flex-column flex-grow-1 p-4">
+                  <div className="card-body d-flex flex-column flex-grow-1 p-4" style={{ minWidth: 0 }}>
                     {/* Category & Read Time Row */}
                     <div className="d-flex align-items-center justify-content-between mb-2">
                       <span
@@ -506,6 +627,10 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
                         lineHeight: 1.35,
                         color: '#ffffff',
                         marginBottom: '12px',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
                       }}
                     >
                       {post.title}
@@ -519,6 +644,10 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
                         lineHeight: 1.6,
                         marginBottom: '20px',
                         flex: '1 0 auto',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
                       }}
                     >
                       {post.description}
@@ -545,7 +674,7 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
             </div>
           ))}
         </div>
-      ) : (
+      ) : !isLoading ? (
         /* Empty State */
         <div
           style={{
@@ -583,10 +712,9 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
           <button
             type="button"
             onClick={resetAllFilters}
-            className="hpa-btn hpa-btn-primary"
             style={{
               background: '#d40027',
-              borderColor: '#d40027',
+              border: 'none',
               color: '#ffffff',
               padding: '9px 20px',
               borderRadius: '8px',
@@ -598,10 +726,113 @@ export function InsightsListingClient({ initialPosts }: InsightsListingClientPro
             Reset All Filters
           </button>
         </div>
+      ) : null}
+
+      {/* Infinite Scroll Sentinel */}
+      {hasMore && <div ref={sentinelRef} style={{ height: '40px', margin: '20px 0' }} />}
+
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="text-center py-4 my-3" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'rgba(18, 20, 29, 0.9)',
+              border: '1px solid rgba(255, 51, 85, 0.3)',
+              borderRadius: '999px',
+              padding: '10px 24px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 51, 85, 0.2)',
+            }}
+          >
+            <span
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: '#ff3355',
+                display: 'inline-block',
+                boxShadow: '0 0 10px #ff3355',
+                animation: 'pulse 1.2s infinite',
+              }}
+            />
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.04em' }}>
+              Loading Next 9 Engineering Dispatches...
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Error State with Retry Button */}
+      {errorMessage && !isLoading && (
+        <div className="text-center py-4 my-3">
+          <div
+            style={{
+              display: 'inline-flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'rgba(28, 12, 16, 0.95)',
+              border: '1px solid rgba(255, 51, 85, 0.5)',
+              borderRadius: '16px',
+              padding: '18px 28px',
+              maxWidth: '480px',
+              margin: '0 auto',
+            }}
+          >
+            <span style={{ color: '#ff6b81', fontSize: '0.86rem' }}>
+              {errorMessage}
+            </span>
+            <button
+              type="button"
+              onClick={handleRetry}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#d40027',
+                border: 'none',
+                color: '#ffffff',
+                padding: '8px 18px',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(212, 0, 39, 0.4)',
+              }}
+            >
+              <FaRotateRight size={12} />
+              <span>Retry Loading</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* End of List Message */}
+      {!hasMore && posts.length > 0 && !isLoading && (
+        <div className="text-center py-5 my-3">
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: 'rgba(15, 17, 24, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '999px',
+              padding: '10px 26px',
+              color: 'rgba(255, 255, 255, 0.65)',
+              fontSize: '0.82rem',
+              letterSpacing: '0.04em',
+            }}
+          >
+            <FaCheckCircle style={{ color: '#22c55e' }} size={13} />
+            <span>You have caught up with all {posts.length} engineering insights // 2026 Edition</span>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
 export default InsightsListingClient;
-

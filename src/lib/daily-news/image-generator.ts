@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { supabase, createMediaRecord } from '@/lib/admin-db';
+import { uploadToR2, isR2Configured } from '@/lib/storage/r2';
 import { query } from '@/lib/outreach/db';
 import { GeneratedArticleSection } from './types';
 import {
@@ -477,7 +478,7 @@ async function generateOrFetchUniqueImage(params: {
 }
 
 // ============================================================================
-// 5. UPLOAD TO SUPABASE STORAGE & CATALOG IN MEDIA VAULT
+// 5. UPLOAD TO STORAGE & CATALOG IN MEDIA VAULT
 // ============================================================================
 async function uploadAndRecordMedia(
   buffer: Buffer,
@@ -490,35 +491,63 @@ async function uploadAndRecordMedia(
   prompt?: string
 ): Promise<{ url: string; mediaId?: number }> {
   let publicUrl = fallbackExternalUrl;
+  let storedKey = filename;
 
-  try {
-    // 1. Upload to Supabase Storage ('media' bucket)
-    const { data: uploadData, error: uploadErr } = await supabase.storage
-      .from('media')
-      .upload(filename, buffer, {
+  // 1. Primary: Cloudflare R2 Object Storage
+  if (isR2Configured()) {
+    try {
+      const r2Key = `blogs/${filename}`;
+      const r2Res = await uploadToR2({
+        key: r2Key,
+        body: buffer,
         contentType,
-        upsert: true,
+        visibility: 'public',
+        metadata: {
+          alt,
+          contentHash,
+          prompt: prompt ? prompt.slice(0, 100) : '',
+        },
       });
 
-    if (!uploadErr && uploadData) {
-      const { data: urlData } = supabase.storage.from('media').getPublicUrl(filename);
-      if (urlData?.publicUrl) {
-        publicUrl = urlData.publicUrl;
+      if (r2Res.success && r2Res.url) {
+        publicUrl = r2Res.url;
+        storedKey = r2Key;
       }
-    } else if (uploadErr) {
-      console.warn('[image-generator] Supabase storage upload warning:', uploadErr);
+    } catch (r2Err) {
+      console.warn('[image-generator] Cloudflare R2 upload warning:', r2Err);
     }
-  } catch (storageErr) {
-    console.warn('[image-generator] Supabase storage exception:', storageErr);
   }
 
-  // 2. Insert into Supabase 'media' table for Media Vault cataloging
+  // 2. Secondary fallback: Supabase Storage ('media' bucket) if R2 was not used
+  if (publicUrl === fallbackExternalUrl) {
+    try {
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('media')
+        .upload(filename, buffer, {
+          contentType,
+          upsert: true,
+        });
+
+      if (!uploadErr && uploadData) {
+        const { data: urlData } = supabase.storage.from('media').getPublicUrl(filename);
+        if (urlData?.publicUrl) {
+          publicUrl = urlData.publicUrl;
+        }
+      } else if (uploadErr) {
+        console.warn('[image-generator] Supabase storage upload warning:', uploadErr);
+      }
+    } catch (storageErr) {
+      console.warn('[image-generator] Supabase storage exception:', storageErr);
+    }
+  }
+
+  // 3. Insert into Supabase 'media' table for Media Vault cataloging
   let mediaId: number | undefined;
   try {
     const mediaRecordRes = await createMediaRecord({
       alt,
       caption,
-      filename,
+      filename: storedKey,
       mime_type: contentType,
       filesize: buffer.length,
       width: 1200,

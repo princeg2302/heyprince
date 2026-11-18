@@ -331,6 +331,205 @@ export async function getPosts(): Promise<Article[]> {
   return articlesList;
 }
 
+export interface PaginatedPostsOptions {
+  limit?: number;
+  cursorPublishedAt?: string;
+  cursorSlug?: string;
+  category?: string;
+  period?: string;
+  search?: string;
+  sort?: 'newest' | 'oldest';
+}
+
+export interface PaginatedPostsResult {
+  posts: Article[];
+  nextCursor: {
+    publishedAt: string;
+    slug: string;
+  } | null;
+  hasMore: boolean;
+  totalCount: number;
+}
+
+/**
+ * Retrieve paginated published insights/posts with stable cursor pagination
+ */
+export async function getPostsPaginated(options: PaginatedPostsOptions = {}): Promise<PaginatedPostsResult> {
+  const limit = options.limit || 9;
+  const sort = options.sort || 'newest';
+  const ascending = sort === 'oldest';
+
+  try {
+    const [{ data: adminUser }, { data: dbCategories }] = await Promise.all([
+      supabase
+        .from('users')
+        .select('name, role, avatar_url')
+        .limit(1)
+        .single(),
+      supabase
+        .from('categories')
+        .select('id, title'),
+    ]);
+
+    const catMap = new Map<number, string>();
+    (dbCategories || []).forEach((c: any) => catMap.set(c.id, c.title));
+
+    // Base query for published posts
+    let query = supabase
+      .from('posts')
+      .select('*', { count: 'exact' })
+      .eq('status', 'published');
+
+    // Filter by category if specified
+    if (options.category && options.category !== 'all') {
+      const targetCat = options.category.toLowerCase();
+      // Match by category_name or find category_id
+      const matchedCatId = Array.from(catMap.entries()).find(
+        ([, title]) => title.toLowerCase() === targetCat
+      )?.[0];
+
+      if (matchedCatId) {
+        query = query.or(`category_id.eq.${matchedCatId},category_name.ilike.%${options.category}%`);
+      } else {
+        query = query.ilike('category_name', `%${options.category}%`);
+      }
+    }
+
+    // Filter by keyword search if specified
+    if (options.search && options.search.trim() !== '') {
+      const q = options.search.trim();
+      query = query.or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,seo_description.ilike.%${q}%`);
+    }
+
+    // Filter by period if specified
+    if (options.period && options.period !== 'all') {
+      const now = new Date();
+      if (options.period === 'last30') {
+        const d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('published_at', d);
+      } else if (options.period === 'last90') {
+        const d = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('published_at', d);
+      } else {
+        const year = parseInt(options.period, 10);
+        if (!isNaN(year)) {
+          const startYear = new Date(year, 0, 1).toISOString();
+          const endYear = new Date(year, 11, 31, 23, 59, 59).toISOString();
+          query = query.gte('published_at', startYear).lte('published_at', endYear);
+        }
+      }
+    }
+
+    // Apply cursor
+    if (options.cursorPublishedAt) {
+      if (ascending) {
+        query = query.gt('published_at', options.cursorPublishedAt);
+      } else {
+        query = query.lt('published_at', options.cursorPublishedAt);
+      }
+    }
+
+    // Order and fetch limit + 1 to detect hasMore
+    query = query
+      .order('published_at', { ascending })
+      .order('id', { ascending })
+      .limit(limit + 1);
+
+    const { data: dbPosts, error: sbError, count } = await query;
+
+    if (!sbError && dbPosts) {
+      const hasMore = dbPosts.length > limit;
+      const sliced = hasMore ? dbPosts.slice(0, limit) : dbPosts;
+
+      const posts: Article[] = sliced.map((doc: any) => {
+        const liveCategory = doc.category_id ? catMap.get(doc.category_id) : null;
+        return {
+          slug: doc.slug,
+          title: doc.title,
+          description: doc.excerpt || doc.seo_description || '',
+          readMins: doc.read_mins || '5 min',
+          image: doc.cover_image && doc.cover_image.trim() !== '' ? doc.cover_image : '/assets/blog/photo1.webp',
+          url: `/insights/${doc.slug}/`,
+          date: doc.published_at
+            ? new Date(doc.published_at).toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'Recent',
+          category: liveCategory || doc.category_name || 'Engineering & Strategy',
+          author: {
+            name: adminUser?.name || doc.author_name || 'Prince',
+            role:
+              (adminUser?.role === 'admin'
+                ? 'Senior Full Stack Engineer & IT Consultant'
+                : adminUser?.role) ||
+              doc.author_role ||
+              'Senior Full Stack Engineer & IT Consultant',
+            avatar:
+              adminUser?.avatar_url ||
+              doc.author_avatar ||
+              '/assets/cropped-prince-profile.webp',
+          },
+          tags: [],
+          sections: [],
+          publishedAtIso: doc.published_at,
+        };
+      });
+
+      const lastPost = sliced[sliced.length - 1];
+      const nextCursor = hasMore && lastPost
+        ? { publishedAt: lastPost.published_at, slug: lastPost.slug }
+        : null;
+
+      return {
+        posts,
+        nextCursor,
+        hasMore,
+        totalCount: count || posts.length,
+      };
+    }
+  } catch (err) {
+    console.warn('[getPostsPaginated] Query notice:', err);
+  }
+
+  // Fallback to static articles with client-side slicing
+  const allStatic = await getPosts();
+  let filtered = [...allStatic];
+
+  if (options.category && options.category !== 'all') {
+    filtered = filtered.filter(
+      (p) => (p.category || '').toLowerCase() === options.category!.toLowerCase()
+    );
+  }
+
+  if (options.search && options.search.trim() !== '') {
+    const q = options.search.toLowerCase().trim();
+    filtered = filtered.filter(
+      (p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
+    );
+  }
+
+  let startIndex = 0;
+  if (options.cursorSlug) {
+    const foundIdx = filtered.findIndex((p) => p.slug === options.cursorSlug);
+    if (foundIdx !== -1) {
+      startIndex = foundIdx + 1;
+    }
+  }
+
+  const batch = filtered.slice(startIndex, startIndex + limit);
+  const hasMore = startIndex + limit < filtered.length;
+  const lastItem = batch[batch.length - 1];
+
+  return {
+    posts: batch,
+    nextCursor: hasMore && lastItem ? { publishedAt: lastItem.date, slug: lastItem.slug } : null,
+    hasMore,
+    totalCount: filtered.length,
+  };
+}
+
 /**
  * Retrieve a single insight/post by slug from Supabase / Payload with static fallback
  */

@@ -29,8 +29,14 @@ export async function generateAgentTurnResponse(params: {
   messageType: 'statement' | 'proposal' | 'challenge' | 'evidence' | 'consensus' | 'summary';
   evidence: Record<string, any>;
 }> {
-  const rawKey = process.env.GEMINI_API_KEY?.trim();
-  const apiKey = rawKey && rawKey.startsWith('AIzaSy') ? rawKey : undefined;
+  const primaryGeminiKey = process.env.GEMINI_API_KEY_1?.trim() || process.env.GEMINI_API_KEY?.trim();
+  const backupGeminiKey = process.env.GEMINI_API_KEY_2?.trim();
+  const openaiKey = process.env.OPENAI_API_KEY?.trim();
+  const openaiModel = process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini';
+
+  const geminiKeysToTry = [primaryGeminiKey, backupGeminiKey].filter(
+    (k): k is string => Boolean(k && k.startsWith('AIzaSy'))
+  );
 
   // Candidate models: verified live Gemini models
   const candidateModels = [
@@ -115,13 +121,14 @@ ${
     : `Respond in your professional role as ${params.speaker.name}. Address Prince or the previous speaker, reference factual capabilities or verified tools, and advance the objective.`
 }`;
 
-  if (apiKey) {
+  // 1. Primary & Backup Gemini Execution
+  for (const activeGeminiKey of geminiKeysToTry) {
     for (const model of candidateModels) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeGeminiKey}`;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -139,7 +146,10 @@ ${
 
         clearTimeout(timeoutId);
 
-        if (!res.ok) continue;
+        if (!res.ok) {
+          // If quota hit (429), advance to next key/provider
+          continue;
+        }
 
         const data = await res.json();
         const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -164,8 +174,64 @@ ${
           evidence: liveEvidence,
         };
       } catch (err) {
-        // Continue to next model
+        // Continue to next model or key
       }
+    }
+  }
+
+  // 2. OpenAI Fallback Execution
+  if (openaiKey) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: openaiModel,
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: `${userPrompt}\n\nPlease output valid JSON.` },
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.35,
+          max_tokens: 450,
+        }),
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data?.choices?.[0]?.message?.content;
+        if (rawText) {
+          const parsed = JSON.parse(rawText.trim());
+          const cleanContent = sanitizeEmDashes(parsed.content || '');
+
+          const liveEvidence = params.toolResult
+            ? {
+                isLive: true,
+                tool: params.toolResult.toolName,
+                timestamp: params.toolResult.timestamp,
+                ...params.toolResult.data,
+                ...parsed.evidence,
+              }
+            : parsed.evidence || {};
+
+          return {
+            content: cleanContent,
+            messageType: parsed.messageType || (params.isConcludingTurn ? 'consensus' : 'statement'),
+            evidence: liveEvidence,
+          };
+        }
+      }
+    } catch (openAiErr) {
+      // Fall through to dynamic fallback
     }
   }
 
@@ -459,8 +525,14 @@ export async function generateTaskExecutionDeliverable(params: {
   acceptanceCriteria: string[];
 }): Promise<TaskExecutionDeliverable> {
   const { agent, taskTitle, taskDescription, acceptanceCriteria } = params;
-  const rawKey = process.env.GEMINI_API_KEY?.trim();
-  const apiKey = rawKey && rawKey.startsWith('AIzaSy') ? rawKey : undefined;
+  const primaryGeminiKey = process.env.GEMINI_API_KEY_1?.trim() || process.env.GEMINI_API_KEY?.trim();
+  const backupGeminiKey = process.env.GEMINI_API_KEY_2?.trim();
+  const openaiKey = process.env.OPENAI_API_KEY?.trim();
+  const openaiModel = process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini';
+
+  const geminiKeysToTry = [primaryGeminiKey, backupGeminiKey].filter(
+    (k): k is string => Boolean(k && k.startsWith('AIzaSy'))
+  );
 
   const candidateModels = [
     'gemini-3.5-flash',
@@ -511,13 +583,14 @@ ${acceptanceCriteria.map((c) => `- ${c}`).join('\n')}
 
 Produce the complete professional deliverable now.`;
 
-  if (apiKey) {
+  // 1. Primary & Backup Gemini Execution
+  for (const activeGeminiKey of geminiKeysToTry) {
     for (const model of candidateModels) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeGeminiKey}`;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -549,9 +622,52 @@ Produce the complete professional deliverable now.`;
           metrics: parsed.metrics || {},
         };
       } catch (err) {
-        // Fallback to next model
+        // Fallback to next model or key
       }
     }
+  }
+
+  // 2. OpenAI Fallback Execution
+  if (openaiKey) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: openaiModel,
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: `${userPrompt}\n\nPlease output valid JSON.` },
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.3,
+          max_tokens: 1200,
+        }),
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data?.choices?.[0]?.message?.content;
+        if (rawText) {
+          const parsed = JSON.parse(rawText.trim());
+          return {
+            summary: sanitizeEmDashes(parsed.summary || `Deliverable completed for "${taskTitle}" by ${agent.name}.`),
+            details: sanitizeEmDashes(parsed.details || ''),
+            keyFindings: (parsed.keyFindings || []).map((k: string) => sanitizeEmDashes(k)),
+            metrics: parsed.metrics || {},
+          };
+        }
+      }
+    } catch {}
   }
 
   // Dynamic fallback deliverable

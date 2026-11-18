@@ -11,61 +11,61 @@ export const timelineMilestones: Milestone[] = [
     pos: 1,
     year: '2010',
     left: '0%',
-    text: 'The spark ignited — fascinated by how computers and websites worked, exploring the digital world, and taking my very first steps into technology.',
+    text: 'The spark ignited: fascinated by how computers and websites worked, exploring the digital world, and taking my very first steps into technology.',
   },
   {
     pos: 2,
     year: '2014',
     left: 'calc(100% - (8 * 9%))',
-    text: 'Curiosity & searching for direction — tinkering with computers and hardware, exploring different fields, and trying to understand what path to pursue in life.',
+    text: 'Curiosity & searching for direction: tinkering with computers and hardware, exploring different fields, and trying to understand what path to pursue in life.',
   },
   {
     pos: 3,
     year: '2015',
     left: 'calc(100% - (7 * 9%))',
-    text: 'Exploring the future & discovering code — actively trying to explore what to do in the future, testing different paths until I found web design, realizing code was my true calling.',
+    text: 'Exploring the future & discovering code: actively trying to explore what to do in the future, testing different paths until I found web design, realizing code was my true calling.',
   },
   {
     pos: 4,
     year: '2016',
     left: 'calc(100% - (6 * 9%))',
-    text: 'Balancing studies with passion — along with my academic studies, I was up late every night learning new technologies, web fundamentals, and modern developer tools.',
+    text: 'Balancing studies with passion: along with my academic studies, I was up late every night learning new technologies, web fundamentals, and modern developer tools.',
   },
   {
     pos: 5,
     year: '2017',
     left: 'calc(100% - (5 * 9%))',
-    text: 'Building real projects from scratch — diving deeper into JavaScript, experimenting with CSS animations, and turning static concepts into functional digital pages.',
+    text: 'Building real projects from scratch: diving deeper into JavaScript, experimenting with CSS animations, and turning static concepts into functional digital pages.',
   },
   {
     pos: 6,
     year: '2018',
     left: 'calc(100% - (4 * 9%))',
-    text: 'Kickstarted my career in IT — writing my very first production code with HTML, CSS & JavaScript, turning my passion into a full-fledged profession in tech.',
+    text: 'Kickstarted my career in IT: writing my very first production code with HTML, CSS & JavaScript, turning my passion into a full-fledged profession in tech.',
   },
   {
     pos: 7,
     year: '2019',
     left: 'calc(100% - (3 * 9%))',
-    text: 'Accelerating as a web engineer — mastering frontend workflows, building dynamic web solutions, custom themes, and solving complex client challenges.',
+    text: 'Accelerating as a web engineer: mastering frontend workflows, building dynamic web solutions, custom themes, and solving complex client challenges.',
   },
   {
     pos: 8,
     year: '2021',
     left: 'calc(100% - (2 * 9%))',
-    text: 'Leveling up modern UI/UX — crafting ultra-smooth, animated web experiences with React, GSAP motion, interactive components, and lightning-fast speed.',
+    text: 'Leveling up modern UI/UX: crafting ultra-smooth, animated web experiences with React, GSAP motion, interactive components, and lightning-fast speed.',
   },
   {
     pos: 9,
     year: '2023',
     left: 'calc(100% - (1 * 9%))',
-    text: 'Architecting scalable digital products — designing full-featured web applications, optimizing performance, and integrating modern workflows with creative engineering.',
+    text: 'Architecting scalable digital products: designing full-featured web applications, optimizing performance, and integrating modern workflows with creative engineering.',
   },
   {
     pos: 10,
     year: '2026',
     left: 'calc(100% - (0 * 9%))',
-    text: 'Senior Full Stack IT Consultant & AI Innovator — empowering founders and enterprises with high-performance Next.js apps, bespoke CMS engineering, autonomous AI workflows, and sub-second web experiences.',
+    text: 'Senior Full Stack IT Consultant & AI Innovator: empowering founders and enterprises with high-performance Next.js apps, bespoke CMS engineering, autonomous AI workflows, and sub-second web experiences.',
   },
 ];
 
@@ -93,6 +93,7 @@ export interface Article {
   };
   tags: string[];
   sections: ArticleSection[];
+  publishedAtIso?: string;
 }
 
 export const articlesList: Article[] = [

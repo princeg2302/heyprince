@@ -13,6 +13,10 @@ import {
 } from 'react-icons/fa6';
 import { Article, articlesList } from '../data/siteContent';
 
+const DEFAULT_BLOG_FALLBACK = '/assets/blog/photo1.webp';
+const DEFAULT_AUTHOR_AVATAR =
+  'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg';
+
 export interface ArticlesSectionProps {
   articles?: Article[];
   onSelectArticle?: (slug: string) => void;
@@ -130,12 +134,18 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                 <div className="spotlight-img-wrap">
                   <img
                     className="spotlight-img"
-                    src={featuredArticle.image}
+                    src={featuredArticle.image || DEFAULT_BLOG_FALLBACK}
                     alt={`${featuredArticle.title} - Latest Engineering Insight by Prince`}
                     loading="lazy"
                     decoding="async"
                     width="800"
                     height="500"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      if (target.src !== DEFAULT_BLOG_FALLBACK && !target.src.endsWith(DEFAULT_BLOG_FALLBACK)) {
+                        target.src = DEFAULT_BLOG_FALLBACK;
+                      }
+                    }}
                   />
                   <span className="spotlight-badge-latest">
                     <FaBolt size={10} style={{ color: '#ff3355' }} />
@@ -170,12 +180,18 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                     <div className="spotlight-author">
                       <img
                         className="spotlight-author-avatar"
-                        src={featuredArticle.author?.avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
+                        src={featuredArticle.author?.avatar || DEFAULT_AUTHOR_AVATAR}
                         alt={featuredArticle.author?.name || 'Prince'}
                         loading="lazy"
                         decoding="async"
                         width="38"
                         height="38"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          if (target.src !== DEFAULT_AUTHOR_AVATAR) {
+                            target.src = DEFAULT_AUTHOR_AVATAR;
+                          }
+                        }}
                       />
                       <div>
                         <div className="spotlight-author-name">{featuredArticle.author?.name || 'Prince'}</div>
@@ -206,12 +222,18 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                     <div className="article-img-wrap">
                       <img
                         className="card-img"
-                        src={article.image}
+                        src={article.image || DEFAULT_BLOG_FALLBACK}
                         alt={`${article.title} - Engineering Insight by Prince`}
                         loading="lazy"
                         decoding="async"
                         width="600"
                         height="375"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          if (target.src !== DEFAULT_BLOG_FALLBACK && !target.src.endsWith(DEFAULT_BLOG_FALLBACK)) {
+                            target.src = DEFAULT_BLOG_FALLBACK;
+                          }
+                        }}
                       />
                       {article.category && (
                         <span className="article-category-badge">{article.category}</span>
@@ -235,10 +257,16 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                         <div className="companion-author">
                           <img
                             className="companion-author-avatar"
-                            src={article.author?.avatar || 'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'}
+                            src={article.author?.avatar || DEFAULT_AUTHOR_AVATAR}
                             alt={article.author?.name || 'Prince'}
                             width="24"
                             height="24"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              if (target.src !== DEFAULT_AUTHOR_AVATAR) {
+                                target.src = DEFAULT_AUTHOR_AVATAR;
+                              }
+                            }}
                           />
                           <span className="companion-author-name">{article.author?.name || 'Prince'}</span>
                         </div>

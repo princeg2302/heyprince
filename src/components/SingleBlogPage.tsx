@@ -76,6 +76,7 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
 
   const DEFAULT_AUTHOR_AVATAR =
     'https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg';
+  const DEFAULT_BLOG_IMAGE = '/assets/blog/photo1.webp';
 
   const [authorAvatar, setAuthorAvatar] = useState<string>(
     article.author?.avatar || DEFAULT_AUTHOR_AVATAR
@@ -528,14 +529,19 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
         {/* Featured Image */}
         <div className="blog-featured-img-wrap">
           <img
-            src={article.image}
+            src={article.image || DEFAULT_BLOG_IMAGE}
             alt={`${article.title} - Article by Prince`}
             className="blog-featured-img"
             fetchPriority="high"
             decoding="async"
             width="1200"
             height="675"
-            style={{ objectFit: 'cover', width: '100%', height: '100%', aspectRatio: '16 / 9' }}
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              if (target.src !== DEFAULT_BLOG_IMAGE && !target.src.endsWith(DEFAULT_BLOG_IMAGE)) {
+                target.src = DEFAULT_BLOG_IMAGE;
+              }
+            }}
           />
         </div>
 

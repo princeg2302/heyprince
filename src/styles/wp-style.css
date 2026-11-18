@@ -1180,6 +1180,7 @@ img.shape-separator {
 .spotlight-img-wrap {
   position: relative;
   width: 100%;
+  height: 100%;
   min-height: 380px;
   overflow: hidden;
   background: #141722;
@@ -1225,6 +1226,8 @@ img.shape-separator {
   justify-content: center;
   background: rgba(10, 12, 18, 0.5);
   backdrop-filter: blur(6px);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .spotlight-meta-row {
@@ -6112,7 +6115,7 @@ body {
 }
 
 .blog-featured-img-wrap {
-  margin: 36px 0 50px;
+  margin: 32px 0 36px;
   border-radius: 20px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -6120,16 +6123,19 @@ body {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #0f1118;
+  position: relative;
+  display: block;
 }
 
 .blog-featured-img {
   width: 100%;
   height: 100%;
-  max-height: 540px;
   aspect-ratio: 16 / 9;
   object-fit: cover !important;
   object-position: center;
   display: block;
+  margin: 0;
+  padding: 0;
 }
 
 .blog-content-layout {

@@ -118,8 +118,8 @@ export default async function InsightsListingPage() {
             </p>
           </header>
 
-          {/* Interactive Articles Grid with Date & Category Filters */}
-          <InsightsListingClient initialPosts={posts} />
+          {/* Interactive Articles Grid with Infinite Scroll & Filters */}
+          <InsightsListingClient initialPosts={posts.slice(0, 9)} totalCount={posts.length} />
 
           {/* Bottom Call to Action */}
           <div className="text-center mt-5 pt-4">
