@@ -21,7 +21,9 @@
     "test:company": "npx tsx src/scripts/test-ai-company-suite.ts",
     "test:workforce": "npx tsx src/scripts/test-unified-workforce.ts",
     "test:r2": "npx tsx src/scripts/test-r2-suite.ts",
-    "test:pagination": "npx tsx src/scripts/test-blog-pagination-suite.ts"
+    "test:pagination": "npx tsx src/scripts/test-blog-pagination-suite.ts",
+    "migrate:video": "npx tsx src/scripts/migrate-video-studio.ts",
+    "test:video": "npx tsx src/scripts/test-video-studio-suite.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1171.0",

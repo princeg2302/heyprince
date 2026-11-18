@@ -26,6 +26,7 @@ import {
   Bot,
   CheckCircle2,
   Building2,
+  Video,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -56,6 +57,7 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
     { label: 'AI Chief of Staff', href: '/admin/chief-of-staff/', icon: Bot },
     { label: 'Lead Intelligence', href: '/admin/outreach/', icon: Globe },
     { label: 'Posts & Insights', href: '/admin/posts/', icon: FileText },
+    { label: 'AI Video Studio', href: '/admin/video-studio/', icon: Video },
     { label: 'Daily AI News', href: '/admin/news-automation/', icon: Sparkles },
     { label: 'Services', href: '/admin/services/', icon: Briefcase },
     { label: 'Admin Users', href: '/admin/users/', icon: Users },

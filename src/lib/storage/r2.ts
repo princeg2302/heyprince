@@ -26,6 +26,8 @@ export const R2_FOLDERS = [
   'clients',
   'media-vault',
   'projects',
+  'videos',
+  'clips',
 ] as const;
 
 export type R2Folder = typeof R2_FOLDERS[number] | string;
@@ -65,6 +67,7 @@ export interface R2FileMetadata {
 // Maximum upload limits
 export const MAX_IMAGE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
 export const MAX_DOCUMENT_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+export const MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024; // 500 MB
 
 // Allowed MIME types
 export const ALLOWED_MIME_TYPES = new Set([
@@ -76,6 +79,14 @@ export const ALLOWED_MIME_TYPES = new Set([
   'image/svg+xml',
   'image/avif',
   'image/x-icon',
+  // Videos
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  // Subtitles
+  'text/vtt',
+  'text/srt',
+  'application/x-subrip',
   // Documents
   'application/pdf',
   'text/markdown',
@@ -194,7 +205,13 @@ export async function uploadToR2(options: R2UploadOptions): Promise<R2UploadResu
   const sizeBytes = buffer.length;
 
   // Validation 1: Maximum file size limit
-  const maxLimit = options.maxSizeBytes || (options.contentType.startsWith('image/') ? MAX_IMAGE_SIZE_BYTES : MAX_DOCUMENT_SIZE_BYTES);
+  const maxLimit = options.maxSizeBytes || (
+    options.contentType.startsWith('video/')
+      ? MAX_VIDEO_SIZE_BYTES
+      : options.contentType.startsWith('image/')
+      ? MAX_IMAGE_SIZE_BYTES
+      : MAX_DOCUMENT_SIZE_BYTES
+  );
   if (sizeBytes > maxLimit) {
     return {
       success: false,
