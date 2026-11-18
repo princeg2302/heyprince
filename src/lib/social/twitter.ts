@@ -161,14 +161,29 @@ export async function publishToTwitter(params: SocialPublishParams): Promise<Soc
   }
 
   tweetText = sanitizeEmDashes(tweetText);
+
+  // If text is over 280 characters, intelligently trim while keeping the link
   if (tweetText.length > 280) {
-    tweetText = `${tweetText.slice(0, 277)}...`;
+    if (articleUrl && tweetText.includes(articleUrl)) {
+      const parts = tweetText.split(articleUrl);
+      const beforeLink = parts[0];
+      const afterLink = parts.slice(1).join(articleUrl);
+      const availableBefore = 280 - articleUrl.length - afterLink.length - 5;
+      if (availableBefore > 20) {
+        tweetText = `${beforeLink.slice(0, availableBefore).trim()}...\n\n${articleUrl}${afterLink}`;
+      } else {
+        tweetText = `${tweetText.slice(0, 277)}...`;
+      }
+    } else {
+      tweetText = `${tweetText.slice(0, 277)}...`;
+    }
   }
 
   try {
-    const tweetUrl = 'https://api.twitter.com/2/tweets';
+    const tweetUrl = 'https://api.x.com/2/tweets';
     const authHeader = generateOAuth1Header('POST', tweetUrl, config);
 
+    console.log('[Twitter Publisher] Dispatching tweet to api.x.com/2/tweets...');
     const res = await fetch(tweetUrl, {
       method: 'POST',
       headers: {
@@ -178,10 +193,15 @@ export async function publishToTwitter(params: SocialPublishParams): Promise<Soc
       body: JSON.stringify({ text: tweetText }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    console.log('[Twitter Publisher] API response status:', res.status, JSON.stringify(data));
 
     if (!res.ok || !data.data?.id) {
-      const errorMsg = data.errors?.[0]?.message || data.detail || `Twitter publish failed (HTTP ${res.status})`;
+      const errorMsg =
+        data.errors?.[0]?.message ||
+        data.detail ||
+        data.title ||
+        `Twitter publish failed (HTTP ${res.status})`;
       await recordSocialShare({
         postId: params.postId,
         platform: 'twitter',
