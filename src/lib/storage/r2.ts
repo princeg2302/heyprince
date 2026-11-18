@@ -115,14 +115,19 @@ export function getR2Endpoint(): string {
 
 /**
  * Resolves the public base URL for public assets.
+ *
+ * Notice: *.r2.cloudflarestorage.com is strictly an authenticated S3 endpoint and
+ * returns 400 InvalidArgument / Authorization error if accessed directly by browsers.
+ * If R2_PUBLIC_BASE_URL is not set or points to r2.cloudflarestorage.com, we route through
+ * the Next.js streaming media proxy at /api/media.
  */
 export function getR2PublicBaseUrl(): string {
-  if (process.env.R2_PUBLIC_BASE_URL && process.env.R2_PUBLIC_BASE_URL.trim() !== '') {
-    return process.env.R2_PUBLIC_BASE_URL.replace(/\/+$/, '');
+  const customBase = process.env.R2_PUBLIC_BASE_URL?.trim();
+  if (customBase && !customBase.includes('.r2.cloudflarestorage.com')) {
+    return customBase.replace(/\/+$/, '');
   }
-  const bucketName = process.env.R2_BUCKET_NAME || '';
-  const accountId = process.env.R2_ACCOUNT_ID || '';
-  return `https://${bucketName}.${accountId}.r2.cloudflarestorage.com`;
+  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL?.trim() || 'https://heyprince.in';
+  return `${serverUrl.replace(/\/+$/, '')}/api/media`;
 }
 
 let cachedS3Client: S3Client | null = null;
