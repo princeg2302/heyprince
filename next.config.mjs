@@ -11,6 +11,26 @@ const nextConfig = {
         hostname: 'muzbzrxwbanzsjvgtexp.supabase.co',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '**.r2.cloudflarestorage.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.r2.dev',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'assets.heyprince.in',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
     ],
   },
   async headers() {

@@ -14,6 +14,10 @@ import {
   X,
   FileText,
   Loader2,
+  CloudLightning,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { MediaRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -44,6 +48,37 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+
+  // R2 Migration state
+  const [migrationModalOpen, setMigrationModalOpen] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<any>(null);
+
+  const handleRunMigration = async () => {
+    setMigrating(true);
+    setMigrationResult(null);
+    try {
+      const res = await fetch('/api/admin/storage/migrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      const data = await res.json();
+      setMigrationResult(data);
+      if (data.success) {
+        showToast(`R2 Migration complete! ${data.migratedCount} new files copied to Cloudflare R2.`, 'success');
+        const mRes = await fetch('/api/admin/media');
+        const mData = await mRes.json();
+        if (mData.media) setMediaList(mData.media);
+      } else {
+        showToast(data.error || 'Migration reported issues.', 'error');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Network error during migration.', 'error');
+    } finally {
+      setMigrating(false);
+    }
+  };
 
   const filtered = mediaList
     .filter((m) => {
@@ -203,10 +238,23 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
             Upload and organize logos, portfolio hero banners, and blog cover illustrations.
           </p>
         </div>
-        <button onClick={() => setUploadModalOpen(true)} className="hpa-btn hpa-btn-primary">
-          <Upload size={16} />
-          <span>Upload Media</span>
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            onClick={() => {
+              setMigrationResult(null);
+              setMigrationModalOpen(true);
+            }}
+            className="hpa-btn hpa-btn-secondary"
+            title="Migrate all assets from Supabase to Cloudflare R2"
+          >
+            <CloudLightning size={16} style={{ color: '#f59e0b' }} />
+            <span>Migrate to R2</span>
+          </button>
+          <button onClick={() => setUploadModalOpen(true)} className="hpa-btn hpa-btn-primary">
+            <Upload size={16} />
+            <span>Upload Media</span>
+          </button>
+        </div>
       </div>
 
       <div className="hpa-card">
@@ -520,6 +568,105 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
         onCancel={() => setBulkDeleteOpen(false)}
         isLoading={bulkDeleteLoading}
       />
+
+      {/* Cloudflare R2 Migration Modal */}
+      {migrationModalOpen && (
+        <div className="hpa-modal-backdrop">
+          <div className="hpa-modal" style={{ maxWidth: '580px' }}>
+            <div className="hpa-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CloudLightning size={20} style={{ color: '#f59e0b' }} />
+                <h3 className="hpa-modal-title">Migrate Assets to Cloudflare R2</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMigrationModalOpen(false)}
+                className="hpa-modal-close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px 24px', fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.6 }}>
+              <p style={{ margin: '0 0 16px 0' }}>
+                This tool automatically streams all <strong>115+ images and blog assets</strong> currently stored in Supabase Storage into your <strong>Cloudflare R2 bucket</strong>, and updates all corresponding database records in the <code>media</code> and <code>posts</code> tables.
+              </p>
+
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '8px',
+                  background: 'rgba(56, 189, 248, 0.08)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  marginBottom: '20px',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', marginBottom: '6px', fontWeight: 600 }}>
+                  <CheckCircle2 size={16} />
+                  <span>Zero Downtime & Safe Preservation</span>
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '18px', color: '#94a3b8' }}>
+                  <li>Existing Supabase files remain intact without deletion.</li>
+                  <li>Blog cover images and media vault assets are placed in organized R2 folders.</li>
+                  <li>Idempotent: Assets already present in R2 are automatically skipped.</li>
+                </ul>
+              </div>
+
+              {migrationResult && (
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '8px',
+                    background: migrationResult.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    border: migrationResult.success ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                    marginBottom: '20px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: migrationResult.success ? '#4ade80' : '#f87171', fontWeight: 700, marginBottom: '8px' }}>
+                    {migrationResult.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    <span>{migrationResult.success ? 'Migration Succeeded!' : 'Migration Finished with Warnings'}</span>
+                  </div>
+                  <div style={{ fontSize: '0.82rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', color: '#e2e8f0' }}>
+                    <div>Total Source Files: <strong>{migrationResult.totalSourceFiles}</strong></div>
+                    <div>Newly Uploaded to R2: <strong>{migrationResult.migratedCount}</strong></div>
+                    <div>Already in R2: <strong>{migrationResult.alreadyInR2Count}</strong></div>
+                    <div>Failed: <strong>{migrationResult.failedCount}</strong></div>
+                    <div>Blog Posts Repointed: <strong>{migrationResult.postsUpdatedTotal}</strong></div>
+                    <div>Media Vault Repointed: <strong>{migrationResult.mediaUpdatedTotal}</strong></div>
+                  </div>
+                  {migrationResult.error && (
+                    <div style={{ marginTop: '8px', color: '#f87171', fontSize: '0.78rem' }}>
+                      Error: {migrationResult.error}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="hpa-modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setMigrationModalOpen(false)}
+                  disabled={migrating}
+                  className="hpa-btn hpa-btn-secondary"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRunMigration}
+                  disabled={migrating}
+                  className="hpa-btn hpa-btn-primary"
+                  style={{ background: '#f59e0b', borderColor: '#f59e0b', color: '#000000', fontWeight: 700 }}
+                >
+                  {migrating ? <Loader2 size={15} className="hpa-spin" /> : <CloudLightning size={15} />}
+                  <span>{migrating ? 'Migrating Files to R2...' : 'Start Migration to R2'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
