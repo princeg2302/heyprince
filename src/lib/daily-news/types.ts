@@ -161,6 +161,7 @@ export interface OrchestrationResult {
   status: RunStatus;
   websiteStatus: WebsiteStatus;
   linkedinStatus: LinkedInStatus;
+  socialPublishResults?: any;
   postId?: number | null;
   postSlug?: string;
   postUrl?: string;

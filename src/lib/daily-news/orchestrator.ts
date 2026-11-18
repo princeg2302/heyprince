@@ -603,6 +603,25 @@ export async function executeDailyNewsAutomation(params?: {
       }
     }
 
+    // 8. Stage 5: Publish to Social Platforms (Threads, Twitter/X, WhatsApp Channel)
+    let socialPublishResults: any = null;
+    if (postStatus === 'published') {
+      try {
+        const { publishToAllSocialPlatforms } = await import('@/lib/social/publisher');
+        socialPublishResults = await publishToAllSocialPlatforms({
+          postId: createdPost.id,
+          customText: generated.linkedinPost,
+          imageUrl: coverImageUrl,
+        });
+
+        if (socialPublishResults.publishedCount > 0) {
+          console.log(`[DailyNews] Multi-platform publish success: ${socialPublishResults.publishedCount} published.`);
+        }
+      } catch (socialErr: any) {
+        console.warn('[DailyNews] Social publishing notice:', socialErr?.message || socialErr);
+      }
+    }
+
     // Determine overall run status
     let finalRunStatus: RunStatus = 'success';
     if (linkedinError) {
@@ -628,6 +647,7 @@ export async function executeDailyNewsAutomation(params?: {
       status: finalRunStatus,
       websiteStatus,
       linkedinStatus,
+      socialPublishResults,
       postId: createdPost.id,
       postSlug: createdPost.slug,
       postUrl,
@@ -846,6 +866,18 @@ export async function publishDraftRun(runId: number): Promise<{
       linkedinStatus = 'failed';
       linkedinError = liErr?.message || 'LinkedIn publish exception';
     }
+  }
+
+  // Multi-platform social publishing (Threads, Twitter/X, WhatsApp Channel)
+  let socialPublishResults: any = null;
+  try {
+    const { publishToAllSocialPlatforms } = await import('@/lib/social/publisher');
+    socialPublishResults = await publishToAllSocialPlatforms({
+      postId: createdPost.id,
+      customText: content.linkedinPost || run.linkedinCommentary,
+    });
+  } catch (socialErr: any) {
+    console.warn('[approveAndPublishDraft] Social publish notice:', socialErr?.message || socialErr);
   }
 
   await updateDailyRun(run.id, {

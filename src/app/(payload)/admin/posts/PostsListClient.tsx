@@ -19,11 +19,13 @@ import {
   Inbox,
   Share2,
   Sparkles,
+  Send,
 } from 'lucide-react';
 import { PostRecord } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 import { LinkedInPublishModal } from '@/components/admin/LinkedInPublishModal';
+import { SocialPublishModal } from '@/components/admin/SocialPublishModal';
 
 interface PostsListClientProps {
   initialPosts: PostRecord[];
@@ -40,6 +42,7 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [publishingPost, setPublishingPost] = useState<PostRecord | null>(null);
+  const [socialPublishingPost, setSocialPublishingPost] = useState<PostRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
@@ -422,6 +425,16 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
                             <Share2 size={14} />
                           </button>
 
+                          <button
+                            type="button"
+                            onClick={() => setSocialPublishingPost(post)}
+                            className="hpa-btn hpa-btn-secondary hpa-btn-icon"
+                            title="Publish to Socials (Threads, Twitter/X, WhatsApp)"
+                            style={{ color: '#ff3366' }}
+                          >
+                            <Send size={14} />
+                          </button>
+
                           <Link
                             href={`/insights/${post.slug}`}
                             target="_blank"
@@ -524,6 +537,13 @@ export default function PostsListClient({ initialPosts, categories }: PostsListC
         post={publishingPost}
         isOpen={publishingPost !== null}
         onClose={() => setPublishingPost(null)}
+      />
+
+      {/* Social Publish Modal (Threads, Twitter/X, WhatsApp) */}
+      <SocialPublishModal
+        post={socialPublishingPost}
+        isOpen={socialPublishingPost !== null}
+        onClose={() => setSocialPublishingPost(null)}
       />
     </div>
   );
