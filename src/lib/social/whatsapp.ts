@@ -11,18 +11,30 @@ export interface WhatsAppConfig {
   isConfigured: boolean;
 }
 
+function cleanEnv(val?: string): string {
+  if (!val) return '';
+  let str = val.trim();
+  if (
+    (str.startsWith('"') && str.endsWith('"')) ||
+    (str.startsWith("'") && str.endsWith("'"))
+  ) {
+    str = str.slice(1, -1).trim();
+  }
+  return str;
+}
+
 export function getWhatsAppConfig(): WhatsAppConfig {
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim() || '';
-  const channelId = process.env.WHATSAPP_CHANNEL_ID?.trim() || undefined;
-  const phoneId = process.env.WHATSAPP_BUSINESS_PHONE_ID?.trim() || undefined;
-  const apiVersion = process.env.WHATSAPP_API_VERSION?.trim() || 'v21.0';
+  const accessToken = cleanEnv(process.env.WHATSAPP_ACCESS_TOKEN);
+  const channelId = cleanEnv(process.env.WHATSAPP_CHANNEL_ID);
+  const phoneId = cleanEnv(process.env.WHATSAPP_BUSINESS_PHONE_ID);
+  const apiVersion = cleanEnv(process.env.WHATSAPP_API_VERSION) || 'v21.0';
 
   const isConfigured = Boolean(accessToken && (channelId || phoneId));
 
   return {
     accessToken,
-    channelId,
-    phoneId,
+    channelId: channelId || undefined,
+    phoneId: phoneId || undefined,
     apiVersion,
     isConfigured,
   };
@@ -124,6 +136,8 @@ export async function publishToWhatsAppChannel(
     const isWhapi =
       process.env.WHATSAPP_API_PROVIDER === 'whapi' ||
       config.channelId?.includes('@newsletter') ||
+      config.channelId?.startsWith('120363') ||
+      (!config.accessToken.startsWith('EAA') && config.accessToken.length < 80) ||
       Boolean(process.env.WHATSAPP_GATEWAY_URL);
 
     let res: Response;
@@ -131,9 +145,10 @@ export async function publishToWhatsAppChannel(
 
     if (isWhapi) {
       // Whapi.Cloud automated channel broadcasting
-      const channelJid = config.channelId?.includes('@newsletter')
-        ? config.channelId
-        : `${config.channelId}@newsletter`;
+      const rawChannel = config.channelId || '';
+      const channelJid = rawChannel.includes('@newsletter')
+        ? rawChannel
+        : `${rawChannel}@newsletter`;
 
       const whapiBase = process.env.WHATSAPP_GATEWAY_URL || 'https://gate.whapi.cloud';
       const isMedia = Boolean(imageUrl && !imageUrl.endsWith('.svg'));
