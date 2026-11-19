@@ -1080,7 +1080,7 @@ export default function VideoStudioClient() {
                       </td>
 
                       <td>
-                        {job.youtubeVideoId ? (
+                        {job.youtubeVideoId && !job.youtubeVideoId.startsWith('hp_') ? (
                           <a
                             href={job.youtubeVideoUrl || `https://youtube.com/watch?v=${job.youtubeVideoId}`}
                             target="_blank"
@@ -1098,6 +1098,20 @@ export default function VideoStudioClient() {
                             <span>Watch</span>
                             <ExternalLink size={12} />
                           </a>
+                        ) : job.youtubeVideoId?.startsWith('hp_') ? (
+                          <span
+                            className="hpa-pill"
+                            style={{
+                              background: 'rgba(251, 191, 36, 0.1)',
+                              color: '#fbbf24',
+                              borderColor: 'rgba(251, 191, 36, 0.25)',
+                              fontSize: '0.68rem',
+                              padding: '2px 8px',
+                            }}
+                            title="Simulated dev record: configure YOUTUBE_CLIENT_ID and YOUTUBE_REFRESH_TOKEN to auto-upload to your YouTube channel."
+                          >
+                            Simulated (Dev)
+                          </span>
                         ) : (
                           <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem' }}>Pending</span>
                         )}
@@ -1607,7 +1621,25 @@ export default function VideoStudioClient() {
                   {!selectedJob.r2Retained && selectedJob.r2DeletedAt ? 'Pruned (Retention Policy)' : 'Active in Bucket'}
                 </span>
               </div>
-              <div>YouTube URL: <span style={{ color: '#38bdf8' }}>{selectedJob.youtubeVideoUrl || 'N/A'}</span></div>
+              <div>
+                YouTube Destination:{' '}
+                {selectedJob.youtubeVideoId && !selectedJob.youtubeVideoId.startsWith('hp_') ? (
+                  <a
+                    href={selectedJob.youtubeVideoUrl || `https://youtube.com/watch?v=${selectedJob.youtubeVideoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#38bdf8', textDecoration: 'underline' }}
+                  >
+                    {selectedJob.youtubeVideoUrl}
+                  </a>
+                ) : selectedJob.youtubeVideoId?.startsWith('hp_') ? (
+                  <span style={{ color: '#fbbf24' }}>
+                    Simulated Dev Record (Requires YOUTUBE_CLIENT_ID & YOUTUBE_REFRESH_TOKEN in Vercel for live upload)
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--hpa-text-dim)' }}>Pending upload</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
