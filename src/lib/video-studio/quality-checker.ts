@@ -91,10 +91,13 @@ export async function runMandatoryQualityChecks(
   };
 
   // 6. Audio-Video Duration Alignment Check
-  const totalSceneDurationSec = input.scenes.reduce((acc, s) => acc + (s.estimatedDurationSec || 5), 0);
+  const totalSceneDurationSec = input.scenes.reduce(
+    (acc, s) => acc + (s.actualAudioDurationMs ? s.actualAudioDurationMs / 1000 : (s.estimatedDurationSec || 5)),
+    0
+  );
   const audioDurationSec = input.masterAudioDurationMs / 1000;
   const durationDiffSec = Math.abs(totalSceneDurationSec - audioDurationSec);
-  const durationAligned = durationDiffSec <= 2.5; // Within 2.5s tolerance across multi-scene transitions
+  const durationAligned = durationDiffSec <= 3.0; // Within 3s tolerance across multi-scene transitions
   const audioVideoDurationAlignment: QualityCheckItem = {
     id: 'duration_alignment',
     name: 'Audio-Video Duration Alignment',

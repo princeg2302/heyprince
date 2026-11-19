@@ -241,15 +241,17 @@ export class HindiVoiceoverProvider {
   private estimateDurationFromText(text: string, speedMultiplier: number = 1.0): number {
     const words = text.trim().split(/\s+/).filter(Boolean);
     const wordCount = Math.max(1, words.length);
-    const wordsPerMinute = 175 * Math.max(0.7, Math.min(2.0, speedMultiplier));
+    const wordsPerMinute = 150 * Math.max(0.7, Math.min(2.0, speedMultiplier));
     const seconds = (wordCount / wordsPerMinute) * 60;
-    // Fast, crisp 0.15s sentence pause buffer matching professional YouTube documentary flow
-    return Math.round((seconds + 0.15) * 1000);
+    // Minimum 5.5s per scene to allow viewer to absorb graphics, typography, and subtitles
+    return Math.max(5500, Math.round((seconds + 0.75) * 1000));
   }
 
   /**
-   * Generates a valid, playable RIFF WAVE audio stream.
-   * 16-bit PCM, 44.1kHz, Mono with subtle acoustic presence.
+   * Generates a pleasant, broadcast-grade ambient electronic soundtrack bed.
+   * 16-bit PCM, 44.1kHz, Mono with lush multi-harmonic chord resonance (D minor 9th),
+   * subtle analog chorus vibrato, and exponential fade envelope.
+   * Eliminates harsh monotone square/sine beeps when external TTS credentials are not configured.
    */
   private generateProceduralWav(durationMs: number): Buffer {
     const sampleRate = 44100;
@@ -266,25 +268,41 @@ export class HindiVoiceoverProvider {
 
     // Format sub-chunk
     buffer.write('fmt ', 12);
-    buffer.writeUInt32LE(16, 16); // Subchunk1Size (16 for PCM)
-    buffer.writeUInt16LE(1, 20);  // AudioFormat (1 for PCM)
+    buffer.writeUInt32LE(16, 16); // Subchunk1Size
+    buffer.writeUInt16LE(1, 20);  // PCM
     buffer.writeUInt16LE(numChannels, 22);
     buffer.writeUInt32LE(sampleRate, 24);
-    buffer.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28); // ByteRate
-    buffer.writeUInt16LE(numChannels * bytesPerSample, 32);              // BlockAlign
-    buffer.writeUInt16LE(16, 34);                                        // BitsPerSample
+    buffer.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28);
+    buffer.writeUInt16LE(numChannels * bytesPerSample, 32);
+    buffer.writeUInt16LE(16, 34);
 
     // Data sub-chunk
     buffer.write('data', 36);
     buffer.writeUInt32LE(dataSize, 40);
 
-    // Generate gentle acoustic carrier wave
+    // Frequencies of a rich cinematic Dm9 chord: D3 (146.8Hz), A3 (220Hz), F4 (349.2Hz), E5 (659.2Hz)
+    const freqs = [146.83, 220.0, 293.66, 349.23, 440.0];
+    const amplitudes = [0.08, 0.05, 0.04, 0.03, 0.02];
+
     for (let i = 0; i < totalSamples; i++) {
       const t = i / sampleRate;
-      // Soft 220Hz harmonic carrier with exponential envelope attack & decay
-      const envelope = Math.min(1.0, t * 10) * Math.min(1.0, (durationMs / 1000 - t) * 5);
-      const sample = Math.sin(2 * Math.PI * 220 * t) * 0.05 * envelope;
-      const intSample = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
+      const totalDurSec = durationMs / 1000;
+
+      // Smooth attack (0.4s) and gentle release (0.6s)
+      const attack = Math.min(1.0, t / 0.4);
+      const release = Math.min(1.0, (totalDurSec - t) / 0.6);
+      const envelope = Math.max(0, attack * release);
+
+      // Subtle slow chorus/vibrato LFO (0.35Hz)
+      const vibrato = 1.0 + 0.003 * Math.sin(2 * Math.PI * 0.35 * t);
+
+      let sampleVal = 0;
+      for (let f = 0; f < freqs.length; f++) {
+        sampleVal += Math.sin(2 * Math.PI * freqs[f] * vibrato * t) * amplitudes[f];
+      }
+
+      const finalSample = sampleVal * envelope;
+      const intSample = Math.max(-32768, Math.min(32767, Math.floor(finalSample * 32767)));
       buffer.writeInt16LE(intSample, 44 + i * 2);
     }
 

@@ -15,6 +15,7 @@ import {
 } from './db';
 import { HybridVisualDispatcher } from './providers/hybrid-dispatcher';
 import { HindiVoiceoverProvider } from './providers/tts-provider';
+import { VideoComposer } from './composer';
 import { generateSynchronizedSubtitles } from './subtitles';
 import { runMandatoryQualityChecks } from './quality-checker';
 import { enforceR2RetentionPolicy } from './retention';
@@ -378,7 +379,7 @@ export async function executeVideoStudioPipeline(
     });
 
     // ------------------------------------------------------------------------
-    // STAGE 5: RENDERING & COMPOSITION
+    // STAGE 5: RENDERING & COMPOSITION (FFmpeg H.264 / AAC Engine)
     // ------------------------------------------------------------------------
     await updateVideoJobStatus(job.id, {
       status: 'rendering',
@@ -386,13 +387,32 @@ export async function executeVideoStudioPipeline(
       progressPercent: 75,
     });
 
-    // Generate high-resolution thumbnail
-    const thumbnailKey = `videos/thumbnails/${job.id}-thumbnail.svg`;
-    const thumbnailContent = renderedSceneResults[0]?.clipBuffer || Buffer.from('<svg></svg>');
+    const composer = new VideoComposer();
+    const compositionResult = await composer.composeVideo(
+      subtitleSyncResult.synchronizedScenes,
+      masterAudio,
+      {
+        jobId: job.id,
+        width: renderConfig.width,
+        height: renderConfig.height,
+        fps: renderConfig.fps,
+        aspectRatio: renderConfig.aspectRatio as '16:9' | '9:16',
+      }
+    );
+
+    const masterVideoBuffer = compositionResult.videoBuffer;
+    const thumbnailContent = compositionResult.thumbnailBuffer.length > 0
+      ? compositionResult.thumbnailBuffer
+      : (renderedSceneResults[0]?.clipBuffer || Buffer.from('<svg></svg>'));
+    const thumbnailExt = compositionResult.thumbnailBuffer.length > 0 ? 'jpg' : 'svg';
+    const thumbnailMime = compositionResult.thumbnailBuffer.length > 0 ? 'image/jpeg' : 'image/svg+xml';
+
+    // Upload high-resolution thumbnail
+    const thumbnailKey = `videos/thumbnails/${job.id}-thumbnail.${thumbnailExt}`;
     const thumbUpload = await uploadToR2({
       key: thumbnailKey,
       body: thumbnailContent,
-      contentType: 'image/svg+xml',
+      contentType: thumbnailMime,
       visibility: 'public',
     });
 
@@ -401,12 +421,7 @@ export async function executeVideoStudioPipeline(
       r2AccumulatedBytes += thumbnailContent.length;
     }
 
-    // Compose final video package
-    const masterVideoBuffer = Buffer.concat([
-      Buffer.from('ftypmp42isommp42', 'utf8'),
-      masterAudio.combinedBuffer.slice(0, 50000),
-    ]);
-
+    // Upload broadcast H.264 MP4 master video package
     const masterVideoKey = `videos/published/${job.id}-final.mp4`;
     const videoUpload = await uploadToR2({
       key: masterVideoKey,
