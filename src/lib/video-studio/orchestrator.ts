@@ -432,6 +432,22 @@ export async function executeVideoStudioPipeline(
       r2TotalBytes: r2AccumulatedBytes > 0 ? r2AccumulatedBytes : masterVideoBuffer.length,
     });
 
+    // Auto-register rendered video in Admin Media Library (/admin/media)
+    try {
+      const { createMediaRecord } = await import('@/lib/admin-db');
+      await createMediaRecord({
+        alt: `${job.title} (AI Video)`,
+        caption: `Rendered AI video for ${job.title}`,
+        filename: masterVideoKey,
+        mime_type: 'video/mp4',
+        filesize: masterVideoBuffer.length,
+        url: finalVideoUrl,
+      });
+      console.log(`[Video Studio Orchestrator] Registered video in Admin Media Library: ${finalVideoUrl}`);
+    } catch (mediaErr) {
+      console.warn('[Video Studio Orchestrator] Non-fatal Media Library registration notice:', mediaErr);
+    }
+
     // ------------------------------------------------------------------------
     // STAGE 6: MANDATORY QUALITY CHECK
     // ------------------------------------------------------------------------

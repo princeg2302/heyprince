@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import {
   Image as ImageIcon,
+  Video,
   Upload,
   Plus,
   Trash2,
@@ -394,18 +395,54 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
                       style={{ cursor: 'pointer', accentColor: '#ff3366', width: '16px', height: '16px' }}
                     />
                   </div>
-                  <img
-                    src={item.url || '/favicon.svg'}
-                    alt={item.alt || item.filename}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/heyprince-logo.svg';
-                    }}
-                  />
+                  {item.mime_type?.startsWith('video/') || item.filename?.endsWith('.mp4') ? (
+                    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0f1d' }}>
+                      <video
+                        src={item.url || undefined}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        preload="metadata"
+                        muted
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(0, 0, 0, 0.35)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'rgba(56, 189, 248, 0.9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#000000',
+                          }}
+                        >
+                          <Video size={18} />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={item.url || '/favicon.svg'}
+                      alt={item.alt || item.filename}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/heyprince-logo.svg';
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div style={{ padding: '12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -504,7 +541,7 @@ export default function MediaClient({ initialMedia }: MediaClientProps) {
               </div>
 
               <div style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--hpa-text-dim)' }}>
-                — OR ENTER DIRECT URL —
+                - OR ENTER DIRECT URL -
               </div>
 
               <div className="hpa-form-group" style={{ margin: 0 }}>

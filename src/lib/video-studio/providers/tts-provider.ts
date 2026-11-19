@@ -80,43 +80,10 @@ export class HindiVoiceoverProvider {
       }
     }
 
-    // 2. OpenAI Audio Speech API
-    if (this.config.provider === 'openai' && process.env.OPENAI_API_KEY) {
+    // 1. ElevenLabs Multilingual Hindi Model (Gold standard ultra-realistic human speech)
+    if ((this.config.provider === 'elevenlabs' || process.env.ELEVENLABS_API_KEY) && process.env.ELEVENLABS_API_KEY) {
       try {
-        const res = await fetch('https://api.openai.com/v1/audio/speech', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'tts-1',
-            input: hindiText,
-            voice: 'alloy',
-            speed: this.config.speakingRate,
-          }),
-        });
-
-        if (res.ok) {
-          const arrayBuf = await res.arrayBuffer();
-          const buffer = Buffer.from(arrayBuf);
-          const durationMs = this.estimateDurationFromText(hindiText, this.config.speakingRate);
-          return {
-            sceneIndex: scene.sceneIndex,
-            audioBuffer: buffer,
-            durationMs,
-            mimeType: 'audio/mp3',
-          };
-        }
-      } catch (err) {
-        console.warn('[Hindi Voiceover] OpenAI TTS request failed, using synthesizer fallback:', err);
-      }
-    }
-
-    // 3. ElevenLabs Multilingual Hindi Model
-    if (this.config.provider === 'elevenlabs' && process.env.ELEVENLABS_API_KEY) {
-      try {
-        const voiceId = this.config.voiceId || '21m00Tcm4TlvDq8ikWAM';
+        const voiceId = this.config.voiceId && this.config.voiceId.length > 15 ? this.config.voiceId : '21m00Tcm4TlvDq8ikWAM';
         const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
           method: 'POST',
           headers: {
@@ -126,7 +93,7 @@ export class HindiVoiceoverProvider {
           body: JSON.stringify({
             text: hindiText,
             model_id: 'eleven_multilingual_v2',
-            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+            voice_settings: { stability: 0.45, similarity_boost: 0.82, style: 0.25, use_speaker_boost: true },
           }),
         });
 
@@ -134,6 +101,7 @@ export class HindiVoiceoverProvider {
           const arrayBuf = await res.arrayBuffer();
           const buffer = Buffer.from(arrayBuf);
           const durationMs = this.estimateDurationFromText(hindiText, this.config.speakingRate);
+          console.log(`[Hindi Voiceover] Scene #${scene.sceneIndex} synthesized with ElevenLabs Human Voice (${buffer.length} bytes).`);
           return {
             sceneIndex: scene.sceneIndex,
             audioBuffer: buffer,
@@ -142,7 +110,41 @@ export class HindiVoiceoverProvider {
           };
         }
       } catch (err) {
-        console.warn('[Hindi Voiceover] ElevenLabs request failed, using synthesizer fallback:', err);
+        console.warn('[Hindi Voiceover] ElevenLabs request failed, falling back to alternative provider:', err);
+      }
+    }
+
+    // 2. OpenAI Audio Speech API (High-fidelity natural human narrator)
+    if ((this.config.provider === 'openai' || process.env.OPENAI_API_KEY) && process.env.OPENAI_API_KEY) {
+      try {
+        const res = await fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'tts-1-hd',
+            input: hindiText,
+            voice: 'onyx',
+            speed: Math.max(1.0, this.config.speakingRate * 1.12),
+          }),
+        });
+
+        if (res.ok) {
+          const arrayBuf = await res.arrayBuffer();
+          const buffer = Buffer.from(arrayBuf);
+          const durationMs = this.estimateDurationFromText(hindiText, this.config.speakingRate);
+          console.log(`[Hindi Voiceover] Scene #${scene.sceneIndex} synthesized with OpenAI Human Voice (${buffer.length} bytes).`);
+          return {
+            sceneIndex: scene.sceneIndex,
+            audioBuffer: buffer,
+            durationMs,
+            mimeType: 'audio/mp3',
+          };
+        }
+      } catch (err) {
+        console.warn('[Hindi Voiceover] OpenAI TTS request failed, falling back to alternative provider:', err);
       }
     }
 
@@ -239,10 +241,10 @@ export class HindiVoiceoverProvider {
   private estimateDurationFromText(text: string, speedMultiplier: number = 1.0): number {
     const words = text.trim().split(/\s+/).filter(Boolean);
     const wordCount = Math.max(1, words.length);
-    const wordsPerMinute = 140 * Math.max(0.5, Math.min(2.0, speedMultiplier));
+    const wordsPerMinute = 175 * Math.max(0.7, Math.min(2.0, speedMultiplier));
     const seconds = (wordCount / wordsPerMinute) * 60;
-    // Add 0.5s pause buffer for natural sentence boundary
-    return Math.round((seconds + 0.5) * 1000);
+    // Fast, crisp 0.15s sentence pause buffer matching professional YouTube documentary flow
+    return Math.round((seconds + 0.15) * 1000);
   }
 
   /**

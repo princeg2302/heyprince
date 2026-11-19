@@ -24,6 +24,7 @@ import {
   Check,
   X,
   Plus,
+  Download,
 } from 'lucide-react';
 import {
   VideoStudioJob,
@@ -1080,41 +1081,70 @@ export default function VideoStudioClient() {
                       </td>
 
                       <td>
-                        {job.youtubeVideoId && !job.youtubeVideoId.startsWith('hp_') ? (
-                          <a
-                            href={job.youtubeVideoUrl || `https://youtube.com/watch?v=${job.youtubeVideoId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              color: '#38bdf8',
-                              textDecoration: 'none',
-                              fontWeight: 700,
-                              fontSize: '0.78rem',
-                            }}
-                          >
-                            <span>Watch</span>
-                            <ExternalLink size={12} />
-                          </a>
-                        ) : job.youtubeVideoId?.startsWith('hp_') ? (
-                          <span
-                            className="hpa-pill"
-                            style={{
-                              background: 'rgba(251, 191, 36, 0.1)',
-                              color: '#fbbf24',
-                              borderColor: 'rgba(251, 191, 36, 0.25)',
-                              fontSize: '0.68rem',
-                              padding: '2px 8px',
-                            }}
-                            title="Simulated dev record: configure YOUTUBE_CLIENT_ID and YOUTUBE_REFRESH_TOKEN to auto-upload to your YouTube channel."
-                          >
-                            Simulated (Dev)
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem' }}>Pending</span>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {job.youtubeVideoId && !job.youtubeVideoId.startsWith('hp_') ? (
+                            <a
+                              href={job.youtubeVideoUrl || `https://youtube.com/watch?v=${job.youtubeVideoId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                color: '#38bdf8',
+                                textDecoration: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.78rem',
+                              }}
+                            >
+                              <span>Watch</span>
+                              <ExternalLink size={12} />
+                            </a>
+                          ) : job.youtubeVideoId?.startsWith('hp_') ? (
+                            <span
+                              className="hpa-pill"
+                              style={{
+                                background: 'rgba(251, 191, 36, 0.1)',
+                                color: '#fbbf24',
+                                borderColor: 'rgba(251, 191, 36, 0.25)',
+                                fontSize: '0.68rem',
+                                padding: '2px 8px',
+                              }}
+                              title="Simulated dev record: configure YOUTUBE_CLIENT_ID and YOUTUBE_REFRESH_TOKEN to auto-upload to your YouTube channel."
+                            >
+                              Simulated (Dev)
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--hpa-text-dim)', fontSize: '0.74rem' }}>Pending</span>
+                          )}
+
+                          {/* Direct Download Button */}
+                          {(job.renderedVideoUrl || job.r2VideoUrl || job.voiceoverAssets?.combinedAudioUrl) && (
+                            <a
+                              href={job.renderedVideoUrl || job.r2VideoUrl || job.voiceoverAssets?.combinedAudioUrl || '#'}
+                              download={`${job.slug || job.id}.mp4`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                background: 'rgba(0, 245, 160, 0.1)',
+                                border: '1px solid rgba(0, 245, 160, 0.3)',
+                                color: '#00f5a0',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                textDecoration: 'none',
+                              }}
+                              title="Download video or audio file"
+                            >
+                              <Download size={11} />
+                              <span>Download</span>
+                            </a>
+                          )}
+                        </div>
                       </td>
 
                       <td>
@@ -1126,6 +1156,20 @@ export default function VideoStudioClient() {
                           >
                             <FileText size={13} />
                           </button>
+
+                          {(job.renderedVideoUrl || job.r2VideoUrl || job.voiceoverAssets?.combinedAudioUrl) && (
+                            <a
+                              href={job.renderedVideoUrl || job.r2VideoUrl || job.voiceoverAssets?.combinedAudioUrl || '#'}
+                              download={`${job.slug || job.id}.mp4`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hpa-table-action-btn"
+                              title="Download video"
+                              style={{ color: '#00f5a0', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Download size={13} />
+                            </a>
+                          )}
 
                           {isJobFailed && (
                             <button
@@ -1520,6 +1564,29 @@ export default function VideoStudioClient() {
                   src={selectedJob.voiceoverAssets.combinedAudioUrl}
                   style={{ width: '100%', height: '36px', borderRadius: '8px', outline: 'none' }}
                 />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+                  <a
+                    href={selectedJob.renderedVideoUrl || selectedJob.r2VideoUrl || selectedJob.voiceoverAssets.combinedAudioUrl}
+                    download={`${selectedJob.slug || selectedJob.id}.mp4`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hpa-btn hpa-btn-primary"
+                    style={{
+                      padding: '6px 14px',
+                      fontSize: '0.78rem',
+                      background: 'linear-gradient(135deg, #00f5a0 0%, #059669 100%)',
+                      color: '#000000',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <Download size={13} />
+                    <span>Download Media Asset</span>
+                  </a>
+                </div>
               </div>
             )}
 
