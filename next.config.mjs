@@ -3,6 +3,7 @@ import { withPayload } from '@payloadcms/next/withPayload';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: true,
+  skipTrailingSlashRedirect: true,
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

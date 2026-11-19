@@ -64,6 +64,14 @@ export default function VideoStudioClient() {
   // Modals
   const [newJobModalOpen, setNewJobModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState<{
+    open: boolean;
+    jobIds: string[];
+    title?: string;
+  }>({ open: false, jobIds: [] });
+
+  // Job Selection
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
 
   // New Job Form
   const [newTopic, setNewTopic] = useState('');
@@ -219,6 +227,54 @@ export default function VideoStudioClient() {
       fetchData();
     } catch (err: any) {
       showToast(err?.message || 'Error saving settings.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedJobIds.length === jobs.length) {
+      setSelectedJobIds([]);
+    } else {
+      setSelectedJobIds(jobs.map((j) => j.id));
+    }
+  };
+
+  const toggleSelectJob = (id: string) => {
+    setSelectedJobIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const executeDelete = async (jobIds: string[]) => {
+    if (!jobIds.length) return;
+    setActionLoading(true);
+    try {
+      let res: Response;
+      if (jobIds.length === 1) {
+        res = await fetch(`/api/admin/video-studio/jobs/${jobIds[0]}`, {
+          method: 'DELETE',
+        });
+      } else {
+        res = await fetch('/api/admin/video-studio/jobs', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobIds }),
+        });
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to delete video job(s).', 'error');
+        return;
+      }
+
+      showToast(`Successfully deleted ${jobIds.length} video job(s).`, 'success');
+      setSelectedJobIds((prev) => prev.filter((id) => !jobIds.includes(id)));
+      setConfirmDeleteModal({ open: false, jobIds: [] });
+      fetchData();
+    } catch (err: any) {
+      showToast(err?.message || 'Error executing delete.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -862,36 +918,103 @@ export default function VideoStudioClient() {
             </button>
           </div>
         ) : (
-          <div className="hpa-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
-            <table className="hpa-table" style={{ width: '100%', minWidth: '700px' }}>
-              <thead>
-                <tr>
-                  <th>Title & ID</th>
-                  <th>Status</th>
-                  <th>Voice & Subtitles</th>
-                  <th>Scenes</th>
-                  <th>QA Score</th>
-                  <th>R2 Retention</th>
-                  <th>YouTube</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((job) => {
-                  const isJobFailed = job.status === 'failed';
-                  const isPublished = job.status === 'published';
-                  const isPruned = !job.r2Retained && Boolean(job.r2DeletedAt);
+          <div>
+            {/* Bulk Selection Actions Toolbar */}
+            {selectedJobIds.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  background: 'rgba(244, 63, 94, 0.08)',
+                  border: '1px solid rgba(244, 63, 94, 0.25)',
+                  marginBottom: '14px',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ffffff', fontSize: '0.82rem', fontWeight: 700 }}>
+                  <span style={{ color: '#f43f5e' }}>{selectedJobIds.length}</span> of {jobs.length} video{selectedJobIds.length > 1 ? 's' : ''} selected
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={() => setSelectedJobIds([])}
+                    className="hpa-btn hpa-btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                  >
+                    Clear Selection
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteModal({ open: true, jobIds: selectedJobIds })}
+                    className="hpa-btn hpa-btn-danger"
+                    style={{
+                      padding: '6px 14px',
+                      fontSize: '0.78rem',
+                      background: '#f43f5e',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete Selected ({selectedJobIds.length})</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
-                  return (
-                    <tr key={job.id}>
-                      <td style={{ maxWidth: '240px' }}>
-                        <div style={{ fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.title}>
-                          {job.title}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)', fontFamily: 'var(--hpa-font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.id}>
-                          {job.id}
-                        </div>
-                      </td>
+            <div className="hpa-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+              <table className="hpa-table" style={{ width: '100%', minWidth: '700px' }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: '38px', textAlign: 'center', padding: '10px 8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={jobs.length > 0 && selectedJobIds.length === jobs.length}
+                        onChange={toggleSelectAll}
+                        style={{ cursor: 'pointer', accentColor: '#38bdf8' }}
+                        title="Select / Deselect all"
+                      />
+                    </th>
+                    <th>Title & ID</th>
+                    <th>Status</th>
+                    <th>Voice & Subtitles</th>
+                    <th>Scenes</th>
+                    <th>QA Score</th>
+                    <th>R2 Retention</th>
+                    <th>YouTube</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.map((job) => {
+                    const isJobFailed = job.status === 'failed';
+                    const isPublished = job.status === 'published';
+                    const isPruned = !job.r2Retained && Boolean(job.r2DeletedAt);
+                    const isSelected = selectedJobIds.includes(job.id);
+
+                    return (
+                      <tr key={job.id} style={{ background: isSelected ? 'rgba(56, 189, 248, 0.06)' : undefined }}>
+                        <td style={{ textAlign: 'center', padding: '10px 8px' }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectJob(job.id)}
+                            style={{ cursor: 'pointer', accentColor: '#38bdf8' }}
+                          />
+                        </td>
+                        <td style={{ maxWidth: '240px' }}>
+                          <div style={{ fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.title}>
+                            {job.title}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--hpa-text-dim)', fontFamily: 'var(--hpa-font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={job.id}>
+                            {job.id}
+                          </div>
+                        </td>
 
                       <td>
                         <span
@@ -1000,6 +1123,16 @@ export default function VideoStudioClient() {
                               <RotateCw size={13} />
                             </button>
                           )}
+
+                          <button
+                            onClick={() => setConfirmDeleteModal({ open: true, jobIds: [job.id], title: job.title })}
+                            disabled={actionLoading}
+                            className="hpa-table-action-btn danger"
+                            title="Delete video job"
+                            style={{ color: '#f43f5e' }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1007,6 +1140,7 @@ export default function VideoStudioClient() {
                 })}
               </tbody>
             </table>
+          </div>
           </div>
         )}
       </div>
@@ -1347,6 +1481,34 @@ export default function VideoStudioClient() {
               </button>
             </div>
 
+            {/* Audio & Video Playback Preview */}
+            {selectedJob.voiceoverAssets?.combinedAudioUrl && (
+              <div
+                style={{
+                  padding: '14px',
+                  borderRadius: '12px',
+                  background: 'var(--hpa-surface-2)',
+                  border: '1px solid var(--hpa-border)',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Volume2 size={15} style={{ color: '#00f5a0' }} />
+                    Master Hindi Voiceover Audio
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--hpa-text-dim)', fontFamily: 'var(--hpa-font-mono)' }}>
+                    {selectedJob.voiceoverAssets.totalDurationMs ? `${(selectedJob.voiceoverAssets.totalDurationMs / 1000).toFixed(1)}s` : ''}
+                  </span>
+                </div>
+                <audio
+                  controls
+                  src={selectedJob.voiceoverAssets.combinedAudioUrl}
+                  style={{ width: '100%', height: '36px', borderRadius: '8px', outline: 'none' }}
+                />
+              </div>
+            )}
+
             {/* QA Checklist Details */}
             {selectedJob.qualityReport && (
               <div
@@ -1446,6 +1608,81 @@ export default function VideoStudioClient() {
                 </span>
               </div>
               <div>YouTube URL: <span style={{ color: '#38bdf8' }}>{selectedJob.youtubeVideoUrl || 'N/A'}</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal (Mobile & Tablet Responsive) */}
+      {confirmDeleteModal.open && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10000,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            className="hpa-card"
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              background: 'var(--hpa-surface)',
+              border: '1px solid rgba(244, 63, 94, 0.4)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', color: '#f43f5e' }}>
+              <AlertTriangle size={22} />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                {confirmDeleteModal.jobIds.length === 1 ? 'Delete Video Job' : `Delete ${confirmDeleteModal.jobIds.length} Video Jobs`}
+              </h3>
+            </div>
+            <p style={{ color: 'var(--hpa-text-muted)', fontSize: '0.84rem', lineHeight: 1.5, margin: '0 0 16px' }}>
+              {confirmDeleteModal.title ? (
+                <>Are you sure you want to permanently delete <strong>{confirmDeleteModal.title}</strong>?</>
+              ) : (
+                <>Are you sure you want to permanently delete these <strong>{confirmDeleteModal.jobIds.length}</strong> video jobs?</>
+              )}
+              <br />
+              All associated R2 video files, audio tracks, subtitles, and scenes will also be removed. This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteModal({ open: false, jobIds: [] })}
+                className="hpa-btn hpa-btn-secondary"
+                style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => executeDelete(confirmDeleteModal.jobIds)}
+                disabled={actionLoading}
+                className="hpa-btn hpa-btn-danger"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.82rem',
+                  background: '#f43f5e',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                {actionLoading ? <Loader2 size={14} className="hpa-spin" /> : <Trash2 size={14} />}
+                <span>Delete Permanently</span>
+              </button>
             </div>
           </div>
         </div>

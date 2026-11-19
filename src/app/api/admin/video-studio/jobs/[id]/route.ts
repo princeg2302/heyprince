@@ -5,6 +5,7 @@ import {
   updateVideoJobStatus,
   getVideoStudioSettings,
   getActiveVideoJob,
+  deleteVideoJob,
 } from '@/lib/video-studio/db';
 import { executeVideoStudioPipeline } from '@/lib/video-studio/orchestrator';
 
@@ -107,3 +108,37 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Job ID is required' }, { status: 400 });
+    }
+
+    const job = await getVideoJobById(id);
+    if (!job) {
+      return NextResponse.json({ success: false, error: 'Job not found' }, { status: 404 });
+    }
+
+    await deleteVideoJob(id);
+
+    return NextResponse.json({
+      success: true,
+      message: `Video job ${id} deleted successfully.`,
+      jobId: id,
+    });
+  } catch (error: any) {
+    console.error('[API /api/admin/video-studio/jobs/[id] DELETE] Error:', error);
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Failed to delete video job' },
+      { status: 500 }
+    );
+  }
+}
+

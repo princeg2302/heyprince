@@ -502,3 +502,48 @@ export async function getStorageDashboardSummary(): Promise<StorageDashboardSumm
     recentRetentionLogs: recentLogs,
   };
 }
+
+/**
+ * Deletes an individual video job and cleans up its associated R2 media objects.
+ */
+export async function deleteVideoJob(jobId: string): Promise<{ success: boolean; deletedCount: number }> {
+  try {
+    const job = await getVideoJobById(jobId);
+    if (job?.r2AssetKeys && Array.isArray(job.r2AssetKeys)) {
+      const { deleteFromR2 } = await import('@/lib/storage/r2');
+      for (const key of job.r2AssetKeys) {
+        if (key) {
+          await deleteFromR2(key).catch(() => {});
+        }
+      }
+    }
+
+    await query(`DELETE FROM video_studio_jobs WHERE id = $1;`, [jobId]);
+    return { success: true, deletedCount: 1 };
+  } catch (err) {
+    console.error(`[VideoStudio DB] Failed to delete video job ${jobId}:`, err);
+    throw err;
+  }
+}
+
+/**
+ * Bulk deletes multiple video jobs and cleans up their R2 media objects.
+ */
+export async function deleteVideoJobs(jobIds: string[]): Promise<{ success: boolean; deletedCount: number }> {
+  if (!jobIds || jobIds.length === 0) {
+    return { success: true, deletedCount: 0 };
+  }
+
+  let deletedCount = 0;
+  for (const id of jobIds) {
+    try {
+      await deleteVideoJob(id);
+      deletedCount++;
+    } catch (e) {
+      console.warn(`[VideoStudio DB] Error deleting job ${id}:`, e);
+    }
+  }
+
+  return { success: true, deletedCount };
+}
+

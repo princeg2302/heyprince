@@ -116,3 +116,35 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { jobIds } = body;
+
+    if (!Array.isArray(jobIds) || jobIds.length === 0) {
+      return NextResponse.json({ success: false, error: 'jobIds array is required' }, { status: 400 });
+    }
+
+    const { deleteVideoJobs } = await import('@/lib/video-studio/db');
+    const result = await deleteVideoJobs(jobIds);
+
+    return NextResponse.json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} video job(s).`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error: any) {
+    console.error('[API /api/admin/video-studio/jobs DELETE] Error:', error);
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Failed to delete video jobs' },
+      { status: 500 }
+    );
+  }
+}
+
