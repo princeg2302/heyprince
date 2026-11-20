@@ -8,6 +8,8 @@ import {
   getAgentById,
 } from '../db';
 import { ChiefSeoRecommendation } from '../types';
+import { recordAgentLearning, getIndustryCategories } from '../../company/db';
+import { recordCompanyMemory } from '../../company/memory';
 
 export async function runSeoGrowthAudit(): Promise<{
   recommendationsCount: number;
@@ -21,13 +23,13 @@ export async function runSeoGrowthAudit(): Promise<{
   await logChiefActivity(
     'seo_growth',
     'info',
-    'Started SEO & Organic Growth audit',
+    'Started SEO & Semantic Intelligence audit (Elena Rostova)',
     { mode }
   );
 
   const recommendations: Partial<ChiefSeoRecommendation>[] = [];
 
-  // 1. Audit Posts for Title & Meta Description Optimization
+  // 1. Audit Real Live Posts for Metadata, CTR & Snippet Optimization
   const posts = await query<{
     id: number;
     title: string;
@@ -53,19 +55,19 @@ export async function runSeoGrowthAudit(): Promise<{
     if (title.length < 30) {
       recommendations.push({
         page_url: pageUrl,
-        issue: 'Under-optimized Title Tag (Too Short)',
-        evidence: `Current title "${title}" is ${title.length} chars (target: 40-60 chars).`,
-        suggested_change: `Expand title to include primary keyword & brand: "${title} | Full-Stack Insights - HeyPrince"`,
-        expected_benefit: 'Improves CTR in Google SERPs by providing complete query relevance and brand authority.',
+        issue: `Under-optimized Title on /insights/${post.slug}`,
+        evidence: `Title "${title}" is ${title.length} characters (target: 45-60 chars).`,
+        suggested_change: `Expand title to include primary architectural keyword & brand: "${title} | Full-Stack Insights - HeyPrince"`,
+        expected_benefit: 'Improves CTR in Google SERPs by matching full search intent.',
         risk_level: 'low',
       });
     } else if (title.length > 65) {
       recommendations.push({
         page_url: pageUrl,
-        issue: 'Title Tag Truncation Warning (Too Long)',
-        evidence: `Current title is ${title.length} chars, which exceeds Google desktop SERP limit of ~60-65 chars.`,
-        suggested_change: `Trim title to front-load primary keyword: "${title.slice(0, 58)}..."`,
-        expected_benefit: 'Prevents awkward clipping in search engine snippet cards.',
+        issue: `Title Truncation on /insights/${post.slug}`,
+        evidence: `Title "${title}" is ${title.length} characters, which Google cuts off on mobile and desktop snippets.`,
+        suggested_change: `Front-load key technologies and trim title to under 60 chars.`,
+        expected_benefit: 'Prevents awkward ellipsis truncation in search cards.',
         risk_level: 'low',
       });
     }
@@ -74,65 +76,47 @@ export async function runSeoGrowthAudit(): Promise<{
     if (!desc || desc.trim().length === 0) {
       recommendations.push({
         page_url: pageUrl,
-        issue: 'Missing Meta Description',
-        evidence: `Page has no dedicated meta description tag, forcing Google to generate an arbitrary snippet.`,
-        suggested_change: `Add 130-155 character compelling meta description highlighting technical takeaways and Prince's engineering perspective.`,
-        expected_benefit: 'Boosts organic click-through rates by up to 25% with clear intent matching.',
+        issue: `Missing Meta Description on /insights/${post.slug}`,
+        evidence: `Post lacks an explicit meta description, forcing search engines to generate an arbitrary snippet.`,
+        suggested_change: `Author a high-CTR 140-155 character meta snippet highlighting practical takeaways and architecture patterns.`,
+        expected_benefit: 'Directly boosts organic search click-through rate by up to 25%.',
         risk_level: 'low',
       });
     } else if (desc.length < 80) {
       recommendations.push({
         page_url: pageUrl,
-        issue: 'Short Meta Description',
-        evidence: `Meta description is only ${desc.length} chars (target: 120-155 chars).`,
-        suggested_change: `Enrich with target secondary keywords and a clear call to read.`,
-        expected_benefit: 'Maximizes snippet real estate and improves SERP prominence.',
+        issue: `Short Meta Description on /insights/${post.slug}`,
+        evidence: `Meta description is only ${desc.length} chars (target: 130-155 chars).`,
+        suggested_change: `Enrich description with secondary search keywords and an explicit call-to-action.`,
+        expected_benefit: 'Maximizes snippet visibility and improves CTR.',
         risk_level: 'low',
       });
     }
   }
 
-  // 2. High-Intent Service Opportunity & Internal Linking Clusters
-  // Suggest relevant topic clusters aligned with core services
-  const keywordOpportunities = [
-    {
-      pageUrl: '/services/wordpress-woocommerce-speed-optimization/',
-      issue: 'Content Cluster Gap: WooCommerce 2026 Core Web Vitals Guide',
-      evidence: 'High client search volume for WooCommerce speed fixes, but no dedicated deep-dive tutorial in /insights/.',
-      suggestedChange: 'Draft technical guide: "Sub-Second WooCommerce: Eliminating TTFB Bottlenecks and Boosting Conversion in 2026".',
-      expectedBenefit: 'Captures commercial intent leads looking for urgent e-commerce speed optimization services.',
-      riskLevel: 'low' as const,
-    },
-    {
-      pageUrl: '/services/full-stack-react-nextjs-development/',
-      issue: 'Internal Linking Gap: Next.js 16 Partial Prerendering',
-      evidence: 'Multiple AI articles mention React 19 and Next.js, but lack internal contextual anchor links pointing to Next.js service offerings.',
-      suggestedChange: 'Add contextual internal links with anchor text "Next.js architectural consulting" connecting latest blog articles to service page.',
-      expectedBenefit: 'Passes PageRank authority and increases inbound service conversion from organic blog traffic.',
-      riskLevel: 'low' as const,
-    },
-    {
-      pageUrl: '/services/ai-integration-intelligent-agents/',
-      issue: 'Commercial Intent Keyword: Autonomous AI Agents in Production',
-      evidence: 'Growing enterprise inquiry volume around practical agent architectures vs toy demos.',
-      suggestedChange: 'Publish case-study article: "Engineering Autonomous AI Agents with Next.js, Supabase & Gemini: Lessons from Production".',
-      expectedBenefit: 'Directly positions HeyPrince as an elite AI agent implementer and drives high-ticket inbound leads.',
-      riskLevel: 'low' as const,
-    },
-  ];
+  // 2. Dynamic Content Gap & Internal Linking Opportunities
+  try {
+    const activeCategories = await getIndustryCategories('active');
+    const existingTitles = posts.map((p) => p.title.toLowerCase());
 
-  for (const opp of keywordOpportunities) {
-    recommendations.push({
-      page_url: opp.pageUrl,
-      issue: opp.issue,
-      evidence: opp.evidence,
-      suggested_change: opp.suggestedChange,
-      expected_benefit: opp.expectedBenefit,
-      risk_level: opp.riskLevel,
-    });
+    for (const cat of activeCategories.slice(0, 4)) {
+      const hasCoverage = existingTitles.some((t) => t.includes(cat.name.toLowerCase().split(' ')[0]));
+      if (!hasCoverage) {
+        recommendations.push({
+          page_url: `/services/${cat.slug}/`,
+          issue: `Content Gap: No dedicated engineering guide for ${cat.name}`,
+          evidence: `Category "${cat.name}" has high commercial relevance (${cat.commercial_relevance}) but lacks a corresponding deep-dive insight.`,
+          suggested_change: `Collaborate with Marcus Sterling to research and publish a technical case study targeting ${cat.name}.`,
+          expected_benefit: `Captures high-intent organic commercial queries for ${cat.name}.`,
+          risk_level: 'low',
+        });
+      }
+    }
+  } catch (catErr) {
+    console.warn('[SeoGrowth] Dynamic gap analysis notice:', catErr);
   }
 
-  // Record top recommendations to database (deduplicating by page_url + issue)
+  // Record top recommendations to database
   let savedCount = 0;
   for (const rec of recommendations.slice(0, 10)) {
     if (rec.page_url && rec.issue && rec.evidence && rec.suggested_change && rec.expected_benefit) {
@@ -148,56 +132,42 @@ export async function runSeoGrowthAudit(): Promise<{
     }
   }
 
-  // If in Mode B (Prepare), create an SEO optimization proposal draft
-  if (mode === 'prepare' && recommendations.length > 0) {
-    await createContentDraft({
-      agentId: 'seo_growth',
-      draftType: 'seo_patch',
-      title: `SEO Roadmap: ${recommendations.length} Actionable Opportunities Identified`,
-      excerpt: `Audited published insights and service clusters. Identified ${recommendations.length} high-impact improvements.`,
-      content: JSON.stringify(recommendations, null, 2),
-      metadata: {
-        totalOpportunities: recommendations.length,
-        topActions: recommendations.slice(0, 5),
-      },
-      status: 'pending_approval',
+  // Record Agent Learning & Department Memory
+  try {
+    await recordAgentLearning({
+      agent_id: 'elena_rostova',
+      learning_type: 'performance_metric',
+      topic_or_entity: 'Organic Search Footprint',
+      lesson: `Audited ${posts.length} published articles. Found ${recommendations.length} SEO optimization opportunities.`,
+      actionable_directive:
+        recommendations.length > 5
+          ? 'Prioritize meta description patches for recently published articles with under-length snippets.'
+          : 'Published articles adhere closely to SEO length and title standards. Focus on internal linking.',
     });
-  }
 
-  // Collaborative Task Delegation: Elena asks Marcus to draft on top content opportunity
-  if (keywordOpportunities.length > 0) {
-    try {
-      const topOpp = keywordOpportunities[0];
-      const { createCompanyTask } = await import('../../company/db');
-      await createCompanyTask({
-        title: `Draft Content on Search Gap: ${topOpp.issue}`,
-        description: `Identified by Elena Rostova: ${topOpp.evidence} Recommended Action: ${topOpp.suggestedChange}`,
-        assignedTo: 'marcus_sterling',
-        assignedBy: 'elena_rostova',
-        priority: 'high',
-        acceptanceCriteria: [
-          'Target commercial search intent for WooCommerce speed fixes',
-          'Include concrete architectural code snippets',
-          'Enforce strict zero em-dash policy',
-        ],
-      });
-    } catch (taskErr) {
-      console.warn('[SEO Growth] Task matrix auto-record notice:', taskErr);
-    }
+    await recordCompanyMemory({
+      scope: 'department',
+      department: 'Growth',
+      employeeId: 'elena_rostova',
+      category: 'learning',
+      insight: `Elena Rostova SEO audit: ${recommendations.length} actionable opportunities across ${posts.length} audited pages.`,
+      confidenceScore: 0.95,
+    });
+  } catch (memErr) {
+    console.warn('[SeoGrowth] Memory recording notice:', memErr);
   }
 
   const duration = Date.now() - startTime;
-  const summary = `Evaluated published pages & topic clusters in ${duration}ms. Produced ${recommendations.length} recommendations.`;
+  const summary = `SEO Audit by Elena Rostova: Analyzed ${posts.length} published pages, generated ${recommendations.length} actionable optimizations (${savedCount} recorded in database).`;
 
-  await updateAgentExecutionTime('seo_growth', new Date(), new Date(Date.now() + 7 * 24 * 3600 * 1000));
-  await incrementAgentStats('seo_growth', true, savedCount);
+  await updateAgentExecutionTime('seo_growth', new Date());
+  await incrementAgentStats('seo_growth', true, recommendations.length);
 
-  await logChiefActivity(
-    'seo_growth',
-    'success',
-    'Completed SEO & Organic Growth audit',
-    { recommendationsCount: recommendations.length, savedCount, durationMs: duration }
-  );
+  await logChiefActivity('seo_growth', 'success', summary, {
+    postsAudited: posts.length,
+    recommendationsCount: recommendations.length,
+    durationMs: duration,
+  });
 
   return {
     recommendationsCount: recommendations.length,

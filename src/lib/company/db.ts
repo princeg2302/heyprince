@@ -15,6 +15,12 @@ import {
   MessageType,
   MemoryScope,
   MemoryCategory,
+  IndustryCategory,
+  BlogTopicRecord,
+  ImageAssetRecord,
+  AgentLearningRecord,
+  ImprovementProposal,
+  DailyCompanyReport,
 } from './types';
 
 // ============================================================================
@@ -739,3 +745,378 @@ export async function getCompanyOverview(): Promise<CompanyOverviewSummary> {
     systemHealth: 'healthy',
   };
 }
+
+// ============================================================================
+// 9. Industry Category Operations (Dynamic Lead Intelligence Expansion)
+// ============================================================================
+
+export async function getIndustryCategories(status = 'active'): Promise<IndustryCategory[]> {
+  const rows = await query<IndustryCategory>(
+    `SELECT * FROM industry_categories WHERE status = $1 ORDER BY last_scanned_at ASC NULLS FIRST, created_at DESC;`,
+    [status]
+  );
+  return rows || [];
+}
+
+export async function getIndustryCategoryBySlug(slug: string): Promise<IndustryCategory | null> {
+  const rows = await query<IndustryCategory>(
+    `SELECT * FROM industry_categories WHERE slug = $1 LIMIT 1;`,
+    [slug]
+  );
+  return rows[0] || null;
+}
+
+export async function createIndustryCategory(cat: {
+  id: string;
+  name: string;
+  slug: string;
+  commercial_relevance: string;
+  heyprince_services: string[];
+  estimated_demand?: string;
+  status?: 'active' | 'proposed' | 'archived';
+  discovered_by?: string;
+  evidence?: Record<string, any>;
+}): Promise<IndustryCategory> {
+  const rows = await query<IndustryCategory>(
+    `INSERT INTO industry_categories (
+      id, name, slug, commercial_relevance, heyprince_services, estimated_demand, status, discovered_by, evidence
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    ON CONFLICT (slug) DO UPDATE SET
+      commercial_relevance = EXCLUDED.commercial_relevance,
+      heyprince_services = EXCLUDED.heyprince_services,
+      updated_at = NOW()
+    RETURNING *;`,
+    [
+      cat.id,
+      cat.name,
+      cat.slug,
+      cat.commercial_relevance,
+      cat.heyprince_services,
+      cat.estimated_demand || 'medium',
+      cat.status || 'active',
+      cat.discovered_by || null,
+      JSON.stringify(cat.evidence || {}),
+    ]
+  );
+  return rows[0];
+}
+
+export async function updateCategoryScanned(slug: string, leadsIncrement = 0): Promise<void> {
+  await query(
+    `UPDATE industry_categories 
+     SET last_scanned_at = NOW(), 
+         leads_found_count = leads_found_count + $1, 
+         updated_at = NOW() 
+     WHERE slug = $2;`,
+    [leadsIncrement, slug]
+  );
+}
+
+// ============================================================================
+// 10. Blog Topics Registry & Editorial Originality Operations
+// ============================================================================
+
+export async function getBlogTopics(limit = 50): Promise<BlogTopicRecord[]> {
+  const rows = await query<BlogTopicRecord>(
+    `SELECT * FROM blog_topics_registry ORDER BY discovered_at DESC LIMIT $1;`,
+    [limit]
+  );
+  return rows || [];
+}
+
+export async function registerBlogTopic(topic: {
+  topic: string;
+  normalized_topic: string;
+  category: string;
+  angle: string;
+  target_audience: string;
+  sources?: any[];
+  semantic_keywords?: string[];
+  status?: 'proposed' | 'approved' | 'drafted' | 'published' | 'rejected';
+  rejection_reason?: string;
+  similarity_score?: number;
+  similar_to_slug?: string;
+  proposed_by?: string;
+}): Promise<BlogTopicRecord> {
+  const rows = await query<BlogTopicRecord>(
+    `INSERT INTO blog_topics_registry (
+      topic, normalized_topic, category, angle, target_audience, sources, semantic_keywords,
+      status, rejection_reason, similarity_score, similar_to_slug, proposed_by
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    ON CONFLICT (normalized_topic) DO UPDATE SET
+      angle = EXCLUDED.angle,
+      status = EXCLUDED.status,
+      rejection_reason = EXCLUDED.rejection_reason,
+      similarity_score = EXCLUDED.similarity_score,
+      updated_at = NOW()
+    RETURNING *;`,
+    [
+      topic.topic,
+      topic.normalized_topic,
+      topic.category,
+      topic.angle,
+      topic.target_audience,
+      JSON.stringify(topic.sources || []),
+      topic.semantic_keywords || [],
+      topic.status || 'proposed',
+      topic.rejection_reason || null,
+      topic.similarity_score || 0.0,
+      topic.similar_to_slug || null,
+      topic.proposed_by || null,
+    ]
+  );
+  return rows[0];
+}
+
+export async function updateBlogTopicStatus(
+  id: string,
+  status: 'proposed' | 'approved' | 'drafted' | 'published' | 'rejected',
+  postId?: number
+): Promise<void> {
+  await query(
+    `UPDATE blog_topics_registry 
+     SET status = $1, post_id = COALESCE($2, post_id), updated_at = NOW() 
+     WHERE id = $3;`,
+    [status, postId ?? null, id]
+  );
+}
+
+// ============================================================================
+// 11. Image Asset Registry Operations
+// ============================================================================
+
+export async function recordImageAsset(asset: {
+  asset_url: string;
+  content_hash: string;
+  prompt: string;
+  provider: string;
+  article_id?: string;
+  post_id?: number;
+  subject: string;
+  visual_concepts?: string[];
+  quality_status?: 'approved' | 'rejected' | 'flagged';
+  quality_score?: number;
+  watermark_detected?: boolean;
+  rejection_reason?: string;
+  metadata?: Record<string, any>;
+}): Promise<ImageAssetRecord> {
+  const rows = await query<ImageAssetRecord>(
+    `INSERT INTO image_assets_registry (
+      asset_url, content_hash, prompt, provider, article_id, post_id, subject,
+      visual_concepts, quality_status, quality_score, watermark_detected, rejection_reason, metadata
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    RETURNING *;`,
+    [
+      asset.asset_url,
+      asset.content_hash,
+      asset.prompt,
+      asset.provider,
+      asset.article_id || null,
+      asset.post_id || null,
+      asset.subject,
+      asset.visual_concepts || [],
+      asset.quality_status || 'approved',
+      asset.quality_score ?? 1.0,
+      asset.watermark_detected ?? false,
+      asset.rejection_reason || null,
+      JSON.stringify(asset.metadata || {}),
+    ]
+  );
+  return rows[0];
+}
+
+export async function getImageAssetByHash(contentHash: string): Promise<ImageAssetRecord | null> {
+  const rows = await query<ImageAssetRecord>(
+    `SELECT * FROM image_assets_registry WHERE content_hash = $1 LIMIT 1;`,
+    [contentHash]
+  );
+  return rows[0] || null;
+}
+
+export async function getRecentImageAssets(limit = 20): Promise<ImageAssetRecord[]> {
+  const rows = await query<ImageAssetRecord>(
+    `SELECT * FROM image_assets_registry ORDER BY created_at DESC LIMIT $1;`,
+    [limit]
+  );
+  return rows || [];
+}
+
+// ============================================================================
+// 12. Persistent Agent Learning & Feedback Operations
+// ============================================================================
+
+export async function recordAgentLearning(learning: {
+  agent_id: string;
+  learning_type:
+    | 'approval'
+    | 'rejection'
+    | 'correction'
+    | 'failure_analysis'
+    | 'market_observation'
+    | 'performance_metric';
+  topic_or_entity: string;
+  lesson: string;
+  actionable_directive: string;
+  source_reference?: string;
+  metadata?: Record<string, any>;
+}): Promise<AgentLearningRecord> {
+  const rows = await query<AgentLearningRecord>(
+    `INSERT INTO company_agent_learnings (
+      agent_id, learning_type, topic_or_entity, lesson, actionable_directive, source_reference, metadata
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;`,
+    [
+      learning.agent_id,
+      learning.learning_type,
+      learning.topic_or_entity,
+      learning.lesson,
+      learning.actionable_directive,
+      learning.source_reference || null,
+      JSON.stringify(learning.metadata || {}),
+    ]
+  );
+  return rows[0];
+}
+
+export async function getAgentLearnings(agentId?: string, limit = 15): Promise<AgentLearningRecord[]> {
+  if (agentId) {
+    const rows = await query<AgentLearningRecord>(
+      `SELECT * FROM company_agent_learnings WHERE agent_id = $1 ORDER BY created_at DESC LIMIT $2;`,
+      [agentId, limit]
+    );
+    return rows || [];
+  }
+  const rows = await query<AgentLearningRecord>(
+    `SELECT * FROM company_agent_learnings ORDER BY created_at DESC LIMIT $1;`,
+    [limit]
+  );
+  return rows || [];
+}
+
+// ============================================================================
+// 13. Autonomous Workflow Improvement Proposals
+// ============================================================================
+
+export async function createImprovementProposal(proposal: {
+  proposed_by: string;
+  title: string;
+  existing_limitation: string;
+  evidence: string;
+  proposed_change: string;
+  affected_files?: string[];
+  risk_assessment: string;
+  estimated_cost_usd?: number;
+}): Promise<ImprovementProposal> {
+  const rows = await query<ImprovementProposal>(
+    `INSERT INTO company_improvement_proposals (
+      proposed_by, title, existing_limitation, evidence, proposed_change, affected_files, risk_assessment, estimated_cost_usd, status
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending_review')
+    RETURNING *;`,
+    [
+      proposal.proposed_by,
+      proposal.title,
+      proposal.existing_limitation,
+      proposal.evidence,
+      proposal.proposed_change,
+      proposal.affected_files || [],
+      proposal.risk_assessment,
+      proposal.estimated_cost_usd || 0.0,
+    ]
+  );
+  return rows[0];
+}
+
+export async function getImprovementProposals(limit = 20): Promise<ImprovementProposal[]> {
+  const rows = await query<ImprovementProposal>(
+    `SELECT p.*, e.name as proposer_name, e.display_title as proposer_title
+     FROM company_improvement_proposals p
+     LEFT JOIN company_employees e ON e.id = p.proposed_by
+     ORDER BY p.created_at DESC LIMIT $1;`,
+    [limit]
+  );
+  return rows || [];
+}
+
+export async function updateImprovementProposalStatus(
+  id: string,
+  status: 'pending_review' | 'approved' | 'implemented' | 'rejected',
+  feedback?: string
+): Promise<void> {
+  await query(
+    `UPDATE company_improvement_proposals 
+     SET status = $1, review_feedback = COALESCE($2, review_feedback), updated_at = NOW() 
+     WHERE id = $3;`,
+    [status, feedback ?? null, id]
+  );
+}
+
+// ============================================================================
+// 14. Daily Company Productivity Reports
+// ============================================================================
+
+export async function saveDailyCompanyReport(report: {
+  report_date: string;
+  research_completed: any[];
+  new_discoveries: any[];
+  proposed_topics: any[];
+  leads_discovered: any[];
+  images_generated: any[];
+  blogs_completed: any[];
+  published_items: any[];
+  rejected_items: any[];
+  improvements_made: any[];
+  pending_tasks: any[];
+  summary: string;
+}): Promise<DailyCompanyReport> {
+  const rows = await query<DailyCompanyReport>(
+    `INSERT INTO daily_company_reports (
+      report_date, research_completed, new_discoveries, proposed_topics, leads_discovered,
+      images_generated, blogs_completed, published_items, rejected_items, improvements_made,
+      pending_tasks, summary
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    ON CONFLICT (report_date) DO UPDATE SET
+      research_completed = EXCLUDED.research_completed,
+      new_discoveries = EXCLUDED.new_discoveries,
+      proposed_topics = EXCLUDED.proposed_topics,
+      leads_discovered = EXCLUDED.leads_discovered,
+      images_generated = EXCLUDED.images_generated,
+      blogs_completed = EXCLUDED.blogs_completed,
+      published_items = EXCLUDED.published_items,
+      rejected_items = EXCLUDED.rejected_items,
+      improvements_made = EXCLUDED.improvements_made,
+      pending_tasks = EXCLUDED.pending_tasks,
+      summary = EXCLUDED.summary
+    RETURNING *;`,
+    [
+      report.report_date,
+      JSON.stringify(report.research_completed),
+      JSON.stringify(report.new_discoveries),
+      JSON.stringify(report.proposed_topics),
+      JSON.stringify(report.leads_discovered),
+      JSON.stringify(report.images_generated),
+      JSON.stringify(report.blogs_completed),
+      JSON.stringify(report.published_items),
+      JSON.stringify(report.rejected_items),
+      JSON.stringify(report.improvements_made),
+      JSON.stringify(report.pending_tasks),
+      report.summary,
+    ]
+  );
+  return rows[0];
+}
+
+export async function getDailyCompanyReportByDate(dateStr: string): Promise<DailyCompanyReport | null> {
+  const rows = await query<DailyCompanyReport>(
+    `SELECT * FROM daily_company_reports WHERE report_date = $1 LIMIT 1;`,
+    [dateStr]
+  );
+  return rows[0] || null;
+}
+
+export async function getLatestDailyCompanyReport(): Promise<DailyCompanyReport | null> {
+  const rows = await query<DailyCompanyReport>(
+    `SELECT * FROM daily_company_reports ORDER BY report_date DESC LIMIT 1;`
+  );
+  return rows[0] || null;
+}
+

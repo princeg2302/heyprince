@@ -216,7 +216,7 @@ export async function mergeBusinessEvidence(
 }
 
 // ============================================================================
-// 2. CONTENT DEDUPLICATION & SIMILARITY CHECK
+// 2. CONTENT DEDUPLICATION & SEMANTIC TOPIC SIMILARITY CHECK
 // ============================================================================
 
 export function normalizeContentTitle(title: string | null | undefined): string {
@@ -233,27 +233,85 @@ export function computeContentHash(content: string): string {
 }
 
 /**
- * Calculates token similarity (Dice coefficient) between two titles.
+ * Extracts significant technical and subject entities from titles
+ */
+const TECH_ENTITIES = new Set([
+  'nextjs', 'next', 'react', 'tailwind', 'typescript', 'javascript', 'python', 'fastapi',
+  'supabase', 'postgresql', 'postgres', 'docker', 'kubernetes', 'aws', 'cloudflare', 'r2',
+  'gemini', 'openai', 'deepseek', 'ollama', 'llama', 'claude', 'anthropic', 'ai', 'agent',
+  'agents', 'rag', 'llm', 'seo', 'cwv', 'ttfb', 'speed', 'performance', 'woocommerce',
+  'wordpress', 'shopify', 'ecommerce', 'headless', 'graphql', 'rest', 'api', 'cybersecurity',
+  'vulnerability', 'auth', 'oauth', 'jwt', 'security', 'cache', 'caching', 'architecture',
+  'microservices', 'serverless', 'database', 'vector', 'embedding', 'redis', 'devops', 'cicd'
+]);
+
+function extractEntities(text: string): Set<string> {
+  const norm = normalizeContentTitle(text);
+  const words = norm.split(' ');
+  const entities = new Set<string>();
+  for (const w of words) {
+    if (TECH_ENTITIES.has(w) || (w.length > 3 && !['with', 'from', 'that', 'this', 'your', 'about', 'guide', 'deep', 'dive'].includes(w))) {
+      entities.add(w);
+    }
+  }
+  return entities;
+}
+
+function getBigrams(text: string): Set<string> {
+  const norm = normalizeContentTitle(text);
+  const words = norm.split(' ').filter((w) => w.length > 1);
+  const bigrams = new Set<string>();
+  for (let i = 0; i < words.length - 1; i++) {
+    bigrams.add(`${words[i]} ${words[i + 1]}`);
+  }
+  return bigrams;
+}
+
+/**
+ * Calculates comprehensive semantic and conceptual similarity between two content titles.
+ * Blends word token overlap, bigram phrase similarity, and technical entity overlap.
  */
 export function calculateTitleSimilarity(titleA: string, titleB: string): number {
   const normA = normalizeContentTitle(titleA);
   const normB = normalizeContentTitle(titleB);
   if (!normA || !normB) return 0;
-  if (normA === normB) return 1;
+  if (normA === normB) return 1.0;
 
+  // 1. Unigram Word Similarity
   const wordsA = new Set(normA.split(' ').filter((w) => w.length > 2));
   const wordsB = new Set(normB.split(' ').filter((w) => w.length > 2));
-
-  let intersection = 0;
+  let unigramIntersection = 0;
   for (const w of wordsA) {
-    if (wordsB.has(w)) intersection++;
+    if (wordsB.has(w)) unigramIntersection++;
   }
+  const unigramSim = (2 * unigramIntersection) / (wordsA.size + wordsB.size || 1);
 
-  return (2 * intersection) / (wordsA.size + wordsB.size || 1);
+  // 2. Bigram Phrase Similarity
+  const biA = getBigrams(normA);
+  const biB = getBigrams(normB);
+  let biIntersection = 0;
+  for (const b of biA) {
+    if (biB.has(b)) biIntersection++;
+  }
+  const biSim = biA.size + biB.size > 0 ? (2 * biIntersection) / (biA.size + biB.size) : 0;
+
+  // 3. Technical Entity Overlap
+  const entA = extractEntities(normA);
+  const entB = extractEntities(normB);
+  let entIntersection = 0;
+  for (const e of entA) {
+    if (entB.has(e)) entIntersection++;
+  }
+  const entSim = entA.size + entB.size > 0 ? (2 * entIntersection) / (entA.size + entB.size) : 0;
+
+  // Weighted blend: 40% unigram, 30% bigrams, 30% technical entities
+  const combined = (0.4 * unigramSim) + (0.3 * biSim) + (0.3 * entSim);
+  return Math.min(Math.max(parseFloat(combined.toFixed(3)), 0), 1);
 }
 
 /**
- * Checks existing blog posts, service pages, and pending drafts to prevent duplicate content generation.
+ * Checks existing blog posts, registered topics, service pages, and pending drafts
+ * to prevent duplicate or recycling content generation.
  */
 export async function checkContentDuplicate(options: {
   title: string;
@@ -265,6 +323,7 @@ export async function checkContentDuplicate(options: {
   reason?: string;
   existingUrl?: string;
   existingId?: string | number;
+  similarityScore?: number;
 }> {
   const cleanTitle = normalizeContentTitle(options.title);
   const targetSlug = options.slug ? options.slug.toLowerCase().trim() : '';
@@ -284,21 +343,54 @@ export async function checkContentDuplicate(options: {
             reason: `Published article already exists with slug "${p.slug}"`,
             existingUrl: `/insights/${p.slug}/`,
             existingId: p.id,
+            similarityScore: 1.0,
           };
         }
         const sim = calculateTitleSimilarity(cleanTitle, p.title);
-        if (sim >= 0.75) {
+        // Stricter threshold of 0.50 catches semantic overlap and angle recycling
+        if (sim >= 0.50) {
           return {
             isDuplicate: true,
-            reason: `Substantially overlapping article already published: "${p.title}" (${Math.round(sim * 100)}% match)`,
+            reason: `Substantially overlapping article already published: "${p.title}" (${Math.round(sim * 100)}% semantic match)`,
             existingUrl: `/insights/${p.slug}/`,
             existingId: p.id,
+            similarityScore: sim,
           };
         }
       }
     }
   } catch (err) {
     console.warn('[checkContentDuplicate] CMS posts check warning:', err);
+  }
+
+  // 2. Check blog_topics_registry for previously published or active topics
+  try {
+    const registeredTopics = await query<{
+      id: string;
+      topic: string;
+      normalized_topic: string;
+      status: string;
+      post_id?: number;
+    }>(
+      `SELECT id, topic, normalized_topic, status, post_id 
+       FROM blog_topics_registry 
+       WHERE status IN ('published', 'drafted', 'approved') 
+       ORDER BY discovered_at DESC LIMIT 50;`
+    );
+
+    for (const t of registeredTopics) {
+      const sim = calculateTitleSimilarity(cleanTitle, t.topic);
+      if (sim >= 0.50) {
+        return {
+          isDuplicate: true,
+          reason: `Topic already recorded in editorial registry: "${t.topic}" (${Math.round(sim * 100)}% match, status: ${t.status})`,
+          existingId: t.id,
+          similarityScore: sim,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[checkContentDuplicate] blog_topics_registry check warning:', err);
   }
 
   // 2. Check existing service pages (servicesList and services table)

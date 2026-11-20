@@ -232,3 +232,124 @@ export interface CompanyOverviewSummary {
   totalTokensConsumed: number;
   systemHealth: 'healthy' | 'degraded' | 'offline';
 }
+
+// ============================================================================
+// Extended Intelligence, Productivity & Autonomous Growth Overhaul Types
+// ============================================================================
+
+export interface IndustryCategory {
+  id: string;
+  name: string;
+  slug: string;
+  commercial_relevance: string;
+  heyprince_services: string[];
+  estimated_demand: string;
+  status: 'active' | 'proposed' | 'archived';
+  discovered_by?: string | null;
+  evidence: Record<string, any>;
+  leads_found_count: number;
+  last_scanned_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogTopicRecord {
+  id: string;
+  topic: string;
+  normalized_topic: string;
+  category: string;
+  angle: string;
+  target_audience: string;
+  sources: Array<{ title: string; url: string; sourceName?: string; publishedAt?: string }>;
+  semantic_keywords: string[];
+  status: 'proposed' | 'approved' | 'drafted' | 'published' | 'rejected';
+  rejection_reason?: string | null;
+  similarity_score: number;
+  similar_to_slug?: string | null;
+  post_id?: number | null;
+  proposed_by?: string | null;
+  discovered_at: string;
+  updated_at: string;
+}
+
+export interface ImageAssetRecord {
+  id: string;
+  asset_url: string;
+  content_hash: string;
+  prompt: string;
+  provider: string;
+  article_id?: string | null;
+  post_id?: number | null;
+  subject: string;
+  visual_concepts: string[];
+  quality_status: 'approved' | 'rejected' | 'flagged';
+  quality_score: number;
+  watermark_detected: boolean;
+  rejection_reason?: string | null;
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface AgentLearningRecord {
+  id: string;
+  agent_id: string;
+  learning_type:
+    | 'approval'
+    | 'rejection'
+    | 'correction'
+    | 'failure_analysis'
+    | 'market_observation'
+    | 'performance_metric';
+  topic_or_entity: string;
+  lesson: string;
+  actionable_directive: string;
+  source_reference?: string | null;
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface ImprovementProposal {
+  id: string;
+  proposed_by: string;
+  title: string;
+  existing_limitation: string;
+  evidence: string;
+  proposed_change: string;
+  affected_files: string[];
+  risk_assessment: string;
+  estimated_cost_usd: number;
+  status: 'pending_review' | 'approved' | 'implemented' | 'rejected';
+  review_feedback?: string | null;
+  created_at: string;
+  updated_at: string;
+  proposer?: CompanyEmployee;
+}
+
+export interface DailyCompanyReport {
+  id: string;
+  report_date: string;
+  research_completed: Array<{ agent: string; topic: string; findings: string }>;
+  new_discoveries: Array<{ type: string; title: string; evidence: string }>;
+  proposed_topics: Array<{ topic: string; category: string; angle: string; status: string }>;
+  leads_discovered: Array<{
+    name: string;
+    domain: string;
+    industry: string;
+    score: number;
+    isUpdate: boolean;
+  }>;
+  images_generated: Array<{
+    subject: string;
+    url: string;
+    qualityPassed: boolean;
+    provider: string;
+  }>;
+  blogs_completed: Array<{ title: string; category: string; wordCount: number }>;
+  published_items: Array<{ type: string; title: string; url?: string }>;
+  rejected_items: Array<{ type: string; title: string; reason: string }>;
+  improvements_made: Array<{ title: string; proposedBy: string; status: string }>;
+  pending_tasks: Array<{ title: string; assignedTo: string; priority: string }>;
+  summary: string;
+  created_at: string;
+}
+

@@ -7,11 +7,14 @@ import {
   getAgentById,
 } from '../db';
 import {
-  LEAD_SCOUT_TARGET_ROTATION,
+  resolveDynamicScoutTarget,
   evaluateLeadContactChannels,
   ScoutTarget,
+  LEAD_SCOUT_TARGET_ROTATION,
 } from '../../outreach/qualification';
 import { generateLeadProposal } from '../../outreach/proposal-generator';
+import { getRelevantCompanyMemories, recordCompanyMemory } from '../../company/memory';
+import { recordAgentLearning, createIndustryCategory, getIndustryCategories } from '../../company/db';
 
 export { LEAD_SCOUT_TARGET_ROTATION, evaluateLeadContactChannels };
 export type { ScoutTarget };
@@ -19,7 +22,10 @@ export type { ScoutTarget };
 export interface LeadScoutResult {
   scanTarget: ScoutTarget;
   leadsDiscovered: number;
+  duplicatesSkipped: number;
+  qualifiedLeads: number;
   draftsCreated: number;
+  newCategoriesProposed: number;
   summary: string;
 }
 
@@ -30,29 +36,97 @@ export async function runLeadScoutDiscovery(options?: {
 }): Promise<LeadScoutResult> {
   const startTime = Date.now();
 
-  // 1. Resolve Target Rotation
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - startOfYear.getTime();
-  const oneDay = 1000 * 60 * 60 * 24;
-  const dayOfYear = Math.floor(diff / oneDay);
+  // 1. Retrieve Historical Memory & Lessons to avoid repetitive mistakes
+  const memories = await getRelevantCompanyMemories({
+    department: 'Sales',
+    employeeId: 'liam_thorne',
+    limit: 5,
+  });
 
-  const target = options?.target || LEAD_SCOUT_TARGET_ROTATION[dayOfYear % LEAD_SCOUT_TARGET_ROTATION.length];
+  // 2. Resolve Dynamic Target across industries and global/Indian hubs
+  const target = options?.target || (await resolveDynamicScoutTarget());
 
-  // 2. Discover Real Businesses via discoveryService
+  // 3. Dynamic Category Discovery & Market Segment Expansion
+  let newCategoriesProposed = 0;
+  try {
+    const existingCategories = await getIndustryCategories('active');
+    const existingSlugs = new Set(existingCategories.map((c) => c.slug));
+
+    // Potential emerging high-demand sectors
+    const candidateExpansions = [
+      {
+        id: 'fintech_wealthtech',
+        name: 'FinTech & WealthTech Platforms',
+        slug: 'fintech-wealthtech-platforms',
+        relevance: 'High security and compliance needs, sub-second latency requirements for client dashboards.',
+        services: ['Next.js Financial Portals', 'SOC2/GDPR Security Hardening', 'Database Optimization'],
+        demand: 'high',
+      },
+      {
+        id: 'logistics_supplychain',
+        name: 'Logistics, Freight & Supply Chain Tech',
+        slug: 'logistics-supply-chain-tech',
+        relevance: 'Legacy enterprise desktop software struggling with mobile driver interfaces and real-time tracking.',
+        services: ['Real-Time Next.js Dashboards', 'Edge API Caching', 'Cloud Modernization'],
+        demand: 'high',
+      },
+      {
+        id: 'renewable_cleantech',
+        name: 'Renewable Energy & Solar Installers',
+        slug: 'renewable-clean-energy-tech',
+        relevance: 'High customer acquisition spend; requires instant solar savings calculator funnels and booking flows.',
+        services: ['Interactive Calculator Web Apps', 'High-Converting Landing Pages', 'WhatsApp Automation'],
+        demand: 'medium',
+      },
+      {
+        id: 'ai_b2b_startups',
+        name: 'AI Startups & Applied Agent Builders',
+        slug: 'ai-startups-agent-builders',
+        relevance: 'Rapidly growing seed/Series-A startups needing reliable full-stack frontend engineering and vector architectures.',
+        services: ['AI Agent Frontends', 'Vercel Edge Integration', 'Custom Vector RAG Pipelines'],
+        demand: 'urgent',
+      },
+    ];
+
+    for (const exp of candidateExpansions) {
+      if (!existingSlugs.has(exp.slug)) {
+        await createIndustryCategory({
+          id: exp.id,
+          name: exp.name,
+          slug: exp.slug,
+          commercial_relevance: exp.relevance,
+          heyprince_services: exp.services,
+          estimated_demand: exp.demand,
+          status: 'active',
+          discovered_by: 'liam_thorne',
+          evidence: {
+            reason: 'Autonomous market analysis by Liam Thorne (Sales & Growth Scout)',
+            discoveredAt: new Date().toISOString(),
+          },
+        });
+        newCategoriesProposed++;
+        break; // Add at most 1 per cycle to keep expansion measured and high-signal
+      }
+    }
+  } catch (catErr) {
+    console.warn('[LeadScout] Dynamic category expansion notice:', catErr);
+  }
+
+  // 4. Discover Real Businesses via discoveryService
   const discoveryResult = await discoveryService.executeJob({
     provider: 'openstreetmap',
     countryCode: target.country,
     city: target.city,
     category: target.category,
-    limit: options?.limit || 10,
+    limit: options?.limit || 12,
     triggerSource: 'automated',
   });
 
   const newDiscoveredCount = discoveryResult.totalInserted;
+  const duplicatesSkipped = discoveryResult.totalDuplicates;
 
-  // 3. Find uncontacted candidate businesses for research & proposal preparation
-  const uncontactedBusinesses = await query<{
+  // 5. Find candidate businesses for research & proposal preparation (scored >= 0.50)
+  const candidateBusinesses = await query<{
     id: string;
     name: string;
     domain: string | null;
@@ -72,12 +146,18 @@ export async function runLeadScoutDiscovery(options?: {
            OR (b.domain IS NOT NULL AND d.metadata->>'domain' = b.domain)
       )
     ORDER BY b.created_at DESC 
-    LIMIT 10;
+    LIMIT 6;
   `);
 
   let draftsCreated = 0;
+  let qualifiedLeads = 0;
 
-  for (const biz of uncontactedBusinesses) {
+  for (const biz of candidateBusinesses) {
+    const meta = biz.metadata || {};
+    if (meta.lifecycle_status === 'Qualified' || meta.is_qualified) {
+      qualifiedLeads++;
+    }
+
     const proposalRes = await generateLeadProposal(biz.id);
     if (proposalRes.success) {
       draftsCreated++;
@@ -85,7 +165,33 @@ export async function runLeadScoutDiscovery(options?: {
   }
 
   const duration = Date.now() - startTime;
-  const summary = `Automated Lead Scout scan completed for ${target.city}, ${target.country} (${target.category}). Discovered ${newDiscoveredCount} new prospect(s) and prepared ${draftsCreated} tailored outreach proposal(s) awaiting AI Approval.`;
+  const summary = `Lead Scout cycle completed for ${target.city}, ${target.country} (${target.category}): Discovered ${newDiscoveredCount} unique prospect(s), rejected ${duplicatesSkipped} duplicate(s), identified ${qualifiedLeads} qualified lead(s), and created ${draftsCreated} tailored proposal(s).`;
+
+  // 6. Record Persistent Agent Learning and Company Memory
+  try {
+    await recordAgentLearning({
+      agent_id: 'liam_thorne',
+      learning_type: 'market_observation',
+      topic_or_entity: `${target.city} - ${target.category}`,
+      lesson: `Discovery yield in ${target.city} (${target.category}): ${newDiscoveredCount} unique, ${duplicatesSkipped} duplicates.`,
+      actionable_directive:
+        duplicatesSkipped > 5
+          ? `Rotate away from ${target.category} in ${target.city} to adjacent hub to maximize unique discoveries.`
+          : `Category ${target.category} shows high discovery viability. Continue quarterly cadence.`,
+      source_reference: `discovery_job_${discoveryResult.job.id}`,
+    });
+
+    await recordCompanyMemory({
+      scope: 'department',
+      department: 'Sales',
+      employeeId: 'liam_thorne',
+      category: 'market_intelligence',
+      insight: `Scanned ${target.city} (${target.category}): ${newDiscoveredCount} new unique leads, ${draftsCreated} proposals prepared.`,
+      confidenceScore: 0.95,
+    });
+  } catch (memErr) {
+    console.warn('[LeadScout] Memory recording notice:', memErr);
+  }
 
   await updateAgentExecutionTime('lead_scout', new Date(), new Date(Date.now() + 24 * 3600 * 1000));
   await incrementAgentStats('lead_scout', true, draftsCreated);
@@ -97,8 +203,12 @@ export async function runLeadScoutDiscovery(options?: {
     {
       targetCity: target.city,
       targetCountry: target.country,
+      targetCategory: target.category,
       newDiscoveredCount,
+      duplicatesSkipped,
+      qualifiedLeads,
       draftsCreated,
+      newCategoriesProposed,
       durationMs: duration,
     }
   );
@@ -106,7 +216,10 @@ export async function runLeadScoutDiscovery(options?: {
   return {
     scanTarget: target,
     leadsDiscovered: newDiscoveredCount,
+    duplicatesSkipped,
+    qualifiedLeads,
     draftsCreated,
+    newCategoriesProposed,
     summary,
   };
 }

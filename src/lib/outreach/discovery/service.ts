@@ -9,6 +9,9 @@ import {
   findBusinessByDomain,
 } from '../db';
 import { DiscoveryJobEntity } from '../types';
+import { calculateLeadScore } from '../qualification';
+import { mergeBusinessEvidence } from '../../deduplication';
+import { updateCategoryScanned } from '../../company/db';
 
 export class DiscoveryService {
   private providers: Map<string, DiscoveryProvider> = new Map();
@@ -78,23 +81,45 @@ export class DiscoveryService {
 
       let insertedCount = 0;
       let duplicateCount = 0;
+      let updatedCount = 0;
 
       // 3. Process & Deduplicate each discovered business
       for (const record of result.records) {
-        // Strict Deduplication: If domain is already known, skip immediately
+        const phoneVal = record.phone || (record.metadata as any)?.phone || null;
+        const hasWebsite = Boolean(record.websiteUrl || record.domain);
+        const hasEmail = Boolean(record.email && record.email.includes('@'));
+        const hasPhone = Boolean(phoneVal && String(phoneVal).replace(/[^0-9]/g, '').length >= 8);
+
+        // Strict Canonical Deduplication: Check if domain already exists
         if (record.normalizedDomain) {
           const existingDomain = await findBusinessByDomain(record.normalizedDomain);
           if (existingDomain) {
+            // Check if there is genuinely new information (e.g. phone or email that was previously missing)
+            const prevMeta = existingDomain.metadata || {};
+            const isNewPhone = phoneVal && !prevMeta.phone;
+            const isNewEmail = record.email && !prevMeta.email;
+
+            if (isNewPhone || isNewEmail) {
+              await mergeBusinessEvidence(existingDomain.id, {
+                phone: phoneVal || prevMeta.phone,
+                new_contact_discovered_at: new Date().toISOString(),
+                is_update: true,
+              });
+              updatedCount++;
+            }
             duplicateCount++;
             continue;
           }
         }
 
-        const phoneVal = record.phone || (record.metadata as any)?.phone || null;
-        const hasWebsite = Boolean(record.websiteUrl || record.domain);
-        const hasEmail = Boolean(record.email && record.email.includes('@'));
-        const hasPhone = Boolean(phoneVal && String(phoneVal).replace(/[^0-9]/g, '').length >= 8);
-        const isQualified = hasWebsite || hasEmail || hasPhone;
+        // Score lead rigorously based on evidence and commercial fit
+        const evaluation = calculateLeadScore({
+          website_url: record.websiteUrl,
+          domain: record.domain,
+          phone: phoneVal,
+          category: record.category || jobInput.category,
+          contacts: record.email ? [{ email: record.email, verification_status: 'UNKNOWN' }] : null,
+        });
 
         const { business, isNew } = await upsertBusiness({
           name: record.name,
@@ -108,8 +133,8 @@ export class DiscoveryService {
           postal_code: record.postalCode,
           latitude: record.latitude,
           longitude: record.longitude,
-          industry: record.industry,
-          category: record.category,
+          industry: record.industry || jobInput.category,
+          category: record.category || jobInput.category,
           source_provider: record.sourceProvider,
           source_provider_id: record.sourceProviderId,
           metadata: {
@@ -117,10 +142,14 @@ export class DiscoveryService {
             phone: phoneVal,
             discovery_source: triggerSource,
             discovery_date: new Date().toISOString(),
-            is_qualified: isQualified,
+            is_qualified: evaluation.recommendedStatus === 'Qualified',
             has_website: hasWebsite,
             has_email: hasEmail,
             has_phone: hasPhone,
+            lead_score: evaluation.score,
+            fit_reason: evaluation.fitReason,
+            lifecycle_status: evaluation.recommendedStatus,
+            source_url: record.websiteUrl || `osm://${record.sourceProviderId}`,
           },
           status: 'DISCOVERED',
         });
@@ -143,6 +172,14 @@ export class DiscoveryService {
             verification_status: 'UNKNOWN',
           });
         }
+      }
+
+      // Track scan metrics on category
+      const catSlug = (jobInput.category || '').toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      try {
+        await updateCategoryScanned(catSlug, insertedCount);
+      } catch {
+        // Non-blocking
       }
 
       // 4. Mark Job Completed

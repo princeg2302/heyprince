@@ -281,13 +281,34 @@ export async function runContentResearcherDiscovery(options?: ContentResearcherO
       }
     }
 
-    // Run automation in preview mode to generate full article without immediately publishing to public blog
-    const result = await executeDailyNewsAutomation({
-      triggerType: 'preview',
-      contentType: options?.customTopic ? 'custom_topic' : 'tech_news',
-      customTopic: options?.customTopic,
-      forceRunToday: true,
-    });
+    // Check if daily run already exists to avoid redundant executions
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { getDailyRunByDate } = await import('../../daily-news/db');
+    const existingToday = await getDailyRunByDate(todayStr);
+
+    let result: any;
+    if (!options?.customTopic && existingToday && (existingToday.status === 'success' || existingToday.websiteStatus === 'published')) {
+      // Today's publication has already executed. Marcus Sterling conducts dynamic editorial research
+      // across rotated commercial categories to queue an original upcoming piece.
+      const { generateCustomTopicPost, DYNAMIC_BLOG_CATEGORIES } = await import('../../daily-news/content-generator');
+      const dayIndex = new Date().getDate() % DYNAMIC_BLOG_CATEGORIES.length;
+      const targetCategory = DYNAMIC_BLOG_CATEGORIES[dayIndex];
+      const editorialTopic = `Advanced Engineering & Architectural Frontiers in ${targetCategory}`;
+
+      const customPost = await generateCustomTopicPost(editorialTopic);
+      result = {
+        success: true,
+        generatedContent: customPost,
+      };
+    } else {
+      // Run automation in preview mode to generate full article without immediately publishing to public blog
+      result = await executeDailyNewsAutomation({
+        triggerType: 'preview',
+        contentType: options?.customTopic ? 'custom_topic' : 'tech_news',
+        customTopic: options?.customTopic,
+        forceRunToday: false,
+      });
+    }
 
     if (!result.success || !result.generatedContent) {
       throw new Error(result.error || 'Failed to generate content from research sources');
@@ -395,6 +416,30 @@ export async function runContentResearcherDiscovery(options?: ContentResearcherO
       });
     } catch (propErr) {
       console.warn('[content-researcher] company_proposals sync notice:', propErr);
+    }
+
+    // Record persistent learning and editorial memory
+    try {
+      const { recordAgentLearning } = await import('../../company/db');
+      const { recordCompanyMemory } = await import('../../company/memory');
+      await recordAgentLearning({
+        agent_id: 'marcus_sterling',
+        learning_type: 'market_observation',
+        topic_or_entity: draftTitle,
+        lesson: `Drafted original article on ${gen.categoryName}: "${draftTitle}". Estimated read time: ${gen.readMins}.`,
+        actionable_directive: `Focus future follow-up articles on implementation benchmarks for ${gen.categoryName}.`,
+        source_reference: draftId,
+      });
+      await recordCompanyMemory({
+        scope: 'department',
+        department: 'Editorial',
+        employeeId: 'marcus_sterling',
+        category: 'decision',
+        insight: `Marcus Sterling drafted technical article "${draftTitle}" in ${gen.categoryName} awaiting approval.`,
+        confidenceScore: 0.98,
+      });
+    } catch (memErr) {
+      console.warn('[content-researcher] Memory recording notice:', memErr);
     }
 
     // Notify Admin via iPhone Web Push

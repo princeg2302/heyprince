@@ -21,6 +21,7 @@ import { generateOfficeHumourMeme } from './meme-generator';
 import { createPost } from '../admin-db';
 import { publishArticleToLinkedIn } from '../linkedin/client';
 import { isAiBackendEnabled, callAiBackend } from '@/lib/ai-backend-client';
+import { checkContentDuplicate } from '../deduplication';
 
 export async function executeDailyNewsAutomation(params?: {
   triggerType?: 'scheduled' | 'manual_run' | 'preview';
@@ -360,6 +361,26 @@ export async function executeDailyNewsAutomation(params?: {
       // 4. Stage 1: Collect & Deduplicate News from RSS Feeds
       collection = await collectDailyNews(settings.lookbackHours);
 
+      // Pre-generation semantic deduplication: filter out candidate stories that overlap with previous posts or registered topics
+      const freshCandidates = [];
+      let semanticDupsSkipped = 0;
+      for (const item of collection.availableItems) {
+        try {
+          const dupCheck = await checkContentDuplicate({ title: item.headline, type: 'article' });
+          if (dupCheck.isDuplicate) {
+            semanticDupsSkipped++;
+            console.log(`[DailyNewsOrchestrator] Candidate "${item.headline}" skipped as duplicate: ${dupCheck.reason}`);
+          } else {
+            freshCandidates.push(item);
+          }
+        } catch {
+          freshCandidates.push(item);
+        }
+      }
+
+      collection.duplicatesSkipped += semanticDupsSkipped;
+      collection.availableItems = freshCandidates;
+
       await updateDailyRun(run.id, {
         sourcesChecked: collection.sourcesChecked,
         itemsDiscovered: collection.itemsDiscovered,
@@ -367,7 +388,9 @@ export async function executeDailyNewsAutomation(params?: {
       });
 
       if (collection.availableItems.length === 0) {
-        const emptyErr = 'No verified tech stories found within the configured lookback window.';
+        const emptyErr = semanticDupsSkipped > 0
+          ? `All discovered tech stories (${semanticDupsSkipped}) were filtered out as duplicates or semantically overlapping with previous posts.`
+          : 'No verified tech stories found within the configured lookback window.';
         await updateDailyRun(run.id, {
           status: 'failed',
           websiteStatus: 'failed',

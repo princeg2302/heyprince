@@ -1,42 +1,94 @@
 import { DiscoveryProvider, DiscoverySearchParams, DiscoveryResult, DiscoveredBusinessRecord, extractDomain } from './types';
 
+export function mapCategoryToOsmTag(cat: string): { key: string; value: string } {
+  const lower = cat.toLowerCase();
+  if (lower.includes('software') || lower.includes('it services') || lower.includes('tech') || lower.includes('computer')) {
+    return { key: 'office', value: 'it' };
+  }
+  if (lower.includes('startup') || lower.includes('coworking')) {
+    return { key: 'amenity', value: 'coworking_space' };
+  }
+  if (lower.includes('agency') || lower.includes('marketing') || lower.includes('creative') || lower.includes('consulting')) {
+    return { key: 'office', value: 'company' };
+  }
+  if (lower.includes('dental') || lower.includes('dentist')) {
+    return { key: 'amenity', value: 'dentist' };
+  }
+  if (lower.includes('clinic') || lower.includes('health') || lower.includes('doctor') || lower.includes('medical')) {
+    return { key: 'amenity', value: 'clinic' };
+  }
+  if (lower.includes('education') || lower.includes('coaching') || lower.includes('school') || lower.includes('institute')) {
+    return { key: 'amenity', value: 'school' };
+  }
+  if (lower.includes('real estate') || lower.includes('construction') || lower.includes('architect')) {
+    return { key: 'office', value: 'estate_agent' };
+  }
+  if (lower.includes('manufacturing') || lower.includes('industrial') || lower.includes('factory')) {
+    return { key: 'industrial', value: '*' };
+  }
+  if (lower.includes('hotel') || lower.includes('hospitality') || lower.includes('resort') || lower.includes('travel')) {
+    return { key: 'tourism', value: 'hotel' };
+  }
+  if (lower.includes('ecommerce') || lower.includes('retail') || lower.includes('store') || lower.includes('shop') || lower.includes('d2c')) {
+    return { key: 'shop', value: '*' };
+  }
+  if (lower.includes('law') || lower.includes('legal') || lower.includes('finance') || lower.includes('accounting') || lower.includes('professional')) {
+    return { key: 'office', value: 'lawyer' };
+  }
+  if (lower.includes('restaurant') || lower.includes('cafe')) {
+    return { key: 'amenity', value: 'restaurant' };
+  }
+  return { key: 'office', value: 'company' };
+}
+
+export function getSearchKeywords(category: string): string[] {
+  const lower = category.toLowerCase();
+  if (lower.includes('it services') || lower.includes('software') || lower.includes('cloud') || lower.includes('tech consulting')) {
+    return ['software company', 'IT services', 'technology consulting', 'cloud solutions', 'web development agency'];
+  }
+  if (lower.includes('startup') || lower.includes('newly launched')) {
+    return ['startup tech', 'incubator', 'coworking space', 'digital agency', 'software labs'];
+  }
+  if (lower.includes('ecommerce') || lower.includes('d2c') || lower.includes('retail')) {
+    return ['ecommerce brand', 'clothing boutique', 'retail store', 'consumer goods', 'specialty store'];
+  }
+  if (lower.includes('health') || lower.includes('clinic') || lower.includes('dental') || lower.includes('medical')) {
+    return ['dental clinic', 'medical center', 'health clinic', 'physiotherapy clinic', 'diagnostic center'];
+  }
+  if (lower.includes('education') || lower.includes('coaching') || lower.includes('institute')) {
+    return ['coaching institute', 'training academy', 'learning center', 'language school', 'tutoring academy'];
+  }
+  if (lower.includes('real estate') || lower.includes('construction') || lower.includes('architect')) {
+    return ['real estate agency', 'property developers', 'architectural studio', 'construction company', 'interior design firm'];
+  }
+  if (lower.includes('manufacturing') || lower.includes('industrial')) {
+    return ['manufacturing company', 'industrial machinery', 'automation systems', 'logistics warehouse', 'fabrication plant'];
+  }
+  if (lower.includes('hotel') || lower.includes('hospitality') || lower.includes('travel')) {
+    return ['boutique hotel', 'luxury resort', 'travel agency', 'tour operator', 'hospitality suites'];
+  }
+  if (lower.includes('agency') || lower.includes('marketing') || lower.includes('creative')) {
+    return ['marketing agency', 'digital advertising agency', 'creative design studio', 'PR communications', 'SEO consulting'];
+  }
+  if (lower.includes('law') || lower.includes('finance') || lower.includes('consulting') || lower.includes('professional')) {
+    return ['law firm', 'corporate legal consultants', 'chartered accountants', 'wealth management', 'financial advisory'];
+  }
+  if (lower.includes('outdated') || lower.includes('speed') || lower.includes('web development')) {
+    return ['local business', 'commercial services', 'consulting office', 'equipment supplier'];
+  }
+  const cleaned = category.replace(/&/g, ' ').replace(/[^\w\s]/g, '').trim();
+  return [cleaned, `${cleaned} company`, `${cleaned} services`];
+}
+
 export class OpenStreetMapDiscoveryAdapter implements DiscoveryProvider {
   name = 'openstreetmap';
 
   private mapCategoryToOsmTag(cat: string): { key: string; value: string } {
-    const lower = cat.toLowerCase();
-    if (lower.includes('restaurant')) return { key: 'amenity', value: 'restaurant' };
-    if (lower.includes('cafe') || lower.includes('coffee')) return { key: 'amenity', value: 'cafe' };
-    if (lower.includes('hotel') || lower.includes('hospitality')) return { key: 'tourism', value: 'hotel' };
-    if (lower.includes('retail') || lower.includes('store') || lower.includes('shop')) return { key: 'shop', value: '*' };
-    if (lower.includes('agency') || lower.includes('consulting') || lower.includes('tech')) return { key: 'office', value: '*' };
-    if (lower.includes('clinic') || lower.includes('dental') || lower.includes('health')) return { key: 'amenity', value: 'dentist' };
-    if (lower.includes('salon') || lower.includes('spa')) return { key: 'shop', value: 'beauty' };
-    return { key: 'amenity', value: 'restaurant' };
+    return mapCategoryToOsmTag(cat);
   }
 
   private getSearchKeywords(category: string): string[] {
-    const lower = category.toLowerCase();
-    if (lower.includes('restaurant') || lower.includes('cafe')) {
-      return ['restaurants', 'cafes', 'bistros', 'bakeries'];
-    }
-    if (lower.includes('hotel') || lower.includes('lodging')) {
-      return ['hotels', 'boutique hotels', 'resorts'];
-    }
-    if (lower.includes('agency') || lower.includes('tech') || lower.includes('consulting')) {
-      return ['marketing agency', 'software company', 'consulting'];
-    }
-    if (lower.includes('health') || lower.includes('clinic') || lower.includes('dental')) {
-      return ['dentist', 'dental clinic', 'medical center', 'health clinic'];
-    }
-    if (lower.includes('retail') || lower.includes('store') || lower.includes('shop')) {
-      return ['boutique', 'bookstore', 'supermarket', 'specialty shop'];
-    }
-    if (lower.includes('auto') || lower.includes('car')) {
-      return ['car repair', 'auto service', 'mechanic'];
-    }
-    const cleaned = category.replace(/&/g, ' ').replace(/[^\w\s]/g, '').trim();
-    return [cleaned];
+    return getSearchKeywords(category);
   }
 
   async search(params: DiscoverySearchParams): Promise<DiscoveryResult> {

@@ -77,6 +77,11 @@ async function handleCronTrigger(request: NextRequest) {
       // Run active non-paused scheduled agents sequentially
       for (const agent of allAgents) {
         if (agent.status === 'enabled' && agent.schedule_cron !== 'event_driven') {
+          // lead_scout has its own dedicated cron job at 5:00 AM (/api/cron/lead-scout)
+          // Skip it during generic 4:00 AM chief-of-staff sweep unless explicitly targeted
+          if (agent.id === 'lead_scout' && !targetAgent) {
+            continue;
+          }
           try {
             const res = await executeAgentTask({
               agentId: agent.id,
