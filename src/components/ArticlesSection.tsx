@@ -10,6 +10,8 @@ import {
   FaCalendarDays,
   FaBolt,
   FaBookOpen,
+  FaArrowUpRightFromSquare,
+  FaFeatherPointed,
 } from 'react-icons/fa6';
 import { Article, articlesList } from '../data/siteContent';
 
@@ -47,17 +49,17 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
     const ctx = gsap.context(() => {
       if (sectionRef.current) {
         gsap.fromTo(
-          ['.article-spotlight-card', '.article-card', '.articles-discovery-bar'],
-          { y: 28, opacity: 0 },
+          ['.editorial-featured-wrap', '.editorial-companion-card', '.articles-discovery-bar'],
+          { y: 30, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            stagger: 0.1,
-            duration: 0.55,
+            stagger: 0.12,
+            duration: 0.6,
             ease: 'power2.out',
             scrollTrigger: {
               trigger: sectionRef.current,
-              start: 'top 85%',
+              start: 'top 82%',
               once: true,
             },
           }
@@ -78,68 +80,121 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
   };
 
   return (
-    <section className="section-articles" id="articles" ref={sectionRef}>
-      <div className="container">
+    <section
+      className="py-5"
+      id="articles"
+      ref={sectionRef}
+      style={{
+        background: '#0b0b0f',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Background ambient lighting */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '20%',
+          right: '10%',
+          width: '500px',
+          height: '400px',
+          background: 'radial-gradient(circle, rgba(212, 0, 39, 0.08) 0%, rgba(0, 242, 254, 0.03) 50%, transparent 75%)',
+          filter: 'blur(80px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="container py-5" style={{ position: 'relative', zIndex: 1 }}>
         {/* Section Header */}
-        <div className="section-heading-group text-center">
-          <div className="articles-eyebrow-pill">
-            <span className="pulse-dot" />
-            <span>ARCHITECTURAL ESSAYS &amp; TECH DISPATCHES // 2026</span>
+        <div className="text-center max-w-3xl mx-auto mb-5 pb-2">
+          <div
+            className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3"
+            style={{
+              background: 'rgba(212, 0, 39, 0.12)',
+              border: '1px solid rgba(212, 0, 39, 0.3)',
+            }}
+          >
+            <FaFeatherPointed size={12} style={{ color: '#d40027' }} />
+            <span
+              style={{
+                color: '#d40027',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+              }}
+            >
+              Architectural Essays &amp; Tech Dispatches // 2026
+            </span>
           </div>
 
-          <h2>
-            Read This <br />
-            Between{' '}
-            <span className="word text-red" suppressHydrationWarning>
-              <span suppressHydrationWarning>B</span>
-              <span suppressHydrationWarning>i</span>
-              <span suppressHydrationWarning>T</span>
-              <span suppressHydrationWarning>e</span>
-              <span suppressHydrationWarning>S</span>
-            </span>
-          </h2>
-          <p>
-            In-depth engineering breakdowns, Next-Gen AI developments, IT strategy playbooks, and unfiltered developer culture essays. Actionable blueprints and architectural wisdom for modern engineering teams.
-          </p>
-
-          <Link
-            className="portal-btn mx-auto"
-            href="/insights/"
-            onClick={(e) => handleArticleClick(featuredArticle?.slug || 'freelancing-tips-it-professionals-2026', e)}
+          <h2
+            style={{
+              fontSize: 'clamp(32px, 4vw, 50px)',
+              color: '#ffffff',
+              fontWeight: 800,
+              lineHeight: 1.2,
+              marginBottom: '16px',
+            }}
           >
-            <span className="mr-right">Stories Worth Scrolling ({displayArticles.length})</span>
-            <span className="arrow">
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="20" cy="20" r="20" fill="white" />
-                <path
-                  d="M24.8218 28L21.652 27.2937C21.7864 25.9354 22.2967 24.6859 23.1832 23.545C24.0696 22.395 25.0725 21.6525 26.1917 21.3175H9V18.6825H26.1917C25.0725 18.3475 24.0696 17.605 23.1832 16.455C22.2967 15.305 21.7864 14.0509 21.652 12.6927L24.8218 12C24.8844 13.9921 25.4575 15.5676 26.541 16.7266C27.6244 17.8766 29.1108 18.5286 31 18.6825V21.3175C29.1108 21.4714 27.6244 22.1279 26.541 23.2869C25.4575 24.4369 24.8844 26.0079 24.8218 28Z"
-                  fill="#000"
-                />
-              </svg>
-            </span>
-          </Link>
+            Read Between The Code
+          </h2>
+          <p
+            style={{
+              color: 'rgba(255, 255, 255, 0.68)',
+              fontSize: '16px',
+              lineHeight: 1.6,
+              maxWidth: '700px',
+              margin: '0 auto',
+            }}
+          >
+            In-depth engineering breakdowns, Next.js optimization playbooks, AI agent orchestration, and actionable architecture blueprints written by practitioners.
+          </p>
         </div>
 
-        {/* Modern Showcase Container */}
-        <div className="article-cards-sliding">
-          {/* 1. Hero Spotlight Article (The #1 Latest Post) */}
-          {featuredArticle && (
-            <article className="article-spotlight-card">
-              <Link
-                className="spotlight-link"
-                href={`/insights/${featuredArticle.slug}/`}
-                onClick={(e) => handleArticleClick(featuredArticle.slug, e)}
-                aria-label={`Read featured article: ${featuredArticle.title}`}
-              >
-                <div className="spotlight-img-wrap">
+        {/* 1. LUXURY EDITORIAL FEATURED BLOG (Magazine Cover Layout) */}
+        {featuredArticle && (
+          <div className="editorial-featured-wrap mb-5">
+            <Link
+              href={`/insights/${featuredArticle.slug}/`}
+              onClick={(e) => handleArticleClick(featuredArticle.slug, e)}
+              className="text-decoration-none d-block rounded-4 overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #10121a 0%, #07080a 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(212, 0, 39, 0.15)',
+                transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(212, 0, 39, 0.6)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 35px 80px rgba(0, 0, 0, 0.85), 0 0 50px rgba(212, 0, 39, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(212, 0, 39, 0.15)';
+              }}
+            >
+              <div className="row g-0 align-items-stretch">
+                {/* Left/Top: Image Column with Cinematic Gradient Mask */}
+                <div className="col-lg-6 col-12 position-relative" style={{ minHeight: '360px', background: '#0a0b0e' }}>
                   <img
-                    className="spotlight-img"
                     src={featuredArticle.image || DEFAULT_BLOG_FALLBACK}
-                    alt={`${featuredArticle.title} - Latest Engineering Insight by Prince`}
+                    alt={`${featuredArticle.title} - Featured Insight`}
                     loading="lazy"
                     decoding="async"
-                    width="800"
-                    height="500"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                      position: 'absolute',
+                      inset: 0,
+                    }}
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
                       if (target.src !== DEFAULT_BLOG_FALLBACK && !target.src.endsWith(DEFAULT_BLOG_FALLBACK)) {
@@ -147,45 +202,135 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                       }
                     }}
                   />
-                  <span className="spotlight-badge-latest">
-                    <FaBolt size={10} style={{ color: '#ff3355' }} />
-                    <span>Latest Drop // 2026</span>
-                  </span>
+                  {/* Cinematic gradient overlay to blend into the card */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to right, rgba(16, 18, 26, 0.1) 0%, rgba(16, 18, 26, 0.85) 100%)',
+                      pointerEvents: 'none',
+                    }}
+                    className="d-none d-lg-block"
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(to top, rgba(16, 18, 26, 0.95) 0%, rgba(16, 18, 26, 0.2) 100%)',
+                      pointerEvents: 'none',
+                    }}
+                    className="d-block d-lg-none"
+                  />
+
+                  {/* Top Left Badge */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '20px',
+                      left: '20px',
+                      zIndex: 2,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'rgba(7, 8, 10, 0.88)',
+                      border: '1px solid rgba(212, 0, 39, 0.5)',
+                      color: '#ffffff',
+                      padding: '5px 14px',
+                      borderRadius: '999px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      backdropFilter: 'blur(10px)',
+                    }}
+                  >
+                    <FaBolt size={10} style={{ color: '#d40027' }} />
+                    <span>Featured Deep Dive</span>
+                  </div>
                 </div>
 
-                <div className="spotlight-body">
-                  <div className="spotlight-meta-row">
-                    {featuredArticle.category && (
-                      <span className="spotlight-category">
-                        {featuredArticle.category}
+                {/* Right/Bottom: Content Column */}
+                <div className="col-lg-6 col-12 d-flex flex-column justify-content-between p-4 p-md-5">
+                  <div>
+                    {/* Metadata Row */}
+                    <div className="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                      {featuredArticle.category && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: '#00f2fe',
+                            background: 'rgba(0, 242, 254, 0.08)',
+                            border: '1px solid rgba(0, 242, 254, 0.25)',
+                            padding: '3px 10px',
+                            borderRadius: '6px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.8px',
+                          }}
+                        >
+                          {featuredArticle.category}
+                        </span>
+                      )}
+                      {featuredArticle.date && (
+                        <span className="d-inline-flex align-items-center gap-1" style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.55)' }}>
+                          <FaCalendarDays size={11} style={{ color: '#d40027' }} />
+                          {featuredArticle.date}
+                        </span>
+                      )}
+                      <span className="d-inline-flex align-items-center gap-1" style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.55)' }}>
+                        <FaClock size={11} style={{ color: '#d40027' }} />
+                        {featuredArticle.readMins} read
                       </span>
-                    )}
-                    {featuredArticle.date && (
-                      <span className="spotlight-date">
-                        <FaCalendarDays size={11} aria-hidden="true" style={{ color: '#ff3355' }} />
-                        {featuredArticle.date}
-                      </span>
-                    )}
-                    <span className="spotlight-read">
-                      <FaClock size={11} aria-hidden="true" style={{ color: '#ff3355' }} />
-                      {featuredArticle.readMins} read
-                    </span>
+                    </div>
+
+                    {/* Headline */}
+                    <h3
+                      style={{
+                        fontSize: 'clamp(22px, 2.5vw, 32px)',
+                        fontWeight: 800,
+                        color: '#ffffff',
+                        lineHeight: 1.3,
+                        marginBottom: '16px',
+                      }}
+                    >
+                      {featuredArticle.title}
+                    </h3>
+
+                    {/* Excerpt */}
+                    <p
+                      style={{
+                        fontSize: '14.5px',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        lineHeight: 1.65,
+                        marginBottom: '24px',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {featuredArticle.description}
+                    </p>
                   </div>
 
-                  <h3 className="spotlight-title">{featuredArticle.title}</h3>
-
-                  <p className="spotlight-excerpt">{featuredArticle.description}</p>
-
-                  <div className="spotlight-footer">
-                    <div className="spotlight-author">
+                  {/* Card Footer: Author + CTA */}
+                  <div
+                    className="pt-4 d-flex align-items-center justify-content-between flex-wrap gap-3"
+                    style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}
+                  >
+                    <div className="d-flex align-items-center gap-3">
                       <img
-                        className="spotlight-author-avatar"
                         src={featuredArticle.author?.avatar || DEFAULT_AUTHOR_AVATAR}
                         alt={featuredArticle.author?.name || 'Prince'}
                         loading="lazy"
                         decoding="async"
-                        width="38"
-                        height="38"
+                        width="40"
+                        height="40"
+                        style={{
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '1.5px solid rgba(212, 0, 39, 0.6)',
+                        }}
                         onError={(e) => {
                           const target = e.currentTarget as HTMLImageElement;
                           if (target.src !== DEFAULT_AUTHOR_AVATAR) {
@@ -194,108 +339,167 @@ export const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                         }}
                       />
                       <div>
-                        <div className="spotlight-author-name">{featuredArticle.author?.name || 'Prince'}</div>
-                        <div className="spotlight-author-role">{featuredArticle.author?.role || 'Senior Full Stack Engineer'}</div>
+                        <div style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>
+                          {featuredArticle.author?.name || 'Prince'}
+                        </div>
+                        <div style={{ color: 'rgba(255, 255, 255, 0.45)', fontSize: '11.5px' }}>
+                          {featuredArticle.author?.role || 'Senior Full Stack Engineer'}
+                        </div>
                       </div>
                     </div>
 
-                    <span className="spotlight-cta-btn">
-                      Read Deep Dive <FaArrowRight size={11} aria-hidden="true" />
-                    </span>
+                    <div
+                      className="d-inline-flex align-items-center gap-2 px-4 py-2 rounded-pill"
+                      style={{
+                        background: '#d40027',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        boxShadow: '0 4px 20px rgba(212, 0, 39, 0.4)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <span>Read Deep Dive</span>
+                      <FaArrowRight size={11} />
+                    </div>
                   </div>
                 </div>
-              </Link>
-            </article>
-          )}
-
-          {/* 2. Companion 3-Column Modern Grid (Next 3 Latest Articles) */}
-          {companionArticles.length > 0 && (
-            <div className="article-companion-grid">
-              {companionArticles.map((article) => (
-                <article className="article-card modern-companion-card" key={article.slug}>
-                  <Link
-                    className="article-link"
-                    href={`/insights/${article.slug}/`}
-                    onClick={(e) => handleArticleClick(article.slug, e)}
-                    aria-label={`Read article: ${article.title}`}
-                  >
-                    <div className="article-img-wrap">
-                      <img
-                        className="card-img"
-                        src={article.image || DEFAULT_BLOG_FALLBACK}
-                        alt={`${article.title} - Engineering Insight by Prince`}
-                        loading="lazy"
-                        decoding="async"
-                        width="600"
-                        height="375"
-                        onError={(e) => {
-                          const target = e.currentTarget as HTMLImageElement;
-                          if (target.src !== DEFAULT_BLOG_FALLBACK && !target.src.endsWith(DEFAULT_BLOG_FALLBACK)) {
-                            target.src = DEFAULT_BLOG_FALLBACK;
-                          }
-                        }}
-                      />
-                      {article.category && (
-                        <span className="article-category-badge">{article.category}</span>
-                      )}
-                    </div>
-
-                    <div className="card-body">
-                      <div className="article-meta-row">
-                        <span className="read-mins">
-                          <FaClock size={11} aria-hidden="true" />
-                          {article.readMins} read
-                        </span>
-                        {article.date && <span className="article-date">{article.date}</span>}
-                      </div>
-
-                      <h3 className="card-title">{article.title}</h3>
-
-                      <p className="card-content">{article.description}</p>
-
-                      <div className="companion-card-footer">
-                        <div className="companion-author">
-                          <img
-                            className="companion-author-avatar"
-                            src={article.author?.avatar || DEFAULT_AUTHOR_AVATAR}
-                            alt={article.author?.name || 'Prince'}
-                            width="24"
-                            height="24"
-                            onError={(e) => {
-                              const target = e.currentTarget as HTMLImageElement;
-                              if (target.src !== DEFAULT_AUTHOR_AVATAR) {
-                                target.src = DEFAULT_AUTHOR_AVATAR;
-                              }
-                            }}
-                          />
-                          <span className="companion-author-name">{article.author?.name || 'Prince'}</span>
-                        </div>
-
-                        <span className="read-more-link">
-                          Read Story <FaArrowRight size={11} className="arrow-icon" aria-hidden="true" />
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </article>
-              ))}
-            </div>
-          )}
-
-          {/* 3. Modern Discovery Bar */}
-          <div className="articles-discovery-bar">
-            <div className="discovery-left">
-              <FaBookOpen className="discovery-icon" aria-hidden="true" />
-              <span>
-                Exploring {displayArticles.length}+ technical breakdowns, AI automations, and IT strategy playbooks.
-              </span>
-            </div>
-
-            <Link href="/insights/" className="discovery-btn">
-              <span>View All Articles &amp; Archive</span>
-              <FaArrowRight size={11} aria-hidden="true" />
+              </div>
             </Link>
           </div>
+        )}
+
+        {/* 2. THREE COMPANION EDITORIAL CARDS (Clean, Razor-Thin Agency Cards) */}
+        {companionArticles.length > 0 && (
+          <div className="row g-4 mb-4">
+            {companionArticles.map((article) => (
+              <div key={article.slug} className="col-lg-4 col-md-6 col-12 d-flex">
+                <Link
+                  href={`/insights/${article.slug}/`}
+                  onClick={(e) => handleArticleClick(article.slug, e)}
+                  className="editorial-companion-card w-100 text-decoration-none d-flex flex-column justify-content-between rounded-4 overflow-hidden agency-card-dark"
+                  style={{
+                    background: '#07080a',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    transition: 'all 0.25s ease',
+                  }}
+                >
+                  {/* Thumbnail */}
+                  <div style={{ position: 'relative', width: '100%', height: '190px', background: '#0e1017', overflow: 'hidden' }}>
+                    <img
+                      src={article.image || DEFAULT_BLOG_FALLBACK}
+                      alt={`${article.title} - Engineering Insight`}
+                      loading="lazy"
+                      decoding="async"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        transition: 'transform 0.4s ease',
+                      }}
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (target.src !== DEFAULT_BLOG_FALLBACK && !target.src.endsWith(DEFAULT_BLOG_FALLBACK)) {
+                          target.src = DEFAULT_BLOG_FALLBACK;
+                        }
+                      }}
+                    />
+                    {article.category && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: '12px',
+                          left: '12px',
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          color: '#ffffff',
+                          background: 'rgba(7, 8, 10, 0.85)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.8px',
+                          backdropFilter: 'blur(8px)',
+                        }}
+                      >
+                        {article.category}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-4 d-flex flex-column justify-content-between flex-grow-1">
+                    <div>
+                      <div className="d-flex align-items-center gap-3 mb-2" style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.5)' }}>
+                        <span className="d-inline-flex align-items-center gap-1">
+                          <FaClock size={10} style={{ color: '#d40027' }} />
+                          {article.readMins} read
+                        </span>
+                        {article.date && <span>{article.date}</span>}
+                      </div>
+
+                      <h4
+                        style={{
+                          fontSize: '17px',
+                          fontWeight: 700,
+                          color: '#ffffff',
+                          lineHeight: 1.35,
+                          marginBottom: '10px',
+                        }}
+                      >
+                        {article.title}
+                      </h4>
+
+                      <p
+                        style={{
+                          fontSize: '13px',
+                          color: 'rgba(255, 255, 255, 0.65)',
+                          lineHeight: 1.55,
+                          margin: 0,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {article.description}
+                      </p>
+                    </div>
+
+                    <div
+                      className="pt-3 mt-3 d-flex align-items-center justify-content-between"
+                      style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}
+                    >
+                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#ffffff' }}>
+                        Read Article
+                      </span>
+                      <FaArrowRight size={11} style={{ color: '#00f2fe' }} />
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Bottom Discovery Link */}
+        <div className="text-center pt-3">
+          <Link
+            href="/insights/"
+            className="d-inline-flex align-items-center gap-2 px-4 py-2 rounded-pill text-decoration-none"
+            style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              fontSize: '13.5px',
+              fontWeight: 600,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span>Explore All {displayArticles.length} Architecture Insights</span>
+            <FaArrowRight size={12} style={{ color: '#d40027' }} />
+          </Link>
         </div>
       </div>
     </section>

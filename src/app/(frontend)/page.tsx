@@ -15,7 +15,6 @@ import { ProblemsSolved } from '@/components/home/ProblemsSolved';
 import { OurApproach } from '@/components/home/OurApproach';
 import { TechExpertise } from '@/components/home/TechExpertise';
 import { WhyChooseUs } from '@/components/home/WhyChooseUs';
-import { CapabilitiesShowcase } from '@/components/home/CapabilitiesShowcase';
 import { HomeFaqSection } from '@/components/home/HomeFaqSection';
 import { getPosts, getServices } from '@/lib/cms';
 
@@ -73,51 +72,50 @@ export default async function HomePage() {
 
   return (
     <div className="home-view-container">
-      {/* 1. Premium Hero Section */}
+      {/* 1. Iconic Hero Section */}
       <HeroBanner />
 
-      {/* 2. Trust & Capabilities */}
+      {/* 2. Interactive Telemetry Console & Core Value Proposition */}
       <TrustCapabilities />
 
-      {/* 3. What We Help You Build */}
+      {/* 3. Interactive Blueprint Studio (Engineering Archetypes) */}
       <WhatWeBuild />
 
-      {/* 4. Featured Dynamic Services */}
+      {/* 4. Playing Cards Hand Fan (Centered Taash ke Patte on Scroll) */}
       <FeaturedServicesSection services={services} />
 
-      {/* 5. Business Problems We Solve */}
+      {/* 5. Before vs. After Comparative Diagnosis Console */}
       <ProblemsSolved />
 
-      {/* 6. Our 8-Stage Approach */}
+      {/* 6. 8-Stage Engineering Flight Plan & Timeline */}
       <OurApproach />
 
-      {/* 7. Technologies & Expertise */}
+      {/* 7. Interactive Stack Terminal & Architecture Matrix */}
       <TechExpertise />
 
-      {/* 8. Why Choose HeyPrince */}
+      {/* 8. Senior Engineering Bento Grid */}
       <WhyChooseUs />
 
-      {/* 9. Verified Capabilities & Architecture Showcase */}
-      <CapabilitiesShowcase />
-
-      {/* Brand Personality & Philosophy */}
+      {/* 9. Vision & Ambition */}
       <VisionAmbition />
 
-      {/* Interactive Milestones Timeline */}
+      {/* 10. Interactive Cyber Arcade Experience */}
+      <CyberArcade />
+
+      {/* 11. Journey & Evolution */}
       <JourneyTimeline />
 
-      {/* 10. Dynamic Insights & Articles */}
+      {/* 12. Dynamic Engineering Articles & Magazine Cover Spotlight */}
       <ArticlesSection articles={latestArticles} />
 
-      {/* 11. Frequently Asked Questions (with JSON-LD Schema) */}
+      {/* 13. Real Customer FAQ */}
       <HomeFaqSection />
 
-      {/* 12. Final High-Converting Consultation & Let's Talk Banner */}
-      <LetsTalkBanner />
-
-      {/* Interactive Cyber Arcade & Brand Memories */}
-      <CyberArcade />
+      {/* 14. Captured Moments */}
       <CapturedMemories />
+
+      {/* 15. Final Conversion Section */}
+      <LetsTalkBanner />
     </div>
   );
 }
