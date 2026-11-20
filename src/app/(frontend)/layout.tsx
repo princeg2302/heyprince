@@ -29,7 +29,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://heyprince.in'),
   title: {
-    default: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
+    default: 'Prince: Senior Full Stack IT Consultant & Systems Architect',
     template: '%s | HeyPrince',
   },
   description:
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     canonical: 'https://heyprince.in/',
   },
   openGraph: {
-    title: 'Prince — Senior Full Stack IT Consultant & Web Engineer | HeyPrince',
+    title: 'Prince: Senior Full Stack IT Consultant & Systems Architect | HeyPrince',
     description:
       'Prince is a Senior Full Stack Engineer & IT Consultant specializing in high-performance React & Next.js apps, custom CMS engineering, and AI workflow automations.',
     url: 'https://heyprince.in/',
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Prince — Senior Full Stack IT Consultant & Web Engineer',
+    title: 'Prince: Senior Full Stack IT Consultant & Systems Architect',
     description:
       'Senior Full Stack Engineer & IT Consultant specializing in high-performance React web applications, scalable cloud architectures, and interactive digital solutions.',
     images: ['https://muzbzrxwbanzsjvgtexp.supabase.co/storage/v1/object/public/media/1791537029941-author.jpg'],

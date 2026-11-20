@@ -14,6 +14,41 @@ export interface ServiceFaq {
   a: string;
 }
 
+export interface ServiceProblemSolution {
+  problem: string;
+  solution: string;
+}
+
+export interface ServiceUseCase {
+  title: string;
+  scenario: string;
+  outcome: string;
+}
+
+export interface ServiceComparisonItem {
+  metric: string;
+  heyprince: string;
+  traditionalAgency: string;
+  offTheShelf: string;
+}
+
+export interface ServicePricingMilestone {
+  phase: string;
+  focus: string;
+  turnaround: string;
+}
+
+export interface ServiceArchitectureStep {
+  step: string;
+  layer: string;
+  desc: string;
+}
+
+export interface ServiceIndustryApp {
+  name: string;
+  impact: string;
+}
+
 export interface ServiceData {
   id: string;
   slug: string;
@@ -34,6 +69,18 @@ export interface ServiceData {
   faqs: ServiceFaq[];
   metaTitle: string;
   metaDescription: string;
+
+  // Extended 20-Section Architecture Fields
+  problemsSolved?: ServiceProblemSolution[];
+  whoNeedsThis?: string[];
+  capabilities?: { title: string; desc: string }[];
+  architectureWorkflow?: ServiceArchitectureStep[];
+  integrations?: string[];
+  securityStandards?: string[];
+  useCases?: ServiceUseCase[];
+  industries?: ServiceIndustryApp[];
+  comparison?: ServiceComparisonItem[];
+  pricingMilestones?: ServicePricingMilestone[];
 }
 
 export const servicesList: ServiceData[] = [
@@ -125,7 +172,7 @@ export const servicesList: ServiceData[] = [
         a: 'Never. We exclusively use commercial enterprise API agreements (like Google Gemini API and Anthropic Claude) which strictly guarantee zero retention for model training.',
       },
     ],
-    metaTitle: 'AI Services & Project Automations | Prince — Senior IT Consultant',
+    metaTitle: 'AI Services & Project Automations | Prince: Senior IT Consultant',
     metaDescription:
       'Custom autonomous AI agents, LLM pipelines, RAG systems, and smart workflow automations built for high-performance scale by Prince.',
   },
@@ -297,7 +344,7 @@ export const servicesList: ServiceData[] = [
         a: 'We use Next.js for server-rendered HTML or configure prerendering with comprehensive meta tags, dynamic canonicals, and JSON-LD schema graphs so search engine crawlers index every route instantly.',
       },
     ],
-    metaTitle: 'React & Next.js Web Development | Prince — Senior Engineer',
+    metaTitle: 'React & Next.js Web Development | Prince: Senior Full Stack Engineer',
     metaDescription:
       'Senior React & Next.js frontend development. High-performance, motion-rich, TypeScript web applications crafted by Prince.',
   },
@@ -644,4 +691,384 @@ export const servicesList: ServiceData[] = [
     metaDescription:
       'Elevate your brand with bespoke UI/UX interface design, Figma design systems, and digital graphic assets crafted by Prince.',
   },
+  {
+    id: 'ecommerce-solutions',
+    slug: 'ecommerce-solutions',
+    title: 'Headless E-Commerce & Custom Online Stores',
+    shortTitle: 'Headless E-Commerce',
+    tagline: 'Blisteringly fast headless storefronts, custom checkout funnels, and enterprise Shopify or Next.js architectures.',
+    category: 'E-Commerce & Digital Sales',
+    cardTheme: 'featured',
+    isFeatured: true,
+    featuredBadge: '★ HIGH CONVERSION // SUB-SECOND CHECKOUT',
+    iconName: 'FaRocket',
+    heroDescription:
+      'We engineer headless e-commerce architectures combining Next.js, Shopify Storefront API, Stripe, and global edge CDNs for instantaneous product loading and increased checkout conversions.',
+    overview: [
+      'Every 100ms delay in page load time costs e-commerce businesses up to 7% in sales conversions. Traditional monolithic storefronts burdened by heavy themes and third-party apps frequently fail Google Core Web Vitals.',
+      'We build decoupled, headless e-commerce engines that separate the frontend presentation from backend inventory and order management. Your catalog loads instantly from edge caches, and your cart experiences zero layout shift.',
+      'From custom product configurators and multi-currency checkouts to automated CRM inventory syncs, we build high-converting storefronts engineered for maximum revenue per session.',
+    ],
+    deliverables: [
+      {
+        title: 'Headless Next.js Storefront',
+        desc: 'Sub-second catalog browsing, server-side rendered product pages, dynamic filtering, and zero-flicker cart drawers.',
+      },
+      {
+        title: 'Shopify Storefront API Integration',
+        desc: 'Leverage Shopify’s rock-solid checkout and inventory engine while delivering a 100% custom, bespoke frontend design.',
+      },
+      {
+        title: 'Custom Stripe & Payment Gateway Flows',
+        desc: 'Optimized checkout sequences with Apple Pay, Google Pay, localized currencies, and subscription billing.',
+      },
+      {
+        title: 'Automated Order & Inventory Webhooks',
+        desc: 'Real-time synchronization between your storefront, warehouse fulfillment systems, ERP, and customer marketing automation.',
+      },
+    ],
+    techStack: [
+      'Next.js 16 Commerce',
+      'Shopify Storefront API',
+      'Stripe Billing & Checkout',
+      'Tailwind CSS & Framer Motion',
+      'Supabase PostgreSQL',
+      'Cloudflare Edge & CDN',
+      'Redis Distributed Caching',
+      'Algolia InstantSearch',
+    ],
+    process: [
+      {
+        step: '01',
+        title: 'Catalog Architecture & UX Audit',
+        desc: 'Analyzing your product taxonomy, checkout drop-off points, and technical performance bottlenecks.',
+      },
+      {
+        step: '02',
+        title: 'Storefront Design & Component System',
+        desc: 'Designing high-contrast, tactile product pages, sticky add-to-cart interactions, and friction-free mobile flows.',
+      },
+      {
+        step: '03',
+        title: 'Headless API Wiring & Edge Caching',
+        desc: 'Connecting Shopify or custom database backends with ISR (Incremental Static Regeneration) for instant page loads.',
+      },
+      {
+        step: '04',
+        title: 'Conversion QA & Payment Stress Testing',
+        desc: 'Validating end-to-end checkout, tax calculations, shipping rule webhooks, and analytics tracking.',
+      },
+    ],
+    highlights: [
+      'Sub-500ms product page load times',
+      'Zero layout shifts (CLS < 0.05)',
+      '100% bespoke design without theme limitations',
+      'Seamless multi-currency and global tax support',
+    ],
+    faqs: [
+      {
+        q: 'Why should I switch from standard Shopify to Headless Next.js?',
+        a: 'Standard Shopify themes load tens of JavaScript apps that cripple mobile load speeds. Headless separates your frontend, yielding 95+ Core Web Vitals, instantaneous transitions, and 15-30% higher mobile checkout conversions.',
+      },
+      {
+        q: 'Do I still manage products and orders in Shopify admin?',
+        a: 'Yes! Your marketing and operations teams continue using the standard Shopify dashboard for orders, refunds, inventory, and customer records. Only the customer-facing frontend is modernized.',
+      },
+      {
+        q: 'Can you migrate our existing store data safely?',
+        a: 'Yes. We run lossless database migrations for all existing customer accounts, order history, SEO URLs with 301 redirects, and product variants without downtime.',
+      },
+    ],
+    metaTitle: 'Headless E-Commerce Development | Prince: Senior IT Consultant',
+    metaDescription:
+      'High-converting headless Shopify and Next.js e-commerce development with sub-second page loads, custom Stripe checkouts, and edge caching by Prince.',
+  },
+  {
+    id: 'web-performance-optimization',
+    slug: 'web-performance-optimization',
+    title: 'Core Web Vitals & Web Performance Engineering',
+    shortTitle: 'Speed & Performance',
+    tagline: 'Sub-500ms TTFB, 95+ PageSpeed scores, zero layout shifts, and precision runtime bottleneck remediation.',
+    category: 'Performance & Infrastructure',
+    cardTheme: 'black',
+    iconName: 'FaBolt',
+    heroDescription:
+      'We audit, de-bloat, and re-engineer sluggish websites to achieve 95+ Core Web Vitals, eliminating server bottlenecks, DOM bloat, uncompressed media, and render-blocking scripts.',
+    overview: [
+      'Google explicitly penalizes slow websites in organic search rankings. When Largest Contentful Paint (LCP) exceeds 2.5 seconds or Cumulative Layout Shift (CLS) causes jumpy layouts, bounce rates double and revenue evaporates.',
+      'We do not simply install caching plugins: we diagnose performance at the browser rendering engine, HTTP network, and server runtime levels. We analyze flame charts, optimize V8 execution time, and eliminate render-blocking JavaScript.',
+      'From legacy WordPress speed rehabilitations to complex React hydration optimizations, we deliver measurable, verifiable speed scores across both mobile and desktop devices.',
+    ],
+    deliverables: [
+      {
+        title: 'Deep Performance & Flame Chart Audit',
+        desc: 'Identifying CPU bottlenecks, main-thread blocking JavaScript, excessive DOM depth, and redundant network requests.',
+      },
+      {
+        title: 'Core Web Vitals Remediation (LCP, CLS, INP)',
+        desc: 'Engineering sub-2.5s LCP, zero Cumulative Layout Shift, and Interaction to Next Paint (INP) under 100ms.',
+      },
+      {
+        title: 'Media Pipeline & Next-Gen Formats',
+        desc: 'Automating WebP/AVIF conversions, responsive image srcsets, and adaptive loading for mobile cellular networks.',
+      },
+      {
+        title: 'Server-Side & Edge Caching Architecture',
+        desc: 'Configuring Cloudflare caching rules, stale-while-revalidate headers, Redis object caching, and database query indexation.',
+      },
+    ],
+    techStack: [
+      'Chrome DevTools Profiler',
+      'Google Lighthouse CI',
+      'WebPageTest Private Agents',
+      'Next.js Dynamic Imports & Streaming',
+      'Cloudflare Edge Cache & Workers',
+      'Redis Query Caching',
+      'Brotli & Gzip Compression',
+      'Critical CSS Inlining',
+    ],
+    process: [
+      {
+        step: '01',
+        title: 'Baseline Profiling & Waterfall Capture',
+        desc: 'Capturing real-user monitoring metrics, throttling tests on 4G networks, and mapping third-party script overhead.',
+      },
+      {
+        step: '02',
+        title: 'Script De-bloating & Critical Path Inlining',
+        desc: 'Removing dead JavaScript bundles, deferring analytics trackers, and inlining critical CSS above the fold.',
+      },
+      {
+        step: '03',
+        title: 'Server TTFB & Database Indexing',
+        desc: 'Optimizing SQL query execution times, activating bytecode opcache, and routing traffic through edge networks.',
+      },
+      {
+        step: '04',
+        title: 'Verification & CI Regression Prevention',
+        desc: 'Running before-and-after benchmark reports and setting performance budgets in automated deployment pipelines.',
+      },
+    ],
+    highlights: [
+      'Guaranteed 90+ mobile PageSpeed scores',
+      'Sub-500ms Time To First Byte (TTFB)',
+      'Zero layout shifts (CLS < 0.05)',
+      'Detailed before-and-after Lighthouse verification reports',
+    ],
+    faqs: [
+      {
+        q: 'Can you speed up our WordPress website without breaking existing features?',
+        a: 'Yes! We audit every active plugin, de-queue unneeded scripts on pages where they are not used, optimize images and database tables, and configure server-level caching without modifying your core content.',
+      },
+      {
+        q: 'How does web speed affect our Google organic rankings?',
+        a: 'Google uses Core Web Vitals as an official ranking factor. Passing the Core Web Vitals assessment directly improves search ranking eligibility, lowers bounce rates, and boosts Google Ads Quality Scores, reducing cost per click.',
+      },
+      {
+        q: 'What is the turnaround time for a performance remediation project?',
+        a: 'Most performance audits and remediations are completed within 3 to 7 business days, with immediate observable speed improvements after deployment.',
+      },
+    ],
+    metaTitle: 'Web Performance Optimization & Core Web Vitals | Prince: Senior IT Consultant',
+    metaDescription:
+      'Sub-500ms TTFB, 95+ PageSpeed scores, and zero layout shift engineering for Next.js, React, and WordPress websites by Prince.',
+  },
 ];
+
+/**
+ * Resolves comprehensive data for all 20 landing page sections for any service.
+ * Ensures consistent, high-converting technical copy across static and Supabase-loaded services.
+ */
+export function resolveService20Sections(service: ServiceData) {
+  const isAi = service.slug.includes('ai') || service.category.toLowerCase().includes('ai');
+  const isCms = service.slug.includes('cms') || service.category.toLowerCase().includes('cms') || service.slug.includes('wordpress');
+  const isPerf = service.slug.includes('performance') || service.slug.includes('speed');
+  const isEcom = service.slug.includes('ecommerce') || service.slug.includes('commerce');
+  const isSeo = service.slug.includes('seo') || service.category.toLowerCase().includes('seo');
+  const isDesign = service.slug.includes('ui-ux') || service.category.toLowerCase().includes('design');
+
+  const problemsSolved: ServiceProblemSolution[] = service.problemsSolved || [
+    {
+      problem: 'Sluggish performance, bloated legacy codebases, and poor user retention.',
+      solution: 'Clean, hand-crafted architectural engineering delivering sub-second response times and rock-solid reliability.',
+    },
+    {
+      problem: 'High agency fees, junior staff delegation, and communication delays.',
+      solution: 'Direct collaboration with a senior systems engineer who writes production code and takes personal accountability.',
+    },
+    {
+      problem: 'Friction in scaling, vendor lock-in, and opaque proprietary code.',
+      solution: 'Strictly typed, open-standard modular codebases with 100% intellectual property ownership transferred to you.',
+    },
+    {
+      problem: 'Disjointed toolchains and manual operational overhead.',
+      solution: 'Automated, event-driven integrations connecting your frontend, APIs, databases, and third-party SaaS tools.',
+    },
+  ];
+
+  const whoNeedsThis: string[] = service.whoNeedsThis || [
+    'Fast-growing tech companies and startups needing enterprise-grade technical execution without agency overhead.',
+    'Established businesses struggling with legacy codebase bloat, slow page loads, and fragile architecture.',
+    'Product and marketing leaders who require sub-second Core Web Vitals and high-converting conversion funnels.',
+    'Founders looking for a dependable senior technical partner to design, build, and deploy production software.',
+  ];
+
+  const capabilities: { title: string; desc: string }[] = service.capabilities || service.deliverables.map((d) => ({
+    title: d.title,
+    desc: d.desc,
+  }));
+
+  const architectureWorkflow: ServiceArchitectureStep[] = service.architectureWorkflow || [
+    {
+      step: 'Layer 1',
+      layer: 'Edge Presentation & Client Layer',
+      desc: 'Next.js 16 server components, static generation, asset streaming, and edge caching for sub-500ms initial page delivery.',
+    },
+    {
+      step: 'Layer 2',
+      layer: 'API & Business Logic Microservices',
+      desc: 'Strictly typed TypeScript or Python endpoints validating payloads against deterministic schemas with zero-trust token auth.',
+    },
+    {
+      step: 'Layer 3',
+      layer: 'Data Persistence & Caching Tier',
+      desc: 'Normalized Supabase PostgreSQL tables, Redis in-memory session caching, and secure cloud blob storage via Cloudflare R2.',
+    },
+    {
+      step: 'Layer 4',
+      layer: 'Telemetry & Guardrail Monitoring',
+      desc: 'Automated health endpoints, structured error telemetry, rate limiting, and continuous performance regression testing.',
+    },
+  ];
+
+  const integrations: string[] = service.integrations || [
+    'Supabase & PostgreSQL',
+    'Stripe & Razorpay Billing',
+    'Cloudflare Edge & R2',
+    'HubSpot & Salesforce CRM',
+    'OpenAI & Google Gemini APIs',
+    'GitHub CI/CD Pipelines',
+    'Redis Distributed Caching',
+    'Webhook Automation Endpoints',
+  ];
+
+  const securityStandards: string[] = service.securityStandards || [
+    'Zero-trust cryptographic API authentication and role-based access control.',
+    'Complete sanitization of all request inputs with Zod/Pydantic schemas.',
+    'Strict HTTP security headers: Content-Security-Policy, HSTS, and CORS enforcement.',
+    'Automated rate-limiting on all public endpoints to prevent abuse and DDoS attacks.',
+    'Zero plain-text secret storage with strict cloud environment isolation.',
+  ];
+
+  const useCases: ServiceUseCase[] = service.useCases || [
+    {
+      title: 'High-Growth Platform Launch',
+      scenario: 'A company needs a scalable, high-converting digital platform deployed in weeks with sub-second page loads.',
+      outcome: 'Engineered a bespoke system with 98+ PageSpeed scores, seamless payment integrations, and zero maintenance headaches.',
+    },
+    {
+      title: 'Legacy System Modernization',
+      scenario: 'An existing application is sluggish, crashes under load, and suffers from bloated technical debt.',
+      outcome: 'Refactored architecture into modular services, cutting latency by 70% and slashing server infrastructure costs.',
+    },
+    {
+      title: 'Automated Operations & Workflow Scaling',
+      scenario: 'A business is losing hours daily on manual data entry, customer routing, and disconnected toolchains.',
+      outcome: 'Deployed event-driven autonomous pipelines that save 20+ team hours weekly with zero data entry errors.',
+    },
+  ];
+
+  const industries: ServiceIndustryApp[] = service.industries || [
+    { name: 'SaaS & Technology Startups', impact: 'Sub-second onboarding flows, API integrations, and scalable multi-tenant backends.' },
+    { name: 'E-Commerce & D2C Brands', impact: 'Frictionless checkout pipelines, instant catalog browsing, and conversion rate optimization.' },
+    { name: 'Professional & Legal Services', impact: 'Secure client portals, automated document intake, and high-trust digital presentation.' },
+    { name: 'Healthcare & Local Clinics', impact: 'HIPAA-conscious appointment booking, local search dominance, and responsive mobile UX.' },
+  ];
+
+  const comparison: ServiceComparisonItem[] = service.comparison || [
+    {
+      metric: 'Source Code Ownership',
+      heyprince: '100% full intellectual property ownership transferred to client on day one.',
+      traditionalAgency: 'Proprietary lock-in or licensing agreements requiring recurring retainers.',
+      offTheShelf: 'Rented platform with zero ownership and constant monthly price hikes.',
+    },
+    {
+      metric: 'Engineering Point of Contact',
+      heyprince: 'Direct access to senior systems engineer who writes the production code.',
+      traditionalAgency: 'Junior developers routed through non-technical account managers.',
+      offTheShelf: 'Automated chatbots and community ticket forums with delayed support.',
+    },
+    {
+      metric: 'Page Speed & Core Web Vitals',
+      heyprince: 'Sub-500ms TTFB, 95+ mobile Lighthouse score, and zero layout shift.',
+      traditionalAgency: 'Bloated themes with 30+ plugins averaging 35-55 speed scores.',
+      offTheShelf: 'Unpredictable speed constrained by shared platform infrastructure.',
+    },
+    {
+      metric: 'Architecture & Scalability',
+      heyprince: 'Strictly typed TypeScript/Python, normalized databases, and modular architecture.',
+      traditionalAgency: 'Spaghetti code copied across projects without documentation.',
+      offTheShelf: 'Rigid walled-garden architecture impossible to customize deeply.',
+    },
+    {
+      metric: 'Communication Velocity',
+      heyprince: 'Asynchronous updates via WhatsApp/Slack with same-day turnaround.',
+      traditionalAgency: 'Endless status meetings, change order bureaucracy, and scope creep.',
+      offTheShelf: 'Self-serve documentation with zero customized advisory.',
+    },
+  ];
+
+  const pricingMilestones: ServicePricingMilestone[] = service.pricingMilestones || [
+    {
+      phase: 'Phase 1: Architecture & Technical Discovery',
+      focus: 'System mapping, database schema design, wireframes, and fixed milestone scope.',
+      turnaround: 'Days 1 to 3',
+    },
+    {
+      phase: 'Phase 2: Core Engineering & Integrations',
+      focus: 'Full-stack development, API wiring, database migrations, and UI implementation.',
+      turnaround: 'Days 4 to 12',
+    },
+    {
+      phase: 'Phase 3: Security Audits & Performance Tuning',
+      focus: 'Lighthouse 95+ optimization, stress testing, edge caching, and mobile QA.',
+      turnaround: 'Days 13 to 16',
+    },
+    {
+      phase: 'Phase 4: Production Launch & Senior Handover',
+      focus: 'Zero-downtime DNS deployment, SSL provisioning, git repo transfer, and documentation.',
+      turnaround: 'Day 17 onwards',
+    },
+  ];
+
+  return {
+    hero: {
+      title: service.title,
+      shortTitle: service.shortTitle,
+      tagline: service.tagline,
+      category: service.category,
+      isFeatured: Boolean(service.isFeatured),
+      featuredBadge: service.featuredBadge,
+      heroDescription: service.heroDescription,
+      iconName: service.iconName,
+    },
+    overview: service.overview,
+    problemsSolved,
+    whoNeedsThis,
+    coreScope: service.deliverables,
+    capabilities,
+    architectureWorkflow,
+    techStack: service.techStack,
+    process: service.process,
+    deliverables: service.deliverables,
+    integrations,
+    securityStandards,
+    useCases,
+    industries,
+    comparison,
+    pricingMilestones,
+    faqs: service.faqs,
+    highlights: service.highlights,
+  };
+}
+

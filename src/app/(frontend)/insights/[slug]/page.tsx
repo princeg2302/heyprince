@@ -35,14 +35,14 @@ export async function generateMetadata({ params }: InsightPageProps): Promise<Me
     : `https://heyprince.in${post.image.startsWith('/') ? '' : '/'}${post.image}`;
 
   return {
-    title: `${post.title} | Prince — Tech Partner`,
+    title: `${post.title} | Prince: Tech Partner`,
     description: post.description,
     keywords: `${post.tags.join(', ')}, Web Development, IT Engineering, Prince, Software Architecture, Full Stack Consultant`,
     alternates: {
       canonical: `https://heyprince.in/insights/${post.slug}/`,
     },
     openGraph: {
-      title: `${post.title} | Prince — Tech Partner`,
+      title: `${post.title} | Prince: Tech Partner`,
       description: post.description,
       url: `https://heyprince.in/insights/${post.slug}/`,
       type: 'article',
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: InsightPageProps): Promise<Me
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${post.title} | Prince — Tech Partner`,
+      title: `${post.title} | Prince: Tech Partner`,
       description: post.description,
       images: [absoluteImage],
     },

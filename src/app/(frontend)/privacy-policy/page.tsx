@@ -3,7 +3,7 @@ import React from 'react';
 import { PrivacyPolicyPage } from '@/components';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Prince — Senior IT Consultant & Web Engineer | HeyPrince',
+  title: 'Privacy Policy | Prince: Senior IT Consultant & Web Engineer | HeyPrince',
   description:
     'Read the HeyPrince Privacy Policy to understand how we protect your personal data, manage cookie consent preferences, and guarantee transparency.',
   keywords: [
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     canonical: 'https://heyprince.in/privacy-policy/',
   },
   openGraph: {
-    title: 'Privacy Policy | Prince — Senior IT Consultant & Web Engineer | HeyPrince',
+    title: 'Privacy Policy | Prince: Senior IT Consultant & Web Engineer | HeyPrince',
     description:
       'Read the HeyPrince Privacy Policy to understand how we protect your personal data, manage cookie consent preferences, and guarantee transparency.',
     url: 'https://heyprince.in/privacy-policy/',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Privacy Policy | Prince — Senior IT Consultant & Web Engineer | HeyPrince',
+    title: 'Privacy Policy | Prince: Senior IT Consultant & Web Engineer | HeyPrince',
     description:
       'Read the HeyPrince Privacy Policy to understand how we protect your personal data, manage cookie consent preferences, and guarantee transparency.',
   },

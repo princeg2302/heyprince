@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { articlesList, Article } from '../data/siteContent';
 import {
   FaArrowLeft,
@@ -22,6 +23,8 @@ import {
   FaRegComments,
   FaGithub,
   FaXTwitter,
+  FaBolt,
+  FaRocket,
 } from 'react-icons/fa6';
 import { DiscussionSection, CommentItem } from './discussions/DiscussionSection';
 
@@ -829,6 +832,38 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
               </div>
             </footer>
 
+            {/* Reciprocal Internal Linking: Related Engineering Advisory & Services */}
+            <div
+              className="my-5 p-4"
+              style={{
+                background: 'radial-gradient(circle at top right, #1b2030 0%, #0d0f15 100%)',
+                border: '1px solid rgba(0, 242, 254, 0.3)',
+                borderRadius: '16px',
+              }}
+            >
+              <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#00f2fe', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>
+                    Senior Engineering Advisory
+                  </span>
+                  <h4 style={{ color: '#ffffff', fontSize: '18px', fontWeight: 700, margin: '0 0 6px 0' }}>
+                    Need Production Implementation for Your Team?
+                  </h4>
+                  <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '13px', lineHeight: 1.5, margin: 0, maxWidth: '600px' }}>
+                    Work directly with Prince on custom React/Next.js architectures, sub-second performance engineering, or autonomous AI pipelines.
+                  </p>
+                </div>
+                <div className="d-flex gap-2 flex-wrap">
+                  <Link href="/services/" className="btn-back-home" style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }}>
+                    <span>Explore Services</span>
+                  </Link>
+                  <Link href="/contact/" className="portal-btn">
+                    <span className="mr-right">Discuss Project</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
             {/* Live Discussion & Threaded Community Replies Component */}
             <DiscussionSection
               slug={article.slug}
@@ -969,6 +1004,87 @@ export const SingleBlogPage: React.FC<SingleBlogPageProps> = ({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Core Engineering Services Widget */}
+              <div className="sidebar-widget categories-sidebar-widget">
+                <div className="widget-header">
+                  <FaBolt className="widget-icon" style={{ color: '#00f2fe' }} />
+                  <h4 className="widget-title">Engineering Services</h4>
+                </div>
+                <p className="widget-subtitle">Direct senior IT consulting and custom architecture</p>
+                <div className="d-flex flex-column gap-2 mt-3">
+                  <Link
+                    href="/services/react-development/"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '8px',
+                      padding: '10px 14px',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span>React &amp; Next.js Engineering</span>
+                    <FaArrowRight size={10} color="#00f2fe" />
+                  </Link>
+                  <Link
+                    href="/services/ai-automation/"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '8px',
+                      padding: '10px 14px',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span>AI Automations &amp; LLM Pipelines</span>
+                    <FaArrowRight size={10} color="#00f2fe" />
+                  </Link>
+                  <Link
+                    href="/services/seo-services/"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '8px',
+                      padding: '10px 14px',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span>Technical SEO &amp; Speed Audits</span>
+                    <FaArrowRight size={10} color="#00f2fe" />
+                  </Link>
+                  <Link
+                    href="/services/"
+                    style={{
+                      marginTop: '6px',
+                      color: '#d40027',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <span>View All 9 Specializations</span>
+                    <FaArrowRight size={10} />
+                  </Link>
                 </div>
               </div>
             </div>

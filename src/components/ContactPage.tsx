@@ -28,11 +28,13 @@ export interface ContactPageProps {
 
 const SERVICE_OPTIONS = [
   'Frontend React / Next.js',
+  'AI Automations & LLM Pipelines',
   'Full-Stack Web App',
-  'UI/UX Redesign & Motion',
-  'WordPress & Custom Theme',
-  'Shopify E-Commerce Store',
-  'Speed & SEO Optimization',
+  'Headless E-Commerce Store',
+  'WordPress & CMS Engineering',
+  'Core Web Vitals & Speed',
+  'Technical SEO & Growth',
+  'UI/UX Design Systems',
   'Technical Architecture & Advisory',
 ];
 
@@ -96,11 +98,28 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigateHome }) => {
     setCaptchaProof('');
   }, []);
 
-  // CRITICAL: Ensure instant scroll to top on mount before paint
+  // CRITICAL: Ensure instant scroll to top on mount before paint and preselect service from query
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const preselected = params.get('service');
+      if (preselected) {
+        const decoded = decodeURIComponent(preselected);
+        const matched = SERVICE_OPTIONS.find(
+          (opt) =>
+            opt.toLowerCase().includes(decoded.toLowerCase()) ||
+            decoded.toLowerCase().includes(opt.toLowerCase())
+        );
+        setFormData((prev) => ({
+          ...prev,
+          service: matched || decoded,
+        }));
+      }
+    }
   }, []);
 
   const handleCopyEmail = () => {

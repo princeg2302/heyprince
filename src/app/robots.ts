@@ -8,14 +8,34 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
+        disallow: [
+          '/admin/',
+          '/admin/*',
+          '/api/',
+          '/api/*',
+          '/(payload)/',
+          '/(payload)/*',
+        ],
       },
       {
         userAgent: 'Googlebot',
         allow: '/',
+        disallow: [
+          '/admin/',
+          '/admin/*',
+          '/api/',
+          '/api/*',
+        ],
       },
       {
         userAgent: 'Bingbot',
         allow: '/',
+        disallow: [
+          '/admin/',
+          '/admin/*',
+          '/api/',
+          '/api/*',
+        ],
       },
     ],
     sitemap: 'https://heyprince.in/sitemap.xml',

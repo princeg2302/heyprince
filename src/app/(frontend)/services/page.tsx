@@ -26,7 +26,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'Engineering & Technical Services — Web Architecture & AI | HeyPrince',
+  title: 'Engineering & Technical Services: Web Architecture & AI | HeyPrince',
   description:
     'Explore high-performance IT consulting, custom Next.js web applications, bespoke WordPress & CMS engineering, enterprise PHP, and autonomous AI automations by Prince.',
   keywords: [
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     canonical: 'https://heyprince.in/services/',
   },
   openGraph: {
-    title: 'Engineering & Technical Services — Web Architecture & AI | HeyPrince',
+    title: 'Engineering & Technical Services: Web Architecture & AI | HeyPrince',
     description:
       'High-performance IT consulting, custom React & Next.js applications, and autonomous AI workflows engineered by Prince.',
     url: 'https://heyprince.in/services/',
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Engineering & Technical Services — Web Architecture & AI | HeyPrince',
+    title: 'Engineering & Technical Services: Web Architecture & AI | HeyPrince',
     description:
       'High-performance IT consulting, custom React & Next.js applications, and autonomous AI workflows engineered by Prince.',
   },
@@ -155,7 +155,7 @@ export default async function ServicesListingPage() {
 
             <p className="service-tagline-lead">
               From bespoke React &amp; Next.js platforms and enterprise CMS builds to autonomous AI
-              reasoning pipelines — explore specialized engineering services built for speed, stability, and measurable business growth.
+              reasoning pipelines: explore specialized engineering services built for speed, stability, and measurable business growth.
             </p>
           </header>
 
@@ -379,7 +379,7 @@ export default async function ServicesListingPage() {
               Have a Custom Engineering Challenge?
             </h2>
             <p style={{ maxWidth: '600px', margin: '0 auto 28px', color: 'rgba(255, 255, 255, 0.7)' }}>
-              Whether you need to scale an enterprise web app, automate business workflows, or audit mission-critical software — let’s architect the right solution.
+              Whether you need to scale an enterprise web app, automate business workflows, or audit mission-critical software, let’s architect the right solution.
             </p>
             <Link className="portal-btn mx-auto" href="/contact/">
               <span className="mr-right">Request Project Consultation</span>

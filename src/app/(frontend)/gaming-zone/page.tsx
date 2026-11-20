@@ -3,7 +3,7 @@ import React from 'react';
 import { GamingZoneView } from '@/components';
 
 export const metadata: Metadata = {
-  title: 'Play Retro Games Online — 8-Bit Platformer, Snake, Brick Breaker, Sudoku & 2048 | HeyPrince Gaming Zone',
+  title: 'Play Retro Games Online: 8-Bit Platformer, Snake, Brick Breaker, Sudoku & 2048 | HeyPrince Gaming Zone',
   description:
     'Play classic retro arcade games directly in your browser: 8-Bit Pixel Platformer (running, jumping, powerups, flagpole), Neon Snake (60fps), Cyber Brick Breaker, Sudoku, and 2048.',
   keywords: [
