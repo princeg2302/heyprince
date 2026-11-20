@@ -1,5 +1,3 @@
-import { query } from './db';
-
 export interface ScoutTarget {
   country: string;
   city: string;
@@ -86,53 +84,6 @@ export const LEAD_SCOUT_TARGET_ROTATION: ScoutTarget[] = GLOBAL_HUBS.slice(0, 12
   category: CORE_CATEGORIES[idx % CORE_CATEGORIES.length].name,
   categorySlug: CORE_CATEGORIES[idx % CORE_CATEGORIES.length].slug,
 }));
-
-/**
- * Dynamically resolves the next target using the database's least recently scanned categories
- * and rotating through global tech and commercial hubs.
- */
-export async function resolveDynamicScoutTarget(): Promise<ScoutTarget> {
-  try {
-    const categories = await query<{
-      name: string;
-      slug: string;
-      last_scanned_at: string | null;
-    }>(
-      `SELECT name, slug, last_scanned_at 
-       FROM industry_categories 
-       WHERE status = 'active' 
-       ORDER BY last_scanned_at ASC NULLS FIRST, created_at ASC 
-       LIMIT 1;`
-    );
-
-    const chosenCategory = categories.length > 0
-      ? categories[0]
-      : CORE_CATEGORIES[Math.floor(Math.random() * CORE_CATEGORIES.length)];
-
-    // Pick hub based on day & random rotation
-    const now = new Date();
-    const daySeed = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
-    const randomOffset = Math.floor(Math.random() * GLOBAL_HUBS.length);
-    const chosenHub = GLOBAL_HUBS[(daySeed + randomOffset) % GLOBAL_HUBS.length];
-
-    return {
-      country: chosenHub.country,
-      city: chosenHub.city,
-      category: chosenCategory.name,
-      categorySlug: chosenCategory.slug,
-    };
-  } catch (err) {
-    console.warn('[resolveDynamicScoutTarget] Falling back to static target:', err);
-    const chosenHub = GLOBAL_HUBS[Math.floor(Math.random() * GLOBAL_HUBS.length)];
-    const chosenCat = CORE_CATEGORIES[Math.floor(Math.random() * CORE_CATEGORIES.length)];
-    return {
-      country: chosenHub.country,
-      city: chosenHub.city,
-      category: chosenCat.name,
-      categorySlug: chosenCat.slug,
-    };
-  }
-}
 
 /**
  * Calculates a rigorous objective lead score between 0.10 and 1.00 based on:

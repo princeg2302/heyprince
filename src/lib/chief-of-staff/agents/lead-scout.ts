@@ -7,10 +7,11 @@ import {
   getAgentById,
 } from '../db';
 import {
-  resolveDynamicScoutTarget,
   evaluateLeadContactChannels,
   ScoutTarget,
   LEAD_SCOUT_TARGET_ROTATION,
+  GLOBAL_HUBS,
+  CORE_CATEGORIES,
 } from '../../outreach/qualification';
 import { generateLeadProposal } from '../../outreach/proposal-generator';
 import { getRelevantCompanyMemories, recordCompanyMemory } from '../../company/memory';
@@ -18,6 +19,48 @@ import { recordAgentLearning, createIndustryCategory, getIndustryCategories } fr
 
 export { LEAD_SCOUT_TARGET_ROTATION, evaluateLeadContactChannels };
 export type { ScoutTarget };
+
+export async function resolveDynamicScoutTarget(): Promise<ScoutTarget> {
+  try {
+    const categories = await query<{
+      name: string;
+      slug: string;
+      last_scanned_at: string | null;
+    }>(
+      `SELECT name, slug, last_scanned_at 
+       FROM industry_categories 
+       WHERE status = 'active' 
+       ORDER BY last_scanned_at ASC NULLS FIRST, created_at ASC 
+       LIMIT 1;`
+    );
+
+    const chosenCategory = categories.length > 0
+      ? categories[0]
+      : CORE_CATEGORIES[Math.floor(Math.random() * CORE_CATEGORIES.length)];
+
+    const now = new Date();
+    const daySeed = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
+    const randomOffset = Math.floor(Math.random() * GLOBAL_HUBS.length);
+    const chosenHub = GLOBAL_HUBS[(daySeed + randomOffset) % GLOBAL_HUBS.length];
+
+    return {
+      country: chosenHub.country,
+      city: chosenHub.city,
+      category: chosenCategory.name,
+      categorySlug: chosenCategory.slug,
+    };
+  } catch (err) {
+    console.warn('[resolveDynamicScoutTarget] Falling back to static target:', err);
+    const chosenHub = GLOBAL_HUBS[Math.floor(Math.random() * GLOBAL_HUBS.length)];
+    const chosenCat = CORE_CATEGORIES[Math.floor(Math.random() * CORE_CATEGORIES.length)];
+    return {
+      country: chosenHub.country,
+      city: chosenHub.city,
+      category: chosenCat.name,
+      categorySlug: chosenCat.slug,
+    };
+  }
+}
 
 export interface LeadScoutResult {
   scanTarget: ScoutTarget;
