@@ -6,27 +6,27 @@ export const OurApproach: React.FC = () => {
     {
       num: '01',
       title: 'Discover',
-      desc: 'We audit your existing application, database architecture, bottlenecks, and commercial goals to identify high-impact technical objectives.',
+      desc: 'Uncompromising technical audit of your current stack, database architecture, bottlenecks, and commercial objectives.',
     },
     {
       num: '02',
       title: 'Research',
-      desc: 'Deep technical research into user search intent, performance benchmarks, competitor tech stacks, and edge-case integration requirements.',
+      desc: 'Benchmarking performance baselines, competitor infrastructure, high-converting patterns, and emerging technologies.',
     },
     {
       num: '03',
       title: 'Plan',
-      desc: 'Defining strict data schemas, API contracts, milestone roadmaps, infrastructure budgets, and verifiable deliverable checklists.',
+      desc: 'Architecture blueprint design, typed API schemas, entity-relationship diagrams, and milestone delivery commitments.',
     },
     {
       num: '04',
       title: 'Design',
-      desc: 'Crafting responsive, high-converting UX with clean typographic hierarchy, accessible color palettes, and kinetic tactile interactions.',
+      desc: 'High-contrast, responsive component prototypes built in Figma with production-ready tokens and WCAG AA accessibility.',
     },
     {
       num: '05',
       title: 'Develop',
-      desc: 'Engineering clean, modular TypeScript, Next.js, and Python codebases adhering to strict linting, typing, and architectural separation.',
+      desc: 'Writing clean, strictly typed TypeScript and Python code with modular service boundaries and sub-second execution.',
     },
     {
       num: '06',
@@ -46,53 +46,102 @@ export const OurApproach: React.FC = () => {
   ];
 
   return (
-    <section className="py-5" style={{ background: '#12141c', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+    <section
+      className="py-5"
+      style={{
+        background: '#0b0b0f',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+      }}
+    >
       <div className="container py-5">
         <div className="text-center max-w-3xl mx-auto mb-5">
-          <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style={{ background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
-            <FaCompass size={13} className="text-accent" />
-            <span style={{ color: '#ffffff', fontSize: '12px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Engineering Discipline</span>
+          <div
+            className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <FaCompass size={12} style={{ color: '#00f2fe' }} />
+            <span
+              style={{
+                color: '#ffffff',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+              }}
+            >
+              Engineering Discipline
+            </span>
           </div>
-          <h2 style={{ fontSize: 'clamp(32px, 4vw, 46px)', color: '#ffffff', fontWeight: 800, lineHeight: 1.2, marginBottom: '16px' }}>
-            Our 8-Stage Delivery Lifecycle
+          <h2
+            style={{
+              fontSize: 'clamp(32px, 4vw, 46px)',
+              color: '#ffffff',
+              fontWeight: 800,
+              lineHeight: 1.2,
+              marginBottom: '16px',
+            }}
+          >
+            Our 8-Stage Engineering Lifecycle
           </h2>
-          <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '18px', lineHeight: 1.6, maxWidth: '720px', margin: '0 auto' }}>
-            We do not guess, skip steps, or push unverified code. Every engagement follows a disciplined, transparent engineering methodology.
+          <p
+            style={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '17px',
+              lineHeight: 1.6,
+              maxWidth: '720px',
+              margin: '0 auto',
+            }}
+          >
+            From the initial system discovery to continuous post-launch optimization, every step follows disciplined engineering practices.
           </p>
         </div>
 
         <div className="row g-4">
           {steps.map((st, idx) => (
             <div key={idx} className="col-lg-3 col-md-6 col-12 d-flex">
-              <div 
-                className="w-100 p-4 rounded-4" 
-                style={{ 
-                  background: '#181b24', 
-                  border: '1px solid rgba(255, 255, 255, 0.07)',
+              <div
+                className="w-100 p-4 rounded-4 agency-card-dark"
+                style={{
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  transition: 'transform 0.3s ease',
                 }}
               >
                 <div>
                   <div className="d-flex align-items-center justify-content-between mb-3">
-                    <span 
-                      style={{ 
-                        fontFamily: 'var(--font-futuru)', 
-                        fontSize: '28px', 
-                        fontWeight: 900, 
-                        color: '#e53935' 
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-futuru)',
+                        fontSize: '26px',
+                        fontWeight: 900,
+                        color: '#d40027',
                       }}
                     >
                       {st.num}
                     </span>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.3)' }}></span>
+                    <span
+                      style={{
+                        fontSize: '10.5px',
+                        color: '#00f2fe',
+                        letterSpacing: '1px',
+                        textTransform: 'uppercase',
+                        fontWeight: 700,
+                        background: 'rgba(0, 242, 254, 0.08)',
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(0, 242, 254, 0.2)',
+                      }}
+                    >
+                      Stage {st.num}
+                    </span>
                   </div>
-                  <h3 style={{ fontSize: '19px', color: '#ffffff', fontWeight: 700, marginBottom: '10px' }}>
+                  <h3 style={{ fontSize: '18px', color: '#ffffff', fontWeight: 700, marginBottom: '8px' }}>
                     {st.title}
                   </h3>
-                  <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.6, margin: 0 }}>
+                  <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.6, margin: 0 }}>
                     {st.desc}
                   </p>
                 </div>
@@ -104,3 +153,5 @@ export const OurApproach: React.FC = () => {
     </section>
   );
 };
+
+export default OurApproach;

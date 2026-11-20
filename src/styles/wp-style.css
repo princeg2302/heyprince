@@ -10243,6 +10243,120 @@ body {
   }
 }
 
+/* Sleek Hero Enhancements without Mashed Layout */
+.hero-status-pill-wrap {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.hero-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(14, 16, 23, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.hero-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d40027;
+  box-shadow: 0 0 10px #d40027;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.hero-scroll-prompt-wrap {
+  position: absolute;
+  bottom: 11%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+.hero-scroll-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.hero-scroll-btn:hover {
+  background: rgba(212, 0, 39, 0.15);
+  border-color: rgba(212, 0, 39, 0.5);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.hero-arrow-bounce {
+  animation: arrowBounce 1.8s infinite ease-in-out;
+}
+
+@keyframes arrowBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+@media (max-width: 767px) {
+  .hero-status-pill-wrap {
+    top: 100px;
+    width: 90%;
+    text-align: center;
+  }
+  .hero-status-pill {
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    padding: 5px 12px;
+  }
+  .hero-scroll-prompt-wrap {
+    bottom: 14%;
+  }
+}
+
+/* Agency Dark Standard Cards (Unified Pitch Black) */
+.agency-card-dark {
+  background: #07080a !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.agency-card-dark:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(212, 0, 39, 0.45) !important;
+  box-shadow: 0 16px 35px rgba(212, 0, 39, 0.15), 0 0 20px rgba(0, 242, 254, 0.08) !important;
+}
+
 
 /* ==========================================================================
    Live Discussion & Threaded Comments (Cyber-Defense Protected)

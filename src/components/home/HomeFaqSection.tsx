@@ -55,21 +55,59 @@ export const HomeFaqSection: React.FC = () => {
   };
 
   return (
-    <section className="py-5" style={{ background: '#12141c', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+    <section
+      className="py-5"
+      style={{
+        background: '#0b0b0f',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+      }}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <div className="container py-5">
         <div className="text-center max-w-3xl mx-auto mb-5">
-          <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style={{ background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
-            <FaCircleQuestion size={13} className="text-accent" />
-            <span style={{ color: '#ffffff', fontSize: '12px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Frequently Asked Questions</span>
+          <div
+            className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <FaCircleQuestion size={12} style={{ color: '#00f2fe' }} />
+            <span
+              style={{
+                color: '#ffffff',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+              }}
+            >
+              Frequently Asked Questions
+            </span>
           </div>
-          <h2 style={{ fontSize: 'clamp(32px, 4vw, 46px)', color: '#ffffff', fontWeight: 800, lineHeight: 1.2, marginBottom: '16px' }}>
+          <h2
+            style={{
+              fontSize: 'clamp(32px, 4vw, 46px)',
+              color: '#ffffff',
+              fontWeight: 800,
+              lineHeight: 1.2,
+              marginBottom: '16px',
+            }}
+          >
             Everything You Need to Know
           </h2>
-          <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '18px', lineHeight: 1.6, maxWidth: '720px', margin: '0 auto' }}>
+          <p
+            style={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '17px',
+              lineHeight: 1.6,
+              maxWidth: '720px',
+              margin: '0 auto',
+            }}
+          >
             Straightforward answers about our engineering process, pricing approach, timelines, and technical standards.
           </p>
         </div>
@@ -79,12 +117,17 @@ export const HomeFaqSection: React.FC = () => {
             {homeFaqs.map((faq, idx) => {
               const isOpen = openIndex === idx;
               return (
-                <div 
+                <div
                   key={idx}
                   className="rounded-4 overflow-hidden"
                   style={{
-                    background: isOpen ? '#181b25' : '#14161f',
-                    border: isOpen ? '1px solid rgba(229, 57, 53, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    background: '#07080a',
+                    border: isOpen
+                      ? '1px solid rgba(212, 0, 39, 0.5)'
+                      : '1px solid rgba(255, 255, 255, 0.07)',
+                    boxShadow: isOpen
+                      ? '0 10px 30px rgba(212, 0, 39, 0.15)'
+                      : '0 4px 15px rgba(0, 0, 0, 0.3)',
                     transition: 'all 0.25s ease',
                   }}
                 >
@@ -95,24 +138,31 @@ export const HomeFaqSection: React.FC = () => {
                     style={{ cursor: 'pointer', outline: 'none' }}
                     aria-expanded={isOpen}
                   >
-                    <span style={{ fontSize: '17px', color: '#ffffff', fontWeight: 600, paddingRight: '16px' }}>
+                    <span style={{ fontSize: '16.5px', color: '#ffffff', fontWeight: 600, paddingRight: '16px' }}>
                       {faq.q}
                     </span>
-                    <FaChevronDown 
-                      size={14} 
-                      style={{ 
-                        color: isOpen ? '#e53935' : 'rgba(255, 255, 255, 0.4)',
+                    <FaChevronDown
+                      size={14}
+                      style={{
+                        color: isOpen ? '#d40027' : 'rgba(255, 255, 255, 0.5)',
                         transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                         transition: 'transform 0.25s ease, color 0.25s ease',
                         flexShrink: 0,
-                      }} 
+                      }}
                     />
                   </button>
+
                   {isOpen && (
-                    <div className="px-4 pb-4">
-                      <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.7, margin: 0, borderTop: '1px dashed rgba(255, 255, 255, 0.1)', paddingTop: '16px' }}>
-                        {faq.a}
-                      </p>
+                    <div
+                      className="px-4 pb-4 pt-1"
+                      style={{
+                        color: 'rgba(255, 255, 255, 0.75)',
+                        fontSize: '14.5px',
+                        lineHeight: 1.7,
+                        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                      }}
+                    >
+                      <p className="m-0">{faq.a}</p>
                     </div>
                   )}
                 </div>
@@ -124,3 +174,5 @@ export const HomeFaqSection: React.FC = () => {
     </section>
   );
 };
+
+export default HomeFaqSection;
