@@ -1,0 +1,41 @@
+name: Verify Automation and Security Fixes
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [fix/automation-security-reliability]
+
+permissions:
+  contents: read
+
+jobs:
+  nextjs-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
+
+  python-auth-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: heyprince-ai-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install fastapi pydantic-settings
+      - name: Run internal authentication tests
+        env:
+          AI_SERVICE_SECRET: unit-test-secret
+          DEBUG: "false"
+        run: python -m unittest discover -s tests -p "test_*.py" -v
