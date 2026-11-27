@@ -63,16 +63,17 @@ No Supabase production data, policies, grants or schema were changed by this bra
 
 - Git branch created from `main`.
 - Vercel preview deployments have been created automatically for intermediate commits; several were superseded/cancelled by newer commits.
-- Final branch deployment build status is pending at the time of this note.
-- GitHub Actions TypeScript typecheck passed on the first CI run.
-- The first Python CI attempt passed all four new HMAC tests but the test-discovery job failed because the workflow had not installed the existing `httpx` dependency required by another repository test. The workflow now installs the backend requirements file; the rerun is pending.
+- Latest branch preview deployment is READY: `https://heyprince-pw1eims8h-heyprince1.vercel.app` (commit `31d2183a8e2145cff6ef4aba77aefcf8055e2b4e`). Vercel reported successful Next.js compilation, TypeScript checks and static page generation.
+- GitHub Actions run `45962206666` completed successfully.
+- `nextjs-typecheck`: passed (`npx tsc --noEmit`).
+- `python-auth-tests`: passed (4 tests covering valid signature, missing signature, expired timestamp and missing service secret).
+- The first Python CI attempt had failed because the workflow omitted the existing `httpx` dependency; the workflow was corrected to install `requirements.txt`, and the subsequent run passed.
 - No live cron endpoint was triggered, to avoid starting production automation.
 - No live Python backend request was sent, because the backend URL/secret are not configured in Vercel.
 - No production database mutations were made.
 
 ## Remaining verification before merge
-- Confirm final Vercel preview deployment is READY.
-- Confirm GitHub Actions typecheck and Python unit tests pass after the workflow dependency correction.
+- Vercel preview build is READY and GitHub Actions typecheck/Python auth tests pass.
 - Review the preview build output for route/type errors.
 - Configure `CRON_SECRET` before merging, or production crons will intentionally reject requests.
 - Complete the separate Supabase server-client migration and security migration before claiming the database exposure is fixed.
