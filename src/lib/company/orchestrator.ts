@@ -506,8 +506,8 @@ export async function processCompanyTask(taskId: string): Promise<{
   });
 
   const outputResult: Record<string, any> = {
-    executedAt: new Date().toISOString(),
-    completedBy: task.assigned_to,
+    generatedAt: new Date().toISOString(),
+    preparedBy: task.assigned_to,
     agentName: agent?.name || task.assigned_to,
     summary: deliverable.summary,
     details: deliverable.details,
@@ -520,9 +520,7 @@ export async function processCompanyTask(taskId: string): Promise<{
     })),
   };
 
-  // 4. Move to review_ready
-  await updateTaskStatus(taskId, 'review_ready', outputResult);
-
+  // 4. Move to review_ready after deliverable generation.
   // 5. Independent review is a separate workflow. Do not self-certify the
   // assigned agent's work or claim a reviewer ran when no reviewer executed.
   const reviewerId = task.reviewer_id || 'unassigned';
