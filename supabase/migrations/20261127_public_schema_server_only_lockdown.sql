@@ -50,36 +50,10 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO service_role;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 
--- Future objects created by either current public-schema owner must not
--- automatically expose them to anonymous or authenticated API roles.
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE ALL ON SEQUENCES FROM PUBLIC, anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated;
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  REVOKE ALL ON SEQUENCES FROM PUBLIC, anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated;
-
--- Re-grant server-side privileges for future objects created by these roles.
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  GRANT ALL ON TABLES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  GRANT ALL ON SEQUENCES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  GRANT EXECUTE ON FUNCTIONS TO service_role;
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  GRANT ALL ON TABLES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  GRANT ALL ON SEQUENCES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  GRANT EXECUTE ON FUNCTIONS TO service_role;
+-- Default privileges are intentionally not changed here because the connected
+-- migration role is not authorized to alter defaults owned by postgres or
+-- supabase_admin. Configure future-object defaults separately as the owning
+-- database role after this migration, if required.
 
 -- Post-migration validation queries (run separately):
 -- SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND NOT rowsecurity;
