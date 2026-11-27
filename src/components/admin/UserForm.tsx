@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Save, ArrowLeft, Lock, Mail, User as UserIcon, Shield, Upload, Trash2, Camera, Loader2, Share2, ShieldCheck } from 'lucide-react';
-import { AdminUser } from '@/lib/admin-db';
+import type { AdminUser } from '@/lib/admin-db';
 import { useToast } from '@/components/admin/Toast';
 
 interface UserFormProps {
