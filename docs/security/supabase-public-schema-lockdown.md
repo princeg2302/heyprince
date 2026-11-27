@@ -21,7 +21,7 @@ Vercel Production and Preview were checked without decrypting values: `SUPABASE_
 
 ## Prepared migration
 
-`supabase/migrations/20261127_public_schema_server_only_lockdown.sql` is prepared on this PR branch but **has not been applied**.
+`supabase/migrations/20261127_public_schema_server_only_lockdown.sql` is prepared on this PR branch but **was applied successfully on 2026-11-27**.
 
 It is designed to:
 1. Enable RLS on all current tables in `public`.
@@ -49,3 +49,14 @@ It is designed to:
 The inbound WhatsApp webhook requires `WHATSAPP_WEBHOOK_SECRET` in Vercel and the matching `X-HeyPrince-Webhook-Secret` custom header in Whapi.Cloud. On 2026-11-27, Vercel metadata showed the variable is present for Production and Preview; its secret value was not decrypted or inspected, and the Whapi.Cloud header was not independently verified. Confirm the provider header matches the configured Vercel value before relying on inbound WhatsApp lead capture.
 
 `AI_BACKEND_URL` and `AI_SERVICE_SECRET` were not present in the Vercel environment-variable inventory on 2026-11-27. Python backend delegation therefore remains inactive until the actual reachable backend URL and a matching shared secret are supplied and configured.
+
+
+## Applied migration verification (2026-11-27)
+
+- RLS disabled public tables: 0; RLS enabled: 78.
+- Direct table grants remaining for anon / authenticated: 0.
+- anon and authenticated lack USAGE on schema public; service_role retains schema usage and table access.
+- All inspected public SECURITY DEFINER functions deny EXECUTE to anon and authenticated and allow service_role.
+- Supabase migration history records public_schema_server_only_lockdown.
+- Post-migration Security Advisor now reports 78 RLS-enabled-without-policy informational findings; this is expected under the server-only model, but continue monitoring.
+- Default privileges for future objects remain a separate owner-level task and are not covered by this applied migration.
