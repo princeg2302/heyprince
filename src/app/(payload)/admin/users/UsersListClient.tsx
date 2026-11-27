@@ -14,7 +14,7 @@ import {
   Inbox,
   Lock,
 } from 'lucide-react';
-import { AdminUser } from '@/lib/admin-db';
+import type { AdminUser } from '@/lib/admin-db';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 
