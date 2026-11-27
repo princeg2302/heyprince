@@ -30,6 +30,10 @@ This branch contains code changes only. It has not been merged into `main`, depl
 
 **Deployment prerequisite:** The Vercel project currently has no `AI_BACKEND_URL` or `AI_SERVICE_SECRET`, so the Python backend delegation path is not active in the inspected production configuration. Configure matching secrets on both services before enabling it. Python backend deployment/restart is separate from Vercel deployment.
 
+### Database connection hardening
+- Removed the implicit local `postgres:postgres@127.0.0.1` fallback when no database URL is configured.
+- Remote PostgreSQL connections now verify TLS certificates rather than accepting untrusted certificates.
+
 ### Daily News stale-run reconciliation
 - Added a database update that marks runs still in `running` for more than three minutes as failed before a new run starts.
 - Removed the immediate forced retry from the cron route, avoiding a second expensive run after the first failure within the same 60-second function window.
