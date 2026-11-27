@@ -32,7 +32,8 @@ This branch contains code changes only. It has not been merged into `main`, depl
 
 ### Database connection hardening
 - Removed the implicit local `postgres:postgres@127.0.0.1` fallback when no database URL is configured.
-- Remote PostgreSQL connections now verify TLS certificates rather than accepting untrusted certificates.
+- Remote PostgreSQL connections can verify the Supabase CA chain and hostname when `SUPABASE_DB_CA_CERT` is configured; the connection URL's SSL query parameters are removed when this CA is supplied.
+- The first strict-verification preview test failed with `SELF_SIGNED_CERT_IN_CHAIN` because the project-specific Supabase CA was not configured in Vercel. To avoid breaking production connectivity, the existing compatibility fallback remains until the CA is supplied. This TLS hardening is therefore **not yet active**.
 
 ### Daily News stale-run reconciliation
 - Added a database update that marks runs still in `running` for more than three minutes as failed before a new run starts.
@@ -54,7 +55,7 @@ Live read-only inspection confirmed:
 - `anon` and `authenticated` have broad table privileges across 78 public tables.
 - The `anon` role has SELECT/INSERT/UPDATE/DELETE privileges on `public.users` and `public.leads`, including SELECT on password hash, salt and reset-token columns in `public.users`.
 
-A blanket revoke/RLS migration is deliberately not included yet. The current server-side CMS/admin implementation uses the publishable-key Supabase client from `src/lib/admin-db.ts`, including reads/writes for admin workflows. The inspected Vercel project also has no `SUPABASE_SERVICE_ROLE_KEY` (or equivalent server-only secret) configured. Applying a blanket restriction before migrating server-side access to a privileged, server-only client could break the admin CMS and public site. The next security phase must:
+A blanket revoke/RLS migration is deliberately not included yet. The current server-side CMS/admin implementation uses the publishable-key Supabase client from `src/lib/admin-db.ts`, including reads/writes for admin workflows. The inspected Vercel project also has no `SUPABASE_SERVICE_ROLE_KEY` (or equivalent server-only secret) configured. It also has no `SUPABASE_DB_CA_CERT`, so strict PostgreSQL TLS certificate verification remains pending. Applying a blanket restriction before migrating server-side access to a privileged, server-only client could break the admin CMS and public site. The next security phase must:
 1. inventory every Supabase client use and public Data API dependency;
 2. migrate privileged server-side operations to a server-only secret client;
 3. explicitly define public read-only policies for published content/services and required public forms;
@@ -80,5 +81,6 @@ No Supabase production data, policies, grants or schema were changed by this bra
 - Vercel preview build is READY and GitHub Actions typecheck/Python auth tests pass.
 - Review the preview build output for route/type errors.
 - Configure `CRON_SECRET` before merging, or production crons will intentionally reject requests.
+- Add the project's Supabase root CA certificate as `SUPABASE_DB_CA_CERT` in Vercel and verify a successful PostgreSQL connection before enabling strict TLS verification.
 - Complete the separate Supabase server-client migration and security migration before claiming the database exposure is fixed.
 - Implement durable queues/idempotency for long-running work and a real reviewer/approval execution workflow.
