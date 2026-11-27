@@ -94,3 +94,7 @@ No Supabase production data, policies, grants or schema were changed by this bra
 - `PAYLOAD_SECRET` is present in Production and can be used for admin-session and MFA pending-token signing; no key value was read.
 - Do not use a `NEXT_PUBLIC_` variable for the Supabase secret key and never expose it to browser code.
 - Until the server-only key is configured, admin database operations intentionally fail closed; the public website's publishable-key client is not changed by this patch.
+
+## WhatsApp webhook authentication
+- The inbound WhatsApp webhook now requires `WHATSAPP_WEBHOOK_SECRET` and the custom `X-HeyPrince-Webhook-Secret` header. This protects the route before it writes leads through the privileged server-side Supabase client.
+- Configure a random secret of at least 32 characters as a Vercel Production environment variable and set the same value as a custom header in Whapi.Cloud's webhook settings. Until both sides are configured, webhook POSTs intentionally return 503/401; the GET health check remains available.
