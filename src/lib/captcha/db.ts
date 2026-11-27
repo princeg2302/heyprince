@@ -1,17 +1,24 @@
+import 'server-only';
 import pg from 'pg';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let pool: pg.Pool | null = null;
-let supabaseClient: SupabaseClient | null = null;
+let supabaseClient: SupabaseClient<any> | null = null;
 
-export function getCaptchaSupabaseClient(): SupabaseClient {
+export function getCaptchaSupabaseClient(): SupabaseClient<any> {
   if (!supabaseClient) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
-    const key =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-      'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
-    supabaseClient = createClient(url, key);
+    const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!key) {
+      throw new Error('CAPTCHA database access requires the server-only SUPABASE_SECRET_KEY.');
+    }
+    supabaseClient = createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
   }
   return supabaseClient;
 }
