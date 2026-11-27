@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { deleteFromR2, isR2Configured } from './storage/r2';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 // Use an explicit `any` database generic here because this repository does not
 // yet maintain generated Supabase Database types. Omitting the generic in a
@@ -16,6 +16,10 @@ let adminSupabaseClient: AdminSupabaseClient | undefined;
 
 function getAdminSupabaseClient(): AdminSupabaseClient {
   const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl) {
+    throw new Error('Admin database access requires NEXT_PUBLIC_SUPABASE_URL.');
+  }
+
   if (!secretKey) {
     throw new Error(
       'Admin database access is disabled: configure SUPABASE_SECRET_KEY (preferred) or SUPABASE_SERVICE_ROLE_KEY on the server.'
