@@ -46,4 +46,6 @@ It is designed to:
 
 ## Separate open prerequisite
 
-The inbound WhatsApp webhook now requires `WHATSAPP_WEBHOOK_SECRET` in Vercel and the matching `X-HeyPrince-Webhook-Secret` custom header in Whapi.Cloud. Vercel was checked and that variable is not yet present. Configure both sides before relying on inbound WhatsApp lead capture.
+The inbound WhatsApp webhook requires `WHATSAPP_WEBHOOK_SECRET` in Vercel and the matching `X-HeyPrince-Webhook-Secret` custom header in Whapi.Cloud. On 2026-11-27, Vercel metadata showed the variable is present for Production and Preview; its secret value was not decrypted or inspected, and the Whapi.Cloud header was not independently verified. Confirm the provider header matches the configured Vercel value before relying on inbound WhatsApp lead capture.
+
+`AI_BACKEND_URL` and `AI_SERVICE_SECRET` were not present in the Vercel environment-variable inventory on 2026-11-27. Python backend delegation therefore remains inactive until the actual reachable backend URL and a matching shared secret are supplied and configured.
