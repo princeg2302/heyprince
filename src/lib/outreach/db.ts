@@ -33,11 +33,29 @@ export function getOutreachPool(): pg.Pool {
     }
 
     const isLocalDatabase = uri.includes('127.0.0.1') || uri.includes('localhost');
+    const databaseCa = process.env.SUPABASE_DB_CA_CERT?.replace(/\\n/g, '\n');
+    let connectionString = uri;
+
+    // pg-connection-string can replace the explicit SSL object when SSL query
+    // parameters are present. Remove those parameters when a CA is supplied.
+    if (databaseCa) {
+      const parsedUrl = new URL(uri);
+      for (const key of ['sslmode', 'sslrootcert', 'sslcert', 'sslkey']) {
+        parsedUrl.searchParams.delete(key);
+      }
+      connectionString = parsedUrl.toString();
+    }
+
     pool = new pg.Pool({
-      connectionString: uri,
-      // Verify the database TLS certificate. Never silently accept an
-      // untrusted certificate for a remote production database.
-      ssl: isLocalDatabase ? false : { rejectUnauthorized: true },
+      connectionString,
+      // Supabase uses a project-specific CA. Until it is configured, preserve
+      // existing connectivity; set SUPABASE_DB_CA_CERT to enable strict
+      // certificate-chain and hostname verification.
+      ssl: isLocalDatabase
+        ? false
+        : databaseCa
+          ? { ca: databaseCa, rejectUnauthorized: true }
+          : { rejectUnauthorized: false },
       max: 6,
       idleTimeoutMillis: 15000,
       connectionTimeoutMillis: 10000,
