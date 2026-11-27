@@ -121,6 +121,9 @@ export async function POST(request: NextRequest) {
               }
               console.info(`[WhatsApp Webhook] Created new lead for incoming WhatsApp contact (+${phoneDigits})`);
             }
+          } catch (leadError) {
+            // Propagate database failures to the outer handler so Whapi can retry.
+            throw leadError;
           }
         }
       }
