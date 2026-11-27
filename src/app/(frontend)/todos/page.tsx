@@ -1,10 +1,6 @@
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { supabase } from "@/lib/admin-db";
 
 export default async function TodosPage() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
   const { data: todos, error } = await supabase.from("todos").select();
 
   return (
