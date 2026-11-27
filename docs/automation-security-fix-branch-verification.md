@@ -1,0 +1,77 @@
+# Automation and Security Fix Branch — Verification Notes
+
+Branch: `fix/automation-security-reliability`
+
+This branch contains code changes only. It has not been merged into `main`, deployed to production, or applied to the Supabase production database.
+
+## Changes made
+
+### Cron endpoint authentication
+- Added a shared, fail-closed cron authentication helper.
+- Removed trust in spoofable `x-vercel-cron`, User-Agent and query-string credentials.
+- Applied the shared check to Daily News, Lead Scout, Chief of Staff and Company Workforce endpoints.
+- Requires `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret`.
+
+**Deployment prerequisite:** The connected Vercel project did not have a `CRON_SECRET` environment variable when inspected. Add a strong secret to Vercel Production (and Preview if preview cron testing is needed) before merging this branch. Until then, production cron requests will correctly fail closed with HTTP 401. Do not put the secret in Git.
+
+### Duplicate automation and scheduler behavior
+- Removed the autonomous-workforce heartbeat from the two admin dashboard GET endpoints. Dashboard polling is now read-only.
+- The Chief of Staff sweep skips Alex Vance (the Company Workforce route owns the workforce cycle) and Lead Scout (which has its own dedicated cron).
+- Python APScheduler is now disabled by default and requires both explicit opt-in flags. Its jobs use single-instance/coalescing behavior.
+- The Chief of Staff route now returns HTTP 500 if one of its agent executions reports failure.
+
+**Still outstanding:** Agent-specific cadence is not fully implemented. In particular, the configured four-hour Website Guardian cadence cannot be guaranteed by the current once-daily Vercel route. A durable scheduler/queue design is still required.
+
+### Python backend request authentication
+- TypeScript now signs `METHOD:path:millisecond_timestamp:body`, matching the Python verifier.
+- Python now fails closed when `AI_SERVICE_SECRET` is missing rather than using a built-in development secret.
+- Added Python standard-library unittest coverage for valid signatures, missing signatures, expired timestamps and missing secrets.
+
+**Deployment prerequisite:** The Vercel project currently has no `AI_BACKEND_URL` or `AI_SERVICE_SECRET`, so the Python backend delegation path is not active in the inspected production configuration. Configure matching secrets on both services before enabling it. Python backend deployment/restart is separate from Vercel deployment.
+
+### Daily News stale-run reconciliation
+- Added a database update that marks runs still in `running` for more than three minutes as failed before a new run starts.
+- Removed the immediate forced retry from the cron route, avoiding a second expensive run after the first failure within the same 60-second function window.
+- Failed run results now produce HTTP 500.
+
+**Still outstanding:** Daily News still has a 60-second Vercel execution ceiling. The durable solution is to split collection, generation, media and publishing into resumable background steps/queue jobs. This branch does not claim to eliminate runtime timeouts.
+
+### Honest task and proposal states
+- Company tasks now remain in `review_ready` until an actual independent reviewer verifies them. Generated criteria are explicitly marked `verified: false`.
+- Outreach, site-modification and financial proposals no longer get marked executed when their external side effects have not been implemented. They remain approved and return a clear unsupported-executor result.
+- Existing historical rows were not rewritten.
+
+## Critical Supabase security issue — intentionally not migrated here
+
+Live read-only inspection confirmed:
+- 23 public tables have RLS disabled.
+- 55 public tables have RLS enabled but no policies.
+- `anon` and `authenticated` have broad table privileges across 78 public tables.
+- The `anon` role has SELECT/INSERT/UPDATE/DELETE privileges on `public.users` and `public.leads`, including SELECT on password hash, salt and reset-token columns in `public.users`.
+
+A blanket revoke/RLS migration is deliberately not included yet. The current server-side CMS/admin implementation uses the publishable-key Supabase client from `src/lib/admin-db.ts`, including reads/writes for admin workflows. The inspected Vercel project also has no `SUPABASE_SERVICE_ROLE_KEY` (or equivalent server-only secret) configured. Applying a blanket restriction before migrating server-side access to a privileged, server-only client could break the admin CMS and public site. The next security phase must:
+1. inventory every Supabase client use and public Data API dependency;
+2. migrate privileged server-side operations to a server-only secret client;
+3. explicitly define public read-only policies for published content/services and required public forms;
+4. deny anonymous access to users, sessions, leads and internal automation tables;
+5. run role-based tests and Supabase advisors before applying the migration.
+
+No Supabase production data, policies, grants or schema were changed by this branch.
+
+## Verification status
+
+- Git branch created from `main`.
+- Vercel preview deployments have been created automatically for intermediate commits; several were superseded/cancelled by newer commits.
+- Final branch deployment build status is pending at the time of this note.
+- A GitHub Actions workflow has been added to run `npx tsc --noEmit` and the Python authentication unit tests on this branch/PR. CI result is pending.
+- No live cron endpoint was triggered, to avoid starting production automation.
+- No live Python backend request was sent, because the backend URL/secret are not configured in Vercel.
+- No production database mutations were made.
+
+## Remaining verification before merge
+- Confirm final Vercel preview deployment is READY.
+- Confirm GitHub Actions typecheck and Python unit tests pass.
+- Review the preview build output for route/type errors.
+- Configure `CRON_SECRET` before merging, or production crons will intentionally reject requests.
+- Complete the separate Supabase server-client migration and security migration before claiming the database exposure is fixed.
+- Implement durable queues/idempotency for long-running work and a real reviewer/approval execution workflow.
