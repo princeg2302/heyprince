@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: heyprince-ai-backend
+    runtime: docker
+    rootDir: heyprince-ai-backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: AI_SERVICE_SECRET
+        sync: false
+      - key: DATABASE_URI
+        sync: false
+      - key: GEMINI_API_KEY_1
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: ENABLE_SCHEDULER
+        value: "false"
+      - key: ENABLE_AUTONOMOUS_CRON
+        value: "false"
