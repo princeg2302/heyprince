@@ -15,6 +15,8 @@ This branch contains code changes only. It has not been merged into `main`, depl
 **Deployment prerequisite:** The connected Vercel project did not have a `CRON_SECRET` environment variable when inspected. Add a strong secret to Vercel Production (and Preview if preview cron testing is needed) before merging this branch. Until then, production cron requests will correctly fail closed with HTTP 401. Do not put the secret in Git.
 
 ### Duplicate automation and scheduler behavior
+- Supabase does not currently have the `pg_cron` extension installed; the database has no `cron.job` table. The configured schedules are therefore not being run by Supabase Postgres itself.
+
 - Removed the autonomous-workforce heartbeat from the two admin dashboard GET endpoints. Dashboard polling is now read-only.
 - The Chief of Staff sweep skips Alex Vance (the Company Workforce route owns the workforce cycle) and Lead Scout (which has its own dedicated cron).
 - Python APScheduler is now disabled by default and requires both explicit opt-in flags. Its jobs use single-instance/coalescing behavior.
