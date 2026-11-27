@@ -1,3 +1,4 @@
+import 'server-only';
 import { sanitizeAiContent, sanitizeEmDashes } from './ai-content-sanitizer';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
@@ -5,9 +6,40 @@ import { cookies } from 'next/headers';
 import { deleteFromR2, isR2Configured } from './storage/r2';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+let adminSupabaseClient: ReturnType<typeof createClient> | undefined;
+
+function getAdminSupabaseClient(): ReturnType<typeof createClient> {
+  const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secretKey) {
+    throw new Error(
+      'Admin database access is disabled: configure SUPABASE_SECRET_KEY (preferred) or SUPABASE_SERVICE_ROLE_KEY on the server.'
+    );
+  }
+
+  if (!adminSupabaseClient) {
+    adminSupabaseClient = createClient(supabaseUrl, secretKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+  }
+
+  return adminSupabaseClient;
+}
+
+// Keep the existing query API while resolving the privileged client lazily.
+// This allows builds to complete without a production secret, but database
+// access fails closed at runtime until a server-only key is configured.
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_target, property) {
+    const client = getAdminSupabaseClient();
+    const value = Reflect.get(client, property, client);
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});
 
 // Password hashing constants matching the database schema and Payload specification
 const HASH_PREFIX = 'pbkdf2-sha256-v1:';
