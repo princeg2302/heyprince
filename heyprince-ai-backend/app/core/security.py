@@ -2,6 +2,7 @@ import hmac
 import hashlib
 import time
 from fastapi import Request, HTTPException
+from app.core.config import settings
 
 def compute_hmac(secret: str, message: str) -> str:
     return hmac.new(secret.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).hexdigest()
