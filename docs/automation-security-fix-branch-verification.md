@@ -90,6 +90,7 @@ No Supabase production data, policies, grants or schema were changed by this bra
 
 ## Admin database secret prerequisite
 - Admin/CMS database access now uses a server-only Supabase secret key and no longer falls back to a publishable key.
-- Configure Vercel Production (and Preview if testing admin preview flows) with `SUPABASE_SECRET_KEY` using a Supabase secret key. The legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted only as a compatibility fallback.
-- Do not use a `NEXT_PUBLIC_` variable for this key and never expose it to browser code.
+- **Current Vercel check:** `SUPABASE_SECRET_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are not configured in Production. Configure `SUPABASE_SECRET_KEY` (preferred) with a Supabase secret key before testing admin/CMS routes. `SUPABASE_SERVICE_ROLE_KEY` is accepted only as a compatibility fallback.
+- `PAYLOAD_SECRET` is present in Production and can be used for admin-session and MFA pending-token signing; no key value was read.
+- Do not use a `NEXT_PUBLIC_` variable for the Supabase secret key and never expose it to browser code.
 - Until the server-only key is configured, admin database operations intentionally fail closed; the public website's publishable-key client is not changed by this patch.
