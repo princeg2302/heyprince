@@ -1,10 +1,5 @@
 import crypto from 'crypto';
 
-/**
- * Client for delegating AI operations from Next.js to the dedicated Python AI service
- * running on the VPS. Uses HMAC-SHA256 authentication with timestamp replay protection.
- */
-
 export interface AiBackendResponse<T = any> {
   success: boolean;
   ok?: boolean;
@@ -16,15 +11,12 @@ export interface AiBackendResponse<T = any> {
 const AI_BACKEND_URL = process.env.AI_BACKEND_URL || '';
 const AI_SERVICE_SECRET = process.env.AI_SERVICE_SECRET || '';
 
-/**
- * Checks whether the Python AI Backend is configured in the environment.
- */
 export function isAiBackendEnabled(): boolean {
   return Boolean(AI_BACKEND_URL && AI_SERVICE_SECRET);
 }
 
-/**
- * Calls an endpoint on the Python AI Backend with HMAC authentication.
+/** Sign the exact method, URL path, millisecond timestamp and serialized body
+ * expected by heyprince-ai-backend/app/core/security.py.
  */
 export async function callAiBackend<T = any>(
   endpoint: string,
@@ -41,26 +33,23 @@ export async function callAiBackend<T = any>(
   const cleanBase = AI_BACKEND_URL.replace(/\/+$/, '');
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const targetUrl = `${cleanBase}${cleanEndpoint}`;
-
+  const targetPath = new URL(targetUrl).pathname;
+  const method = 'POST';
   const bodyStr = JSON.stringify(payload);
-  const timestamp = Math.floor(Date.now() / 1000).toString();
-
-  // Generate HMAC-SHA256 signature
+  const timestamp = Date.now().toString();
   const signature = crypto
     .createHmac('sha256', AI_SERVICE_SECRET)
-    .update(`${timestamp}:${bodyStr}`)
+    .update(`${method}:${targetPath}:${timestamp}:${bodyStr}`)
     .digest('hex');
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for deep LLM generation
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
 
+  try {
     const res = await fetch(targetUrl, {
-      method: 'POST',
+      method,
       headers: {
         'Content-Type': 'application/json',
-        'X-AI-Signature': signature,
-        'X-AI-Timestamp': timestamp,
         'X-Signature': signature,
         'X-Timestamp': timestamp,
         'User-Agent': 'HeyPrince-NextJS-Client/1.0',
@@ -68,8 +57,6 @@ export async function callAiBackend<T = any>(
       body: bodyStr,
       signal: controller.signal,
     });
-
-    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const errText = await res.text();
@@ -81,11 +68,10 @@ export async function callAiBackend<T = any>(
       };
     }
 
-    const data = await res.json();
     return {
       success: true,
       ok: true,
-      data,
+      data: await res.json(),
       source: 'python',
     };
   } catch (err: any) {
@@ -94,6 +80,7 @@ export async function callAiBackend<T = any>(
       error: `Network error reaching Python AI backend: ${err?.message || String(err)}`,
       source: 'local_fallback',
     };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
-
