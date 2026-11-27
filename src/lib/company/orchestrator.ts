@@ -396,23 +396,30 @@ export async function executeApprovedProposal(proposalId: string): Promise<{
       };
     }
 
-    // Action Category B: Outreach Campaign
+    // These action types currently have no connected execution adapter.
+    // Keep the proposal approved and report the limitation instead of
+    // recording a side effect that never happened.
     if (proposal.proposal_type === 'outreach_campaign') {
-      await markProposalExecuted(proposalId);
       return {
-        success: true,
-        message: `Outreach campaign "${proposal.title}" authorized and queued into email dispatch engine.`,
-        result: { queuedContacts: payload.contactCount || 1 },
+        success: false,
+        message: `Outreach campaign "${proposal.title}" remains approved but was not dispatched: no campaign execution adapter is connected.`,
+        error: 'OUTREACH_EXECUTOR_NOT_CONFIGURED',
       };
     }
 
-    // Action Category C: Site Modification / Technical SEO Patch
     if (proposal.proposal_type === 'site_modification') {
-      await markProposalExecuted(proposalId);
       return {
-        success: true,
-        message: `Site optimization "${proposal.title}" deployed to production.`,
-        result: { changesApplied: payload.targetUrls || ['/'] },
+        success: false,
+        message: `Site modification "${proposal.title}" remains approved but was not deployed: no site-change deployment adapter is connected.`,
+        error: 'SITE_MODIFICATION_EXECUTOR_NOT_CONFIGURED',
+      };
+    }
+
+    if (proposal.proposal_type === 'financial_expense') {
+      return {
+        success: false,
+        message: `Financial proposal "${proposal.title}" remains approved but requires a separately approved payment workflow.`,
+        error: 'PAYMENT_EXECUTOR_NOT_CONFIGURED',
       };
     }
 
