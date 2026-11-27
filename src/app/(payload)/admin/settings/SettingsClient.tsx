@@ -15,7 +15,7 @@ import {
   Lock,
   Eye,
 } from 'lucide-react';
-import { AdminUser } from '@/lib/admin-db';
+import type { AdminUser } from '@/lib/admin-db';
 import { LinkedInSettingsCard } from '@/components/admin/LinkedInSettingsCard';
 import { MfaSettingsCard } from '@/components/admin/MfaSettingsCard';
 import { SocialLinksSettingsCard } from '@/components/admin/SocialLinksSettingsCard';
