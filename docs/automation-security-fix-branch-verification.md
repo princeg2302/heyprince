@@ -26,6 +26,7 @@ This branch contains code changes only. It has not been merged into `main`, depl
 - TypeScript now signs `METHOD:path:millisecond_timestamp:body`, matching the Python verifier.
 - Python now fails closed when `AI_SERVICE_SECRET` is missing rather than using a built-in development secret.
 - Added Python standard-library unittest coverage for valid signatures, missing signatures, expired timestamps and missing secrets.
+- Admin session verification now rejects unsigned legacy Base64 tokens, requires a configured signing secret (no hardcoded fallback), rejects sessions when the live admin record cannot be revalidated, and compares password hashes using a timing-safe comparison.
 
 **Deployment prerequisite:** The Vercel project currently has no `AI_BACKEND_URL` or `AI_SERVICE_SECRET`, so the Python backend delegation path is not active in the inspected production configuration. Configure matching secrets on both services before enabling it. Python backend deployment/restart is separate from Vercel deployment.
 
@@ -63,14 +64,15 @@ No Supabase production data, policies, grants or schema were changed by this bra
 - Git branch created from `main`.
 - Vercel preview deployments have been created automatically for intermediate commits; several were superseded/cancelled by newer commits.
 - Final branch deployment build status is pending at the time of this note.
-- A GitHub Actions workflow has been added to run `npx tsc --noEmit` and the Python authentication unit tests on this branch/PR. CI result is pending.
+- GitHub Actions TypeScript typecheck passed on the first CI run.
+- The first Python CI attempt passed all four new HMAC tests but the test-discovery job failed because the workflow had not installed the existing `httpx` dependency required by another repository test. The workflow now installs the backend requirements file; the rerun is pending.
 - No live cron endpoint was triggered, to avoid starting production automation.
 - No live Python backend request was sent, because the backend URL/secret are not configured in Vercel.
 - No production database mutations were made.
 
 ## Remaining verification before merge
 - Confirm final Vercel preview deployment is READY.
-- Confirm GitHub Actions typecheck and Python unit tests pass.
+- Confirm GitHub Actions typecheck and Python unit tests pass after the workflow dependency correction.
 - Review the preview build output for route/type errors.
 - Configure `CRON_SECRET` before merging, or production crons will intentionally reject requests.
 - Complete the separate Supabase server-client migration and security migration before claiming the database exposure is fixed.
