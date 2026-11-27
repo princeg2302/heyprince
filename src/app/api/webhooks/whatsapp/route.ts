@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { logChiefActivity } from '@/lib/chief-of-staff/db';
 import { supabase } from '@/lib/admin-db';
 import { sanitizeEmDashes } from '@/lib/ai-content-sanitizer';
@@ -21,6 +22,24 @@ export async function GET() {
  * Handles incoming client messages (messages.post) and delivery receipts (statuses.post).
  */
 export async function POST(request: NextRequest) {
+  // Whapi.Cloud supports custom webhook headers. Require a shared secret before
+  // accepting events because this route writes leads using a privileged server key.
+  const expectedSecret = process.env.WHATSAPP_WEBHOOK_SECRET?.trim();
+  if (!expectedSecret) {
+    return NextResponse.json({ success: false, error: 'Webhook authentication is not configured.' }, { status: 503 });
+  }
+
+  const suppliedSecret = request.headers.get('x-heyprince-webhook-secret')?.trim() || '';
+  const expectedBuffer = Buffer.from(expectedSecret, 'utf8');
+  const suppliedBuffer = Buffer.from(suppliedSecret, 'utf8');
+  if (
+    !suppliedSecret ||
+    suppliedBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(suppliedBuffer, expectedBuffer)
+  ) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const payload = await request.json();
 
