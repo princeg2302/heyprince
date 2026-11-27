@@ -86,15 +86,20 @@ export async function POST(request: NextRequest) {
           try {
             const now = new Date().toISOString();
             // Check if lead already exists with this phone number
-            const { data: existingLeads } = await supabase
+            const { data: existingLeads, error: lookupError } = await supabase
               .from('leads')
               .select('id, name, phone, message')
               .ilike('phone', `%${phoneDigits.slice(-10)}%`)
               .limit(1);
 
+            if (lookupError) {
+              throw new Error(`WhatsApp lead lookup failed: ${lookupError.message}`);
+            }
+
             if (!existingLeads || existingLeads.length === 0) {
-              // Create new inbound WhatsApp lead
-              await supabase.from('leads').insert([
+              // Create new inbound WhatsApp lead. A failed write must be retried
+              // by the webhook provider rather than acknowledged and lost.
+              const { error: insertError } = await supabase.from('leads').insert([
                 {
                   name: senderName,
                   email: `${phoneDigits}@whatsapp.inbound`,
@@ -110,10 +115,12 @@ export async function POST(request: NextRequest) {
                   updated_at: now,
                 },
               ]);
+
+              if (insertError) {
+                throw new Error(`WhatsApp lead insert failed: ${insertError.message}`);
+              }
               console.info(`[WhatsApp Webhook] Created new lead for incoming WhatsApp contact (+${phoneDigits})`);
             }
-          } catch (dbErr) {
-            console.warn('[WhatsApp Webhook] Non-fatal database lead insertion notice:', dbErr);
           }
         }
       }
@@ -138,9 +145,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || 'Failed to process WhatsApp webhook payload',
+        error: 'Webhook processing failed. The provider may retry this event.',
       },
-      { status: 400 }
+      { status: 500 }
     );
   }
 }
