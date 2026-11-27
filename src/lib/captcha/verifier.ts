@@ -100,10 +100,10 @@ export async function verifyAndConsumeProof(
       };
     }
     if (dbResult.reason === 'database_error') {
-      console.warn('[Captcha Verifier] Database query degraded; verified via valid HMAC cryptographic proof');
       return {
-        success: true,
-        proofId: payload.pid,
+        success: false,
+        error: 'Security verification is temporarily unavailable. Please try again.',
+        code: 'DATABASE_UNAVAILABLE',
       };
     }
     return {
