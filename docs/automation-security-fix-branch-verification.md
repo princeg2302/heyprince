@@ -70,7 +70,7 @@ No Supabase production data, policies, grants or schema were changed by this bra
 
 - Git branch created from `main`.
 - Vercel preview deployments have been created automatically for intermediate commits; several were superseded/cancelled by newer commits.
-- Latest branch preview deployment is READY: `https://heyprince-pw1eims8h-heyprince1.vercel.app` (commit `31d2183a8e2145cff6ef4aba77aefcf8055e2b4e`). Vercel reported successful Next.js compilation, TypeScript checks and static page generation.
+- Latest code preview deployment is READY: `https://heyprince-n0ng92ij9-heyprince1.vercel.app` (commit `c1158a6461b0f4bf4a05b9ae5586199fb443319f`). Vercel reported successful Next.js compilation, TypeScript checks and static page generation, with no TLS-chain errors after making CA verification conditional on the supplied certificate.
 - GitHub Actions run `45962206666` completed successfully.
 - `nextjs-typecheck`: passed (`npx tsc --noEmit`).
 - `python-auth-tests`: passed (4 tests covering valid signature, missing signature, expired timestamp and missing service secret).
