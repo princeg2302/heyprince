@@ -20,8 +20,9 @@ export function verifyPassword(password: string, salt: string, storedHash: strin
   if (target.startsWith(HASH_PREFIX)) {
     target = target.slice(HASH_PREFIX.length);
   }
-  const derived = crypto.pbkdf2Sync(password, salt, HASH_ITERATIONS, HASH_KEY_LENGTH, 'sha256').toString('hex');
-  return derived === target;
+  const derived = crypto.pbkdf2Sync(password, salt, HASH_ITERATIONS, HASH_KEY_LENGTH, 'sha256');
+  const expected = Buffer.from(target, 'hex');
+  return expected.length === derived.length && crypto.timingSafeEqual(derived, expected);
 }
 
 export function hashPassword(password: string): { salt: string; hash: string } {
@@ -49,11 +50,11 @@ export interface AdminUser {
 }
 
 function getSessionSigningSecret(): string {
-  return (
-    process.env.ADMIN_SESSION_SECRET ||
-    process.env.PAYLOAD_SECRET ||
-    'heyprince-cryptographic-admin-session-secret-2026'
-  );
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.PAYLOAD_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('ADMIN_SESSION_SECRET or PAYLOAD_SECRET must be configured with at least 32 characters.');
+  }
+  return secret;
 }
 
 export function signAdminSessionToken(payload: object): string {
@@ -97,16 +98,7 @@ export function verifyAdminSessionToken(token: string): any | null {
     }
   }
 
-  try {
-    const json = Buffer.from(token, 'base64').toString('utf8');
-    const parsed = JSON.parse(json);
-    if (parsed && parsed.id && parsed.email && parsed.exp && parsed.exp > Date.now()) {
-      return parsed;
-    }
-  } catch {
-    return null;
-  }
-
+  // Unsigned legacy Base64 tokens are intentionally rejected.
   return null;
 }
 
@@ -161,22 +153,15 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
         .eq('id', payload.id)
         .single();
 
-      if (!error && user) {
-        return user as AdminUser;
+      if (error || !user) {
+        console.warn('[getCurrentAdmin] Session rejected because the live admin record could not be verified.');
+        return null;
       }
+      return user as AdminUser;
     } catch (dbErr) {
-      console.warn('[getCurrentAdmin] Live profile check error:', dbErr);
+      console.warn('[getCurrentAdmin] Live profile check failed; rejecting session:', dbErr);
+      return null;
     }
-
-    return {
-      id: payload.id,
-      name: payload.name || payload.email.split('@')[0],
-      email: payload.email,
-      role: (payload.role as 'admin' | 'editor') || 'admin',
-      avatar_url: payload.avatar_url || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
   } catch {
     return null;
   }
