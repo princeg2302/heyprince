@@ -28,6 +28,14 @@ async function handleCronTrigger(request: NextRequest) {
     const results = [];
 
     if (targetAgent) {
+      // Dedicated cron routes own these agents; do not allow the targeted
+      // executive sweep parameter to bypass the duplicate-run exclusion.
+      if (targetAgent === 'lead_scout' || targetAgent === 'alex_vance') {
+        return NextResponse.json(
+          { success: false, error: `Agent ${targetAgent} has a dedicated cron route` },
+          { status: 400 }
+        );
+      }
       const match = allAgents.find((agent) => agent.id === targetAgent);
       if (!match) {
         return NextResponse.json({ success: false, error: `Agent ${targetAgent} not found` }, { status: 404 });
