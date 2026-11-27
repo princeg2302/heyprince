@@ -22,22 +22,22 @@ let pool: pg.Pool | null = null;
 
 export function getOutreachPool(): pg.Pool {
   if (!pool) {
-    let uri =
-      process.env.DATABASE_URI ||
-      process.env.POSTGRES_URL ||
-      'postgresql://postgres:postgres@127.0.0.1:5432/heyprince';
+    let uri = process.env.DATABASE_URI || process.env.POSTGRES_URL;
+    if (!uri) {
+      throw new Error('DATABASE_URI or POSTGRES_URL must be configured; refusing to fall back to an insecure local database.');
+    }
 
     // Auto-route Supabase pooler from session mode (5432) to transaction mode (6543)
     if (uri.includes('pooler.supabase.com:5432')) {
       uri = uri.replace(':5432', ':6543');
     }
 
+    const isLocalDatabase = uri.includes('127.0.0.1') || uri.includes('localhost');
     pool = new pg.Pool({
       connectionString: uri,
-      ssl:
-        uri && !uri.includes('127.0.0.1') && !uri.includes('localhost')
-          ? { rejectUnauthorized: false }
-          : false,
+      // Verify the database TLS certificate. Never silently accept an
+      // untrusted certificate for a remote production database.
+      ssl: isLocalDatabase ? false : { rejectUnauthorized: true },
       max: 6,
       idleTimeoutMillis: 15000,
       connectionTimeoutMillis: 10000,
