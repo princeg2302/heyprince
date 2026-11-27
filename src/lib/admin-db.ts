@@ -244,7 +244,10 @@ export async function authenticateAdmin(
         };
       }
     } catch (mfaErr) {
-      console.warn('[authenticateAdmin] MFA check warning:', mfaErr);
+      // Never downgrade to password-only login when MFA state or token signing
+      // cannot be checked. Fail closed to avoid bypassing an enabled MFA factor.
+      console.error('[authenticateAdmin] MFA verification unavailable; rejecting login:', mfaErr);
+      return { success: false, error: 'Multi-factor authentication could not be verified. Please try again later.' };
     }
 
     await issueAdminSessionCookie(user);
