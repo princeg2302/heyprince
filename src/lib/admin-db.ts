@@ -1043,7 +1043,10 @@ export async function createUser(data: {
       return { success: false, error: 'A user with this email address already exists.' };
     }
 
-    const plainPassword = data.password || 'HeyPrinceAdmin2026!';
+    const plainPassword = data.password?.trim();
+    if (!plainPassword || plainPassword.length < 12) {
+      return { success: false, error: 'A password of at least 12 characters is required.' };
+    }
     const { salt, hash } = hashPassword(plainPassword);
     const now = new Date().toISOString();
 
