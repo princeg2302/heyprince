@@ -86,3 +86,10 @@ No Supabase production data, policies, grants or schema were changed by this bra
 - Add the project's Supabase root CA certificate as `SUPABASE_DB_CA_CERT` in Vercel and verify a successful PostgreSQL connection before enabling strict TLS verification.
 - Complete the separate Supabase server-client migration and security migration before claiming the database exposure is fixed.
 - Implement durable queues/idempotency for long-running work and a real reviewer/approval execution workflow.
+
+
+## Admin database secret prerequisite
+- Admin/CMS database access now uses a server-only Supabase secret key and no longer falls back to a publishable key.
+- Configure Vercel Production (and Preview if testing admin preview flows) with `SUPABASE_SECRET_KEY` using a Supabase secret key. The legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted only as a compatibility fallback.
+- Do not use a `NEXT_PUBLIC_` variable for this key and never expose it to browser code.
+- Until the server-only key is configured, admin database operations intentionally fail closed; the public website's publishable-key client is not changed by this patch.
