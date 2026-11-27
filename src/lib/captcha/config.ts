@@ -17,22 +17,22 @@ export interface CaptchaConfig {
   maxVerificationsPerIpPerWindow: number;
 }
 
-// Derive a resilient, deterministic signing secret if CAPTCHA_SIGNING_SECRET is not explicitly provided
+// Never use a public/default fallback for a signing key. Derive from the
+// server-only Payload secret only when a dedicated CAPTCHA secret is absent.
 function resolveSigningSecret(): string {
-  const explicit = process.env.CAPTCHA_SIGNING_SECRET;
-  if (explicit && explicit.trim().length >= 32) {
-    return explicit.trim();
+  const explicit = process.env.CAPTCHA_SIGNING_SECRET?.trim();
+  if (explicit && explicit.length >= 32) return explicit;
+
+  const payloadSecret = process.env.PAYLOAD_SECRET?.trim();
+  if (!payloadSecret || payloadSecret.length < 32) {
+    throw new Error(
+      'CAPTCHA_SIGNING_SECRET (32+ characters) or PAYLOAD_SECRET (32+ characters) must be configured.'
+    );
   }
 
-  // Derive from existing PAYLOAD_SECRET or DATABASE_URI as secondary stable entropy
-  const seed =
-    process.env.PAYLOAD_SECRET ||
-    process.env.DATABASE_URI ||
-    'heyprince-production-custom-captcha-secret-salt-2026';
-
   return crypto
-    .createHmac('sha256', 'heyprince-captcha-engine')
-    .update(seed)
+    .createHmac('sha256', payloadSecret)
+    .update('heyprince:captcha:signing:v1')
     .digest('hex');
 }
 
