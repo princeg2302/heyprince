@@ -1,15 +1,20 @@
 import 'server-only';
 import { sanitizeAiContent, sanitizeEmDashes } from './ai-content-sanitizer';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { deleteFromR2, isR2Configured } from './storage/r2';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
 
-let adminSupabaseClient: ReturnType<typeof createClient> | undefined;
+// Use an explicit `any` database generic here because this repository does not
+// yet maintain generated Supabase Database types. Omitting the generic in a
+// ReturnType expression can resolve table operations to `never` during tsc.
+type AdminSupabaseClient = SupabaseClient<any>;
 
-function getAdminSupabaseClient(): ReturnType<typeof createClient> {
+let adminSupabaseClient: AdminSupabaseClient | undefined;
+
+function getAdminSupabaseClient(): AdminSupabaseClient {
   const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secretKey) {
     throw new Error(
@@ -33,7 +38,7 @@ function getAdminSupabaseClient(): ReturnType<typeof createClient> {
 // Keep the existing query API while resolving the privileged client lazily.
 // This allows builds to complete without a production secret, but database
 // access fails closed at runtime until a server-only key is configured.
-export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+export const supabase = new Proxy({} as AdminSupabaseClient, {
   get(_target, property) {
     const client = getAdminSupabaseClient();
     const value = Reflect.get(client, property, client);
