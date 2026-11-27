@@ -13,6 +13,7 @@ import {
   createDailyRun,
   updateDailyRun,
   markNewsItemsUsed,
+  expireStaleDailyRuns,
 } from './db';
 import { collectDailyNews } from './rss-collector';
 import { generateDailyPost, generateCustomTopicPost } from './content-generator';
@@ -31,6 +32,12 @@ export async function executeDailyNewsAutomation(params?: {
 }): Promise<OrchestrationResult> {
   const triggerType = params?.triggerType || 'scheduled';
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // Reconcile runs orphaned by a serverless timeout before starting another run.
+  const expiredRuns = await expireStaleDailyRuns(3);
+  if (expiredRuns > 0) {
+    console.warn(`[Daily News] Marked ${expiredRuns} stale running record(s) as failed.`);
+  }
 
   // 1. Fetch current settings
   const settings = await getDailyNewsSettings();

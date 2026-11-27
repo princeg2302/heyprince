@@ -1,45 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runAutonomousCompanyCycle } from '@/lib/company/autonomous-worker';
-import { getCurrentAdmin } from '@/lib/admin-db';
+import { isAuthorizedCronRequest } from '@/lib/cron-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
+  if (!isAuthorizedCronRequest(request)) {
+    console.warn('[Cron:CompanyWorkforce] Unauthorized request blocked.');
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const authHeader = req.headers.get('authorization');
-    const customHeader = req.headers.get('x-cron-secret');
-    const cronSecret = process.env.CRON_SECRET?.trim();
-
-    const userAgent = req.headers.get('user-agent') || '';
-    const isVercelCron =
-      req.headers.get('x-vercel-cron') === '1' ||
-      req.headers.has('x-vercel-cron-schedule') ||
-      userAgent.toLowerCase().includes('vercel-cron');
-
-    const isCronJobOrg = userAgent.toLowerCase().includes('cron-job.org');
-    const queryKey = req.nextUrl.searchParams.get('key') || req.nextUrl.searchParams.get('secret');
-    const isAuthorizedKey = queryKey === 'heyprince_cron_2026' || (cronSecret && queryKey === cronSecret);
-
-    if (cronSecret) {
-      const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
-      const providedSecret = bearerSecret || customHeader;
-
-      if (!providedSecret || providedSecret !== cronSecret) {
-        if (!isVercelCron && !isCronJobOrg && !isAuthorizedKey) {
-          const admin = await getCurrentAdmin();
-          if (!admin) {
-            return NextResponse.json({ error: 'Unauthorized: Invalid CRON_SECRET or session' }, { status: 401 });
-          }
-        }
-      }
-    } else if (process.env.NODE_ENV === 'production' && !isVercelCron && !isCronJobOrg && !isAuthorizedKey) {
-      const admin = await getCurrentAdmin();
-      if (!admin) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
-
     const report = await runAutonomousCompanyCycle();
     return NextResponse.json({ success: true, report });
   } catch (err: any) {
@@ -51,6 +23,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
-  return GET(req);
+export async function POST(request: NextRequest) {
+  return GET(request);
 }

@@ -125,11 +125,11 @@ export function hashRecoveryCode(code: string): string {
 // ============================================================================
 
 function getMfaSigningSecret(): string {
-  return (
-    process.env.ADMIN_SESSION_SECRET ||
-    process.env.PAYLOAD_SECRET ||
-    'heyprince-admin-mfa-intermediate-signing-secret'
-  );
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.PAYLOAD_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('ADMIN_SESSION_SECRET or PAYLOAD_SECRET must be configured with at least 32 characters.');
+  }
+  return secret;
 }
 
 export function createMfaPendingToken(userId: number, email: string): string {

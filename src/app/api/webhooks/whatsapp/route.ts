@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { logChiefActivity } from '@/lib/chief-of-staff/db';
 import { supabase } from '@/lib/admin-db';
 import { sanitizeEmDashes } from '@/lib/ai-content-sanitizer';
@@ -21,6 +22,24 @@ export async function GET() {
  * Handles incoming client messages (messages.post) and delivery receipts (statuses.post).
  */
 export async function POST(request: NextRequest) {
+  // Whapi.Cloud supports custom webhook headers. Require a shared secret before
+  // accepting events because this route writes leads using a privileged server key.
+  const expectedSecret = process.env.WHATSAPP_WEBHOOK_SECRET?.trim();
+  if (!expectedSecret) {
+    return NextResponse.json({ success: false, error: 'Webhook authentication is not configured.' }, { status: 503 });
+  }
+
+  const suppliedSecret = request.headers.get('x-heyprince-webhook-secret')?.trim() || '';
+  const expectedBuffer = Buffer.from(expectedSecret, 'utf8');
+  const suppliedBuffer = Buffer.from(suppliedSecret, 'utf8');
+  if (
+    !suppliedSecret ||
+    suppliedBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(suppliedBuffer, expectedBuffer)
+  ) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const payload = await request.json();
 
@@ -67,15 +86,20 @@ export async function POST(request: NextRequest) {
           try {
             const now = new Date().toISOString();
             // Check if lead already exists with this phone number
-            const { data: existingLeads } = await supabase
+            const { data: existingLeads, error: lookupError } = await supabase
               .from('leads')
               .select('id, name, phone, message')
               .ilike('phone', `%${phoneDigits.slice(-10)}%`)
               .limit(1);
 
+            if (lookupError) {
+              throw new Error(`WhatsApp lead lookup failed: ${lookupError.message}`);
+            }
+
             if (!existingLeads || existingLeads.length === 0) {
-              // Create new inbound WhatsApp lead
-              await supabase.from('leads').insert([
+              // Create new inbound WhatsApp lead. A failed write must be retried
+              // by the webhook provider rather than acknowledged and lost.
+              const { error: insertError } = await supabase.from('leads').insert([
                 {
                   name: senderName,
                   email: `${phoneDigits}@whatsapp.inbound`,
@@ -91,10 +115,15 @@ export async function POST(request: NextRequest) {
                   updated_at: now,
                 },
               ]);
+
+              if (insertError) {
+                throw new Error(`WhatsApp lead insert failed: ${insertError.message}`);
+              }
               console.info(`[WhatsApp Webhook] Created new lead for incoming WhatsApp contact (+${phoneDigits})`);
             }
-          } catch (dbErr) {
-            console.warn('[WhatsApp Webhook] Non-fatal database lead insertion notice:', dbErr);
+          } catch (leadError) {
+            // Propagate database failures to the outer handler so Whapi can retry.
+            throw leadError;
           }
         }
       }
@@ -119,9 +148,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || 'Failed to process WhatsApp webhook payload',
+        error: 'Webhook processing failed. The provider may retry this event.',
       },
-      { status: 400 }
+      { status: 500 }
     );
   }
 }

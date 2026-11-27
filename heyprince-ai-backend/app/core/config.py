@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     
     # Security
-    AI_SERVICE_SECRET: str = "default_dev_secret_replace_in_production_32chars"
+    AI_SERVICE_SECRET: str = ""
     ALLOWED_ORIGINS: List[str] = ["https://heyprince.in", "http://localhost:3000"]
     CORS_ORIGINS: List[str] = ["https://heyprince.in", "http://localhost:3000"]
     
@@ -50,8 +50,8 @@ class Settings(BaseSettings):
     POLLINATIONS_BASE_URL: str = "https://image.pollinations.ai/prompt"
     
     # Background Scheduler
-    ENABLE_SCHEDULER: bool = True
-    ENABLE_AUTONOMOUS_CRON: bool = True
+    ENABLE_SCHEDULER: bool = False
+    ENABLE_AUTONOMOUS_CRON: bool = False
     DAILY_NEWS_CRON: str = "30 3 * * *"
     CHIEF_OF_STAFF_CRON: str = "0 4 * * *"
     LEAD_SCOUT_CRON: str = "0 5 * * *"

@@ -497,6 +497,24 @@ export async function markNewsItemsUsed(itemIds: number[], runId: number): Promi
 // 4. Daily News Runs (Idempotency & Execution State Machine)
 // ============================================================================
 
+export async function expireStaleDailyRuns(staleAfterMinutes = 3): Promise<number> {
+  const rows = await query(
+    `UPDATE daily_news_runs
+     SET status = 'failed',
+         error_details = jsonb_build_object(
+           'stage', 'timeout',
+           'message', 'Run exceeded the serverless execution window and was marked stale.',
+           'timestamp', NOW()
+         ),
+         completed_at = NOW()
+     WHERE status = 'running'
+       AND started_at < NOW() - ($1::text || ' minutes')::interval
+     RETURNING id;`,
+    [staleAfterMinutes]
+  );
+  return rows.length;
+}
+
 export async function getDailyRunByDate(dateStr: string): Promise<DailyNewsRunRecord | null> {
   const rows = await query(
     `SELECT * FROM daily_news_runs WHERE run_date = $1 ORDER BY id DESC LIMIT 1;`,

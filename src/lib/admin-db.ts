@@ -1,13 +1,54 @@
+import 'server-only';
 import { sanitizeAiContent, sanitizeEmDashes } from './ai-content-sanitizer';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { deleteFromR2, isR2Configured } from './storage/r2';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Use an explicit `any` database generic here because this repository does not
+// yet maintain generated Supabase Database types. Omitting the generic in a
+// ReturnType expression can resolve table operations to `never` during tsc.
+type AdminSupabaseClient = SupabaseClient<any>;
+
+let adminSupabaseClient: AdminSupabaseClient | undefined;
+
+function getAdminSupabaseClient(): AdminSupabaseClient {
+  const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl) {
+    throw new Error('Admin database access requires NEXT_PUBLIC_SUPABASE_URL.');
+  }
+
+  if (!secretKey) {
+    throw new Error(
+      'Admin database access is disabled: configure SUPABASE_SECRET_KEY (preferred) or SUPABASE_SERVICE_ROLE_KEY on the server.'
+    );
+  }
+
+  if (!adminSupabaseClient) {
+    adminSupabaseClient = createClient(supabaseUrl, secretKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+  }
+
+  return adminSupabaseClient;
+}
+
+// Keep the existing query API while resolving the privileged client lazily.
+// This allows builds to complete without a production secret, but database
+// access fails closed at runtime until a server-only key is configured.
+export const supabase = new Proxy({} as AdminSupabaseClient, {
+  get(_target, property) {
+    const client = getAdminSupabaseClient();
+    const value = Reflect.get(client, property, client);
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});
 
 // Password hashing constants matching the database schema and Payload specification
 const HASH_PREFIX = 'pbkdf2-sha256-v1:';
@@ -20,8 +61,9 @@ export function verifyPassword(password: string, salt: string, storedHash: strin
   if (target.startsWith(HASH_PREFIX)) {
     target = target.slice(HASH_PREFIX.length);
   }
-  const derived = crypto.pbkdf2Sync(password, salt, HASH_ITERATIONS, HASH_KEY_LENGTH, 'sha256').toString('hex');
-  return derived === target;
+  const derived = crypto.pbkdf2Sync(password, salt, HASH_ITERATIONS, HASH_KEY_LENGTH, 'sha256');
+  const expected = Buffer.from(target, 'hex');
+  return expected.length === derived.length && crypto.timingSafeEqual(derived, expected);
 }
 
 export function hashPassword(password: string): { salt: string; hash: string } {
@@ -49,11 +91,11 @@ export interface AdminUser {
 }
 
 function getSessionSigningSecret(): string {
-  return (
-    process.env.ADMIN_SESSION_SECRET ||
-    process.env.PAYLOAD_SECRET ||
-    'heyprince-cryptographic-admin-session-secret-2026'
-  );
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.PAYLOAD_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('ADMIN_SESSION_SECRET or PAYLOAD_SECRET must be configured with at least 32 characters.');
+  }
+  return secret;
 }
 
 export function signAdminSessionToken(payload: object): string {
@@ -97,16 +139,7 @@ export function verifyAdminSessionToken(token: string): any | null {
     }
   }
 
-  try {
-    const json = Buffer.from(token, 'base64').toString('utf8');
-    const parsed = JSON.parse(json);
-    if (parsed && parsed.id && parsed.email && parsed.exp && parsed.exp > Date.now()) {
-      return parsed;
-    }
-  } catch {
-    return null;
-  }
-
+  // Unsigned legacy Base64 tokens are intentionally rejected.
   return null;
 }
 
@@ -161,22 +194,15 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
         .eq('id', payload.id)
         .single();
 
-      if (!error && user) {
-        return user as AdminUser;
+      if (error || !user) {
+        console.warn('[getCurrentAdmin] Session rejected because the live admin record could not be verified.');
+        return null;
       }
+      return user as AdminUser;
     } catch (dbErr) {
-      console.warn('[getCurrentAdmin] Live profile check error:', dbErr);
+      console.warn('[getCurrentAdmin] Live profile check failed; rejecting session:', dbErr);
+      return null;
     }
-
-    return {
-      id: payload.id,
-      name: payload.name || payload.email.split('@')[0],
-      email: payload.email,
-      role: (payload.role as 'admin' | 'editor') || 'admin',
-      avatar_url: payload.avatar_url || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
   } catch {
     return null;
   }
@@ -222,7 +248,10 @@ export async function authenticateAdmin(
         };
       }
     } catch (mfaErr) {
-      console.warn('[authenticateAdmin] MFA check warning:', mfaErr);
+      // Never downgrade to password-only login when MFA state or token signing
+      // cannot be checked. Fail closed to avoid bypassing an enabled MFA factor.
+      console.error('[authenticateAdmin] MFA verification unavailable; rejecting login:', mfaErr);
+      return { success: false, error: 'Multi-factor authentication could not be verified. Please try again later.' };
     }
 
     await issueAdminSessionCookie(user);
@@ -1026,7 +1055,10 @@ export async function createUser(data: {
       return { success: false, error: 'A user with this email address already exists.' };
     }
 
-    const plainPassword = data.password || 'HeyPrinceAdmin2026!';
+    const plainPassword = data.password?.trim();
+    if (!plainPassword || plainPassword.length < 12) {
+      return { success: false, error: 'A password of at least 12 characters is required.' };
+    }
     const { salt, hash } = hashPassword(plainPassword);
     const now = new Date().toISOString();
 

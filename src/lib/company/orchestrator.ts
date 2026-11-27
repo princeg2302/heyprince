@@ -396,23 +396,30 @@ export async function executeApprovedProposal(proposalId: string): Promise<{
       };
     }
 
-    // Action Category B: Outreach Campaign
+    // These action types currently have no connected execution adapter.
+    // Keep the proposal approved and report the limitation instead of
+    // recording a side effect that never happened.
     if (proposal.proposal_type === 'outreach_campaign') {
-      await markProposalExecuted(proposalId);
       return {
-        success: true,
-        message: `Outreach campaign "${proposal.title}" authorized and queued into email dispatch engine.`,
-        result: { queuedContacts: payload.contactCount || 1 },
+        success: false,
+        message: `Outreach campaign "${proposal.title}" remains approved but was not dispatched: no campaign execution adapter is connected.`,
+        error: 'OUTREACH_EXECUTOR_NOT_CONFIGURED',
       };
     }
 
-    // Action Category C: Site Modification / Technical SEO Patch
     if (proposal.proposal_type === 'site_modification') {
-      await markProposalExecuted(proposalId);
       return {
-        success: true,
-        message: `Site optimization "${proposal.title}" deployed to production.`,
-        result: { changesApplied: payload.targetUrls || ['/'] },
+        success: false,
+        message: `Site modification "${proposal.title}" remains approved but was not deployed: no site-change deployment adapter is connected.`,
+        error: 'SITE_MODIFICATION_EXECUTOR_NOT_CONFIGURED',
+      };
+    }
+
+    if (proposal.proposal_type === 'financial_expense') {
+      return {
+        success: false,
+        message: `Financial proposal "${proposal.title}" remains approved but requires a separately approved payment workflow.`,
+        error: 'PAYMENT_EXECUTOR_NOT_CONFIGURED',
       };
     }
 
@@ -499,8 +506,8 @@ export async function processCompanyTask(taskId: string): Promise<{
   });
 
   const outputResult: Record<string, any> = {
-    executedAt: new Date().toISOString(),
-    completedBy: task.assigned_to,
+    generatedAt: new Date().toISOString(),
+    preparedBy: task.assigned_to,
     agentName: agent?.name || task.assigned_to,
     summary: deliverable.summary,
     details: deliverable.details,
@@ -508,20 +515,19 @@ export async function processCompanyTask(taskId: string): Promise<{
     metrics: deliverable.metrics || {},
     deliverables: task.acceptance_criteria.map((crit, idx) => ({
       criterion: crit,
-      verified: true,
-      evidence: deliverable.keyFindings[idx] || `Validated successfully by ${agent?.name || task.assigned_to}`,
+      verified: false,
+      evidence: deliverable.keyFindings[idx] || 'Evidence generated; independent verification is still required.',
     })),
   };
 
-  // 4. Move to review_ready
-  await updateTaskStatus(taskId, 'review_ready', outputResult);
+  // 4. Move to review_ready after deliverable generation.
+  // 5. Independent review is a separate workflow. Do not self-certify the
+  // assigned agent's work or claim a reviewer ran when no reviewer executed.
+  const reviewerId = task.reviewer_id || 'unassigned';
+  const verificationNotes = `Awaiting independent review by ${reviewerId}. The assigned agent generated a deliverable; acceptance criteria have not yet been independently verified.`;
 
-  // 5. Independent Review by Reviewer Agent
-  const reviewerId = task.reviewer_id || 'alex_vance';
-  const verificationNotes = `Independent verification passed: All ${task.acceptance_criteria.length} acceptance criteria validated by ${reviewerId}. Deliverable meets HeyPrince engineering and editorial standards.`;
-
-  // 6. Complete task
-  const completedTask = await updateTaskStatus(taskId, 'completed', outputResult, verificationNotes);
+  // Keep the task in review_ready until a real reviewer records evidence.
+  const reviewReadyTask = await updateTaskStatus(taskId, 'review_ready', outputResult, verificationNotes);
 
   // 7. Record in multi-tier company memory
   try {
@@ -547,7 +553,7 @@ export async function processCompanyTask(taskId: string): Promise<{
     employeeId: task.assigned_to,
     department: agent?.department || 'Executive',
     employeeName: agent?.name,
-    context: `Completed Task: ${task.title}. Instructions: ${task.description}`,
+    context: `Task prepared for review: ${task.title}. Instructions: ${task.description}`,
     outputProduced: `${deliverable.summary}\n${deliverable.keyFindings.join('\n')}`,
   }).catch((err) => console.warn('[AutonomousLearning] Task learning error:', err));
 
@@ -556,10 +562,10 @@ export async function processCompanyTask(taskId: string): Promise<{
     const targetDiscussionId = task.discussion_id || (await getLatestDiscussionForRoom('company_hq'))?.id;
     if (targetDiscussionId) {
       const updateContent = sanitizeEmDashes(
-        `Task Completed & Verified: I have executed the task "${task.title}".\n\n` +
+        `Task Ready for Independent Review: I prepared the deliverable for "${task.title}".\n\n` +
         `Executive Summary:\n${deliverable.summary}\n\n` +
         `Key Deliverables & Findings:\n${deliverable.keyFindings.map((k) => `• ${k}`).join('\n')}\n\n` +
-        `The full report and artifacts have been archived to the Task Matrix and Company Brain for Prince's review.`
+        `The deliverable is awaiting independent reviewer verification before completion.`
       );
 
       await insertCompanyMessage({
@@ -581,8 +587,8 @@ export async function processCompanyTask(taskId: string): Promise<{
 
   return {
     success: true,
-    task: completedTask,
-    message: `Task "${task.title}" completed by ${agent?.name || task.assigned_to} and verified.`,
+    task: reviewReadyTask,
+    message: `Task "${task.title}" prepared by ${agent?.name || task.assigned_to} and is awaiting independent review.`,
   };
 }
 

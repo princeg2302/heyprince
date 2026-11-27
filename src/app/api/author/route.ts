@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '@/lib/admin-db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,7 +8,7 @@ export async function GET() {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('name, email, role, avatar_url')
+      .select('name, role, avatar_url')
       .order('id', { ascending: true })
       .limit(1)
       .single();

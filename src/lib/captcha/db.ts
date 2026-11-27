@@ -1,39 +1,56 @@
+import 'server-only';
 import pg from 'pg';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let pool: pg.Pool | null = null;
-let supabaseClient: SupabaseClient | null = null;
+let supabaseClient: SupabaseClient<any> | null = null;
 
-export function getCaptchaSupabaseClient(): SupabaseClient {
+export function getCaptchaSupabaseClient(): SupabaseClient<any> {
   if (!supabaseClient) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muzbzrxwbanzsjvgtexp.supabase.co';
-    const key =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-      'sb_publishable_-_0Hj2xs4eK6DQ4CsKvmGw_QKyxgsnd';
-    supabaseClient = createClient(url, key);
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!url) {
+      throw new Error('CAPTCHA database access requires NEXT_PUBLIC_SUPABASE_URL.');
+    }
+    const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!key) {
+      throw new Error('CAPTCHA database access requires the server-only SUPABASE_SECRET_KEY.');
+    }
+    supabaseClient = createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
   }
   return supabaseClient;
 }
 
 export function getCaptchaDbPool(): pg.Pool {
   if (!pool) {
-    let uri =
-      process.env.DATABASE_URI ||
-      process.env.POSTGRES_URL ||
-      'postgresql://postgres.muzbzrxwbanzsjvgtexp:HeyPrinceDB2026%21@aws-0-us-west-2.pooler.supabase.com:6543/postgres';
-
-    // Auto-route Supabase pooler from session mode (5432) to transaction mode (6543)
-    if (uri.includes('pooler.supabase.com:5432')) {
-      uri = uri.replace(':5432', ':6543');
+    const uri = process.env.DATABASE_URI || process.env.POSTGRES_URL;
+    if (!uri) {
+      throw new Error('CAPTCHA direct database fallback requires DATABASE_URI or POSTGRES_URL.');
     }
 
+    // Auto-route Supabase pooler from session mode (5432) to transaction mode (6543).
+    let connectionString = uri;
+    if (connectionString.includes('pooler.supabase.com:5432')) {
+      connectionString = connectionString.replace(':5432', ':6543');
+    }
+
+    const isLocal = connectionString.includes('127.0.0.1') || connectionString.includes('localhost');
+    const ca = process.env.SUPABASE_DB_CA_CERT?.replace(/\\n/g, '\n');
+    const ssl = isLocal
+      ? false
+      : {
+          rejectUnauthorized: true,
+          ...(ca ? { ca } : {}),
+        };
+
     pool = new pg.Pool({
-      connectionString: uri,
-      ssl:
-        uri && !uri.includes('127.0.0.1') && !uri.includes('localhost')
-          ? { rejectUnauthorized: false }
-          : false,
+      connectionString,
+      ssl,
       max: 8,
       idleTimeoutMillis: 15000,
       connectionTimeoutMillis: 10000,
@@ -96,19 +113,6 @@ export async function getCaptchaSite(siteKey: string): Promise<CaptchaSiteRecord
     }
   } catch (err) {
     console.error('[Captcha DB] Error loading site key:', err);
-  }
-
-  // Fallback for default site if database is initializing
-  if (siteKey === 'hp_site_live_default') {
-    return {
-      site_key: 'hp_site_live_default',
-      name: 'HeyPrince Web Engineering & Services',
-      allowed_origins: ['heyprince.in', 'www.heyprince.in', 'localhost', '127.0.0.1'],
-      is_active: true,
-      max_challenges_per_minute: 60,
-      challenge_ttl_seconds: 300,
-      proof_ttl_seconds: 300,
-    };
   }
 
   return null;
@@ -363,8 +367,8 @@ export async function checkRateLimit(
     );
     return Boolean(rows[0]?.check_captcha_rate_limit);
   } catch (err) {
-    console.warn('[Captcha DB] Rate limit check exception (failing open for single request):', err);
-    // If DB has temporary issue, allow single request rather than total system lockup
-    return true;
+    console.error('[Captcha DB] Rate limit check failed; denying request:', err);
+    // Fail closed: a database outage must not disable CAPTCHA rate limiting.
+    return false;
   }
 }

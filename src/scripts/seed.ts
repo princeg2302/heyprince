@@ -15,12 +15,16 @@ export async function runSeed() {
 
   if (existingUsers.totalDocs === 0) {
     console.log('👤 [Seed] Creating initial admin user (contact@heyprince.in)...');
+    const initialAdminPassword = process.env.PAYLOAD_ADMIN_PASSWORD;
+    if (!initialAdminPassword || initialAdminPassword.length < 12) {
+      throw new Error('Set PAYLOAD_ADMIN_PASSWORD to a unique password of at least 12 characters before seeding the initial admin.');
+    }
     await payload.create({
       collection: 'users',
       data: {
         name: 'Prince',
         email: 'contact@heyprince.in',
-        password: process.env.PAYLOAD_ADMIN_PASSWORD || 'HeyPrinceAdmin2026!',
+        password: initialAdminPassword,
         role: 'admin',
       },
     });

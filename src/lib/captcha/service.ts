@@ -155,7 +155,7 @@ export async function createCaptchaChallenge(options: CreateChallengeOptions): P
   const signedToken = signChallengeToken(tokenPayload);
 
   // 6. Record challenge in database for atomic one-time use verification
-  await insertChallengeRecord({
+  const challengeStored = await insertChallengeRecord({
     id: challengeId,
     siteKey,
     purpose,
@@ -166,6 +166,14 @@ export async function createCaptchaChallenge(options: CreateChallengeOptions): P
     difficulty,
     expiresAt: expiresAtDate,
   });
+
+  if (!challengeStored) {
+    return {
+      success: false,
+      error: 'CAPTCHA storage is temporarily unavailable. Please try again.',
+      code: 'DATABASE_UNAVAILABLE',
+    };
+  }
 
   return {
     success: true,
@@ -328,16 +336,15 @@ export async function verifyCaptchaChallenge(options: VerifyChallengeOptions): P
         attemptsLeft: dbResult.attemptsLeft,
       };
     }
-    // If database connection is degraded, but cryptographic HMAC signature & answer hash match 100%:
-    if (dbResult.reason === 'database_error') {
-      console.warn('[Captcha Service] Database query degraded; accepted cryptographically verified answer');
-    } else {
-      return {
-        success: false,
-        error: `Challenge verification failed (${dbResult.reason || 'invalid'}).`,
-        code: 'VERIFICATION_FAILED',
-      };
-    }
+    // Persistence is required for atomic one-time challenge consumption.
+    // Never accept a challenge when the database cannot confirm its state.
+    return {
+      success: false,
+      error: dbResult.reason === 'database_error'
+        ? 'CAPTCHA verification is temporarily unavailable. Please try again.'
+        : `Challenge verification failed (${dbResult.reason || 'invalid'}).`,
+      code: dbResult.reason === 'database_error' ? 'DATABASE_UNAVAILABLE' : 'VERIFICATION_FAILED',
+    };
   }
 
   // 9. Generate Signed Verification Proof Token (Valid for 5 minutes)
@@ -360,7 +367,7 @@ export async function verifyCaptchaChallenge(options: VerifyChallengeOptions): P
   const proofHash = hashToken(proofToken);
 
   // Store in database for atomic one-time consumption by the protected endpoint
-  await insertProofRecord({
+  const proofStored = await insertProofRecord({
     id: proofId,
     proofTokenHash: proofHash,
     siteKey,
@@ -368,6 +375,14 @@ export async function verifyCaptchaChallenge(options: VerifyChallengeOptions): P
     clientIpHash: ipHash,
     expiresAt: proofExpiresAtDate,
   });
+
+  if (!proofStored) {
+    return {
+      success: false,
+      error: 'CAPTCHA proof storage is temporarily unavailable. Please try again.',
+      code: 'DATABASE_UNAVAILABLE',
+    };
+  }
 
   return {
     success: true,

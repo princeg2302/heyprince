@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { executeAgentTask } from '@/lib/chief-of-staff/orchestrator';
 import { getAllAgents } from '@/lib/chief-of-staff/db';
 import { scanGlobalSector, IntelligenceSector } from '@/lib/jarvis/global-brain';
+import { isAuthorizedCronRequest } from '@/lib/cron-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -15,115 +16,70 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleCronTrigger(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET?.trim();
-  const authHeader = request.headers.get('authorization');
-  const customHeader = request.headers.get('x-cron-secret');
-  const queryKey = request.nextUrl.searchParams.get('key') || request.nextUrl.searchParams.get('secret');
-  const isAuthorizedKey = queryKey === 'heyprince_cron_2026' || (cronSecret && queryKey === cronSecret);
-
-  const userAgent = request.headers.get('user-agent') || '';
-  const isVercelCron =
-    request.headers.get('x-vercel-cron') === '1' ||
-    request.headers.has('x-vercel-cron-schedule') ||
-    userAgent.toLowerCase().includes('vercel-cron');
-
-  const isCronJobOrg = userAgent.toLowerCase().includes('cron-job.org');
-
-  if (cronSecret) {
-    const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
-    const providedSecret = bearerSecret || customHeader;
-
-    if (!providedSecret || providedSecret !== cronSecret) {
-      if (!isVercelCron && !isCronJobOrg && !isAuthorizedKey) {
-        console.warn('[Cron Chief of Staff] Unauthorized access attempt blocked.');
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Unauthorized: Invalid or missing CRON_SECRET authentication.',
-          },
-          { status: 401 }
-        );
-      }
-    }
-  } else if (!isVercelCron && !isCronJobOrg && !isAuthorizedKey && process.env.NODE_ENV === 'production') {
-    console.warn('[Cron Chief of Staff] Blocked unauthenticated public request.');
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Unauthorized. Protected cron route.',
-      },
-      { status: 401 }
-    );
+  if (!isAuthorizedCronRequest(request)) {
+    console.warn('[Cron Chief of Staff] Unauthorized request blocked.');
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const searchParams = request.nextUrl.searchParams;
-  const targetAgent = searchParams.get('agent');
+  const targetAgent = request.nextUrl.searchParams.get('agent');
 
   try {
     const allAgents = await getAllAgents();
     const results = [];
 
     if (targetAgent) {
-      const match = allAgents.find((a) => a.id === targetAgent);
+      // Dedicated cron routes own these agents; do not allow the targeted
+      // executive sweep parameter to bypass the duplicate-run exclusion.
+      if (targetAgent === 'lead_scout' || targetAgent === 'alex_vance') {
+        return NextResponse.json(
+          { success: false, error: `Agent ${targetAgent} has a dedicated cron route` },
+          { status: 400 }
+        );
+      }
+      const match = allAgents.find((agent) => agent.id === targetAgent);
       if (!match) {
         return NextResponse.json({ success: false, error: `Agent ${targetAgent} not found` }, { status: 404 });
       }
-      const res = await executeAgentTask({
-        agentId: targetAgent,
-        triggerSource: 'cron',
-      });
-      results.push(res);
+      results.push(await executeAgentTask({ agentId: targetAgent, triggerSource: 'cron' }));
     } else {
-      // Run active non-paused scheduled agents sequentially
+      // This endpoint is the executive sweep. Dedicated agents with their own
+      // Vercel cron routes are deliberately excluded to avoid duplicate runs.
       for (const agent of allAgents) {
-        if (agent.status === 'enabled' && agent.schedule_cron !== 'event_driven') {
-          // lead_scout has its own dedicated cron job at 5:00 AM (/api/cron/lead-scout)
-          // Skip it during generic 4:00 AM chief-of-staff sweep unless explicitly targeted
-          if (agent.id === 'lead_scout' && !targetAgent) {
-            continue;
-          }
-          try {
-            const res = await executeAgentTask({
-              agentId: agent.id,
-              triggerSource: 'cron',
-            });
-            results.push(res);
-          } catch (agentErr: any) {
-            results.push({
-              agentId: agent.id,
-              success: false,
-              message: agentErr?.message || 'Agent failed during cron run',
-              durationMs: 0,
-            });
-          }
+        if (agent.status !== 'enabled' || agent.schedule_cron === 'event_driven') continue;
+        if (agent.id === 'lead_scout' || agent.id === 'alex_vance') continue;
+        try {
+          results.push(await executeAgentTask({ agentId: agent.id, triggerSource: 'cron' }));
+        } catch (agentErr: any) {
+          results.push({
+            agentId: agent.id,
+            success: false,
+            message: agentErr?.message || 'Agent failed during cron run',
+            durationMs: 0,
+          });
         }
       }
     }
 
-    // 24/7 JARVIS Global Brain Surveillance: cycle through sectors in the background
     try {
       const sectors: IntelligenceSector[] = ['ai', 'technology', 'automobile', 'geopolitics', 'infrastructure', 'recession'];
-      const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
-      await scanGlobalSector(randomSector);
-    } catch (e) {
-      console.warn('[Cron Chief of Staff] Global brain scan notice:', e);
+      const sector = sectors[Math.floor(Math.random() * sectors.length)];
+      await scanGlobalSector(sector);
+    } catch (error) {
+      console.warn('[Cron Chief of Staff] Global brain scan notice:', error);
     }
 
+    const hasFailures = results.some((result: any) => result.success === false);
     return NextResponse.json({
-      success: true,
+      success: !hasFailures,
       timestamp: new Date().toISOString(),
       tasksRun: results.length,
       results,
-    });
+    }, { status: hasFailures ? 500 : 200 });
   } catch (error: any) {
     console.error('[Cron Chief of Staff] Fatal execution exception:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error?.message || 'Internal cron execution failure.',
-      },
+      { success: false, error: error?.message || 'Internal cron execution failure.' },
       { status: 500 }
     );
   }
 }
-

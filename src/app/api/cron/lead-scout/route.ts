@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runLeadScoutDiscovery } from '@/lib/chief-of-staff/agents/lead-scout';
+import { isAuthorizedCronRequest } from '@/lib/cron-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -13,33 +14,9 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleLeadScoutCron(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET?.trim();
-  const authHeader = request.headers.get('authorization');
-  const customHeader = request.headers.get('x-cron-secret');
-
-  const userAgent = request.headers.get('user-agent') || '';
-  const isVercelCron =
-    request.headers.get('x-vercel-cron') === '1' ||
-    request.headers.has('x-vercel-cron-schedule') ||
-    userAgent.toLowerCase().includes('vercel-cron');
-
-  if (cronSecret) {
-    const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
-    const providedSecret = bearerSecret || customHeader;
-
-    if (!providedSecret || providedSecret !== cronSecret) {
-      console.warn('[Cron Lead Scout] Blocked unauthorized request.');
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Invalid or missing CRON_SECRET.' },
-        { status: 401 }
-      );
-    }
-  } else if (!isVercelCron && process.env.NODE_ENV === 'production') {
-    console.warn('[Cron Lead Scout] Blocked unauthenticated public request.');
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized. Protected cron route.' },
-      { status: 401 }
-    );
+  if (!isAuthorizedCronRequest(request)) {
+    console.warn('[Cron Lead Scout] Unauthorized request blocked.');
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -60,4 +37,3 @@ async function handleLeadScoutCron(request: NextRequest) {
     );
   }
 }
-
