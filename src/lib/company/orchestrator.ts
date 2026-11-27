@@ -515,20 +515,21 @@ export async function processCompanyTask(taskId: string): Promise<{
     metrics: deliverable.metrics || {},
     deliverables: task.acceptance_criteria.map((crit, idx) => ({
       criterion: crit,
-      verified: true,
-      evidence: deliverable.keyFindings[idx] || `Validated successfully by ${agent?.name || task.assigned_to}`,
+      verified: false,
+      evidence: deliverable.keyFindings[idx] || 'Evidence generated; independent verification is still required.',
     })),
   };
 
   // 4. Move to review_ready
   await updateTaskStatus(taskId, 'review_ready', outputResult);
 
-  // 5. Independent Review by Reviewer Agent
-  const reviewerId = task.reviewer_id || 'alex_vance';
-  const verificationNotes = `Independent verification passed: All ${task.acceptance_criteria.length} acceptance criteria validated by ${reviewerId}. Deliverable meets HeyPrince engineering and editorial standards.`;
+  // 5. Independent review is a separate workflow. Do not self-certify the
+  // assigned agent's work or claim a reviewer ran when no reviewer executed.
+  const reviewerId = task.reviewer_id || 'unassigned';
+  const verificationNotes = `Awaiting independent review by ${reviewerId}. The assigned agent generated a deliverable; acceptance criteria have not yet been independently verified.`;
 
-  // 6. Complete task
-  const completedTask = await updateTaskStatus(taskId, 'completed', outputResult, verificationNotes);
+  // Keep the task in review_ready until a real reviewer records evidence.
+  const reviewReadyTask = await updateTaskStatus(taskId, 'review_ready', outputResult, verificationNotes);
 
   // 7. Record in multi-tier company memory
   try {
@@ -554,7 +555,7 @@ export async function processCompanyTask(taskId: string): Promise<{
     employeeId: task.assigned_to,
     department: agent?.department || 'Executive',
     employeeName: agent?.name,
-    context: `Completed Task: ${task.title}. Instructions: ${task.description}`,
+    context: `Task prepared for review: ${task.title}. Instructions: ${task.description}`,
     outputProduced: `${deliverable.summary}\n${deliverable.keyFindings.join('\n')}`,
   }).catch((err) => console.warn('[AutonomousLearning] Task learning error:', err));
 
@@ -563,10 +564,10 @@ export async function processCompanyTask(taskId: string): Promise<{
     const targetDiscussionId = task.discussion_id || (await getLatestDiscussionForRoom('company_hq'))?.id;
     if (targetDiscussionId) {
       const updateContent = sanitizeEmDashes(
-        `Task Completed & Verified: I have executed the task "${task.title}".\n\n` +
+        `Task Ready for Independent Review: I prepared the deliverable for "${task.title}".\n\n` +
         `Executive Summary:\n${deliverable.summary}\n\n` +
         `Key Deliverables & Findings:\n${deliverable.keyFindings.map((k) => `• ${k}`).join('\n')}\n\n` +
-        `The full report and artifacts have been archived to the Task Matrix and Company Brain for Prince's review.`
+        `The deliverable is awaiting independent reviewer verification before completion.`
       );
 
       await insertCompanyMessage({
@@ -588,8 +589,8 @@ export async function processCompanyTask(taskId: string): Promise<{
 
   return {
     success: true,
-    task: completedTask,
-    message: `Task "${task.title}" completed by ${agent?.name || task.assigned_to} and verified.`,
+    task: reviewReadyTask,
+    message: `Task "${task.title}" prepared by ${agent?.name || task.assigned_to} and is awaiting independent review.`,
   };
 }
 
