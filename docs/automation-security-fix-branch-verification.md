@@ -12,7 +12,7 @@ This branch contains code changes only. It has not been merged into `main`, depl
 - Applied the shared check to Daily News, Lead Scout, Chief of Staff and Company Workforce endpoints.
 - Requires `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret`.
 
-**Deployment prerequisite:** The connected Vercel project did not have a `CRON_SECRET` environment variable when inspected. Add a strong secret to Vercel Production (and Preview if preview cron testing is needed) before merging this branch. Until then, production cron requests will correctly fail closed with HTTP 401. Do not put the secret in Git.
+**Deployment verification:** `CRON_SECRET` is now present in Vercel Production and the external cron Authorization header has already been configured. The cron endpoint code accepts `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret`. Do not repeat this setup or put the secret in Git.
 
 ### Duplicate automation and scheduler behavior
 - Supabase does not currently have the `pg_cron` extension installed; the database has no `cron.job` table. The configured schedules are therefore not being run by Supabase Postgres itself.
@@ -82,7 +82,7 @@ No Supabase production data, policies, grants or schema were changed by this bra
 ## Remaining verification before merge
 - Vercel preview build is READY and GitHub Actions typecheck/Python auth tests pass.
 - Review the preview build output for route/type errors.
-- Configure `CRON_SECRET` before merging, or production crons will intentionally reject requests.
+- `CRON_SECRET` is present in Vercel Production and the external cron Authorization header is configured; no repeat setup is required.
 - Add the project's Supabase root CA certificate as `SUPABASE_DB_CA_CERT` in Vercel and verify a successful PostgreSQL connection before enabling strict TLS verification.
 - Complete the separate Supabase server-client migration and security migration before claiming the database exposure is fixed.
 - Implement durable queues/idempotency for long-running work and a real reviewer/approval execution workflow.
